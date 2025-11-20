@@ -4,7 +4,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 export async function generateInterviewQuestions(jobDescription: string): Promise<string[]> {
     const model = genAI.getGenerativeModel({
-        model: "gemini-pro",
+        model: "gemini-1.5-flash",
     });
 
     const prompt = `You are an expert HR interviewer. Based on the following job description, generate 8 relevant interview questions that would help assess a candidate's fit for this role.
@@ -52,7 +52,7 @@ export interface EvaluationResult {
 
 export async function evaluateAnswer(question: string, answer: string): Promise<EvaluationResult> {
     const model = genAI.getGenerativeModel({
-        model: "gemini-pro",
+        model: "gemini-1.5-flash",
     });
 
     const prompt = `You are an expert interviewer. Evaluate the following answer to the interview question.
