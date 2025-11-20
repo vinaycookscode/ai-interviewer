@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  EMPLOYER
+  CANDIDATE
+}
+
+enum InterviewStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  clerkId   String   @unique // For authentication
+  email     String   @unique
+  role      Role     @default(CANDIDATE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  jobs       Job[]       @relation("EmployerJobs")
+  interviews Interview[]
+}
+
+model Job {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  employerId  String
+  employer    User     @relation("EmployerJobs", fields: [employerId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  questions  Question[]
+  interviews Interview[]
+}
+
+model Question {
+  id        String   @id @default(uuid())
+  text      String
+  jobId     String
+  job       Job      @relation(fields: [jobId], references: [id])
+  createdAt DateTime @default(now())
+
+  answers Answer[]
+}
+
+model Interview {
+  id          String          @id @default(uuid())
+  candidateId String
+  candidate   User            @relation(fields: [candidateId], references: [id])
+  jobId       String
+  job         Job             @relation(fields: [jobId], references: [id])
+  status      InterviewStatus @default(PENDING)
+  token       String?         @unique // For secure access
+  score       Float? // Overall score
+  feedback    String? // Overall feedback
+  createdAt   DateTime        @default(now())
+
+  answers Answer[]
+}
+
+model Answer {
+  id          String   @id @default(uuid())
+  interviewId String
+  interview   Interview @relation(fields: [interviewId], references: [id])
+  questionId  String
+  question    Question  @relation(fields: [questionId], references: [id])
+  transcript  String // The text of the answer
+  audioUrl    String? // Optional: link to audio file
+  videoUrl    String? // Optional: link to video file
+  score       Float? // Score for this specific answer
+  feedback    String? // Feedback for this specific answer
+  createdAt   DateTime @default(now())
+}
