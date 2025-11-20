@@ -1,12 +1,33 @@
 import Link from "next/link";
 import { LayoutDashboard, PlusCircle, Users, Settings } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { db } from "@/lib/db";
+import { redirect } from "next/navigation";
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
+    const { userId } = await auth();
+    const user = await currentUser();
+
+    if (!userId || !user) {
+        redirect("/sign-in");
+    }
+
+    // Check user role in database
+    const dbUser = await db.user.findUnique({
+        where: { clerkId: userId },
+        select: { role: true },
+    });
+
+    // If user is a candidate, redirect to candidate dashboard
+    if (dbUser?.role === "CANDIDATE") {
+        redirect("/candidate/dashboard");
+    }
+
     return (
         <div className="flex min-h-screen bg-slate-50">
             {/* Sidebar */}

@@ -34,8 +34,8 @@ interface CandidateListProps {
 }
 
 export function CandidateList({ interviews }: CandidateListProps) {
-    const copyLink = (token: string) => {
-        const link = `${window.location.origin}/interview/${token}`;
+    const copyLink = (interviewId: string, token: string) => {
+        const link = `${window.location.origin}/interview/${interviewId}?token=${token}`;
         navigator.clipboard.writeText(link);
         toast.success("Interview link copied to clipboard");
     };
@@ -98,14 +98,18 @@ export function CandidateList({ interviews }: CandidateListProps) {
                                 )}
                             </TableCell>
                             <TableCell>
-                                {new Date(interview.createdAt).toLocaleDateString()}
+                                {new Date(interview.createdAt).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit'
+                                })}
                             </TableCell>
                             <TableCell className="text-right space-x-2">
                                 {interview.status === "PENDING" && interview.token && (
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => copyLink(interview.token!)}
+                                        onClick={() => copyLink(interview.id, interview.token!)}
                                         title="Copy Interview Link"
                                     >
                                         <Copy className="h-4 w-4" />

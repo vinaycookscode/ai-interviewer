@@ -69,11 +69,12 @@ export async function inviteCandidate(data: {
 
         // Send invitation email
         if (process.env.RESEND_API_KEY) {
-            await resend.emails.send({
-                from: process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev",
-                to: data.candidateEmail,
-                subject: `Interview Invitation: ${job.title}`,
-                html: `
+            try {
+                const emailResult = await resend.emails.send({
+                    from: process.env.RESEND_FROM_EMAIL || "onboarding@resend.dev",
+                    to: data.candidateEmail,
+                    subject: `Interview Invitation: ${job.title}`,
+                    html: `
           <h2>Hello ${data.candidateName},</h2>
           <p>You have been invited to complete an AI-powered interview for the position of <strong>${job.title}</strong>.</p>
           <p>The interview consists of ${job.questions.length} questions and should take approximately ${Math.ceil(job.questions.length * 2)} minutes to complete.</p>
@@ -81,7 +82,14 @@ export async function inviteCandidate(data: {
           <p>Or copy this link: ${interviewLink}</p>
           <p>Good luck!</p>
         `,
-            });
+                });
+                console.log("Email sent successfully:", emailResult);
+            } catch (emailError) {
+                console.error("Failed to send email:", emailError);
+                // Continue anyway - the link is still displayed in the UI
+            }
+        } else {
+            console.log("RESEND_API_KEY not configured - skipping email send");
         }
 
         return {

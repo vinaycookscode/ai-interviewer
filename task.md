@@ -23,7 +23,7 @@
     - [x] Question Editor (Manual override)
 - [x] **Candidate Invitation System**
     - [x] Generate unique interview links
-    - [ ] Email invitation system (TODO: Configure Resend API)
+    - [x] Email invitation system (Resend API configured)
 
 ## Phase 3: The Interview Engine (Candidate Side)
 - [x] **Pre-Interview System Check**
@@ -54,4 +54,16 @@
 - [x] **Candidate Auth**: Require signup/login before accessing the interview page.
 - [x] **UI Polish**: Improve overall aesthetics (Clear and Aesthetic look).
 - [x] **UX Fix**: Ensure all clickable items have `cursor-pointer`.
+
+### New Issues
+- [x] **Score Visibility**: Score is not visible for the candidate after completing interview.
+- [x] **Role-Based Access Control**: Candidates can currently access employer features (create jobs, etc.). Need to implement proper role-based permissions.
+- [x] **Candidates Page**: The "Candidates" navigation link is not working (page not implemented).
+- [x] **Settings Page**: The "Settings" navigation link is not working (page not implemented).
+
+### Future Enhancements
+- [ ] Implement Candidates page (list all candidates across all jobs)
+- [ ] Implement Settings page (user profile, preferences, etc.)
+- [ ] Add role-based middleware to restrict candidate access to employer features
+- [ ] Show feedback/score to candidates after interview completion
 

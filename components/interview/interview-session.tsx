@@ -136,11 +136,16 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
                 </div>
                 <h1 className="text-4xl font-bold">Interview Completed!</h1>
                 <p className="text-xl text-gray-500">
-                    Thank you for completing the interview. We will review your answers and get back to you soon.
+                    Thank you for completing the interview. Your responses are being evaluated.
                 </p>
-                <Button onClick={() => router.push("/")} size="lg">
-                    Return Home
-                </Button>
+                <div className="flex gap-4 justify-center">
+                    <Button onClick={() => router.push(`/interview/${interviewId}/feedback`)} size="lg">
+                        View Feedback
+                    </Button>
+                    <Button onClick={() => router.push("/candidate/dashboard")} variant="outline" size="lg">
+                        Back to Dashboard
+                    </Button>
+                </div>
             </div>
         );
     }
