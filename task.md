@@ -33,9 +33,9 @@
     - [x] Real-time Camera Feed
     - [x] Text-to-Speech (AI Voice)
     - [x] Speech-to-Text (Real-time transcription)
-- [ ] **Context-Aware AI Logic**
-    - [ ] Connect Interview flow to LLM
-    - [ ] Implement dynamic follow-up questions
+- [x] **Context-Aware AI Logic**
+    - [x] Connect Interview flow to LLM
+    - [x] Implement dynamic follow-up questions
 
 ## Phase 4: Analysis & Reporting
 - [x] **Automated Scoring Engine**
@@ -44,8 +44,8 @@
 - [x] **Feedback Report Generation**
     - [x] Generate detailed feedback for Candidates
     - [x] Generate summary report for Employers
-- [ ] **Analytics Dashboard**
-    - [ ] Visual charts for candidate performance
+- [x] **Analytics Dashboard**
+    - [x] Visual charts for candidate performance
 
 ## Bugs & Improvements
 - [x] **Sign Out Issue**: Signing out shows a white screen instead of redirecting to sign-in page.
@@ -60,10 +60,22 @@
 - [x] **Role-Based Access Control**: Candidates can currently access employer features (create jobs, etc.). Need to implement proper role-based permissions.
 - [x] **Candidates Page**: The "Candidates" navigation link is not working (page not implemented).
 - [x] **Settings Page**: The "Settings" navigation link is not working (page not implemented).
+- [x] **Interview Link**: Fix undefined URL in email invitations.
+- [x] **Feedback Score**: Ensure scores are calculated and saved upon interview completion.
 
 ### Future Enhancements
-- [ ] Implement Candidates page (list all candidates across all jobs)
-- [ ] Implement Settings page (user profile, preferences, etc.)
-- [ ] Add role-based middleware to restrict candidate access to employer features
-- [ ] Show feedback/score to candidates after interview completion
-
+- [x] Implement Candidates page (list all candidates across all jobs)
+- [x] Implement Settings page (user profile, preferences, etc.)
+- [x] Add role-based middleware to restrict candidate access to employer features
+- [x] Show feedback/score to candidates after interview completion
+- [x] **Analytics Dashboard**: Visual charts for candidate scores and interview status.
+- [x] **Context-Aware AI Logic**: Dynamic follow-up questions based on candidate answers.
+- [x] **Improved Interview Flow**: Public landing page and smart account switching for candidates.
+- [x] **Candidate Deletion**: Ability to delete candidates/interviews.
+- [x] **Date/Time Precision**: Added time to "Invited On" and "Job Created".
+- [x] **Dark Mode**: Comprehensive dark theme with pure black backgrounds and white text.
+- [x] **Chart Polish**: Fixed CSS alignment in analytics charts.
+- [x] **Email Notifications**: Employers get notified on interview completion.
+- [x] **PDF Export**: Downloadable interview feedback reports.
+- [ ] **Edit Job Functionality**: Allow employers to edit existing job details.
+- [ ] **Account Deletion**: Allow users to delete their account and data.

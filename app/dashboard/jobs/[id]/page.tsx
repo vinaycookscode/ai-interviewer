@@ -64,7 +64,13 @@ export default async function JobDetailsPage({
                 <div>
                     <h1 className="text-3xl font-bold mb-2">{job.title}</h1>
                     <p className="text-gray-500">
-                        Created on {new Date(job.createdAt).toLocaleDateString()}
+                        Created on {new Date(job.createdAt).toLocaleString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "numeric",
+                        })}
                     </p>
                 </div>
                 <div className="flex gap-2">

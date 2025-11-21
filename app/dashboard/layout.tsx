@@ -5,6 +5,8 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 
+import { ModeToggle } from "@/components/mode-toggle";
+
 export default async function DashboardLayout({
     children,
 }: {
@@ -18,10 +20,42 @@ export default async function DashboardLayout({
     }
 
     // Check user role in database
-    const dbUser = await db.user.findUnique({
+    let dbUser = await db.user.findUnique({
         where: { clerkId: userId },
-        select: { role: true },
     });
+
+    // If user not found by clerkId, try to find by email (for invited candidates)
+    if (!dbUser) {
+        const email = user.emailAddresses[0]?.emailAddress;
+        if (email) {
+            dbUser = await db.user.findUnique({
+                where: { email },
+            });
+
+            // If found by email, update the clerkId
+            if (dbUser) {
+                await db.user.update({
+                    where: { id: dbUser.id },
+                    data: { clerkId: userId },
+                });
+            } else {
+                // Create new user if doesn't exist (default to CANDIDATE for safety)
+                // Unless it's the very first user? No, let's assume new signups are candidates
+                // or we can let them be employers if they go to /dashboard?
+                // For now, let's create them as CANDIDATE to be safe.
+                // Actually, if they are accessing /dashboard, they might want to be an employer.
+                // But the requirement is "Candidate should not be able to see employer options".
+                // Let's default to CANDIDATE.
+                dbUser = await db.user.create({
+                    data: {
+                        clerkId: userId,
+                        email: email,
+                        role: "CANDIDATE", // Default role
+                    },
+                });
+            }
+        }
+    }
 
     // If user is a candidate, redirect to candidate dashboard
     if (dbUser?.role === "CANDIDATE") {
@@ -29,9 +63,9 @@ export default async function DashboardLayout({
     }
 
     return (
-        <div className="flex min-h-screen bg-slate-50">
+        <div className="flex min-h-screen bg-background">
             {/* Sidebar */}
-            <aside className="w-64 bg-white border-r shadow-sm hidden md:block">
+            <aside className="w-64 bg-card border-r shadow-sm hidden md:block">
                 <div className="p-6 border-b">
                     <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                         AI Interviewer
@@ -73,7 +107,8 @@ export default async function DashboardLayout({
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col">
                 {/* Header */}
-                <header className="h-16 bg-white border-b shadow-sm flex items-center justify-end px-8">
+                <header className="h-16 bg-card border-b shadow-sm flex items-center justify-end px-8 gap-4">
+                    <ModeToggle />
                     <UserButton afterSignOutUrl="/" />
                 </header>
 

@@ -14,6 +14,8 @@ import { Copy, ExternalLink, FileText } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
+import { DeleteCandidateButton } from "@/components/dashboard/delete-candidate-button";
+
 interface Candidate {
     id: string;
     email: string;
@@ -98,13 +100,15 @@ export function CandidateList({ interviews }: CandidateListProps) {
                                 )}
                             </TableCell>
                             <TableCell>
-                                {new Date(interview.createdAt).toLocaleDateString('en-US', {
+                                {new Date(interview.createdAt).toLocaleString('en-US', {
                                     year: 'numeric',
-                                    month: '2-digit',
-                                    day: '2-digit'
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: 'numeric',
+                                    minute: 'numeric'
                                 })}
                             </TableCell>
-                            <TableCell className="text-right space-x-2">
+                            <TableCell className="text-right flex justify-end gap-2">
                                 {interview.status === "PENDING" && interview.token && (
                                     <Button
                                         variant="ghost"
@@ -122,6 +126,7 @@ export function CandidateList({ interviews }: CandidateListProps) {
                                         </Button>
                                     </Link>
                                 )}
+                                <DeleteCandidateButton interviewId={interview.id} />
                             </TableCell>
                         </TableRow>
                     ))}

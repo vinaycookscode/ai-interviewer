@@ -65,7 +65,8 @@ export async function inviteCandidate(data: {
         });
 
         // Generate interview link
-        const interviewLink = `${process.env.NEXT_PUBLIC_APP_URL}/interview/${interview.id}?token=${interviewToken}`;
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        const interviewLink = `${baseUrl}/interview/${interview.id}?token=${interviewToken}`;
 
         // Send invitation email
         if (process.env.RESEND_API_KEY) {

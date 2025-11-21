@@ -14,6 +14,8 @@ import {
     TableRow,
 } from "@/components/ui/table";
 
+import { DeleteCandidateButton } from "@/components/dashboard/delete-candidate-button";
+
 export default async function CandidatesPage() {
     const { userId } = await auth();
 
@@ -136,13 +138,15 @@ export default async function CandidatesPage() {
                                             )}
                                         </TableCell>
                                         <TableCell>
-                                            {new Date(interview.createdAt).toLocaleDateString("en-US", {
+                                            {new Date(interview.createdAt).toLocaleString("en-US", {
                                                 year: "numeric",
                                                 month: "short",
                                                 day: "numeric",
+                                                hour: "numeric",
+                                                minute: "numeric",
                                             })}
                                         </TableCell>
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-right flex justify-end gap-2">
                                             {interview.status === "COMPLETED" && (
                                                 <Link href={`/interview/${interview.id}/feedback`}>
                                                     <Button variant="ghost" size="sm">
@@ -151,6 +155,7 @@ export default async function CandidatesPage() {
                                                     </Button>
                                                 </Link>
                                             )}
+                                            <DeleteCandidateButton interviewId={interview.id} />
                                         </TableCell>
                                     </TableRow>
                                 ))}

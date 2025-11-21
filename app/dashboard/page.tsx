@@ -5,6 +5,8 @@ import Link from "next/link";
 import { PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+import { AnalyticsCharts } from "@/components/dashboard/analytics-charts";
+
 export default async function DashboardPage() {
     const { userId } = await auth();
 
@@ -20,9 +22,82 @@ export default async function DashboardPage() {
                 orderBy: {
                     createdAt: "desc",
                 },
+                include: {
+                    interviews: {
+                        include: {
+                            answers: true,
+                        },
+                    },
+                },
             },
         },
     });
+
+    // Aggregate Analytics Data
+    const allInterviews = user?.jobs.flatMap((job) => job.interviews) || [];
+
+    // 1. Score Distribution
+    const scoreRanges = [
+        { range: "0-2", min: 0, max: 2, count: 0 },
+        { range: "3-5", min: 3, max: 5, count: 0 },
+        { range: "6-8", min: 6, max: 8, count: 0 },
+        { range: "9-10", min: 9, max: 10, count: 0 },
+    ];
+
+    allInterviews.forEach((interview) => {
+        if (interview.score !== null) {
+            const score = interview.score;
+            const range = scoreRanges.find((r) => score >= r.min && score <= r.max);
+            if (range) {
+                range.count++;
+            }
+        }
+    });
+
+    const scoreDistribution = scoreRanges.map(({ range, count }) => ({ range, count }));
+
+    // 2. Status Distribution
+    const statusCounts: Record<string, number> = {
+        PENDING: 0,
+        IN_PROGRESS: 0,
+        COMPLETED: 0,
+    };
+
+    allInterviews.forEach((interview) => {
+        if (statusCounts[interview.status] !== undefined) {
+            statusCounts[interview.status]++;
+        }
+    });
+
+    const statusDistribution = Object.entries(statusCounts).map(([status, count]) => ({
+        status: status.replace("_", " "),
+        count,
+    }));
+
+    // 3. Activity Data (Last 7 Days)
+    const activityMap = new Map<string, number>();
+    const today = new Date();
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+        const dateString = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+        activityMap.set(dateString, 0);
+    }
+
+    allInterviews.forEach((interview) => {
+        const dateString = new Date(interview.createdAt).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+        });
+        if (activityMap.has(dateString)) {
+            activityMap.set(dateString, (activityMap.get(dateString) || 0) + 1);
+        }
+    });
+
+    const activityData = Array.from(activityMap.entries()).map(([date, count]) => ({
+        date,
+        count,
+    }));
 
     return (
         <div>
@@ -41,6 +116,16 @@ export default async function DashboardPage() {
                 </Link>
             </div>
 
+            <div className="mb-8">
+                <h2 className="text-2xl font-bold mb-4">Analytics Overview</h2>
+                <AnalyticsCharts
+                    scoreDistribution={scoreDistribution}
+                    statusDistribution={statusDistribution}
+                    activityData={activityData}
+                />
+            </div>
+
+            <h2 className="text-2xl font-bold mb-4">Recent Jobs</h2>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {user?.jobs && user.jobs.length > 0 ? (
                     user.jobs.map((job) => (
@@ -53,7 +138,7 @@ export default async function DashboardPage() {
                                     {job.title}
                                 </CardTitle>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                    Posted {new Date(job.createdAt).toLocaleDateString()}
+                                    Posted {new Date(job.createdAt).toLocaleString()}
                                 </p>
                             </CardHeader>
                             <CardContent>

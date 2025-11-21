@@ -55,7 +55,7 @@ export default async function CandidateDashboardPage() {
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 p-8">
+        <div className="min-h-screen bg-background p-8">
             <div className="max-w-4xl mx-auto">
                 <div className="mb-8">
                     <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
@@ -93,14 +93,7 @@ export default async function CandidateDashboardPage() {
                                             </CardTitle>
                                             <p className="text-sm text-muted-foreground mt-1">
                                                 Invited on{" "}
-                                                {new Date(interview.createdAt).toLocaleDateString(
-                                                    "en-US",
-                                                    {
-                                                        year: "numeric",
-                                                        month: "long",
-                                                        day: "numeric",
-                                                    }
-                                                )}
+                                                {new Date(interview.createdAt).toLocaleString()}
                                             </p>
                                         </div>
                                         <Badge

@@ -22,6 +22,7 @@ interface InterviewSessionProps {
 
 export function InterviewSession({ interviewId, questions, stream }: InterviewSessionProps) {
     const router = useRouter();
+    const [questionsState, setQuestionsState] = useState<Question[]>(questions);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isRecording, setIsRecording] = useState(false);
     const [transcript, setTranscript] = useState("");
@@ -32,7 +33,7 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
     const recognitionRef = useRef<any>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
 
-    const currentQuestion = questions[currentIndex];
+    const currentQuestion = questionsState[currentIndex];
 
     // Initialize Video Preview
     useEffect(() => {
@@ -71,7 +72,7 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
     // Start Interview on Mount
     useEffect(() => {
         startInterview(interviewId);
-        speakQuestion(questions[0].text);
+        speakQuestion(questionsState[0].text);
     }, []);
 
     const speakQuestion = (text: string) => {
@@ -98,7 +99,7 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
         }
 
         // Submit Answer
-        handleNext();
+        await handleNext();
     };
 
     const handleNext = async () => {
@@ -114,12 +115,28 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
         if (result.success && result.answerId) {
             // Trigger AI scoring in background (fire and forget)
             gradeAnswer(result.answerId);
+
+            // Check for follow-up question
+            if (result.followUp) {
+                // Insert follow-up question after current question
+                const newQuestions = [...questionsState];
+                newQuestions.splice(currentIndex + 1, 0, result.followUp);
+                setQuestionsState(newQuestions);
+            }
         }
 
-        if (currentIndex < questions.length - 1) {
+        if (currentIndex < questionsState.length - 1) {
             setCurrentIndex((prev) => prev + 1);
             setTranscript("");
-            speakQuestion(questions[currentIndex + 1].text);
+            // We need to wait for state update to speak next question? 
+            // Actually, we can just speak the next question from the new array if we had it, 
+            // but since setQuestionsState is async, we might need a useEffect or just speak it here carefully.
+            // If we added a follow-up, it's at currentIndex + 1.
+            // If we didn't, the next original question is at currentIndex + 1.
+
+            // Let's use a timeout to allow state to settle or just speak the target text directly
+            const nextQuestionText = result.followUp ? result.followUp.text : questionsState[currentIndex + 1].text;
+            speakQuestion(nextQuestionText);
         } else {
             await completeInterview(interviewId);
             setIsCompleted(true);
@@ -156,7 +173,7 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
             <div className="flex flex-col justify-center space-y-8">
                 <div className="space-y-4">
                     <div className="text-sm font-medium text-gray-500 uppercase tracking-wider">
-                        Question {currentIndex + 1} of {questions.length}
+                        Question {currentIndex + 1} of {questionsState.length}
                     </div>
                     <h2 className="text-3xl font-bold leading-tight">
                         {currentQuestion.text}
