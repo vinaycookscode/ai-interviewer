@@ -27,13 +27,13 @@ export async function deleteCandidateInterview(interviewId: string) {
             where: { id: interview.jobId },
         });
 
-        if (!job || job.employerId !== (await db.user.findUnique({ where: { clerkId: userId } }))?.id) {
-            // Wait, we need to map clerkId to db user id to check employerId
-            // Let's do it properly
-            const user = await db.user.findUnique({ where: { clerkId: userId } });
-            if (!user || job.employerId !== user.id) {
-                return { success: false, error: "Unauthorized" };
-            }
+        if (!job) {
+            return { success: false, error: "Job not found" };
+        }
+
+        const user = await db.user.findUnique({ where: { clerkId: userId } });
+        if (!user || job.employerId !== user.id) {
+            return { success: false, error: "Unauthorized" };
         }
 
         // Delete the interview
