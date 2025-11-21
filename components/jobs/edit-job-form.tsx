@@ -15,41 +15,54 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form";
-import { createJob } from "@/actions/job";
+import { updateJob } from "@/actions/job";
 import { generateQuestions } from "@/actions/questions";
 import { useRouter } from "next/navigation";
 import { Loader2, Sparkles, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
 
 const formSchema = z.object({
     title: z.string().min(2, "Title must be at least 2 characters"),
     description: z.string().min(10, "Description must be at least 10 characters"),
-    requireResume: z.boolean(),
-    requireAadhar: z.boolean(),
-    requirePAN: z.boolean(),
+    requireResume: z.boolean().default(false),
+    requireAadhar: z.boolean().default(false),
+    requirePAN: z.boolean().default(false),
 });
 
-export function CreateJobForm() {
+interface EditJobFormProps {
+    jobId: string;
+    initialData: {
+        title: string;
+        description: string;
+        requireResume: boolean;
+        requireAadhar: boolean;
+        requirePAN: boolean;
+        questions: { text: string }[];
+    };
+}
+
+export function EditJobForm({ jobId, initialData }: EditJobFormProps) {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
-    const [questions, setQuestions] = useState<string[]>([]);
+    const [questions, setQuestions] = useState<string[]>(initialData.questions.map(q => q.text));
 
     const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
+        resolver: zodResolver(formSchema) as any,
         defaultValues: {
-            title: "",
-            description: "",
-            requireResume: false,
-            requireAadhar: false,
-            requirePAN: false,
+            title: initialData.title,
+            description: initialData.description,
+            requireResume: initialData.requireResume,
+            requireAadhar: initialData.requireAadhar,
+            requirePAN: initialData.requirePAN,
         },
     });
 
     async function handleGenerateQuestions() {
         const description = form.getValues("description");
         if (!description || description.length < 10) {
-            alert("Please enter a job description first");
+            toast.error("Please enter a job description first");
             return;
         }
 
@@ -58,11 +71,12 @@ export function CreateJobForm() {
             const result = await generateQuestions(description);
             if (result.success && result.questions) {
                 setQuestions(result.questions);
+                toast.success("Questions generated successfully");
             } else {
-                alert(result.error || "Failed to generate questions");
+                toast.error(result.error || "Failed to generate questions");
             }
         } catch (error) {
-            alert("Failed to generate questions. Please try again.");
+            toast.error("Failed to generate questions. Please try again.");
         } finally {
             setIsGenerating(false);
         }
@@ -81,11 +95,13 @@ export function CreateJobForm() {
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsLoading(true);
         try {
-            await createJob({ ...values, questions });
-            router.push("/dashboard");
+            await updateJob(jobId, { ...values, questions });
+            toast.success("Job updated successfully");
+            router.push(`/dashboard/jobs/${jobId}`);
             router.refresh();
         } catch (error) {
-            console.error("Failed to create job", error);
+            console.error("Failed to update job", error);
+            toast.error("Failed to update job");
         } finally {
             setIsLoading(false);
         }
@@ -244,12 +260,16 @@ export function CreateJobForm() {
                     </Card>
                 )}
 
-                <Button type="submit" disabled={isLoading}>
-                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Create Job
-                </Button>
+                <div className="flex gap-4">
+                    <Button type="button" variant="outline" onClick={() => router.back()}>
+                        Cancel
+                    </Button>
+                    <Button type="submit" disabled={isLoading}>
+                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Changes
+                    </Button>
+                </div>
             </form>
         </Form>
     );
 }
-

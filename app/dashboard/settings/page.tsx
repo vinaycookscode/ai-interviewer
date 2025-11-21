@@ -2,6 +2,8 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserButton } from "@clerk/nextjs";
 
+import { db } from "@/lib/db";
+
 export default async function SettingsPage() {
     const { userId } = await auth();
     const user = await currentUser();
@@ -9,6 +11,10 @@ export default async function SettingsPage() {
     if (!userId || !user) {
         return <div>Unauthorized</div>;
     }
+
+    const dbUser = await db.user.findUnique({
+        where: { clerkId: userId },
+    });
 
     return (
         <div>
@@ -29,6 +35,14 @@ export default async function SettingsPage() {
                         <CardTitle>Profile</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
+                        <div>
+                            <label className="text-sm font-medium text-muted-foreground">
+                                Role
+                            </label>
+                            <p className="text-lg font-semibold capitalize">
+                                {dbUser?.role?.toLowerCase() || "Unknown"}
+                            </p>
+                        </div>
                         <div>
                             <label className="text-sm font-medium text-muted-foreground">
                                 Email

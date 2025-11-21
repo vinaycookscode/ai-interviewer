@@ -62,6 +62,11 @@ export function PermissionCheck({ onPermissionsGranted }: PermissionCheckProps) 
     return (
         <div className="max-w-2xl mx-auto space-y-6">
             <div className="text-center space-y-2">
+                <div className="flex justify-start mb-4">
+                    <Button variant="ghost" onClick={() => window.location.href = "/dashboard"}>
+                        ← Back to Dashboard
+                    </Button>
+                </div>
                 <h1 className="text-3xl font-bold">System Check</h1>
                 <p className="text-gray-500">
                     Let's make sure your camera and microphone are working properly before we start.

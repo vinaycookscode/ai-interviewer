@@ -28,6 +28,7 @@ export function PdfDownloadButton({ targetId, fileName }: PdfDownloadButtonProps
                 scale: 2, // Higher scale for better quality
                 useCORS: true, // Handle images if any
                 logging: false,
+                backgroundColor: "#ffffff", // Force white background to avoid transparency/lab color issues
             });
 
             const imgData = canvas.toDataURL("image/png");

@@ -87,3 +87,7 @@ lerna-debug.log*
 *.swp
 *.swo
 *~
+
+# User uploads (keep structure but ignore files)
+public/uploads/**/*
+!public/uploads/**/.gitkeep

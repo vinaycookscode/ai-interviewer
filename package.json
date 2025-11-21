@@ -14,7 +14,8 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.70.0",
-    "@clerk/nextjs": "^6.35.2",
+    "@clerk/nextjs": "^6.35.4",
+    "@clerk/themes": "^2.4.39",
     "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/adapter-pg": "^7.0.0",
@@ -38,6 +39,7 @@
     "recharts": "^3.4.1",
     "resend": "^6.5.2",
     "sonner": "^2.0.7",
+    "svix": "^1.81.0",
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^4.1.12"

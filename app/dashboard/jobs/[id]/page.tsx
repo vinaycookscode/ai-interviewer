@@ -74,10 +74,12 @@ export default async function JobDetailsPage({
                     </p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                    </Button>
+                    <Link href={`/dashboard/jobs/${job.id}/edit`}>
+                        <Button variant="outline" size="sm">
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                        </Button>
+                    </Link>
                     <DeleteJobButton jobId={job.id} />
                 </div>
             </div>

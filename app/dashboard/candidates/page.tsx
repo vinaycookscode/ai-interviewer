@@ -95,6 +95,7 @@ export default async function CandidatesPage() {
                                     <TableHead>Job Position</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead>Score</TableHead>
+                                    <TableHead>Documents</TableHead>
                                     <TableHead>Date</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
@@ -136,6 +137,43 @@ export default async function CandidatesPage() {
                                             ) : (
                                                 <span className="text-muted-foreground text-sm">-</span>
                                             )}
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex gap-1 flex-wrap">
+                                                {interview.resumeUrl && (
+                                                    <a
+                                                        href={interview.resumeUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                                                    >
+                                                        Resume
+                                                    </a>
+                                                )}
+                                                {interview.aadharUrl && (
+                                                    <a
+                                                        href={interview.aadharUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-xs px-2 py-1 rounded bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
+                                                    >
+                                                        Aadhar
+                                                    </a>
+                                                )}
+                                                {interview.panUrl && (
+                                                    <a
+                                                        href={interview.panUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-xs px-2 py-1 rounded bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors"
+                                                    >
+                                                        PAN
+                                                    </a>
+                                                )}
+                                                {!interview.resumeUrl && !interview.aadharUrl && !interview.panUrl && (
+                                                    <span className="text-muted-foreground text-sm">No docs</span>
+                                                )}
+                                            </div>
                                         </TableCell>
                                         <TableCell>
                                             {new Date(interview.createdAt).toLocaleString("en-US", {

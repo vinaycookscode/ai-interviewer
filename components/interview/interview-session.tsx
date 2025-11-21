@@ -30,6 +30,8 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
     const [isProcessing, setIsProcessing] = useState(false);
     const [isCompleted, setIsCompleted] = useState(false);
 
+    const [interimTranscript, setInterimTranscript] = useState("");
+
     const recognitionRef = useRef<any>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -53,15 +55,21 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
                 recognition.lang = "en-US";
 
                 recognition.onresult = (event: any) => {
-                    let finalTranscript = "";
+                    let final = "";
+                    let interim = "";
+
                     for (let i = event.resultIndex; i < event.results.length; ++i) {
                         if (event.results[i].isFinal) {
-                            finalTranscript += event.results[i][0].transcript;
+                            final += event.results[i][0].transcript;
+                        } else {
+                            interim += event.results[i][0].transcript;
                         }
                     }
-                    if (finalTranscript) {
-                        setTranscript((prev) => prev + " " + finalTranscript);
+
+                    if (final) {
+                        setTranscript((prev) => prev + " " + final);
                     }
+                    setInterimTranscript(interim);
                 };
 
                 recognitionRef.current = recognition;
@@ -86,9 +94,20 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
 
     const startRecording = () => {
         setIsRecording(true);
-        setTranscript("");
+        // Don't clear transcript here if we want to allow pausing/resuming, 
+        // but for this app, we probably want to clear it for a new answer attempt.
+        // However, if they accidentally stopped, clearing it might be bad. 
+        // Let's clear it only if it's a fresh start for a question.
+        // For now, keeping existing behavior but ensuring interim is cleared.
+        if (!transcript) setTranscript("");
+        setInterimTranscript("");
+
         if (recognitionRef.current) {
-            recognitionRef.current.start();
+            try {
+                recognitionRef.current.start();
+            } catch (e) {
+                console.error("Error starting recognition:", e);
+            }
         }
     };
 
@@ -98,18 +117,25 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
             recognitionRef.current.stop();
         }
 
-        // Submit Answer
-        await handleNext();
+        // Wait a moment for any final recognition results to process
+        setIsProcessing(true);
+        setTimeout(async () => {
+            // Submit Answer
+            await handleNext();
+        }, 1000);
     };
 
     const handleNext = async () => {
         setIsProcessing(true);
 
         // Submit current answer
+        // Combine final and interim transcript to ensure we capture everything
+        const fullTranscript = (transcript + " " + interimTranscript).trim();
+
         const result = await submitAnswer({
             interviewId,
             questionId: currentQuestion.id,
-            transcript: transcript || "(No answer provided)",
+            transcript: fullTranscript || "(No answer provided)",
         });
 
         if (result.success && result.answerId) {
@@ -139,6 +165,12 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
             speakQuestion(nextQuestionText);
         } else {
             await completeInterview(interviewId);
+
+            // Stop all media tracks
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+
             setIsCompleted(true);
         }
 
@@ -217,11 +249,11 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
                 </div>
 
                 {/* Transcript Preview */}
-                {transcript && (
+                {(transcript || interimTranscript) && (
                     <Card className="bg-slate-50 border-none">
                         <CardContent className="p-4">
                             <p className="text-sm text-gray-600 italic">
-                                "{transcript}"
+                                "{transcript} <span className="text-gray-400">{interimTranscript}</span>"
                             </p>
                         </CardContent>
                     </Card>

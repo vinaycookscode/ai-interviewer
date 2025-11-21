@@ -30,13 +30,19 @@ model User {
 }
 
 model Job {
-  id          String   @id @default(uuid())
+  id          String @id @default(uuid())
   title       String
   description String
   employerId  String
-  employer    User     @relation("EmployerJobs", fields: [employerId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  employer    User   @relation("EmployerJobs", fields: [employerId], references: [id])
+
+  // Document requirements
+  requireResume Boolean @default(false)
+  requireAadhar Boolean @default(false)
+  requirePAN    Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   questions  Question[]
   interviews Interview[]
@@ -60,15 +66,26 @@ model Interview {
   job         Job             @relation(fields: [jobId], references: [id])
   status      InterviewStatus @default(PENDING)
   token       String?         @unique // For secure access
-  score       Float? // Overall score
-  feedback    String? // Overall feedback
-  createdAt   DateTime        @default(now())
+
+  // Scheduling
+  scheduledTime DateTime? // When the interview is scheduled
+
+  // Document uploads
+  resumeUrl         String?
+  aadharUrl         String?
+  panUrl            String?
+  documentsVerified Boolean @default(false)
+
+  // Results
+  score     Float? // Overall score
+  feedback  String? // Overall feedback
+  createdAt DateTime @default(now())
 
   answers Answer[]
 }
 
 model Answer {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   interviewId String
   interview   Interview @relation(fields: [interviewId], references: [id])
   questionId  String
@@ -78,5 +95,5 @@ model Answer {
   videoUrl    String? // Optional: link to video file
   score       Float? // Score for this specific answer
   feedback    String? // Feedback for this specific answer
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
 }

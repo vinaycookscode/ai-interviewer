@@ -7,6 +7,10 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
 import { PdfDownloadButton } from "@/components/interview/pdf-download-button";
+import { DashboardHeader } from "@/components/dashboard/header";
+import { DashboardSidebar } from "@/components/dashboard/sidebar";
+import { CandidateSidebar } from "@/components/candidate/sidebar";
+import { db } from "@/lib/db";
 
 export default async function FeedbackPage({
     params,
@@ -15,66 +19,81 @@ export default async function FeedbackPage({
 }) {
     const { id } = await params;
     const { success, interview, averageScore } = await getInterviewFeedback(id);
+    const { currentUser } = await import("@clerk/nextjs/server");
+    const user = await currentUser();
+    const isCandidate = user?.emailAddresses[0]?.emailAddress === interview?.candidate.email;
+    const dashboardLink = isCandidate ? "/candidate/dashboard" : "/dashboard";
 
     if (!success || !interview) {
         notFound();
     }
 
-    // ...
+    // Fetch dbUser to determine role for sidebar
+    const dbUser = await db.user.findUnique({
+        where: { clerkId: user?.id },
+    });
 
     return (
-        <div className="min-h-screen bg-background py-8">
-            <div className="container mx-auto px-4 max-w-4xl">
-                <div className="mb-8 flex items-start justify-between">
-                    <div>
-                        <Link
-                            href="/dashboard"
-                            className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4"
-                        >
-                            <ArrowLeft className="mr-2 h-4 w-4" />
-                            Back to Dashboard
-                        </Link>
-                        <h1 className="text-3xl font-bold text-foreground">Interview Feedback</h1>
-                        <p className="text-muted-foreground mt-2">
-                            {interview.job.title} • {interview.candidate.email}
-                        </p>
-                    </div>
-                    <PdfDownloadButton targetId="feedback-content" fileName={`feedback-${interview.candidate.email}`} />
-                </div>
+        <div className="min-h-screen bg-background">
+            <DashboardHeader user={user} userRole={dbUser?.role} />
 
-                <div id="feedback-content" className="bg-background p-4 rounded-lg">
-                    <div className="grid md:grid-cols-3 gap-8 mb-8">
-                        <div className="md:col-span-1">
-                            <ScoreCard score={averageScore ?? null} />
-                        </div>
-                        <div className="md:col-span-2">
-                            <div className="bg-card p-6 rounded-lg border shadow-sm h-full">
-                                <h3 className="text-lg font-semibold mb-2">Summary</h3>
-                                <p className="text-muted-foreground">
-                                    {averageScore && averageScore >= 7
-                                        ? "Great job! The candidate demonstrated strong knowledge and communication skills."
-                                        : averageScore && averageScore >= 4
-                                            ? "Good effort. There are some areas for improvement, particularly in technical depth."
-                                            : "Needs improvement. The answers lacked sufficient detail or relevance."}
+            <div className="flex">
+                {dbUser?.role === "CANDIDATE" ? <CandidateSidebar /> : <DashboardSidebar />}
+
+                <main className="flex-1 p-8">
+                    <div className="container mx-auto px-4 max-w-4xl">
+                        <div className="mb-8 flex items-start justify-between">
+                            <div>
+                                <Link
+                                    href={dashboardLink}
+                                    className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4"
+                                >
+                                    <ArrowLeft className="mr-2 h-4 w-4" />
+                                    Back to Dashboard
+                                </Link>
+                                <h1 className="text-3xl font-bold text-foreground">Interview Feedback</h1>
+                                <p className="text-muted-foreground mt-2">
+                                    {interview.job.title} • {interview.candidate.email}
                                 </p>
+                            </div>
+                            <PdfDownloadButton targetId="feedback-content" fileName={`feedback-${interview.candidate.email}`} />
+                        </div>
+
+                        <div id="feedback-content" className="bg-background p-4 rounded-lg">
+                            <div className="grid md:grid-cols-3 gap-8 mb-8">
+                                <div className="md:col-span-1">
+                                    <ScoreCard score={averageScore ?? null} />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <div className="bg-card p-6 rounded-lg border shadow-sm h-full">
+                                        <h3 className="text-lg font-semibold mb-2">Summary</h3>
+                                        <p className="text-muted-foreground">
+                                            {averageScore && averageScore >= 7
+                                                ? "Great job! The candidate demonstrated strong knowledge and communication skills."
+                                                : averageScore && averageScore >= 4
+                                                    ? "Good effort. There are some areas for improvement, particularly in technical depth."
+                                                    : "Needs improvement. The answers lacked sufficient detail or relevance."}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-6">
+                                <h2 className="text-2xl font-bold text-foreground">Detailed Breakdown</h2>
+                                {interview.answers.map((answer: any, index: number) => (
+                                    <AnswerCard
+                                        key={answer.id}
+                                        index={index}
+                                        question={answer.question.text}
+                                        answer={answer.transcript}
+                                        score={answer.score}
+                                        feedback={answer.feedback}
+                                    />
+                                ))}
                             </div>
                         </div>
                     </div>
-
-                    <div className="space-y-6">
-                        <h2 className="text-2xl font-bold text-foreground">Detailed Breakdown</h2>
-                        {interview.answers.map((answer: any, index: number) => (
-                            <AnswerCard
-                                key={answer.id}
-                                index={index}
-                                question={answer.question.text}
-                                answer={answer.transcript}
-                                score={answer.score}
-                                feedback={answer.feedback}
-                            />
-                        ))}
-                    </div>
-                </div>
+                </main>
             </div>
         </div>
     );

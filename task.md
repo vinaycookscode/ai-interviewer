@@ -79,3 +79,43 @@
 - [x] **PDF Export**: Downloadable interview feedback reports.
 - [ ] **Edit Job Functionality**: Allow employers to edit existing job details.
 - [ ] **Account Deletion**: Allow users to delete their account and data.
+
+## New Feature Implementation
+
+### Phase 1: Critical Fixes
+- [x] **Fix PDF Download**: PDF download working on employer feedback page and accessible to candidates via "View Feedback" button.
+
+### Phase 2: User Type System
+- [x] **User Type Selection**: Add user type selection (Candidate/Employer) on signup page.
+- [x] **Database Schema**: Update User model to include userType field (using existing Role enum).
+- [/] **Role-Based Access**: Implement proper role-based routing and access control (page-level, not middleware due to edge runtime).
+
+### Phase 3: Smart Authentication Flow
+- [x] **Interview Link Handler**: Check if user exists when accessing interview link.
+- [x] **Conditional Auth**: Redirect to login if user exists, signup if new user.
+- [x] **Auto-redirect**: After auth, redirect back to interview link.
+
+### Phase 4: Candidate Portal Redesign
+- [x] **Candidate Dashboard**: Show only interviews with dates and status.
+- [x] **Interview Timing**: Display "Start Interview" button only when interview is scheduled for current time.
+- [x] **Simplified Navigation**: Remove employer-specific features from candidate view.
+- [x] **Candidate Layout**: Add dedicated layout with sidebar and profile options for candidates.
+- [x] **Document Upload**: Allow candidates to upload required documents before interview.
+
+### Phase 5: Document Management System
+- [x] **Job Document Requirements**: Add checkboxes for required documents (Resume, Aadhar, PAN) when creating job.
+- [x] **Database Schema**: Add document fields to Interview/Candidate model.
+- [x] **Document Upload UI**: Create document upload interface for candidates.
+- [x] **Document Validation**: Ensure candidates upload all required documents before starting interview.
+- [x] **Document Storage**: Implement file upload and storage (local storage in public/uploads).
+
+### Phase 6: Theme Verification
+- [x] **Dark Theme Testing**: All new pages use theme-aware classes (bg-background, bg-card, text-foreground).
+- [x] **Light Theme Testing**: All components properly support light theme.
+- [x] **Theme Consistency**: All new components use theme-aware Tailwind classes.
+
+### Phase 7: Final Polish
+- [x] **Role Visibility**: Display user role (Candidate/Employer) in dashboard header and settings.
+- [x] **Dark Theme Fixes**: Ensure Clerk components and all dashboard sections fully support dark theme.
+- [x] **Hydration Fixes**: Resolve hydration errors in candidate dashboard.
+- [x] **Build Fixes**: Resolve dependency conflicts with Clerk packages.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PermissionCheck } from "@/components/interview/permission-check";
 import { InterviewSession } from "@/components/interview/interview-session";
 
@@ -17,6 +17,15 @@ export function InterviewClientPage({ interview, questions }: InterviewClientPag
         setStream(mediaStream);
         setHasPermissions(true);
     };
+
+    // Cleanup stream on unmount
+    useEffect(() => {
+        return () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, [stream]);
 
     if (!hasPermissions || !stream) {
         return <PermissionCheck onPermissionsGranted={handlePermissionsGranted} />;
