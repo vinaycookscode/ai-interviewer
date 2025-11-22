@@ -88,7 +88,7 @@ export default function SignUpPage() {
                 unsafeMetadata={{
                     userType: userType,
                 }}
-                redirectUrl={userType === "CANDIDATE" ? "/candidate/dashboard" : "/dashboard"}
+                fallbackRedirectUrl={userType === "CANDIDATE" ? "/candidate/dashboard" : "/dashboard"}
             />
         </div>
     );

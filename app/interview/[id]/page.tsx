@@ -19,6 +19,10 @@ export default async function InterviewPage({
                 <div className="text-center space-y-4">
                     <h1 className="text-2xl font-bold text-red-600">Invalid Link</h1>
                     <p className="text-muted-foreground">This interview link is missing a valid token.</p>
+                    <div className="p-4 bg-gray-100 rounded text-xs text-left overflow-auto max-w-md mx-auto">
+                        <p className="font-semibold">Debug Info:</p>
+                        <pre>{JSON.stringify(await searchParams, null, 2)}</pre>
+                    </div>
                 </div>
             </div>
         );
