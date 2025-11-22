@@ -15,9 +15,14 @@ export async function POST(req: NextRequest) {
 
         const formData = await req.formData();
         const interviewId = formData.get("interviewId") as string;
-        const resumeFile = formData.get("resume") as File | null;
-        const aadharFile = formData.get("aadhar") as File | null;
-        const panFile = formData.get("pan") as File | null;
+
+        const resumeEntry = formData.get("resume");
+        const aadharEntry = formData.get("aadhar");
+        const panEntry = formData.get("pan");
+
+        const resumeFile = resumeEntry instanceof File ? resumeEntry : null;
+        const aadharFile = aadharEntry instanceof File ? aadharEntry : null;
+        const panFile = panEntry instanceof File ? panEntry : null;
 
         if (!interviewId) {
             return NextResponse.json({ error: "Interview ID is required" }, { status: 400 });
@@ -101,10 +106,10 @@ export async function POST(req: NextRequest) {
             message: "Documents uploaded successfully",
             interview: updatedInterview,
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error("Document upload error:", error);
         return NextResponse.json(
-            { error: "Failed to upload documents" },
+            { error: error.message || "Failed to upload documents" },
             { status: 500 }
         );
     }
