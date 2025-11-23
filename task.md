@@ -87,8 +87,8 @@
 
 ### Phase 2: User Type System
 - [x] **User Type Selection**: Add user type selection (Candidate/Employer) on signup page.
-- [/] **Vercel Deployment**: Deploy application to Vercel
-- [/] **Domain Setup**: Connect custom Cloudflare domain
+- [x] **Vercel Deployment**: Deploy application to Vercel
+- [x] **Domain Setup**: Connect custom Cloudflare domain (`getbacktou.com`)
 - [x] **Database Setup**: Set up production database (Neon/Vercel Postgres)
 - [/] **Role-Based Access**: Implement proper role-based routing and access control (page-level, not middleware due to edge runtime).
 
@@ -141,3 +141,7 @@
 - [x] **Dark Theme Fixes**: Ensure Clerk components and all dashboard sections fully support dark theme.
 - [x] **Hydration Fixes**: Resolve hydration errors in candidate dashboard.
 - [x] **Build Fixes**: Resolve dependency conflicts with Clerk packages.
+
+### Phase 8: Manual Invitation System (Current)
+- [/] **Remove Resend**: Disable automated email sending.
+- [ ] **Manual Invite UI**: Create "Copy Invitation" interface for employers.

@@ -53,6 +53,20 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
     });
 
     if (existingUser) {
+        // If user was invited (NULL password), allow them to claim the account
+        if (existingUser.password === null) {
+            await db.user.update({
+                where: { email },
+                data: {
+                    name,
+                    password: hashedPassword,
+                    role,
+                },
+            });
+            return { success: "Account claimed successfully!" };
+        }
+
+        // User already has a password - cannot register again
         return { error: "Email already in use!" };
     }
 
@@ -67,3 +81,4 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
 
     return { success: "User created!" };
 };
+
