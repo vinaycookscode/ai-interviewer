@@ -27,13 +27,18 @@ export const RegisterForm = () => {
     const [success, setSuccess] = useState<string | undefined>("");
     const [isPending, startTransition] = useTransition();
 
+    // Check if user is coming from interview invitation
+    const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    const callbackUrl = searchParams.get("callbackUrl");
+    const isInterviewInvitation = callbackUrl?.includes("/interview/");
+
     const form = useForm<z.infer<typeof RegisterSchema>>({
         resolver: zodResolver(RegisterSchema),
         defaultValues: {
             email: "",
             password: "",
             name: "",
-            role: "CANDIDATE",
+            role: isInterviewInvitation ? "CANDIDATE" : "CANDIDATE",
         },
     });
 
@@ -116,41 +121,43 @@ export const RegisterForm = () => {
                                 </FormItem>
                             )}
                         />
-                        <FormField
-                            control={form.control}
-                            name="role"
-                            render={({ field }) => (
-                                <FormItem className="space-y-3">
-                                    <FormLabel>I am a...</FormLabel>
-                                    <FormControl>
-                                        <RadioGroup
-                                            onValueChange={field.onChange}
-                                            defaultValue={field.value}
-                                            className="flex flex-col space-y-1"
-                                            disabled={isPending}
-                                        >
-                                            <FormItem className="flex items-center space-x-3 space-y-0">
-                                                <FormControl>
-                                                    <RadioGroupItem value="CANDIDATE" />
-                                                </FormControl>
-                                                <FormLabel className="font-normal">
-                                                    Candidate (I want to be interviewed)
-                                                </FormLabel>
-                                            </FormItem>
-                                            <FormItem className="flex items-center space-x-3 space-y-0">
-                                                <FormControl>
-                                                    <RadioGroupItem value="EMPLOYER" />
-                                                </FormControl>
-                                                <FormLabel className="font-normal">
-                                                    Employer (I want to hire)
-                                                </FormLabel>
-                                            </FormItem>
-                                        </RadioGroup>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        {!isInterviewInvitation && (
+                            <FormField
+                                control={form.control}
+                                name="role"
+                                render={({ field }) => (
+                                    <FormItem className="space-y-3">
+                                        <FormLabel>I am a...</FormLabel>
+                                        <FormControl>
+                                            <RadioGroup
+                                                onValueChange={field.onChange}
+                                                defaultValue={field.value}
+                                                className="flex flex-col space-y-1"
+                                                disabled={isPending}
+                                            >
+                                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                                    <FormControl>
+                                                        <RadioGroupItem value="CANDIDATE" />
+                                                    </FormControl>
+                                                    <FormLabel className="font-normal">
+                                                        Candidate (I want to be interviewed)
+                                                    </FormLabel>
+                                                </FormItem>
+                                                <FormItem className="flex items-center space-x-3 space-y-0">
+                                                    <FormControl>
+                                                        <RadioGroupItem value="EMPLOYER" />
+                                                    </FormControl>
+                                                    <FormLabel className="font-normal">
+                                                        Employer (I want to hire)
+                                                    </FormLabel>
+                                                </FormItem>
+                                            </RadioGroup>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
                     </div>
                     <FormError message={error} />
                     <FormSuccess message={success} />
