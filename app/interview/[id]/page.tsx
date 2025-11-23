@@ -65,8 +65,8 @@ export default async function InterviewPage({
 
         const redirectPath = `/interview/${id}?token=${token}`;
 
-        if (existingUser) {
-            // User exists - redirect to sign-in
+        if (existingUser && existingUser.password !== null) {
+            // User exists with password - redirect to sign-in
             const signInUrl = new URL("/auth/login", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000");
             signInUrl.searchParams.set("callbackUrl", redirectPath); // NextAuth uses callbackUrl
 
@@ -87,7 +87,7 @@ export default async function InterviewPage({
                 </div>
             );
         } else {
-            // New user - redirect to sign-up
+            // New user OR invited user (NULL password) - redirect to sign-up
             const signUpUrl = new URL("/auth/register", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000");
             signUpUrl.searchParams.set("callbackUrl", redirectPath);
 
