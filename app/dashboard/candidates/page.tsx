@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,8 @@ import {
 import { DeleteCandidateButton } from "@/components/dashboard/delete-candidate-button";
 
 export default async function CandidatesPage() {
-    const { userId } = await auth();
+    const session = await auth();
+    const userId = session?.user?.id;
 
     if (!userId) {
         return <div>Unauthorized</div>;
@@ -25,7 +26,7 @@ export default async function CandidatesPage() {
 
     // Get employer's jobs and all interviews
     const employer = await db.user.findUnique({
-        where: { clerkId: userId },
+        where: { id: userId },
         include: {
             jobs: {
                 include: {

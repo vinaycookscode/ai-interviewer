@@ -32,8 +32,7 @@ if [ ! -f ".env" ] && [ ! -f ".env.local" ]; then
     echo -e "${RED}❌ Warning: No .env or .env.local file found.${NC}"
     echo "Make sure to set up environment variables in Vercel dashboard:"
     echo "  - DATABASE_URL"
-    echo "  - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"
-    echo "  - CLERK_SECRET_KEY"
+
     echo "  - GEMINI_API_KEY"
     echo "  - RESEND_API_KEY"
     echo "  - RESEND_FROM_EMAIL"

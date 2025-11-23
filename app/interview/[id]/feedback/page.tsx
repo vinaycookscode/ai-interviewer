@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { auth } from "@/auth";
 
 import { PdfDownloadButton } from "@/components/interview/pdf-download-button";
 import { DashboardHeader } from "@/components/dashboard/header";
@@ -19,9 +20,9 @@ export default async function FeedbackPage({
 }) {
     const { id } = await params;
     const { success, interview, averageScore } = await getInterviewFeedback(id);
-    const { currentUser } = await import("@clerk/nextjs/server");
-    const user = await currentUser();
-    const isCandidate = user?.emailAddresses[0]?.emailAddress === interview?.candidate.email;
+    const session = await auth();
+    const user = session?.user;
+    const isCandidate = user?.email === interview?.candidate.email;
     const dashboardLink = isCandidate ? "/candidate/dashboard" : "/dashboard";
 
     if (!success || !interview) {
@@ -30,7 +31,7 @@ export default async function FeedbackPage({
 
     // Fetch dbUser to determine role for sidebar
     const dbUser = await db.user.findUnique({
-        where: { clerkId: user?.id },
+        where: { id: user?.id },
     });
 
     return (

@@ -1,19 +1,19 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth } from "@/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton } from "@/components/auth/user-button";
 
 import { db } from "@/lib/db";
 
 export default async function SettingsPage() {
-    const { userId } = await auth();
-    const user = await currentUser();
+    const session = await auth();
+    const userId = session?.user?.id;
 
-    if (!userId || !user) {
+    if (!userId) {
         return <div>Unauthorized</div>;
     }
 
     const dbUser = await db.user.findUnique({
-        where: { clerkId: userId },
+        where: { id: userId },
     });
 
     return (
@@ -48,7 +48,7 @@ export default async function SettingsPage() {
                                 Email
                             </label>
                             <p className="text-lg">
-                                {user.emailAddresses[0]?.emailAddress}
+                                {dbUser?.email}
                             </p>
                         </div>
                         <div>
@@ -56,14 +56,14 @@ export default async function SettingsPage() {
                                 Name
                             </label>
                             <p className="text-lg">
-                                {user.firstName} {user.lastName}
+                                {dbUser?.name}
                             </p>
                         </div>
                         <div className="pt-4">
                             <p className="text-sm text-muted-foreground mb-2">
                                 Manage your account settings
                             </p>
-                            <UserButton afterSignOutUrl="/sign-in" />
+                            <UserButton />
                         </div>
                     </CardContent>
                 </Card>

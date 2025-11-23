@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
 import { EditJobForm } from "@/components/jobs/edit-job-form";
@@ -9,7 +9,8 @@ export default async function EditJobPage({
     params: Promise<{ id: string }>;
 }) {
     const { id } = await params;
-    const { userId } = await auth();
+    const session = await auth();
+    const userId = session?.user?.id;
 
     if (!userId) {
         return <div>Unauthorized</div>;
@@ -28,7 +29,7 @@ export default async function EditJobPage({
     }
 
     // Verify ownership
-    if (job.employer.clerkId !== userId) {
+    if (job.employer.id !== userId) {
         return <div>Unauthorized</div>;
     }
 

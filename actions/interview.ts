@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { Resend } from "resend";
 import { randomBytes } from "crypto";
@@ -13,7 +13,8 @@ export async function inviteCandidate(data: {
     candidateEmail: string;
 }) {
     try {
-        const { userId } = await auth();
+        const session = await auth();
+        const userId = session?.user?.id;
 
         if (!userId) {
             return { success: false, error: "Unauthorized" };
@@ -25,7 +26,7 @@ export async function inviteCandidate(data: {
             include: { employer: true, questions: true },
         });
 
-        if (!job || job.employer.clerkId !== userId) {
+        if (!job || job.employer.id !== userId) {
             return { success: false, error: "Unauthorized" };
         }
 
@@ -45,7 +46,7 @@ export async function inviteCandidate(data: {
             candidate = await db.user.create({
                 data: {
                     email: data.candidateEmail,
-                    clerkId: `candidate_${randomBytes(16).toString("hex")}`,
+                    name: data.candidateName,
                     role: "CANDIDATE",
                 },
             });

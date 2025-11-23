@@ -87,7 +87,9 @@
 
 ### Phase 2: User Type System
 - [x] **User Type Selection**: Add user type selection (Candidate/Employer) on signup page.
-- [x] **Database Schema**: Update User model to include userType field (using existing Role enum).
+- [/] **Vercel Deployment**: Deploy application to Vercel
+- [/] **Domain Setup**: Connect custom Cloudflare domain
+- [x] **Database Setup**: Set up production database (Neon/Vercel Postgres)
 - [/] **Role-Based Access**: Implement proper role-based routing and access control (page-level, not middleware due to edge runtime).
 
 ### Phase 3: Smart Authentication Flow
@@ -97,7 +99,27 @@
 
 ### Phase 4: Candidate Portal Redesign
 - [x] **Candidate Dashboard**: Show only interviews with dates and status.
-- [x] **Interview Timing**: Display "Start Interview" button only when interview is scheduled for current time.
+- [x] **Migration: Clerk to Custom Auth**
+    - [x] **Setup & Configuration**
+        - [x] Uninstall Clerk packages (`@clerk/nextjs`, `@clerk/themes`)
+        - [x] Install Auth.js packages (`next-auth@beta`, `@auth/prisma-adapter`, `bcryptjs`)
+        - [x] Configure `auth.ts`, `auth.config.ts`, and `routes.ts`
+    - [x] **Database Migration**
+        - [x] Update Prisma schema (User, Account, Session models)
+        - [x] Run database migration (`npx prisma db push`)
+    - [x] **Backend Implementation**
+        - [x] Create server actions for Login and Register (`actions/auth.ts`)
+        - [x] Update `middleware.ts` for route protection
+        - [x] Refactor existing actions (`interview.ts`, `job.ts`) to use new auth
+    - [x] **Frontend Implementation**
+        - [x] Create Login page (`app/auth/login/page.tsx`) and form
+        - [x] Create Register page (`app/auth/register/page.tsx`) and form
+        - [x] Create custom `UserButton` component
+        - [x] Update `DashboardHeader` to use new `UserButton`
+    - [x] **Cleanup**
+        - [x] Remove old Clerk pages (`app/sign-in`, `app/sign-up`)
+        - [x] Remove Clerk webhooks
+        - [x] Verify all Clerk references are removed
 - [x] **Simplified Navigation**: Remove employer-specific features from candidate view.
 - [x] **Candidate Layout**: Add dedicated layout with sidebar and profile options for candidates.
 - [x] **Document Upload**: Allow candidates to upload required documents before interview.

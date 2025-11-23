@@ -1,4 +1,4 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,23 +9,16 @@ import { redirect } from "next/navigation";
 import { canStartInterview, getTimeUntilInterview } from "@/lib/interview-timing";
 
 export default async function CandidateDashboardPage() {
-    const { userId } = await auth();
-    const user = await currentUser();
+    const session = await auth();
+    const userId = session?.user?.id;
 
-    if (!userId || !user) {
-        redirect("/sign-in");
-    }
-
-    // Get candidate's email
-    const candidateEmail = user.emailAddresses[0]?.emailAddress;
-
-    if (!candidateEmail) {
-        return <div>Error: No email found</div>;
+    if (!userId) {
+        redirect("/auth/login");
     }
 
     // Find candidate user in database
     const candidate = await db.user.findUnique({
-        where: { email: candidateEmail },
+        where: { id: userId },
         include: {
             interviews: {
                 include: {

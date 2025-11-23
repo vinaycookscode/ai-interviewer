@@ -1,5 +1,5 @@
 import { ModeToggle } from "@/components/mode-toggle";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton } from "@/components/auth/user-button";
 import { LayoutDashboard } from "lucide-react";
 
 interface DashboardHeaderProps {
@@ -18,17 +18,17 @@ export function DashboardHeader({ user, userRole }: DashboardHeaderProps) {
                     <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                         AI Interviewer
                     </h1>
-                    <p className="text-[10px] text-muted-foreground leading-none">Intelligent Hiring Platform</p>
+                    <p className="text-muted-foreground text-[10px] leading-none">Intelligent Hiring Platform</p>
                 </div>
             </div>
 
             <div className="flex items-center gap-4">
                 <div className="flex flex-col items-end mr-2 hidden md:flex">
-                    <span className="text-sm font-medium">{user.firstName} {user.lastName}</span>
+                    <span className="text-sm font-medium">{user.name}</span>
                     <span className="text-xs text-muted-foreground capitalize">{userRole?.toLowerCase()}</span>
                 </div>
                 <ModeToggle />
-                <UserButton afterSignOutUrl="/" />
+                <UserButton />
             </div>
         </header>
     );

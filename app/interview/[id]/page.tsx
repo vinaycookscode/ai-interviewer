@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
 import { InterviewClientPage } from "./client-page";
-import { currentUser } from "@clerk/nextjs/server";
+import { auth } from "@/auth";
 
 export default async function InterviewPage({
     params,
@@ -19,10 +19,6 @@ export default async function InterviewPage({
                 <div className="text-center space-y-4">
                     <h1 className="text-2xl font-bold text-red-600">Invalid Link</h1>
                     <p className="text-muted-foreground">This interview link is missing a valid token.</p>
-                    <div className="p-4 bg-gray-100 rounded text-xs text-left overflow-auto max-w-md mx-auto">
-                        <p className="font-semibold">Debug Info:</p>
-                        <pre>{JSON.stringify(await searchParams, null, 2)}</pre>
-                    </div>
                 </div>
             </div>
         );
@@ -57,7 +53,8 @@ export default async function InterviewPage({
     }
 
     // Smart authentication flow
-    const user = await currentUser();
+    const session = await auth();
+    const user = session?.user;
 
     if (!user) {
         // User not authenticated - check if they exist in our database
@@ -70,8 +67,8 @@ export default async function InterviewPage({
 
         if (existingUser) {
             // User exists - redirect to sign-in
-            const signInUrl = new URL("/sign-in", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000");
-            signInUrl.searchParams.set("redirect_url", redirectPath);
+            const signInUrl = new URL("/auth/login", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000");
+            signInUrl.searchParams.set("callbackUrl", redirectPath); // NextAuth uses callbackUrl
 
             return (
                 <div className="flex items-center justify-center min-h-screen bg-background">
@@ -91,8 +88,8 @@ export default async function InterviewPage({
             );
         } else {
             // New user - redirect to sign-up
-            const signUpUrl = new URL("/sign-up", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000");
-            signUpUrl.searchParams.set("redirect_url", redirectPath);
+            const signUpUrl = new URL("/auth/register", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000");
+            signUpUrl.searchParams.set("callbackUrl", redirectPath);
 
             return (
                 <div className="flex items-center justify-center min-h-screen bg-background">
@@ -115,8 +112,7 @@ export default async function InterviewPage({
     }
 
     // User is authenticated - verify they're the correct candidate
-    const userEmail = user.emailAddresses[0]?.emailAddress;
-    if (userEmail !== interview.candidate.email) {
+    if (user.email !== interview.candidate.email) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-background">
                 <div className="text-center space-y-4 max-w-md p-8">

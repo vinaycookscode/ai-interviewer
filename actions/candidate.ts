@@ -1,12 +1,13 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { auth } from "@clerk/nextjs/server";
+import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 
 export async function deleteCandidateInterview(interviewId: string) {
     try {
-        const { userId } = await auth();
+        const session = await auth();
+        const userId = session?.user?.id;
 
         if (!userId) {
             return { success: false, error: "Unauthorized" };
@@ -31,7 +32,7 @@ export async function deleteCandidateInterview(interviewId: string) {
             return { success: false, error: "Job not found" };
         }
 
-        const user = await db.user.findUnique({ where: { clerkId: userId } });
+        const user = await db.user.findUnique({ where: { id: userId } });
         if (!user || job.employerId !== user.id) {
             return { success: false, error: "Unauthorized" };
         }

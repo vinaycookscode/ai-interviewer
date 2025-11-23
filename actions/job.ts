@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
+import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
@@ -12,29 +12,20 @@ export async function createJob(data: {
     requireAadhar?: boolean;
     requirePAN?: boolean;
 }) {
-    const { userId } = await auth();
+    const session = await auth();
+    const userId = session?.user?.id;
 
     if (!userId) {
         throw new Error("Unauthorized");
     }
 
-    // Find or create user in database
-    let user = await db.user.findUnique({
-        where: { clerkId: userId },
+    // Verify user exists in database
+    const user = await db.user.findUnique({
+        where: { id: userId },
     });
 
     if (!user) {
-        // Get user email from Clerk
-        const { clerkClient } = await import("@clerk/nextjs/server");
-        const clerkUser = await (await clerkClient()).users.getUser(userId);
-
-        user = await db.user.create({
-            data: {
-                clerkId: userId,
-                email: clerkUser.emailAddresses[0].emailAddress,
-                role: "EMPLOYER",
-            },
-        });
+        throw new Error("User not found");
     }
 
     // Create the job with questions and document requirements
@@ -57,7 +48,8 @@ export async function createJob(data: {
 }
 
 export async function deleteJob(jobId: string) {
-    const { userId } = await auth();
+    const session = await auth();
+    const userId = session?.user?.id;
 
     if (!userId) {
         throw new Error("Unauthorized");
@@ -69,7 +61,7 @@ export async function deleteJob(jobId: string) {
         include: { employer: true },
     });
 
-    if (!job || job.employer.clerkId !== userId) {
+    if (!job || job.employer.id !== userId) {
         throw new Error("Unauthorized");
     }
 
@@ -88,7 +80,8 @@ export async function updateJob(jobId: string, data: {
     requireAadhar?: boolean;
     requirePAN?: boolean;
 }) {
-    const { userId } = await auth();
+    const session = await auth();
+    const userId = session?.user?.id;
 
     if (!userId) {
         throw new Error("Unauthorized");
@@ -100,7 +93,7 @@ export async function updateJob(jobId: string, data: {
         include: { employer: true },
     });
 
-    if (!job || job.employer.clerkId !== userId) {
+    if (!job || job.employer.id !== userId) {
         throw new Error("Unauthorized");
     }
 

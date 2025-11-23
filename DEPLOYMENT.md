@@ -56,8 +56,7 @@ Go to your Vercel dashboard and add these environment variables:
 
 **Required:**
 - `DATABASE_URL` - PostgreSQL connection string (use Vercel Postgres or external provider)
-- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` - Clerk publishable key
-- `CLERK_SECRET_KEY` - Clerk secret key
+
 - `GEMINI_API_KEY` - Google Gemini API key
 - `RESEND_API_KEY` - Resend API key for emails
 - `RESEND_FROM_EMAIL` - Email address for sending (e.g., `noreply@yourdomain.com`)
@@ -146,7 +145,7 @@ If you've connected your GitHub repository to Vercel:
 ## Post-Deployment Checklist
 
 - [ ] Verify all environment variables are set
-- [ ] Test authentication (Clerk)
+- [ ] Test authentication (Custom Auth.js)
 - [ ] Test AI interview flow (Gemini)
 - [ ] Test email notifications (Resend)
 - [ ] Check dark theme works correctly

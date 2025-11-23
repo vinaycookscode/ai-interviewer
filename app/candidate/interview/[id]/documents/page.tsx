@@ -1,4 +1,4 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { notFound, redirect } from "next/navigation";
 import { DocumentUploadClient } from "./client";
@@ -8,11 +8,11 @@ export default async function DocumentUploadPage({
 }: {
     params: Promise<{ id: string }>;
 }) {
-    const { userId } = await auth();
-    const user = await currentUser();
+    const session = await auth();
+    const userId = session?.user?.id;
 
-    if (!userId || !user) {
-        redirect("/sign-in");
+    if (!userId) {
+        redirect("/auth/login");
     }
 
     const { id } = await params;
@@ -30,8 +30,7 @@ export default async function DocumentUploadPage({
     }
 
     // Verify user is the candidate
-    const userEmail = user.emailAddresses[0]?.emailAddress;
-    if (userEmail !== interview.candidate.email) {
+    if (!session.user || session.user.email !== interview.candidate.email) {
         redirect("/candidate/dashboard");
     }
 

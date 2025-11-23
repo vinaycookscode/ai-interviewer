@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { AnalyticsCharts } from "@/components/dashboard/analytics-charts";
 
 export default async function DashboardPage() {
-    const { userId } = await auth();
+    const session = await auth();
+    const userId = session?.user?.id;
 
     if (!userId) {
         return <div>Please sign in</div>;
@@ -16,7 +17,7 @@ export default async function DashboardPage() {
 
     // Get user from database
     const user = await db.user.findUnique({
-        where: { clerkId: userId },
+        where: { id: userId },
         include: {
             jobs: {
                 orderBy: {
