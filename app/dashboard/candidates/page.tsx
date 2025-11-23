@@ -13,6 +13,12 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import { DeleteCandidateButton } from "@/components/dashboard/delete-candidate-button";
 
@@ -97,8 +103,8 @@ export default async function CandidatesPage() {
                                     <TableHead>Status</TableHead>
                                     <TableHead>Score</TableHead>
                                     <TableHead>Documents</TableHead>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
+                                    <TableHead className="w-[180px]">Date</TableHead>
+                                    <TableHead className="text-right w-[100px]">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -110,12 +116,17 @@ export default async function CandidatesPage() {
                                         <TableCell>{interview.jobTitle}</TableCell>
                                         <TableCell>
                                             <Badge
-                                                variant={
+                                                variant="outline"
+                                                className={
                                                     interview.status === "COMPLETED"
-                                                        ? "default"
+                                                        ? interview.score && interview.score >= 8
+                                                            ? "text-green-600 border-green-200 bg-green-50"
+                                                            : interview.score && interview.score >= 5
+                                                                ? "text-yellow-600 border-yellow-200 bg-yellow-50"
+                                                                : "text-red-600 border-red-200 bg-red-50"
                                                         : interview.status === "IN_PROGRESS"
-                                                            ? "secondary"
-                                                            : "outline"
+                                                            ? "text-blue-600 border-blue-200 bg-blue-50"
+                                                            : "text-muted-foreground border-border bg-muted/50"
                                                 }
                                             >
                                                 {interview.status.replace("_", " ")}
@@ -188,10 +199,18 @@ export default async function CandidatesPage() {
                                         <TableCell className="text-right flex justify-end gap-2">
                                             {interview.status === "COMPLETED" && (
                                                 <Link href={`/interview/${interview.id}/feedback`}>
-                                                    <Button variant="ghost" size="sm">
-                                                        <FileText className="h-4 w-4 mr-2" />
-                                                        View Feedback
-                                                    </Button>
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button variant="ghost" size="icon">
+                                                                    <FileText className="h-4 w-4 text-primary" />
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p>View Feedback</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
                                                 </Link>
                                             )}
                                             <DeleteCandidateButton interviewId={interview.id} />

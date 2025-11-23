@@ -70,10 +70,20 @@ export function EditJobForm({ jobId, initialData }: EditJobFormProps) {
         try {
             const result = await generateQuestions(description);
             if (result.success && result.questions) {
-                setQuestions(result.questions);
+                // Append new questions to existing ones
+                setQuestions(prevQuestions => [...prevQuestions, ...result.questions]);
                 toast.success("Questions generated successfully");
             } else {
-                toast.error(result.error || "Failed to generate questions");
+                if (result.error?.includes("API key")) {
+                    toast.error(result.error, {
+                        action: {
+                            label: "Settings",
+                            onClick: () => window.location.href = "/settings"
+                        }
+                    });
+                } else {
+                    toast.error(result.error || "Failed to generate questions");
+                }
             }
         } catch (error) {
             toast.error("Failed to generate questions. Please try again.");

@@ -43,13 +43,17 @@ export function CreateJobForm() {
             requireResume: false,
             requireAadhar: false,
             requirePAN: false,
+            questions: [], // Added default value for questions
         },
     });
+
+    // Watch for changes in questions array to re-render
+    // const questions = form.watch("questions") || [];
 
     async function handleGenerateQuestions() {
         const description = form.getValues("description");
         if (!description || description.length < 10) {
-            alert("Please enter a job description first");
+            toast.error("Please enter a job description first (min 10 characters)"); // Changed alert to toast
             return;
         }
 
@@ -57,12 +61,24 @@ export function CreateJobForm() {
         try {
             const result = await generateQuestions(description);
             if (result.success && result.questions) {
-                setQuestions(result.questions);
+                // Append new questions to existing ones
+                const currentQuestions = form.getValues("questions") || [];
+                form.setValue("questions", [...currentQuestions, ...result.questions]);
+                toast.success("Questions generated successfully");
             } else {
-                alert(result.error || "Failed to generate questions");
+                if (result.error?.includes("API key")) {
+                    toast.error(result.error, {
+                        action: {
+                            label: "Settings",
+                            onClick: () => window.location.href = "/settings"
+                        }
+                    });
+                } else {
+                    toast.error(result.error || "Failed to generate questions");
+                }
             }
         } catch (error) {
-            alert("Failed to generate questions. Please try again.");
+            toast.error("Failed to generate questions. Please try again."); // Changed alert to toast
         } finally {
             setIsGenerating(false);
         }

@@ -30,13 +30,13 @@ export function AnalyticsCharts({
     activityData,
 }: AnalyticsChartsProps) {
     return (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-4">
+        <div className="grid gap-4 md:grid-cols-3">
+            <Card>
                 <CardHeader>
                     <CardTitle>Interview Activity (Last 7 Days)</CardTitle>
                 </CardHeader>
                 <CardContent className="pl-2">
-                    <div className="h-[300px]">
+                    <div className="h-[220px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={activityData}>
                                 <CartesianGrid strokeDasharray="3 3" />
@@ -68,12 +68,12 @@ export function AnalyticsCharts({
                 </CardContent>
             </Card>
 
-            <Card className="col-span-3">
+            <Card>
                 <CardHeader>
                     <CardTitle>Interview Status</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="h-[300px] flex flex-col">
+                    <div className="h-[220px] flex flex-col">
                         <div className="flex-1">
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
@@ -81,8 +81,8 @@ export function AnalyticsCharts({
                                         data={statusDistribution}
                                         cx="50%"
                                         cy="45%"
-                                        innerRadius={50}
-                                        outerRadius={70}
+                                        innerRadius={40}
+                                        outerRadius={60}
                                         fill="#8884d8"
                                         paddingAngle={5}
                                         dataKey="count"
@@ -115,12 +115,12 @@ export function AnalyticsCharts({
                 </CardContent>
             </Card>
 
-            <Card className="col-span-7">
+            <Card>
                 <CardHeader>
                     <CardTitle>Score Distribution</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="h-[300px]">
+                    <div className="h-[220px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={scoreDistribution}>
                                 <CartesianGrid strokeDasharray="3 3" />

@@ -1,17 +1,64 @@
 "use server";
 
 import { generateInterviewQuestions } from "@/lib/gemini";
+import { auth } from "@/auth"; // Assuming auth is from next-auth or similar
+import { db } from "@/lib/db"; // Assuming db is your Prisma client or ORM instance
+import { GoogleGenerativeAI } from "@google/generative-ai"; // Import GoogleGenerativeAI
 
 export async function generateQuestions(jobDescription: string) {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+        return { success: false, error: "Unauthorized" };
+    }
+
+    // Get user's API key
+    const user = await db.user.findUnique({
+        where: { id: session.user.id },
+        select: { geminiApiKey: true }
+    });
+
+    const apiKey = user?.geminiApiKey || process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+        return {
+            success: false,
+            error: "Gemini API key not found. Please add your API key in Settings."
+        };
+    }
+
     try {
-        if (!process.env.GEMINI_API_KEY) {
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+        const prompt = `
+            Generate 5 interview questions for a job with the following description:
+            ${jobDescription}
+            
+            Format the output as a JSON array of strings.
+            Example: ["Question 1", "Question 2", "Question 3", "Question 4", "Question 5"]
+        `;
+
+        const result = await model.generateContent(prompt);
+        const response = result.response;
+        const text = response.text();
+
+        // Attempt to parse the JSON output
+        let questions: string[] = [];
+        try {
+            questions = JSON.parse(text);
+            if (!Array.isArray(questions) || !questions.every(q => typeof q === 'string')) {
+                throw new Error("Invalid JSON format from Gemini API.");
+            }
+        } catch (parseError) {
+            console.error("Failed to parse Gemini API response as JSON:", parseError);
+            console.error("Raw Gemini API response:", text);
             return {
                 success: false,
-                error: "Gemini API key is not configured. Please add GEMINI_API_KEY to your .env file."
+                error: "Failed to parse questions from Gemini API. Please try again."
             };
         }
 
-        const questions = await generateInterviewQuestions(jobDescription);
         return { success: true, questions };
     } catch (error: any) {
         console.error("Failed to generate questions:", error);

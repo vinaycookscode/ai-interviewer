@@ -89,8 +89,8 @@ export default async function SettingsPage() {
                                 {process.env.RESEND_API_KEY ? "✓ Configured" : "✗ Not configured"}
                             </p>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                            API keys are configured in your .env file
+                        <p className="text-sm text-muted-foreground">
+                            Manage your API keys and other settings
                         </p>
                     </CardContent>
                 </Card>
