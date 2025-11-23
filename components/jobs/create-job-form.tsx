@@ -20,6 +20,7 @@ import { generateQuestions } from "@/actions/questions";
 import { useRouter } from "next/navigation";
 import { Loader2, Sparkles, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
 
 const formSchema = z.object({
     title: z.string().min(2, "Title must be at least 2 characters"),
@@ -43,7 +44,6 @@ export function CreateJobForm() {
             requireResume: false,
             requireAadhar: false,
             requirePAN: false,
-            questions: [], // Added default value for questions
         },
     });
 
@@ -53,7 +53,7 @@ export function CreateJobForm() {
     async function handleGenerateQuestions() {
         const description = form.getValues("description");
         if (!description || description.length < 10) {
-            toast.error("Please enter a job description first (min 10 characters)"); // Changed alert to toast
+            toast.error("Please enter a job description first (min 10 characters)");
             return;
         }
 
@@ -61,9 +61,8 @@ export function CreateJobForm() {
         try {
             const result = await generateQuestions(description);
             if (result.success && result.questions) {
-                // Append new questions to existing ones
-                const currentQuestions = form.getValues("questions") || [];
-                form.setValue("questions", [...currentQuestions, ...result.questions]);
+                // Append new questions to existing ones from state
+                setQuestions(prev => [...prev, ...result.questions!]);
                 toast.success("Questions generated successfully");
             } else {
                 if (result.error?.includes("API key")) {
@@ -78,7 +77,7 @@ export function CreateJobForm() {
                 }
             }
         } catch (error) {
-            toast.error("Failed to generate questions. Please try again."); // Changed alert to toast
+            toast.error("Failed to generate questions. Please try again.");
         } finally {
             setIsGenerating(false);
         }
