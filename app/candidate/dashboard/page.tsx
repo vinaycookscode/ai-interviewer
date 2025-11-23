@@ -77,10 +77,8 @@ export default async function CandidateDashboardPage() {
                         candidate.interviews.map((interview) => {
                             const canStart = canStartInterview(interview.scheduledTime);
                             const timeUntil = getTimeUntilInterview(interview.scheduledTime);
-                            const needsDocuments =
-                                (interview.job.requireResume && !interview.resumeUrl) ||
-                                (interview.job.requireAadhar && !interview.aadharUrl) ||
-                                (interview.job.requirePAN && !interview.panUrl);
+                            // Documents are now optional - don't block interview start
+                            const needsDocuments = false;
 
                             return (
                                 <Card

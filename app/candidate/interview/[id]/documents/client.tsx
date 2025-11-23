@@ -204,7 +204,7 @@ export function DocumentUploadClient({
                                             <ul className="list-disc list-inside space-y-1">
                                                 <li>Accepted formats: PDF, JPG, PNG</li>
                                                 <li>Maximum file size: 5MB</li>
-                                                <li>All required documents must be uploaded before starting the interview</li>
+                                                <li>Documents are requested but optional - you can start the interview without uploading</li>
                                             </ul>
                                         </div>
                                     </div>
@@ -221,7 +221,7 @@ export function DocumentUploadClient({
                                     </Button>
                                     <Button
                                         onClick={handleUpload}
-                                        disabled={uploading || !allRequiredUploaded}
+                                        disabled={uploading}
                                         className="flex-1"
                                     >
                                         {uploading ? (
