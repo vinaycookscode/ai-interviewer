@@ -16,7 +16,7 @@ export const Header = ({ label }: HeaderProps) => {
         <div className="w-full flex flex-col gap-y-4 items-center justify-center">
             <Link href="/" className="group">
                 <h1 className={cn("text-3xl font-semibold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent group-hover:scale-105 transition-transform", font.className)}>
-                    AI Interviewer
+                    Get Back To U
                 </h1>
             </Link>
             <p className="text-muted-foreground text-sm">{label}</p>

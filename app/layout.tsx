@@ -16,7 +16,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
-  title: "AI Interviewer",
+  title: "Get Back To U",
   description: "AI-powered interview platform",
 };
 

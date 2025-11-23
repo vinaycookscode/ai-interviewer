@@ -12,7 +12,7 @@ export default function HomePage() {
           <div className="flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              AI Interviewer
+              Get Back To U
             </h1>
           </div>
           <div className="flex items-center gap-4">
@@ -210,12 +210,7 @@ export default function HomePage() {
       <footer className="border-t py-8 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center text-muted-foreground">
-            <p className="mb-2">
-              © 2025 AI Interviewer. All rights reserved.
-            </p>
-            <p className="text-sm">
-              Built with ❤️ using Next.js and AI
-            </p>
+            <p>© 2025 Get Back To U. All rights reserved.</p>
           </div>
         </div>
       </footer>

@@ -17,7 +17,9 @@ export function DashboardHeader({ user, userRole }: DashboardHeaderProps) {
                 </div>
                 <div>
                     <h1 className="text-xl font-bold">
-                        <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">AI Interviewer</span> {/* Applied gradient to span */}
+                        <Link href="/">
+                            <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Get Back To U</span> {/* Applied gradient to span */}
+                        </Link>
                     </h1>
                     <p className="text-muted-foreground text-[10px] leading-none">Intelligent Hiring Platform</p>
                 </div>
