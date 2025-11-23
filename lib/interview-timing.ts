@@ -1,6 +1,6 @@
 /**
  * Check if an interview can be started based on scheduled time
- * Allows starting 15 minutes before and after scheduled time
+ * Only allows starting AT or AFTER the scheduled time
  */
 export function canStartInterview(scheduledTime: Date | null): boolean {
     if (!scheduledTime) {
@@ -9,11 +9,8 @@ export function canStartInterview(scheduledTime: Date | null): boolean {
     }
 
     const now = new Date();
-    const diff = scheduledTime.getTime() - now.getTime();
-    const minutesDiff = diff / (1000 * 60);
-
-    // Allow starting 15 minutes before and after scheduled time
-    return minutesDiff >= -15 && minutesDiff <= 15;
+    // Only allow starting if current time >= scheduled time
+    return now >= scheduledTime;
 }
 
 /**
@@ -26,19 +23,22 @@ export function getTimeUntilInterview(scheduledTime: Date | null): string {
 
     const now = new Date();
     const diff = scheduledTime.getTime() - now.getTime();
+
+    if (diff <= 0) {
+        return "Available now";
+    }
+
     const minutesDiff = Math.floor(diff / (1000 * 60));
     const hoursDiff = Math.floor(minutesDiff / 60);
     const daysDiff = Math.floor(hoursDiff / 24);
 
-    if (minutesDiff < -15) {
-        return "Window closed";
-    } else if (minutesDiff >= -15 && minutesDiff <= 15) {
-        return "Available now";
-    } else if (minutesDiff < 60) {
-        return `Starts in ${minutesDiff} minutes`;
+    if (minutesDiff < 60) {
+        return `Starts in ${minutesDiff} minute${minutesDiff !== 1 ? 's' : ''}`;
     } else if (hoursDiff < 24) {
-        return `Starts in ${hoursDiff} hour${hoursDiff > 1 ? 's' : ''}`;
+        const remainingMins = minutesDiff % 60;
+        return `Starts in ${hoursDiff}h ${remainingMins}m`;
     } else {
-        return `Starts in ${daysDiff} day${daysDiff > 1 ? 's' : ''}`;
+        const remainingHours = hoursDiff % 24;
+        return `Starts in ${daysDiff}d ${remainingHours}h`;
     }
 }

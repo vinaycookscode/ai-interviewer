@@ -98,7 +98,16 @@ export default async function CandidateDashboardPage() {
                                                     <div className="flex items-center gap-2 mt-2 text-sm">
                                                         <Calendar className="h-4 w-4 text-muted-foreground" />
                                                         <span className="text-muted-foreground">
-                                                            Scheduled: <span suppressHydrationWarning>{new Date(interview.scheduledTime).toLocaleString()}</span>
+                                                            Scheduled: <span suppressHydrationWarning className="font-medium text-foreground">
+                                                                {new Date(interview.scheduledTime).toLocaleString('en-US', {
+                                                                    weekday: 'short',
+                                                                    month: 'short',
+                                                                    day: 'numeric',
+                                                                    year: 'numeric',
+                                                                    hour: '2-digit',
+                                                                    minute: '2-digit',
+                                                                })}
+                                                            </span>
                                                         </span>
                                                     </div>
                                                 )}
