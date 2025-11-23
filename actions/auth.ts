@@ -36,7 +36,10 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
     }
 };
 
-export const register = async (values: z.infer<typeof RegisterSchema>) => {
+export const register = async (
+    values: z.infer<typeof RegisterSchema>,
+    callbackUrl?: string
+) => {
     const validatedFields = RegisterSchema.safeParse(values);
 
     if (!validatedFields.success) {
@@ -63,6 +66,25 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
                     role,
                 },
             });
+
+            // Auto-login after claiming account
+            try {
+                await signIn("credentials", {
+                    email,
+                    password,
+                    redirectTo: callbackUrl || DEFAULT_LOGIN_REDIRECT,
+                });
+            } catch (error) {
+                if (error instanceof AuthError) {
+                    switch (error.type) {
+                        case "CredentialsSignin":
+                            return { error: "Invalid credentials!" };
+                        default:
+                            return { error: "Something went wrong!" };
+                    }
+                }
+                throw error;
+            }
             return { success: "Account claimed successfully!" };
         }
 
@@ -79,6 +101,24 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
         },
     });
 
+    // Auto-login after registration
+    try {
+        await signIn("credentials", {
+            email,
+            password,
+            redirectTo: callbackUrl || DEFAULT_LOGIN_REDIRECT,
+        });
+    } catch (error) {
+        if (error instanceof AuthError) {
+            switch (error.type) {
+                case "CredentialsSignin":
+                    return { error: "Invalid credentials!" };
+                default:
+                    return { error: "Something went wrong!" };
+            }
+        }
+        throw error;
+    }
+
     return { success: "User created!" };
 };
-

@@ -41,8 +41,12 @@ export const RegisterForm = () => {
         setError("");
         setSuccess("");
 
+        // Get callbackUrl from URL params
+        const searchParams = new URLSearchParams(window.location.search);
+        const callbackUrl = searchParams.get("callbackUrl") || undefined;
+
         startTransition(() => {
-            register(values)
+            register(values, callbackUrl)
                 .then((data) => {
                     setError(data.error);
                     setSuccess(data.success);
