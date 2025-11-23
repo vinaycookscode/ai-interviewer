@@ -73,30 +73,32 @@ export function AnalyticsCharts({
                     <CardTitle>Interview Status</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={statusDistribution}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={80}
-                                    fill="#8884d8"
-                                    paddingAngle={5}
-                                    dataKey="count"
-                                >
-                                    {statusDistribution.map((entry, index) => (
-                                        <Cell
-                                            key={`cell-${index}`}
-                                            fill={COLORS[index % COLORS.length]}
-                                        />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                            </PieChart>
-                        </ResponsiveContainer>
-                        <div className="flex flex-wrap justify-center gap-4 mt-4">
+                    <div className="h-[300px] flex flex-col">
+                        <div className="flex-1">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={statusDistribution}
+                                        cx="50%"
+                                        cy="45%"
+                                        innerRadius={50}
+                                        outerRadius={70}
+                                        fill="#8884d8"
+                                        paddingAngle={5}
+                                        dataKey="count"
+                                    >
+                                        {statusDistribution.map((entry, index) => (
+                                            <Cell
+                                                key={`cell-${index}`}
+                                                fill={COLORS[index % COLORS.length]}
+                                            />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                        <div className="flex flex-wrap justify-center gap-4 pb-2">
                             {statusDistribution.map((entry, index) => (
                                 <div key={entry.status} className="flex items-center gap-2">
                                     <div
@@ -104,7 +106,7 @@ export function AnalyticsCharts({
                                         style={{ backgroundColor: COLORS[index % COLORS.length] }}
                                     />
                                     <span className="text-sm text-muted-foreground capitalize">
-                                        {entry.status.toLowerCase()}
+                                        {entry.status.toLowerCase().replace('_', ' ')}
                                     </span>
                                 </div>
                             ))}

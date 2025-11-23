@@ -111,15 +111,52 @@ export default async function InterviewPage({
         }
     }
 
-    // User is authenticated - verify they're the correct candidate
-    if (user.email !== interview.candidate.email) {
+    // User is authenticated    // Check if user is logged in and matches candidate
+    if (!user || user.id !== interview.candidate.id) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-background">
-                <div className="text-center space-y-4 max-w-md p-8">
-                    <h1 className="text-2xl font-bold text-red-600">Wrong Account</h1>
+                <div className="text-center space-y-4">
+                    <h1 className="text-2xl font-bold text-red-600">Unauthorized</h1>
                     <p className="text-muted-foreground">
-                        This interview is for {interview.candidate.email}.
-                        Please sign in with the correct account.
+                        You must be logged in as the invited candidate to access this interview.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    // Check if scheduled time has arrived
+    const now = new Date();
+    const scheduledTime = interview.scheduledTime ? new Date(interview.scheduledTime) : null;
+
+    if (scheduledTime && now < scheduledTime) {
+        const timeUntil = scheduledTime.getTime() - now.getTime();
+        const hours = Math.floor(timeUntil / (1000 * 60 * 60));
+        const minutes = Math.floor((timeUntil % (1000 * 60 * 60)) / (1000 * 60));
+
+        const formattedDate = scheduledTime.toLocaleString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZoneName: 'short'
+        });
+
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-background">
+                <div className="text-center space-y-6 max-w-md p-8">
+                    <h1 className="text-3xl font-bold">Interview Not Yet Available</h1>
+                    <p className="text-muted-foreground">
+                        Your interview for <strong>{interview.job.title}</strong> is scheduled for:
+                    </p>
+                    <p className="text-lg font-semibold">{formattedDate}</p>
+                    <p className="text-muted-foreground">
+                        Time remaining: <strong>{hours}h {minutes}m</strong>
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                        Please return after the scheduled time to start your interview.
                     </p>
                 </div>
             </div>

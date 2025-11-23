@@ -29,6 +29,7 @@ import { Loader2, UserPlus, Copy, Check } from "lucide-react";
 const formSchema = z.object({
     candidateName: z.string().min(2, "Name must be at least 2 characters"),
     candidateEmail: z.string().email("Invalid email address"),
+    scheduledTime: z.string().min(1, "Please select a date and time"),
 });
 
 export function InviteCandidateDialog({ jobId }: { jobId: string }) {
@@ -38,11 +39,19 @@ export function InviteCandidateDialog({ jobId }: { jobId: string }) {
     const [interviewLink, setInterviewLink] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
 
+    // Get minimum datetime (now + 1 hour)
+    const getMinDateTime = () => {
+        const now = new Date();
+        now.setHours(now.getHours() + 1);
+        return now.toISOString().slice(0, 16);
+    };
+
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             candidateName: "",
             candidateEmail: "",
+            scheduledTime: "",
         },
     });
 
@@ -53,6 +62,7 @@ export function InviteCandidateDialog({ jobId }: { jobId: string }) {
                 jobId,
                 candidateName: values.candidateName,
                 candidateEmail: values.candidateEmail,
+                scheduledTime: new Date(values.scheduledTime).toISOString(),
             });
 
             if (result.success) {
@@ -137,6 +147,26 @@ export function InviteCandidateDialog({ jobId }: { jobId: string }) {
                                                 />
                                             </FormControl>
                                             <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="scheduledTime"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Scheduled Interview Time</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="datetime-local"
+                                                    min={getMinDateTime()}
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                            <p className="text-sm text-muted-foreground">
+                                                Interview will be available starting from this time
+                                            </p>
                                         </FormItem>
                                     )}
                                 />
