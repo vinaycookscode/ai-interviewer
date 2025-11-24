@@ -9,6 +9,7 @@ datasource db {
 enum Role {
   EMPLOYER
   CANDIDATE
+  ADMIN
 }
 
 enum InterviewStatus {
@@ -26,6 +27,15 @@ model User {
   password      String?
   geminiApiKey  String?   // User provided API key
   role          Role      @default(CANDIDATE)
+  
+  // Location tracking
+  country       String?
+  countryCode   String?
+  city          String?
+  latitude      Float?
+  longitude     Float?
+  ipAddress     String?
+  
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -137,4 +147,28 @@ model Answer {
   score       Float? // Score for this specific answer
   feedback    String? // Feedback for this specific answer
   createdAt   DateTime  @default(now())
+}
+
+model DailyStat {
+  id        String   @id @default(uuid())
+  date      DateTime @unique
+  visitors  Int      @default(0)
+  views     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VisitorLocation {
+  id          String   @id @default(uuid())
+  country     String
+  countryCode String
+  city        String?
+  latitude    Float?
+  longitude   Float?
+  visits      Int      @default(1)
+  lastVisit   DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([countryCode])
 }

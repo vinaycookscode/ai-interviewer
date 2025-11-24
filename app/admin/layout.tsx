@@ -1,14 +1,9 @@
-import Link from "next/link";
-import { LayoutDashboard, PlusCircle, Users, Settings } from "lucide-react";
-import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-
-import { ModeToggle } from "@/components/mode-toggle";
 import { DashboardHeader } from "@/components/dashboard/header";
-import { DashboardSidebar } from "@/components/dashboard/sidebar";
+import { AdminSidebar } from "@/components/admin/sidebar";
 
-export default async function DashboardLayout({
+export default async function AdminLayout({
     children,
 }: {
     children: React.ReactNode;
@@ -19,8 +14,8 @@ export default async function DashboardLayout({
         redirect("/auth/login");
     }
 
-    if (session.user.role !== "EMPLOYER" && session.user.role !== "ADMIN") {
-        redirect("/candidate/dashboard");
+    if (session.user.role !== "ADMIN") {
+        redirect("/dashboard");
     }
 
     return (
@@ -28,7 +23,7 @@ export default async function DashboardLayout({
             <DashboardHeader user={session.user} userRole={session.user.role} />
 
             <div className="flex flex-1">
-                <DashboardSidebar userRole={session.user.role} />
+                <AdminSidebar />
 
                 {/* Main Content Area */}
                 <main className="flex-1 p-8 overflow-y-auto">

@@ -21,6 +21,7 @@ import { FormError } from "@/components/auth/form-error";
 import { FormSuccess } from "@/components/auth/form-success";
 import { register } from "@/actions/auth";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Loader2 } from "lucide-react";
 
 export const RegisterForm = () => {
     const [error, setError] = useState<string | undefined>("");
@@ -166,7 +167,14 @@ export const RegisterForm = () => {
                         type="submit"
                         className="w-full"
                     >
-                        Create an account
+                        {isPending ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Creating account...
+                            </>
+                        ) : (
+                            "Create an account"
+                        )}
                     </Button>
                 </form>
             </Form>

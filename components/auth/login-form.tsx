@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/auth/form-error";
 import { FormSuccess } from "@/components/auth/form-success";
 import { login } from "@/actions/auth";
+import { Loader2 } from "lucide-react";
 
 export const LoginForm = () => {
     const searchParams = useSearchParams();
@@ -110,7 +111,14 @@ export const LoginForm = () => {
                         type="submit"
                         className="w-full"
                     >
-                        Login
+                        {isPending ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Logging in...
+                            </>
+                        ) : (
+                            "Login"
+                        )}
                     </Button>
                 </form>
             </Form>

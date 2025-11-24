@@ -38,7 +38,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             }
             if (token.role && session.user) {
                 // @ts-ignore
-                session.user.role = token.role as "CANDIDATE" | "EMPLOYER";
+                session.user.role = token.role as "CANDIDATE" | "EMPLOYER" | "ADMIN";
             }
             return session;
         },

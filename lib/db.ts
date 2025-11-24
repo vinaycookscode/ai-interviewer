@@ -1,4 +1,7 @@
 import { PrismaClient } from "@prisma/client";
+
+// Force TS update
+
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 

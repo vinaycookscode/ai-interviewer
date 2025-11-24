@@ -1,4 +1,6 @@
 "use server";
+// Force rebuild
+
 
 import * as z from "zod";
 import { LoginSchema, RegisterSchema } from "@/schemas";
@@ -92,12 +94,37 @@ export const register = async (
         return { error: "Email already in use!" };
     }
 
+    // Capture user location from IP (best effort, don't block on errors)
+    let locationData = null;
+    try {
+        const { headers } = await import("next/headers");
+        const { getClientIP, getLocationFromIP } = await import("@/lib/geolocation");
+        const headersList = await headers();
+        const clientIP = getClientIP(headersList);
+
+        if (clientIP && clientIP !== "0.0.0.0") {
+            locationData = await getLocationFromIP(clientIP);
+        }
+    } catch (error) {
+        console.error("Failed to capture location:", error);
+        // Continue with registration even if geolocation fails
+    }
+
     await db.user.create({
         data: {
             name,
             email,
             password: hashedPassword,
             role,
+            // Add location data if available
+            ...(locationData && {
+                country: locationData.country,
+                countryCode: locationData.countryCode,
+                city: locationData.city,
+                latitude: locationData.latitude,
+                longitude: locationData.longitude,
+                ipAddress: locationData.ip,
+            }),
         },
     });
 

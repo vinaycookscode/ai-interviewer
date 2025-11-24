@@ -14,6 +14,7 @@ const geistMono = Geist_Mono({
 
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AnalyticsTracker } from "@/components/analytics-tracker";
 
 export const metadata: Metadata = {
   title: "Get Back To U",
@@ -38,6 +39,7 @@ export default function RootLayout({
         >
           {children}
           <Toaster />
+          <AnalyticsTracker />
         </ThemeProvider>
       </body>
     </html>
