@@ -102,17 +102,18 @@ export default async function DashboardPage() {
 
     return (
         <div>
-            <div className="flex items-center justify-between mb-8 pb-6 border-b">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 pb-6 border-b gap-4">
                 <div>
-                    <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                    <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                         Dashboard
                     </h1>
-                    <p className="text-muted-foreground mt-2">Manage your job postings and interviews</p>
+                    <p className="text-muted-foreground mt-2 text-sm sm:text-base">Manage your job postings and interviews</p>
                 </div>
                 <Link href="/dashboard/jobs/new">
-                    <Button size="lg" className="shadow-lg hover:shadow-xl transition-shadow">
+                    <Button size="lg" className="shadow-lg hover:shadow-xl transition-shadow w-full sm:w-auto">
                         <PlusCircle className="mr-2 h-5 w-5" />
-                        New Job
+                        <span className="hidden sm:inline">New Job</span>
+                        <span className="sm:hidden">Create Job</span>
                     </Button>
                 </Link>
             </div>

@@ -18,7 +18,7 @@ import {
 import { createJob } from "@/actions/job";
 import { generateQuestions } from "@/actions/questions";
 import { useRouter } from "next/navigation";
-import { Loader2, Sparkles, X } from "lucide-react";
+import { Loader2, Sparkles, X, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 
@@ -209,26 +209,31 @@ export function CreateJobForm() {
                     </CardContent>
                 </Card>
 
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                     <Button
                         type="button"
                         variant="outline"
                         onClick={handleGenerateQuestions}
                         disabled={isGenerating}
+                        className="w-full sm:w-auto flex items-center justify-center"
                     >
                         {isGenerating ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
                             <Sparkles className="mr-2 h-4 w-4" />
                         )}
-                        Generate Questions with AI
+                        <span className="hidden sm:inline">Generate Questions with AI</span>
+                        <span className="sm:hidden">Generate with AI</span>
                     </Button>
                     <Button
                         type="button"
-                        variant="secondary"
+                        variant="outline"
                         onClick={() => setQuestions([...questions, ""])}
+                        className="w-full sm:w-auto flex items-center justify-center"
                     >
-                        Add Question Manually
+                        <Plus className="mr-2 h-4 w-4" />
+                        <span className="hidden sm:inline">Add Question Manually</span>
+                        <span className="sm:hidden">Add Manually</span>
                     </Button>
                 </div>
 

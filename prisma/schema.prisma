@@ -43,6 +43,7 @@ model User {
   sessions      Session[]
   jobs          Job[]       @relation("EmployerJobs")
   interviews    Interview[]
+  mockInterviews MockInterview[]
 }
 
 model Account {
@@ -171,4 +172,36 @@ model VisitorLocation {
   updatedAt   DateTime @updatedAt
 
   @@unique([countryCode])
+}
+
+model MockInterview {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  // Practice settings
+  role        String   // e.g., "Frontend Developer"
+  difficulty  String   // "Junior", "Mid", "Senior"
+  
+  // Results
+  score       Float?
+  feedback    String?
+  
+  createdAt   DateTime @default(now())
+  
+  answers     MockAnswer[]
+}
+
+model MockAnswer {
+  id              String        @id @default(uuid())
+  mockInterviewId String
+  mockInterview   MockInterview @relation(fields: [mockInterviewId], references: [id])
+  
+  question        String        // Store question text directly as it's dynamic
+  transcript      String
+  audioUrl        String?
+  score           Float?
+  feedback        String?
+  
+  createdAt       DateTime      @default(now())
 }
