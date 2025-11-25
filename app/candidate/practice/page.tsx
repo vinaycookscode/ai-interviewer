@@ -17,7 +17,7 @@ export default function PracticePage() {
     const [isPending, startTransition] = useTransition();
     const [role, setRole] = useState("");
     const [difficulty, setDifficulty] = useState("Junior");
-    const [apiStatus, setApiStatus] = useState<{ available: boolean; reason?: string } | null>(null);
+    const [apiStatus, setApiStatus] = useState<{ available: boolean; usingFallback?: boolean; reason?: string } | null>(null);
     const [isCheckingApi, setIsCheckingApi] = useState(true);
 
     // Check API status on mount
@@ -55,7 +55,7 @@ export default function PracticePage() {
                 <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
                     AI Mock Interview Playground
                 </h1>
-                <p className="text-muted-foreground text-sm sm:text-base">
+                <p className="text-muted-foreground text-xs sm:text-sm max-w-lg mx-auto">
                     Practice your interview skills with our AI. Get instant feedback and improve your confidence.
                 </p>
             </div>
@@ -69,12 +69,12 @@ export default function PracticePage() {
                 </Card>
             ) : (
                 <>
-                    {!apiStatus?.available && (
-                        <Alert variant="destructive" className="mb-6">
+                    {apiStatus?.usingFallback && (
+                        <Alert className="mb-6 border-yellow-500/50 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400">
                             <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Service Unavailable</AlertTitle>
+                            <AlertTitle>Limited AI Availability</AlertTitle>
                             <AlertDescription>
-                                {apiStatus?.reason || "AI service is currently unavailable."}
+                                {apiStatus?.reason || "AI service is currently unavailable. You can still practice with offline questions."}
                             </AlertDescription>
                         </Alert>
                     )}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { LayoutDashboard, Sparkles, Menu } from "lucide-react";
+import { LayoutDashboard, Sparkles, Menu, User, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -23,6 +23,22 @@ const NavLinks = ({ onLinkClick }: { onLinkClick?: () => void }) => (
         >
             <Sparkles size={20} className="group-hover:scale-110 transition-transform text-purple-500" />
             <span>AI Practice</span>
+        </Link>
+        <Link
+            href="/candidate/profile"
+            onClick={onLinkClick}
+            className="flex items-center gap-3 px-4 py-3 text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-all font-medium group"
+        >
+            <User size={20} className="group-hover:scale-110 transition-transform" />
+            <span>Profile</span>
+        </Link>
+        <Link
+            href="/candidate/resume-screener"
+            onClick={onLinkClick}
+            className="flex items-center gap-3 px-4 py-3 text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-all font-medium group"
+        >
+            <FileText size={20} className="group-hover:scale-110 transition-transform text-blue-500" />
+            <span>Resume Screener</span>
         </Link>
     </>
 );

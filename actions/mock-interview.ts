@@ -17,28 +17,12 @@ export async function checkApiStatus() {
     } catch (error: any) {
         console.error("API health check failed:", error);
 
-        if (error?.status === 404 || error?.statusText === 'Not Found') {
-            return {
-                available: false,
-                reason: "API quota limit reached. Please try again later or upgrade your plan."
-            };
-        }
-        if (error?.status === 429) {
-            return {
-                available: false,
-                reason: "Too many requests. Please wait a moment and try again."
-            };
-        }
-        if (error?.status === 401 || error?.status === 403) {
-            return {
-                available: false,
-                reason: "Invalid API key. Please check your configuration."
-            };
-        }
-
+        // Return available: true but with fallback flag so users can still practice
+        // with hardcoded questions
         return {
-            available: false,
-            reason: "AI service is currently unavailable. Please try again later."
+            available: true,
+            usingFallback: true,
+            reason: "AI service is currently unavailable. Running in offline practice mode."
         };
     }
 }
@@ -86,15 +70,20 @@ export async function generateMockQuestions(role: string, difficulty: string) {
     } catch (error: any) {
         console.error("Error generating questions:", error);
 
-        // Check for API quota errors
-        if (error?.status === 404 || error?.statusText === 'Not Found') {
-            return { error: "API quota limit reached. Please try again later or upgrade your plan." };
-        }
-        if (error?.status === 429) {
-            return { error: "Too many requests. Please wait a moment and try again." };
-        }
+        // Fallback questions if API fails
+        const fallbackQuestions = [
+            `Tell me about a time you faced a challenge in your previous role as a ${role}.`,
+            `What are your key strengths and weaknesses relevant to a ${difficulty} level position?`,
+            "Describe a project you are particularly proud of.",
+            "How do you handle tight deadlines and pressure?",
+            "Where do you see yourself in 5 years?"
+        ];
 
-        return { error: "Failed to generate questions. Please check your API configuration." };
+        return {
+            questions: fallbackQuestions,
+            isFallback: true,
+            error: "API unavailable, using fallback questions."
+        };
     }
 }
 
@@ -109,6 +98,8 @@ export async function saveMockAnswer(
     if (!session || !session.user) {
         return { error: "Unauthorized" };
     }
+
+    let evaluation = { score: 0, feedback: "" };
 
     try {
         // Generate immediate feedback for this answer
@@ -129,8 +120,17 @@ export async function saveMockAnswer(
         const response = await result.response;
         const text = response.text();
         const cleanedText = text.replace(/```json/g, "").replace(/```/g, "").trim();
-        const evaluation = JSON.parse(cleanedText);
+        evaluation = JSON.parse(cleanedText);
+    } catch (error: any) {
+        console.error("Error generating feedback:", error);
+        // Fallback evaluation
+        evaluation = {
+            score: 0,
+            feedback: "AI feedback is currently unavailable. Your answer has been recorded."
+        };
+    }
 
+    try {
         await db.mockAnswer.create({
             data: {
                 mockInterviewId,
@@ -143,18 +143,9 @@ export async function saveMockAnswer(
         });
 
         return { success: "Answer saved", evaluation };
-    } catch (error: any) {
-        console.error("Error saving mock answer:", error);
-
-        // Check for API quota errors
-        if (error?.status === 404 || error?.statusText === 'Not Found') {
-            return { error: "API quota limit reached. Your answer was saved but AI feedback is unavailable. Please try again later." };
-        }
-        if (error?.status === 429) {
-            return { error: "Too many requests. Please wait a moment and try again." };
-        }
-
-        return { error: "Failed to evaluate your answer. Please try again." };
+    } catch (dbError) {
+        console.error("Error saving answer to DB:", dbError);
+        return { error: "Failed to save answer" };
     }
 }
 
@@ -195,9 +186,7 @@ export async function completeMockInterview(mockInterviewId: string) {
         } catch (apiError: any) {
             console.error("Error generating feedback:", apiError);
             // Use default feedback if API fails
-            if (apiError?.status === 404 || apiError?.statusText === 'Not Found') {
-                feedback = "Your practice session is complete! API quota limit reached, so detailed feedback is unavailable. Your score: " + averageScore.toFixed(1) + "/10";
-            }
+            feedback = `Your practice session is complete! AI feedback is currently unavailable. Your average score: ${averageScore.toFixed(1)}/10`;
         }
 
         await db.mockInterview.update({

@@ -1,16 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2, MoreHorizontal, ShieldAlert } from "lucide-react";
+import { Trash2, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -21,6 +13,12 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { deleteUser } from "@/actions/admin";
 import { toast } from "sonner";
 
@@ -50,32 +48,46 @@ export function UserActions({ userId, userName }: UserActionsProps) {
         }
     };
 
+    const handleCopy = () => {
+        navigator.clipboard.writeText(userId);
+        toast.success("User ID copied to clipboard");
+    };
+
     return (
-        <>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem
-                        onClick={() => navigator.clipboard.writeText(userId)}
-                    >
-                        Copy User ID
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                        className="text-destructive focus:text-destructive"
-                        onClick={() => setOpen(true)}
-                    >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete User
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+        <TooltipProvider>
+            <div className="flex items-center justify-center gap-2">
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={handleCopy}
+                        >
+                            <Copy className="h-4 w-4" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Copy User ID</p>
+                    </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => setOpen(true)}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Delete User</p>
+                    </TooltipContent>
+                </Tooltip>
+            </div>
 
             <AlertDialog open={open} onOpenChange={setOpen}>
                 <AlertDialogContent>
@@ -99,6 +111,6 @@ export function UserActions({ userId, userName }: UserActionsProps) {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </>
+        </TooltipProvider>
     );
 }
