@@ -24,18 +24,76 @@ export function PdfDownloadButton({ targetId, fileName }: PdfDownloadButtonProps
 
         setIsGenerating(true);
         try {
-            const canvas = await html2canvas(element, {
-                scale: 2, // Higher scale for better quality
-                useCORS: true, // Handle images if any
+            // Clone the element to manipulate it for PDF generation without affecting the UI
+            const clone = element.cloneNode(true) as HTMLElement;
+
+            // Style the clone to ensure full visibility
+            clone.style.position = "absolute";
+            clone.style.top = "-9999px";
+            clone.style.left = "0";
+            clone.style.width = `${element.offsetWidth}px`;
+            clone.style.height = "auto";
+            clone.style.overflow = "visible";
+            clone.style.zIndex = "-1";
+
+            // Helper to recursively sanitize colors
+            const sanitizeColors = (el: HTMLElement) => {
+                const style = window.getComputedStyle(el);
+
+                // Sanitize background color
+                if (style.backgroundColor.includes('oklch') || style.backgroundColor.includes('lab') || style.backgroundColor.includes('oklab')) {
+                    el.style.backgroundColor = '#1a1a1a'; // Fallback dark
+                }
+
+                // Sanitize text color
+                if (style.color.includes('oklch') || style.color.includes('lab') || style.color.includes('oklab')) {
+                    el.style.color = '#ffffff'; // Fallback white
+                }
+
+                // Sanitize border color
+                if (style.borderColor.includes('oklch') || style.borderColor.includes('lab') || style.borderColor.includes('oklab')) {
+                    el.style.borderColor = '#333333'; // Fallback border
+                }
+
+                // Sanitize gradients (backgroundImage)
+                // Gradients often contain color functions. If we detect unsupported ones, we remove the gradient.
+                if (style.backgroundImage !== 'none' &&
+                    (style.backgroundImage.includes('oklch') ||
+                        style.backgroundImage.includes('lab') ||
+                        style.backgroundImage.includes('oklab'))) {
+                    el.style.backgroundImage = 'none';
+                    // Ensure there's a background color if we remove the image
+                    if (el.style.backgroundColor === '' || el.style.backgroundColor === 'rgba(0, 0, 0, 0)') {
+                        el.style.backgroundColor = '#1a1a1a';
+                    }
+                }
+
+                Array.from(el.children).forEach(child => sanitizeColors(child as HTMLElement));
+            };
+
+            // Append to body to render
+            document.body.appendChild(clone);
+
+            // Sanitize colors BEFORE passing to html2canvas
+            sanitizeColors(clone);
+
+            const canvas = await html2canvas(clone, {
+                scale: 2,
+                useCORS: true,
                 logging: false,
-                backgroundColor: "#ffffff", // Force white background to avoid transparency/lab color issues
+                backgroundColor: "#000000",
+                windowWidth: element.scrollWidth,
+                windowHeight: element.scrollHeight
             });
+
+            // Remove clone
+            document.body.removeChild(clone);
 
             const imgData = canvas.toDataURL("image/png");
             const pdf = new jsPDF({
                 orientation: "portrait",
                 unit: "px",
-                format: [canvas.width, canvas.height], // Custom format to fit content
+                format: [canvas.width, canvas.height],
             });
 
             pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);

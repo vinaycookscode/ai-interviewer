@@ -2,6 +2,8 @@
 
 import { db } from "@/lib/db";
 import { InterviewStatus } from "@prisma/client";
+import { generateFollowUp } from "@/lib/ai-context";
+import { generatePersonalityProfile } from "@/lib/ai/personality";
 
 export async function startInterview(interviewId: string) {
     try {
@@ -15,8 +17,6 @@ export async function startInterview(interviewId: string) {
         return { success: false, error: "Failed to start interview" };
     }
 }
-
-import { generateFollowUp } from "@/lib/ai-context";
 
 export async function submitAnswer(data: {
     interviewId: string;
@@ -108,6 +108,13 @@ export async function completeInterview(interviewId: string) {
                 candidate: true
             }
         });
+
+        // Generate Personality Profile
+        try {
+            await generatePersonalityProfile(interviewId);
+        } catch (aiError) {
+            console.error("Failed to generate personality profile:", aiError);
+        }
 
         // Send email notification to employer
         if (process.env.RESEND_API_KEY && interview.job.employer.email) {

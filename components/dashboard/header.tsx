@@ -24,10 +24,12 @@ export function DashboardHeader({ user, userRole }: DashboardHeaderProps) {
             </Link>
 
             <div className="flex items-center gap-4">
-                <div className="flex flex-col items-end mr-2 hidden md:flex">
-                    <span className="text-sm font-medium">{user.name}</span>
-                    <span className="text-xs text-muted-foreground capitalize">{userRole?.toLowerCase()}</span>
-                </div>
+                {user && (
+                    <div className="flex flex-col items-end mr-2 hidden md:flex">
+                        <span className="text-sm font-medium">{user.name}</span>
+                        <span className="text-xs text-muted-foreground capitalize">{userRole?.toLowerCase()}</span>
+                    </div>
+                )}
                 <ModeToggle />
                 <UserButton />
             </div>
