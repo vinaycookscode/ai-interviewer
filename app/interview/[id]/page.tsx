@@ -181,6 +181,44 @@ export default async function InterviewPage({
         );
     }
 
+    // Check for required documents
+    const requirements = {
+        resume: interview.job.requireResume,
+        aadhar: interview.job.requireAadhar,
+        pan: interview.job.requirePAN,
+    };
+
+    const existingDocs = {
+        resume: !!interview.resumeUrl,
+        aadhar: !!interview.aadharUrl,
+        pan: !!interview.panUrl,
+    };
+
+    const missingDocs =
+        (requirements.resume && !existingDocs.resume) ||
+        (requirements.aadhar && !existingDocs.aadhar) ||
+        (requirements.pan && !existingDocs.pan);
+
+    if (missingDocs) {
+        // Redirect to document upload page
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-background">
+                <div className="text-center space-y-6 max-w-md p-8">
+                    <h1 className="text-3xl font-bold">Documents Required</h1>
+                    <p className="text-muted-foreground">
+                        This interview requires you to upload certain documents before proceeding.
+                    </p>
+                    <a
+                        href={`/candidate/interview/${id}/documents`}
+                        className="inline-block px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+                    >
+                        Upload Documents
+                    </a>
+                </div>
+            </div>
+        );
+    }
+
     // All checks passed - show interview
     return (
         <InterviewClientPage

@@ -188,7 +188,7 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
                     Thank you for completing the interview. Your responses are being evaluated.
                 </p>
                 <div className="flex gap-4 justify-center">
-                    <Button onClick={() => router.push(`/interview/${interviewId}/feedback`)} size="lg">
+                    <Button onClick={() => router.push(`/candidate/interview/${interviewId}/feedback`)} size="lg">
                         View Feedback
                     </Button>
                     <Button onClick={() => router.push("/candidate/dashboard")} variant="outline" size="lg">

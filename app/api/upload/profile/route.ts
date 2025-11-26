@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
+import { uploadToR2 } from "@/lib/r2";
 
 export async function POST(req: NextRequest) {
     try {
@@ -22,23 +20,12 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "No resume file provided" }, { status: 400 });
         }
 
-        // Create uploads directory if it doesn't exist
-        // Store in public/uploads/profiles/[userId]
-        const uploadsDir = join(process.cwd(), "public", "uploads", "profiles", userId);
-        if (!existsSync(uploadsDir)) {
-            await mkdir(uploadsDir, { recursive: true });
-        }
-
-        const bytes = await resumeFile.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-        // Sanitize filename
+        const buffer = Buffer.from(await resumeFile.arrayBuffer());
         const safeName = resumeFile.name.replace(/[^a-zA-Z0-9.-]/g, "_");
         const fileName = `resume_${Date.now()}_${safeName}`;
-        const filePath = join(uploadsDir, fileName);
 
-        await writeFile(filePath, buffer);
-
-        const resumeUrl = `/uploads/profiles/${userId}/${fileName}`;
+        // Upload to R2: profiles/[userId]/[fileName]
+        const resumeUrl = await uploadToR2(buffer, fileName, `profiles/${userId}`, resumeFile.type);
 
         return NextResponse.json({
             success: true,

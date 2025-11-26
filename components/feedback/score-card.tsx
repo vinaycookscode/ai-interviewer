@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 interface ScoreCardProps {
@@ -8,19 +7,17 @@ interface ScoreCardProps {
 export function ScoreCard({ score }: ScoreCardProps) {
     if (score === null) {
         return (
-            <Card className="border-2">
-                <CardHeader>
-                    <CardTitle>Overall Score</CardTitle>
-                </CardHeader>
-                <CardContent className="flex items-center justify-center py-8">
+            <div className="flex flex-col items-center justify-center h-full">
+                <h3 className="text-2xl font-semibold mb-6">Overall Score</h3>
+                <div className="flex flex-col items-center justify-center py-8">
                     <div className="text-center">
                         <div className="w-32 h-32 rounded-full bg-muted flex items-center justify-center mb-3">
                             <span className="text-4xl">⏳</span>
                         </div>
                         <p className="text-muted-foreground">Scoring in progress...</p>
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
         );
     }
 
@@ -42,14 +39,13 @@ export function ScoreCard({ score }: ScoreCardProps) {
     }
 
     return (
-        <Card className={cn("border-2", borderClass)}>
-            <CardHeader>
-                <CardTitle>Overall Score</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center justify-center py-8">
+        <div className="flex flex-col items-center justify-center h-full">
+            <h3 className="text-2xl font-semibold mb-6">Overall Score</h3>
+            <div className="flex flex-col items-center justify-center">
                 <div className="relative w-40 h-40 mb-4">
                     {/* Background circle */}
-                    <svg className="w-full h-full transform -rotate-90">
+                    {/* Background circle */}
+                    <svg className="w-full h-full" viewBox="0 0 160 160">
                         <circle
                             cx="80"
                             cy="80"
@@ -57,7 +53,7 @@ export function ScoreCard({ score }: ScoreCardProps) {
                             stroke="currentColor"
                             strokeWidth="12"
                             fill="none"
-                            className="text-muted/20"
+                            className="text-muted-foreground/20"
                         />
                         {/* Progress circle */}
                         <circle
@@ -69,7 +65,7 @@ export function ScoreCard({ score }: ScoreCardProps) {
                             fill="none"
                             strokeDasharray={`${2 * Math.PI * 70}`}
                             strokeDashoffset={`${2 * Math.PI * 70 * (1 - percentage / 100)}`}
-                            className={cn("transition-all duration-1000", colorClass)}
+                            className={cn("transition-all duration-1000 origin-center -rotate-90", colorClass)}
                             strokeLinecap="round"
                         />
                     </svg>
@@ -81,10 +77,10 @@ export function ScoreCard({ score }: ScoreCardProps) {
                         <span className="text-sm text-muted-foreground">out of 10</span>
                     </div>
                 </div>
-                <div className={cn("px-4 py-2 rounded-full text-sm font-medium", bgClass, "text-white")}>
+                <div className={cn("px-3 py-1 rounded-full text-xs font-medium mt-2", bgClass, "text-white")}>
                     {score >= 8 ? "Excellent" : score >= 5 ? "Good" : "Needs Improvement"}
                 </div>
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
 }

@@ -209,7 +209,7 @@ export function CandidatesTable({ interviews }: CandidatesTableProps) {
                                         href={interview.resumeUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                                        className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors border border-blue-200"
                                     >
                                         Resume
                                     </a>
@@ -219,7 +219,7 @@ export function CandidatesTable({ interviews }: CandidatesTableProps) {
                                         href={interview.aadharUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-xs px-2 py-1 rounded bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
+                                        className="text-xs px-2 py-1 rounded bg-green-50 text-green-600 hover:bg-green-100 transition-colors border border-green-200"
                                     >
                                         Aadhar
                                     </a>
@@ -229,13 +229,13 @@ export function CandidatesTable({ interviews }: CandidatesTableProps) {
                                         href={interview.panUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-xs px-2 py-1 rounded bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors"
+                                        className="text-xs px-2 py-1 rounded bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors border border-purple-200"
                                     >
                                         PAN
                                     </a>
                                 )}
                                 {!interview.resumeUrl && !interview.aadharUrl && !interview.panUrl && (
-                                    <span className="text-muted-foreground text-sm">No docs</span>
+                                    <span className="text-muted-foreground text-xs italic">Pending</span>
                                 )}
                             </div>
                         </TableCell>

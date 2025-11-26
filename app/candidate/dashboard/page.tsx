@@ -212,7 +212,7 @@ export default async function CandidateDashboardPage() {
                                             )}
                                             {interview.status === "COMPLETED" && (
                                                 <Button variant="outline" className="w-full" asChild>
-                                                    <Link href={`/interview/${interview.id}/feedback`}>
+                                                    <Link href={`/candidate/interview/${interview.id}/feedback`}>
                                                         <FileText className="h-4 w-4 mr-2" />
                                                         View Feedback
                                                     </Link>

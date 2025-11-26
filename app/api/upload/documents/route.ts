@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
+import { uploadToR2 } from "@/lib/r2";
 
 export async function POST(req: NextRequest) {
     try {
@@ -39,12 +37,6 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Interview not found" }, { status: 404 });
         }
 
-        // Create uploads directory if it doesn't exist
-        const uploadsDir = join(process.cwd(), "public", "uploads", "documents", interviewId);
-        if (!existsSync(uploadsDir)) {
-            await mkdir(uploadsDir, { recursive: true });
-        }
-
         const updateData: {
             resumeUrl?: string;
             aadharUrl?: string;
@@ -54,32 +46,23 @@ export async function POST(req: NextRequest) {
 
         // Handle resume upload
         if (resumeFile) {
-            const bytes = await resumeFile.arrayBuffer();
-            const buffer = Buffer.from(bytes);
-            const fileName = `resume_${Date.now()}_${resumeFile.name}`;
-            const filePath = join(uploadsDir, fileName);
-            await writeFile(filePath, buffer);
-            updateData.resumeUrl = `/uploads/documents/${interviewId}/${fileName}`;
+            const buffer = Buffer.from(await resumeFile.arrayBuffer());
+            const fileName = `resume_${Date.now()}_${resumeFile.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+            updateData.resumeUrl = await uploadToR2(buffer, fileName, `documents/${interviewId}`, resumeFile.type);
         }
 
         // Handle Aadhar upload
         if (aadharFile) {
-            const bytes = await aadharFile.arrayBuffer();
-            const buffer = Buffer.from(bytes);
-            const fileName = `aadhar_${Date.now()}_${aadharFile.name}`;
-            const filePath = join(uploadsDir, fileName);
-            await writeFile(filePath, buffer);
-            updateData.aadharUrl = `/uploads/documents/${interviewId}/${fileName}`;
+            const buffer = Buffer.from(await aadharFile.arrayBuffer());
+            const fileName = `aadhar_${Date.now()}_${aadharFile.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+            updateData.aadharUrl = await uploadToR2(buffer, fileName, `documents/${interviewId}`, aadharFile.type);
         }
 
         // Handle PAN upload
         if (panFile) {
-            const bytes = await panFile.arrayBuffer();
-            const buffer = Buffer.from(bytes);
-            const fileName = `pan_${Date.now()}_${panFile.name}`;
-            const filePath = join(uploadsDir, fileName);
-            await writeFile(filePath, buffer);
-            updateData.panUrl = `/uploads/documents/${interviewId}/${fileName}`;
+            const buffer = Buffer.from(await panFile.arrayBuffer());
+            const fileName = `pan_${Date.now()}_${panFile.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+            updateData.panUrl = await uploadToR2(buffer, fileName, `documents/${interviewId}`, panFile.type);
         }
 
         // Update interview with document URLs
