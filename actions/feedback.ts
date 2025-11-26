@@ -17,6 +17,7 @@ export async function getInterviewFeedback(interviewId: string) {
                         createdAt: "asc",
                     },
                 },
+                personalityProfile: true,
             },
         });
 

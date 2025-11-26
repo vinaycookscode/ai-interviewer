@@ -138,6 +138,7 @@ model Interview {
   createdAt DateTime @default(now())
 
   answers Answer[]
+  personalityProfile PersonalityProfile?
 }
 
 model Answer {
@@ -208,4 +209,24 @@ model MockAnswer {
   feedback        String?
   
   createdAt       DateTime      @default(now())
+}
+
+model PersonalityProfile {
+  id                 String    @id @default(uuid())
+  interviewId        String    @unique
+  interview          Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  
+  // Core Traits
+  communicationStyle String    // e.g., "Concise", "Elaborate", "Technical"
+  confidenceScore    Float     // 0-10
+  technicalDepth     String    // "Surface", "Intermediate", "Expert"
+  
+  // Detailed Analysis
+  strengths          String[]
+  weaknesses         String[]
+  cultureFitScore    Float     // 0-100
+  
+  summary            String    @db.Text
+  
+  createdAt          DateTime  @default(now())
 }

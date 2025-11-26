@@ -9,6 +9,7 @@ import { auth } from "@/auth";
 
 import { PdfDownloadButton } from "@/components/interview/pdf-download-button";
 import { db } from "@/lib/db";
+import { PersonalityCard } from "@/components/interview/personality-card";
 
 export default async function FeedbackPage({
     params,
@@ -25,11 +26,6 @@ export default async function FeedbackPage({
     if (!success || !interview) {
         notFound();
     }
-
-    // Fetch dbUser to determine role for sidebar
-    const dbUser = await db.user.findUnique({
-        where: { id: user?.id },
-    });
 
     return (
         <div className="container mx-auto px-4 max-w-4xl py-8">
@@ -52,22 +48,44 @@ export default async function FeedbackPage({
 
             <div id="feedback-content" className="bg-background p-4 rounded-lg">
                 <div className="grid md:grid-cols-3 gap-8 mb-8">
-                    <div className="md:col-span-1">
+                    <div className="md:col-span-1 space-y-6">
                         <ScoreCard score={averageScore ?? null} />
+                        {/* Personality Insights for Employers */}
+                        {!isCandidate && interview.personalityProfile && (
+                            <div className="hidden md:block">
+                                <h3 className="text-lg font-semibold mb-4">Personality Insights</h3>
+                                <PersonalityCard profile={interview.personalityProfile} />
+                            </div>
+                        )}
                     </div>
                     <div className="md:col-span-2">
                         <div className="h-full flex flex-col justify-center">
                             <h3 className="text-lg font-semibold mb-2">Summary</h3>
-                            <p className="text-muted-foreground">
+                            <p className="text-muted-foreground mb-6">
                                 {averageScore && averageScore >= 7
                                     ? "Great job! The candidate demonstrated strong knowledge and communication skills."
                                     : averageScore && averageScore >= 4
                                         ? "Good effort. There are some areas for improvement, particularly in technical depth."
                                         : "Needs improvement. The answers lacked sufficient detail or relevance."}
                             </p>
+
+                            {/* Mobile Personality Card */}
+                            {!isCandidate && interview.personalityProfile && (
+                                <div className="md:hidden mb-6">
+                                    <h3 className="text-lg font-semibold mb-4">Personality Insights</h3>
+                                    <PersonalityCard profile={interview.personalityProfile} />
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
+
+                {!isCandidate && interview.personalityProfile && (
+                    <div className="mb-8">
+                        <h2 className="text-2xl font-bold text-foreground mb-4">Personality Profile</h2>
+                        <PersonalityCard profile={interview.personalityProfile} />
+                    </div>
+                )}
 
                 <div className="space-y-6">
                     <h2 className="text-2xl font-bold text-foreground">Detailed Breakdown</h2>
