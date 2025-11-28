@@ -230,3 +230,13 @@ model PersonalityProfile {
   
   createdAt          DateTime  @default(now())
 }
+
+model RateLimit {
+  id          String   @id @default(uuid())
+  identifier  String   // IP address or email
+  count       Int      @default(0)
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  
+  @@unique([identifier])
+}

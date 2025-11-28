@@ -10,6 +10,10 @@ import { AuthError } from "next-auth";
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
 
+import { checkRateLimit } from "@/lib/rate-limit";
+import { headers } from "next/headers";
+import { getClientIP } from "@/lib/geolocation";
+
 export const login = async (values: z.infer<typeof LoginSchema>) => {
     const validatedFields = LoginSchema.safeParse(values);
 
@@ -18,6 +22,15 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
     }
 
     const { email, password } = validatedFields.data;
+
+    // Rate Limiting
+    const headersList = await headers();
+    const ip = getClientIP(headersList);
+
+    const rateLimit = await checkRateLimit(ip);
+    if (!rateLimit.success) {
+        return { error: "Too many login attempts. Please try again later." };
+    }
 
     try {
         await signIn("credentials", {
