@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { UsersTable } from "@/components/admin/users-table";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface UsersPageClientProps {
     users: Array<{
@@ -26,6 +27,7 @@ export default function UsersPageClient({
     currentPage,
     page,
 }: UsersPageClientProps) {
+    const router = useRouter();
     const [searchTerm, setSearchTerm] = useState("");
 
     const usersWithDate = users.map((user) => ({
@@ -66,14 +68,24 @@ export default function UsersPageClient({
             </div>
 
             <div className="flex items-center justify-end space-x-2">
-                <Button variant="outline" size="sm" disabled={currentPage <= 1} asChild>
-                    <Link href={`/admin/users?page=${currentPage - 1}`}>Previous</Link>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push(`/admin/users?page=${currentPage - 1}`)}
+                    disabled={currentPage <= 1}
+                >
+                    Previous
                 </Button>
                 <div className="text-sm font-medium">
                     Page {currentPage} of {totalPages}
                 </div>
-                <Button variant="outline" size="sm" disabled={currentPage >= totalPages} asChild>
-                    <Link href={`/admin/users?page=${currentPage + 1}`}>Next</Link>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push(`/admin/users?page=${currentPage + 1}`)}
+                    disabled={currentPage >= totalPages}
+                >
+                    Next
                 </Button>
             </div>
         </div>

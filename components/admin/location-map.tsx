@@ -36,8 +36,11 @@ export function LocationMap({ locationStats }: LocationMapProps) {
     }, [locationStats]);
 
     const getColor = (geo: any) => {
-        const countryCode = geo.id;
-        const count = statsMap.get(countryCode) || 0;
+        // Try to match against ID or ISO_A2 property (case insensitive)
+        const count = statsMap.get(geo.id) ||
+            statsMap.get(geo.properties.ISO_A2) ||
+            statsMap.get(geo.properties.iso_a2) ||
+            0;
 
         if (count === 0) return "#D6D6DA"; // Light gray for countries with no users
 
@@ -66,7 +69,10 @@ export function LocationMap({ locationStats }: LocationMapProps) {
                             <Geographies geography={geoUrl}>
                                 {({ geographies }) =>
                                     geographies.map((geo) => {
-                                        const count = statsMap.get(geo.id) || 0;
+                                        const count = statsMap.get(geo.id) ||
+                                            statsMap.get(geo.properties.ISO_A2) ||
+                                            statsMap.get(geo.properties.iso_a2) ||
+                                            0;
                                         return (
                                             <Geography
                                                 key={geo.rsmKey}
