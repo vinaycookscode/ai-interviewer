@@ -7,6 +7,7 @@ import Link from "next/link";
 import { FileText, Clock, CheckCircle, Calendar, Upload } from "lucide-react";
 import { redirect } from "next/navigation";
 import { canStartInterview, getTimeUntilInterview } from "@/lib/interview-timing";
+import { DashboardRefresher } from "@/components/candidate/dashboard-refresher";
 
 export default async function CandidateDashboardPage() {
     const session = await auth();
@@ -50,6 +51,7 @@ export default async function CandidateDashboardPage() {
 
     return (
         <div className="min-h-screen bg-background p-8">
+            <DashboardRefresher />
             <div className="max-w-4xl mx-auto">
                 <div className="mb-8">
                     <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
