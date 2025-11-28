@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { LayoutDashboard, Sparkles, Menu, User, FileText } from "lucide-react";
+import { LayoutDashboard, Sparkles, Menu, User, FileText, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -15,6 +15,14 @@ const NavLinks = ({ onLinkClick }: { onLinkClick?: () => void }) => (
         >
             <LayoutDashboard size={20} className="group-hover:scale-110 transition-transform" />
             <span>My Interviews</span>
+        </Link>
+        <Link
+            href="/candidate/dashboard/analytics"
+            onClick={onLinkClick}
+            className="flex items-center gap-3 px-4 py-3 text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-all font-medium group"
+        >
+            <TrendingUp size={20} className="group-hover:scale-110 transition-transform text-green-500" />
+            <span>Analytics</span>
         </Link>
         <Link
             href="/candidate/practice"
