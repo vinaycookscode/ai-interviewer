@@ -98,14 +98,17 @@ export function InviteCandidateDialog({ jobId }: { jobId: string }) {
         }
     }
 
-    function handleClose() {
-        setOpen(false);
-        setInterviewLink(null);
-        setCopied(false);
+    function handleOpenChange(isOpen: boolean) {
+        setOpen(isOpen);
+        if (!isOpen) {
+            setInterviewLink(null);
+            setCopied(false);
+            form.reset();
+        }
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 <Button>
                     <UserPlus className="mr-2 h-4 w-4" />
@@ -206,7 +209,7 @@ export function InviteCandidateDialog({ jobId }: { jobId: string }) {
                                         </>
                                     )}
                                 </Button>
-                                <Button onClick={handleClose} variant="outline">
+                                <Button onClick={() => handleOpenChange(false)} variant="outline">
                                     Done
                                 </Button>
                             </div>
