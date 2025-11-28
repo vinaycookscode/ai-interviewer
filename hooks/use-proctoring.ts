@@ -1,11 +1,21 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { logProctoringEvent } from "@/actions/proctoring";
 
 export function useProctoring(interviewId: string) {
     const warningCount = useRef(0);
+    const [isFullScreen, setIsFullScreen] = useState(true); // Default to true to avoid flash, but actually check on mount
+
+    const enterFullScreen = async () => {
+        try {
+            await document.documentElement.requestFullscreen();
+        } catch (e) {
+            console.error("Failed to enter full screen:", e);
+            toast.error("Could not enter full screen. Please try again.");
+        }
+    };
 
     useEffect(() => {
         const handleVisibilityChange = async () => {
@@ -40,14 +50,37 @@ export function useProctoring(interviewId: string) {
             await logProctoringEvent(interviewId, "WINDOW_BLUR");
         };
 
+        const handleFullScreenChange = async () => {
+            const isFull = !!document.fullscreenElement;
+            setIsFullScreen(isFull);
+
+            if (!isFull) {
+                warningCount.current += 1;
+                toast.warning("Warning: Full-screen mode exited.", {
+                    description: "Please return to full-screen mode immediately.",
+                    duration: 5000,
+                });
+                await logProctoringEvent(interviewId, "FULLSCREEN_EXIT");
+            }
+        };
+
         document.addEventListener("visibilitychange", handleVisibilityChange);
         window.addEventListener("blur", handleBlur);
+        document.addEventListener("fullscreenchange", handleFullScreenChange);
+
+        // Initial check
+        setIsFullScreen(!!document.fullscreenElement);
 
         return () => {
             document.removeEventListener("visibilitychange", handleVisibilityChange);
             window.removeEventListener("blur", handleBlur);
+            document.removeEventListener("fullscreenchange", handleFullScreenChange);
         };
     }, [interviewId]);
 
-    return { warningCount: warningCount.current };
+    return {
+        warningCount: warningCount.current,
+        isFullScreen,
+        enterFullScreen
+    };
 }

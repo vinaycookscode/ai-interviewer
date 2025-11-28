@@ -23,7 +23,7 @@ interface InterviewSessionProps {
 
 export function InterviewSession({ interviewId, questions, stream }: InterviewSessionProps) {
     const router = useRouter();
-    const { warningCount } = useProctoring(interviewId);
+    const { warningCount, isFullScreen, enterFullScreen } = useProctoring(interviewId);
     const [questionsState, setQuestionsState] = useState<Question[]>(questions);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isRecording, setIsRecording] = useState(false);
@@ -195,6 +195,26 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
                     </Button>
                     <Button onClick={() => router.push("/candidate/dashboard")} variant="outline" size="lg">
                         Back to Dashboard
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
+    if (!isFullScreen) {
+        return (
+            <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="max-w-md w-full bg-card border shadow-lg rounded-xl p-8 text-center space-y-6">
+                    <div className="mx-auto w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center">
+                        <Square className="w-8 h-8 text-yellow-600" />
+                    </div>
+                    <h2 className="text-2xl font-bold">Full Screen Required</h2>
+                    <p className="text-muted-foreground">
+                        To ensure a fair interview process, you must remain in full-screen mode.
+                        Please return to full screen to continue.
+                    </p>
+                    <Button onClick={enterFullScreen} size="lg" className="w-full">
+                        Return to Full Screen
                     </Button>
                 </div>
             </div>
