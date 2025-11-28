@@ -139,6 +139,7 @@ model Interview {
 
   answers Answer[]
   personalityProfile PersonalityProfile?
+  proctoringEvents ProctoringEvent[]
 }
 
 model Answer {
@@ -239,4 +240,13 @@ model RateLimit {
   createdAt   DateTime @default(now())
   
   @@unique([identifier])
+}
+
+model ProctoringEvent {
+  id          String   @id @default(uuid())
+  interviewId String
+  interview   Interview @relation(fields: [interviewId], references: [id])
+  type        String   // "TAB_SWITCH", "WINDOW_BLUR", "FULLSCREEN_EXIT"
+  timestamp   DateTime @default(now())
+  details     String?  // Optional context
 }

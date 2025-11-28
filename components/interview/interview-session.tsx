@@ -8,6 +8,7 @@ import { startInterview, submitAnswer, completeInterview } from "@/actions/inter
 import { gradeAnswer } from "@/actions/scoring";
 import { AudioVisualizer } from "./audio-visualizer";
 import { useRouter } from "next/navigation";
+import { useProctoring } from "@/hooks/use-proctoring";
 
 interface Question {
     id: string;
@@ -22,6 +23,7 @@ interface InterviewSessionProps {
 
 export function InterviewSession({ interviewId, questions, stream }: InterviewSessionProps) {
     const router = useRouter();
+    const { warningCount } = useProctoring(interviewId);
     const [questionsState, setQuestionsState] = useState<Question[]>(questions);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isRecording, setIsRecording] = useState(false);
@@ -278,6 +280,12 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
                         <div className="absolute top-4 right-4 flex items-center gap-2 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium animate-pulse">
                             <div className="w-2 h-2 bg-white rounded-full" />
                             Recording
+                        </div>
+                    )}
+
+                    {warningCount > 0 && (
+                        <div className="absolute top-4 left-4 bg-yellow-500/90 text-white px-3 py-1 rounded-full text-sm font-medium backdrop-blur-sm">
+                            Warnings: {warningCount}
                         </div>
                     )}
                 </div>
