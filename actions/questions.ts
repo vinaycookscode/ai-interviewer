@@ -29,7 +29,7 @@ export async function generateQuestions(jobDescription: string) {
 
     try {
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
         const prompt = `
             Generate 5 interview questions for a job with the following description:
@@ -45,8 +45,11 @@ export async function generateQuestions(jobDescription: string) {
 
         // Attempt to parse the JSON output
         let questions: string[] = [];
+        // Clean the text to remove markdown code blocks if present
+        const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
         try {
-            questions = JSON.parse(text);
+            questions = JSON.parse(cleanText);
             if (!Array.isArray(questions) || !questions.every(q => typeof q === 'string')) {
                 throw new Error("Invalid JSON format from Gemini API.");
             }
