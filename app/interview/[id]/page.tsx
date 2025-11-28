@@ -129,6 +129,23 @@ export default async function InterviewPage({
     const now = new Date();
     const scheduledTime = interview.scheduledTime ? new Date(interview.scheduledTime) : null;
 
+    // Check if interview has expired
+    if (interview.expiresAt && now > interview.expiresAt) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-background">
+                <div className="text-center space-y-4 max-w-md p-8">
+                    <h1 className="text-2xl font-bold text-red-600">Interview Expired</h1>
+                    <p className="text-muted-foreground">
+                        This interview link expired on {interview.expiresAt.toLocaleString()}.
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                        Please contact the hiring manager if you believe this is an error.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
     if (scheduledTime && now < scheduledTime) {
         const timeUntil = scheduledTime.getTime() - now.getTime();
         const hours = Math.floor(timeUntil / (1000 * 60 * 60));

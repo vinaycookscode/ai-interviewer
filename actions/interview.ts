@@ -12,6 +12,7 @@ export async function inviteCandidate(data: {
     candidateName: string;
     candidateEmail: string;
     scheduledTime: string;
+    expiresAt?: string;
 }) {
     try {
         const session = await auth();
@@ -64,6 +65,7 @@ export async function inviteCandidate(data: {
                 status: "PENDING",
                 token: interviewToken,
                 scheduledTime: new Date(data.scheduledTime),
+                expiresAt: data.expiresAt ? new Date(data.expiresAt) : new Date(new Date(data.scheduledTime).getTime() + 48 * 60 * 60 * 1000), // Default 48h
             },
         });
 

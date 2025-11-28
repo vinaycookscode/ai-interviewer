@@ -30,6 +30,7 @@ const formSchema = z.object({
     candidateName: z.string().min(2, "Name must be at least 2 characters"),
     candidateEmail: z.string().email("Invalid email address"),
     scheduledTime: z.string().min(1, "Please select a date and time"),
+    expiresAt: z.string().optional(),
 });
 
 export function InviteCandidateDialog({ jobId }: { jobId: string }) {
@@ -52,6 +53,7 @@ export function InviteCandidateDialog({ jobId }: { jobId: string }) {
             candidateName: "",
             candidateEmail: "",
             scheduledTime: "",
+            expiresAt: "",
         },
     });
 
@@ -63,6 +65,7 @@ export function InviteCandidateDialog({ jobId }: { jobId: string }) {
                 candidateName: values.candidateName,
                 candidateEmail: values.candidateEmail,
                 scheduledTime: new Date(values.scheduledTime).toISOString(),
+                expiresAt: values.expiresAt ? new Date(values.expiresAt).toISOString() : undefined,
             });
 
             if (result.success) {

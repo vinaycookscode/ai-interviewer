@@ -152,6 +152,16 @@ function InterviewCard({ interview }: { interview: any }) {
                             </span>
                         </div>
                     )}
+                    {interview.expiresAt && interview.status === "PENDING" && (
+                        <div className="flex items-center gap-2 text-xs mb-2 text-muted-foreground">
+                            <Clock className="h-3 w-3 shrink-0" />
+                            <span>
+                                Expires: <span suppressHydrationWarning>
+                                    {new Date(interview.expiresAt).toLocaleDateString()}
+                                </span>
+                            </span>
+                        </div>
+                    )}
                     <p className="text-sm text-muted-foreground line-clamp-3">
                         {interview.job.description}
                     </p>
@@ -171,7 +181,12 @@ function InterviewCard({ interview }: { interview: any }) {
                 <div className="mt-auto pt-2">
                     {interview.status === "PENDING" && (
                         <>
-                            {needsDocuments ? (
+                            {interview.expiresAt && new Date() > new Date(interview.expiresAt) ? (
+                                <Button disabled className="w-full variant-destructive opacity-80">
+                                    <Clock className="h-4 w-4 mr-2" />
+                                    Expired
+                                </Button>
+                            ) : needsDocuments ? (
                                 <Button variant="default" className="w-full" asChild>
                                     <Link href={`/candidate/interview/${interview.id}/documents`}>
                                         <Upload className="h-4 w-4 mr-2" />

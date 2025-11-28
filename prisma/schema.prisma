@@ -125,6 +125,7 @@ model Interview {
 
   // Scheduling
   scheduledTime DateTime? // When the interview is scheduled
+  expiresAt     DateTime? // When the interview link expires
 
   // Document uploads
   resumeUrl         String?
