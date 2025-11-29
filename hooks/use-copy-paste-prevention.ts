@@ -3,16 +3,21 @@
 import { useEffect } from "react";
 import { toast } from "sonner";
 
-export function useCopyPastePrevention(isActive: boolean = true) {
+export function useCopyPastePrevention(
+    isActive: boolean = true,
+    onWarning?: (message: string, type: string) => void
+) {
     useEffect(() => {
         if (!isActive) return;
 
         const handlePreventDefault = (e: Event) => {
             e.preventDefault();
-            toast.warning("Copying, pasting, and right-click are disabled during the interview.", {
+            const message = "Copying, pasting, and right-click are disabled during the interview.";
+            toast.warning(message, {
                 id: "copy-paste-warning", // Prevent duplicate toasts
                 duration: 2000,
             });
+            if (onWarning) onWarning(message, "COPY_PASTE");
         };
 
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -22,10 +27,12 @@ export function useCopyPastePrevention(isActive: boolean = true) {
                 (e.key === "c" || e.key === "v" || e.key === "x" || e.key === "a")
             ) {
                 e.preventDefault();
-                toast.warning("Keyboard shortcuts are disabled.", {
+                const message = "Keyboard shortcuts are disabled.";
+                toast.warning(message, {
                     id: "shortcut-warning",
                     duration: 2000,
                 });
+                if (onWarning) onWarning(message, "KEYBOARD_SHORTCUT");
             }
 
             // Prevent F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U (View Source)
@@ -35,10 +42,12 @@ export function useCopyPastePrevention(isActive: boolean = true) {
                 ((e.ctrlKey || e.metaKey) && e.key === "u")
             ) {
                 e.preventDefault();
-                toast.warning("Developer tools are disabled.", {
+                const message = "Developer tools are disabled.";
+                toast.warning(message, {
                     id: "devtools-warning",
                     duration: 2000,
                 });
+                if (onWarning) onWarning(message, "DEV_TOOLS");
             }
         };
 
@@ -57,5 +66,5 @@ export function useCopyPastePrevention(isActive: boolean = true) {
             window.removeEventListener("cut", handlePreventDefault);
             window.removeEventListener("keydown", handleKeyDown);
         };
-    }, [isActive]);
+    }, [isActive, onWarning]);
 }

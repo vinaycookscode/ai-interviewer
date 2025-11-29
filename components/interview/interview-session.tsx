@@ -16,6 +16,11 @@ interface Question {
 }
 
 import { useCopyPastePrevention } from "@/hooks/use-copy-paste-prevention";
+import {
+    HoverCard,
+    HoverCardContent,
+    HoverCardTrigger,
+} from "@/components/ui/hover-card";
 
 interface InterviewSessionProps {
     interviewId: string;
@@ -26,7 +31,8 @@ interface InterviewSessionProps {
 export function InterviewSession({ interviewId, questions, stream }: InterviewSessionProps) {
     const router = useRouter();
     // const { interviewId, questions, stream } = interview; // Removed incorrect destructuring
-    const { warningCount, isFullScreen, enterFullScreen } = useProctoring(interviewId);
+    const { warningCount, warnings, isFullScreen, enterFullScreen, addWarning } = useProctoring(interviewId);
+    const [terminationReason, setTerminationReason] = useState<string | null>(null);
     const [questionsState, setQuestionsState] = useState<Question[]>(questions);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isRecording, setIsRecording] = useState(false);
@@ -182,7 +188,59 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
         setIsProcessing(false);
     };
 
+    // Enable copy/paste prevention
+    // Enable copy/paste prevention with warning logging
+    useCopyPastePrevention(true, (message, type) => {
+        addWarning(message, type);
+    });
+
+    // Auto-termination check
+    useEffect(() => {
+        if (warningCount >= 11 && !isCompleted && !terminationReason) {
+            const terminate = async () => {
+                setTerminationReason("Multiple proctoring violations detected.");
+                await stopRecording(); // This will also submit the current answer and complete the interview
+                // We might want to explicitly force completion if stopRecording doesn't do it immediately enough
+                // But stopRecording calls handleNext which calls completeInterview if it's the last question.
+                // If it's NOT the last question, we need to force completion.
+
+                // Let's force completion to be safe
+                await completeInterview(interviewId);
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                setIsCompleted(true);
+            };
+            terminate();
+        }
+    }, [warningCount, isCompleted, terminationReason]);
+
     if (isCompleted) {
+        if (terminationReason) {
+            return (
+                <div className="max-w-2xl mx-auto text-center space-y-6 pt-20">
+                    <div className="flex justify-center">
+                        <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center">
+                            <Square className="h-12 w-12 text-red-600" />
+                        </div>
+                    </div>
+                    <h1 className="text-4xl font-bold text-red-600">Interview Terminated</h1>
+                    <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-xl">
+                        <p className="text-xl text-red-200 font-medium">
+                            {terminationReason}
+                        </p>
+                        <p className="mt-2 text-white/60">
+                            Our proctoring system detected suspicious activity exceeding the allowed limit.
+                            The interview has been automatically submitted for review.
+                        </p>
+                    </div>
+                    <Button onClick={() => router.push("/candidate/dashboard")} variant="outline" size="lg" className="border-red-500/20 hover:bg-red-500/10 hover:text-red-200">
+                        Return to Dashboard
+                    </Button>
+                </div>
+            );
+        }
+
         return (
             <div className="max-w-2xl mx-auto text-center space-y-6 pt-20">
                 <div className="flex justify-center">
@@ -204,8 +262,7 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
         );
     }
 
-    // Enable copy/paste prevention
-    useCopyPastePrevention(true);
+
 
     if (!isFullScreen) {
         return (
@@ -228,92 +285,152 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
     }
 
     return (
-        <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8 h-full select-none">
-            {/* Left: Question & Controls */}
-            <div className="flex flex-col justify-center space-y-8">
-                <div className="space-y-4">
-                    <div className="text-sm font-medium text-gray-500 uppercase tracking-wider">
-                        Question {currentIndex + 1} of {questionsState.length}
-                    </div>
-                    <h2 className="text-3xl font-bold leading-tight">
-                        {currentQuestion.text}
-                    </h2>
-                    {isSpeaking && (
-                        <div className="flex items-center gap-2 text-blue-600 animate-pulse">
-                            <Volume2 className="h-5 w-5" />
-                            <span className="text-sm font-medium">AI is speaking...</span>
-                        </div>
-                    )}
-                </div>
-
-                <div className="space-y-4">
-                    {!isRecording ? (
-                        <Button
-                            onClick={startRecording}
-                            size="lg"
-                            className="w-full h-16 text-lg"
-                            disabled={isSpeaking || isProcessing}
-                        >
-                            <Mic className="mr-2 h-6 w-6" />
-                            Start Answering
-                        </Button>
-                    ) : (
-                        <Button
-                            onClick={stopRecording}
-                            variant="destructive"
-                            size="lg"
-                            className="w-full h-16 text-lg"
-                        >
-                            <Square className="mr-2 h-6 w-6 fill-current" />
-                            Stop & Submit Answer
-                        </Button>
-                    )}
-
-                    {isProcessing && (
-                        <p className="text-center text-sm text-gray-500 animate-pulse">
-                            Saving answer...
-                        </p>
-                    )}
-                </div>
-
-                {/* Transcript Preview */}
-                {(transcript || interimTranscript) && (
-                    <Card className="bg-slate-50 border-none">
-                        <CardContent className="p-4">
-                            <p className="text-sm text-gray-600 italic">
-                                "{transcript} <span className="text-gray-400">{interimTranscript}</span>"
-                            </p>
-                        </CardContent>
-                    </Card>
-                )}
+        <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900 via-slate-900 to-black text-slate-50 select-none overflow-hidden">
+            {/* Ambient Background Effects */}
+            <div className="fixed inset-0 z-0 pointer-events-none">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-purple-500/10 blur-[120px]" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/10 blur-[120px]" />
             </div>
 
-            {/* Right: Video Preview */}
-            <div className="flex flex-col justify-center space-y-4">
-                <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl relative">
-                    <video
-                        ref={videoRef}
-                        autoPlay
-                        playsInline
-                        muted
-                        className="w-full h-full object-cover transform scale-x-[-1]"
-                    />
-                    <div className="absolute bottom-4 left-4 right-4">
-                        <AudioVisualizer stream={stream} />
+            <div className="relative z-10 max-w-6xl mx-auto h-screen p-4 md:p-8 flex flex-col gap-6 justify-center">
+                {/* Main Content Area */}
+                <div className="grid md:grid-cols-2 gap-6 w-full max-h-[80vh]">
+                    {/* Left: Question Card */}
+                    <div className="flex flex-col justify-center">
+                        <div className="relative group">
+                            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+                            <Card className="relative bg-black/40 border-white/10 backdrop-blur-xl shadow-2xl overflow-hidden">
+                                <CardContent className="p-8 space-y-8">
+                                    {/* Question Header */}
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                                            <span className="text-xs font-medium text-blue-100">
+                                                Question {currentIndex + 1} <span className="text-white/40">/</span> {questionsState.length}
+                                            </span>
+                                        </div>
+                                        {isSpeaking && (
+                                            <div className="flex items-center gap-2 text-blue-400">
+                                                <Volume2 className="h-4 w-4 animate-pulse" />
+                                                <span className="text-xs font-medium">Speaking...</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-4 min-h-[120px]">
+                                        <h2 className="text-2xl md:text-3xl font-bold leading-tight bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">
+                                            {currentQuestion.text}
+                                        </h2>
+                                    </div>
+
+                                    <div className="space-y-4 pt-4">
+                                        {!isRecording ? (
+                                            <Button
+                                                onClick={startRecording}
+                                                size="lg"
+                                                className="w-full h-14 text-lg bg-white text-black hover:bg-white/90 shadow-[0_0_30px_-10px_rgba(255,255,255,0.3)] transition-all hover:scale-[1.02]"
+                                                disabled={isSpeaking || isProcessing}
+                                            >
+                                                <Mic className="mr-2 h-5 w-5" />
+                                                Start Answering
+                                            </Button>
+                                        ) : (
+                                            <Button
+                                                onClick={stopRecording}
+                                                variant="destructive"
+                                                size="lg"
+                                                className="w-full h-14 text-lg bg-red-500 hover:bg-red-600 shadow-[0_0_30px_-10px_rgba(239,68,68,0.5)] transition-all hover:scale-[1.02]"
+                                            >
+                                                <Square className="mr-2 h-5 w-5 fill-current" />
+                                                Stop & Submit
+                                            </Button>
+                                        )}
+
+                                        {isProcessing && (
+                                            <p className="text-center text-sm text-white/50 animate-pulse">
+                                                Processing your answer...
+                                            </p>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        {/* Transcript Preview (Floating) */}
+                        {(transcript || interimTranscript) && (
+                            <div className="mt-6 p-4 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md max-h-[150px] overflow-y-auto custom-scrollbar">
+                                <p className="text-sm text-white/80 italic leading-relaxed">
+                                    "{transcript} <span className="text-white/40">{interimTranscript}</span>"
+                                </p>
+                            </div>
+                        )}
                     </div>
 
-                    {isRecording && (
-                        <div className="absolute top-4 right-4 flex items-center gap-2 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium animate-pulse">
-                            <div className="w-2 h-2 bg-white rounded-full" />
-                            Recording
-                        </div>
-                    )}
+                    {/* Right: Video Feed */}
+                    <div className="flex flex-col justify-center h-full">
+                        <div className="relative w-full aspect-[4/3] md:aspect-auto md:h-full rounded-3xl overflow-hidden bg-black border border-white/10 shadow-2xl ring-1 ring-white/5">
+                            <video
+                                ref={videoRef}
+                                autoPlay
+                                playsInline
+                                muted
+                                className="w-full h-full object-cover transform scale-x-[-1]"
+                            />
 
-                    {warningCount > 0 && (
-                        <div className="absolute top-4 left-4 bg-yellow-500/90 text-white px-3 py-1 rounded-full text-sm font-medium backdrop-blur-sm">
-                            Warnings: {warningCount}
+                            {/* Overlays */}
+                            <div className="absolute top-6 right-6 flex flex-col gap-2 items-end">
+                                {isRecording && (
+                                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/20 border border-red-500/30 backdrop-blur-md text-red-200 animate-pulse shadow-lg">
+                                        <div className="w-2 h-2 rounded-full bg-red-500" />
+                                        <span className="text-xs font-medium">Recording</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {warningCount > 0 && (
+                                <div className="absolute top-6 left-6">
+                                    <HoverCard>
+                                        <HoverCardTrigger asChild>
+                                            <div className={`
+                                                px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-md flex items-center gap-2 shadow-lg cursor-help transition-colors
+                                                ${warningCount >= 10
+                                                    ? "bg-red-500/20 border border-red-500/50 text-red-200 hover:bg-red-500/30"
+                                                    : "bg-yellow-500/20 border border-yellow-500/50 text-yellow-200 hover:bg-yellow-500/30"}
+                                            `}>
+                                                <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${warningCount >= 10 ? "bg-red-500" : "bg-yellow-500"}`} />
+                                                Warnings: {warningCount}
+                                            </div>
+                                        </HoverCardTrigger>
+                                        <HoverCardContent className="w-80 bg-black/90 border-white/10 text-white backdrop-blur-xl">
+                                            <div className="space-y-3">
+                                                <h4 className="text-sm font-semibold text-yellow-500 flex items-center gap-2">
+                                                    <div className="w-2 h-2 rounded-full bg-yellow-500" />
+                                                    Proctoring Warnings
+                                                </h4>
+                                                <div className="text-xs space-y-2 max-h-[200px] overflow-y-auto custom-scrollbar pr-2">
+                                                    {warnings.map((w, i) => (
+                                                        <div key={i} className="flex flex-col gap-1 p-2 rounded bg-white/5 border border-white/5">
+                                                            <span className="font-medium text-yellow-200">{w.message}</span>
+                                                            <span className="text-[10px] text-white/40">
+                                                                {new Date(w.timestamp).toLocaleTimeString()}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </HoverCardContent>
+                                    </HoverCard>
+                                </div>
+                            )}
+
+                            {/* Audio Visualizer Overlay */}
+                            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/90 to-transparent p-6 flex items-end justify-center">
+                                <div className="w-full max-w-xs opacity-80">
+                                    <AudioVisualizer stream={stream} />
+                                </div>
+                            </div>
                         </div>
-                    )}
+                    </div>
                 </div>
             </div>
         </div>

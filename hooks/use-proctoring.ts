@@ -5,8 +5,16 @@ import { toast } from "sonner";
 import { logProctoringEvent } from "@/actions/proctoring";
 
 export function useProctoring(interviewId: string) {
-    const warningCount = useRef(0);
-    const [isFullScreen, setIsFullScreen] = useState(true); // Default to true to avoid flash, but actually check on mount
+    const [warnings, setWarnings] = useState<{ message: string; timestamp: number }[]>([]);
+    const [isFullScreen, setIsFullScreen] = useState(true);
+
+    const addWarning = async (message: string, type: string, details?: string) => {
+        const newWarning = { message, timestamp: Date.now() };
+        setWarnings(prev => [...prev, newWarning]);
+
+        // Log to server
+        await logProctoringEvent(interviewId, type, details);
+    };
 
     const enterFullScreen = async () => {
         try {
@@ -20,34 +28,22 @@ export function useProctoring(interviewId: string) {
     useEffect(() => {
         const handleVisibilityChange = async () => {
             if (document.hidden) {
-                warningCount.current += 1;
                 toast.warning("Warning: Tab switching is monitored.", {
                     description: "Please stay on this tab to avoid disqualification.",
                     duration: 5000,
                 });
-
-                await logProctoringEvent(interviewId, "TAB_SWITCH", `Hidden: ${document.hidden}`);
+                await addWarning("Tab switched / Window hidden", "TAB_SWITCH", `Hidden: ${document.hidden}`);
             }
         };
 
         const handleBlur = async () => {
-            // Only trigger if the document is not hidden (blur happens before visibility change usually)
-            // But we want to catch clicking outside window even if visible (e.g. dual monitor)
-            // However, blur also fires when switching tabs.
-            // If we switch tabs, visibilitychange will also fire.
-            // We might get double logs.
-            // Let's rely on visibilitychange for tab switching, and blur for window focus loss.
-
-            // If document is hidden, it's a tab switch, handled by visibilitychange.
             if (document.hidden) return;
 
-            warningCount.current += 1;
             toast.warning("Warning: Window focus lost.", {
                 description: "Please keep the interview window in focus.",
                 duration: 5000,
             });
-
-            await logProctoringEvent(interviewId, "WINDOW_BLUR");
+            await addWarning("Window focus lost", "WINDOW_BLUR");
         };
 
         const handleFullScreenChange = async () => {
@@ -55,12 +51,11 @@ export function useProctoring(interviewId: string) {
             setIsFullScreen(isFull);
 
             if (!isFull) {
-                warningCount.current += 1;
                 toast.warning("Warning: Full-screen mode exited.", {
                     description: "Please return to full-screen mode immediately.",
                     duration: 5000,
                 });
-                await logProctoringEvent(interviewId, "FULLSCREEN_EXIT");
+                await addWarning("Exited full-screen mode", "FULLSCREEN_EXIT");
             }
         };
 
@@ -79,8 +74,10 @@ export function useProctoring(interviewId: string) {
     }, [interviewId]);
 
     return {
-        warningCount: warningCount.current,
+        warnings,
+        warningCount: warnings.length,
         isFullScreen,
-        enterFullScreen
+        enterFullScreen,
+        addWarning
     };
 }

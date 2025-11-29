@@ -28,8 +28,7 @@ export function AudioVisualizer({ stream }: { stream: MediaStream | null }) {
 
             analyser.getByteFrequencyData(dataArray);
 
-            canvasCtx.fillStyle = "rgb(248, 250, 252)"; // bg-slate-50
-            canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+            canvasCtx.clearRect(0, 0, canvas.width, canvas.height); // Transparent background
 
             const barWidth = (canvas.width / bufferLength) * 2.5;
             let barHeight;
@@ -38,11 +37,19 @@ export function AudioVisualizer({ stream }: { stream: MediaStream | null }) {
             for (let i = 0; i < bufferLength; i++) {
                 barHeight = dataArray[i] / 2;
 
-                // Gradient color from blue to purple
-                canvasCtx.fillStyle = `rgb(${100 + barHeight}, 50, ${255 - barHeight})`;
-                canvasCtx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
+                // Gradient color from cyan to purple for premium look
+                const gradient = canvasCtx.createLinearGradient(0, canvas.height, 0, 0);
+                gradient.addColorStop(0, "rgba(139, 92, 246, 0.8)"); // Violet
+                gradient.addColorStop(1, "rgba(56, 189, 248, 0.8)"); // Cyan
 
-                x += barWidth + 1;
+                canvasCtx.fillStyle = gradient;
+
+                // Rounded bars
+                canvasCtx.beginPath();
+                canvasCtx.roundRect(x, canvas.height - barHeight, barWidth, barHeight, 4);
+                canvasCtx.fill();
+
+                x += barWidth + 2; // More spacing
             }
         };
 
@@ -59,7 +66,7 @@ export function AudioVisualizer({ stream }: { stream: MediaStream | null }) {
             ref={canvasRef}
             width={300}
             height={100}
-            className="w-full h-24 rounded-lg bg-slate-50 border border-slate-200"
+            className="w-full h-24 bg-transparent"
         />
     );
 }
