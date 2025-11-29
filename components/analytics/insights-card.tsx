@@ -24,7 +24,7 @@ export function InsightsCard({ insights, isLoading }: InsightsCardProps) {
                         <div className="h-4 bg-primary/10 rounded w-5/6"></div>
                     </div>
                 ) : insights ? (
-                    <div className="text-sm text-muted-foreground prose dark:prose-invert max-w-none">
+                    <div className="text-sm text-muted-foreground prose dark:prose-invert max-w-none overflow-y-auto max-h-[300px] pr-2">
                         <ReactMarkdown>{insights}</ReactMarkdown>
                     </div>
                 ) : (

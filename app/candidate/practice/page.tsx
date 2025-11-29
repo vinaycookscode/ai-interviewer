@@ -50,7 +50,7 @@ export default function PracticePage() {
     const isDisabled = !apiStatus?.available || isPending;
 
     return (
-        <div className="container max-w-2xl py-10 px-4 sm:py-20">
+        <div className="container max-w-2xl pt-10 pb-24 px-4 sm:py-20">
             <div className="mb-6 sm:mb-8 text-center">
                 <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
                     AI Mock Interview Playground

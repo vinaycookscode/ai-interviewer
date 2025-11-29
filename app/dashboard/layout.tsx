@@ -31,7 +31,7 @@ export default async function DashboardLayout({
                 <DashboardSidebar userRole={session.user.role} />
 
                 {/* Main Content Area */}
-                <main className="flex-1 p-8 overflow-y-auto">
+                <main className="flex-1 overflow-y-auto">
                     {children}
                 </main>
             </div>

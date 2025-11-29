@@ -17,7 +17,7 @@ export default async function ProfilePage() {
     }
 
     return (
-        <div className="container max-w-2xl py-10">
+        <div className="w-full max-w-2xl mx-auto px-4 pt-10 pb-40">
             <div className="mb-8">
                 <h1 className="text-3xl font-bold tracking-tight">Manage Profile</h1>
                 <p className="text-muted-foreground mt-2">
@@ -25,7 +25,7 @@ export default async function ProfilePage() {
                 </p>
             </div>
 
-            <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
+            <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-4 md:p-6">
                 <ProfileForm user={user} />
             </div>
         </div>

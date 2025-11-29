@@ -78,7 +78,7 @@ export function AnalyticsDashboard({ initialData }: AnalyticsDashboardProps) {
                 </Card>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3 h-[400px]">
+            <div className="grid gap-4 md:grid-cols-3 md:h-[400px]">
                 <TrendChart data={initialData} />
                 <div className="md:col-span-1">
                     <InsightsCard insights={insights} isLoading={isLoadingInsights} />
