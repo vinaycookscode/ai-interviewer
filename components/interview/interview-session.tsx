@@ -15,6 +15,8 @@ interface Question {
     text: string;
 }
 
+import { useCopyPastePrevention } from "@/hooks/use-copy-paste-prevention";
+
 interface InterviewSessionProps {
     interviewId: string;
     questions: Question[];
@@ -23,6 +25,7 @@ interface InterviewSessionProps {
 
 export function InterviewSession({ interviewId, questions, stream }: InterviewSessionProps) {
     const router = useRouter();
+    // const { interviewId, questions, stream } = interview; // Removed incorrect destructuring
     const { warningCount, isFullScreen, enterFullScreen } = useProctoring(interviewId);
     const [questionsState, setQuestionsState] = useState<Question[]>(questions);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -201,9 +204,12 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
         );
     }
 
+    // Enable copy/paste prevention
+    useCopyPastePrevention(true);
+
     if (!isFullScreen) {
         return (
-            <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4 select-none">
                 <div className="max-w-md w-full bg-card border shadow-lg rounded-xl p-8 text-center space-y-6">
                     <div className="mx-auto w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center">
                         <Square className="w-8 h-8 text-yellow-600" />
@@ -222,7 +228,7 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
     }
 
     return (
-        <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8 h-full">
+        <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-8 h-full select-none">
             {/* Left: Question & Controls */}
             <div className="flex flex-col justify-center space-y-8">
                 <div className="space-y-4">
