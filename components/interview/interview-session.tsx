@@ -53,9 +53,22 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
     const currentQuestion = questionsState[currentIndex];
 
     // Initialize Video Preview
+    // Initialize Video Preview using callback ref to handle strict mode/remounts correctly
+    const setVideoRef = (element: HTMLVideoElement | null) => {
+        videoRef.current = element;
+        if (element && stream) {
+            element.srcObject = stream;
+            element.onloadedmetadata = () => {
+                element.play().catch(e => console.error("InterviewSession: Play error", e));
+            };
+        }
+    };
+
+    // Update srcObject if stream changes while element is already mounted
     useEffect(() => {
         if (videoRef.current && stream) {
             videoRef.current.srcObject = stream;
+            videoRef.current.play().catch(e => console.error("InterviewSession: Play error (update)", e));
         }
     }, [stream]);
 
@@ -425,7 +438,7 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
                     <div className="flex flex-col justify-center h-full">
                         <div className="relative w-full aspect-[4/3] md:aspect-auto md:h-full rounded-3xl overflow-hidden bg-black border border-white/10 shadow-2xl ring-1 ring-white/5">
                             <video
-                                ref={videoRef}
+                                ref={setVideoRef}
                                 autoPlay
                                 playsInline
                                 muted

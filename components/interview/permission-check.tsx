@@ -18,13 +18,20 @@ export function PermissionCheck({ onPermissionsGranted }: PermissionCheckProps) 
     const [error, setError] = useState<string | null>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
 
+    // Removed cleanup here as stream is passed to parent
+    // useEffect(() => {
+    //     return () => {
+    //         if (stream) {
+    //             stream.getTracks().forEach((track) => track.stop());
+    //         }
+    //     };
+    // }, []);
+
     useEffect(() => {
-        return () => {
-            if (stream) {
-                stream.getTracks().forEach((track) => track.stop());
-            }
-        };
-    }, []);
+        if (videoRef.current && stream) {
+            videoRef.current.srcObject = stream;
+        }
+    }, [stream]);
 
     const requestPermissions = async () => {
         setError(null);
@@ -37,10 +44,6 @@ export function PermissionCheck({ onPermissionsGranted }: PermissionCheckProps) 
             setStream(mediaStream);
             setHasCamera(true);
             setHasMic(true);
-
-            if (videoRef.current) {
-                videoRef.current.srcObject = mediaStream;
-            }
         } catch (err: any) {
             console.error("Error accessing media devices:", err);
             if (err.name === "NotAllowedError") {
