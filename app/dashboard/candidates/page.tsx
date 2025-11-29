@@ -9,7 +9,7 @@ import { CandidatesTable } from "@/components/dashboard/candidates-table";
 export default async function CandidatesPage({
     searchParams,
 }: {
-    searchParams: { page?: string };
+    searchParams: Promise<{ page?: string }>;
 }) {
     const session = await auth();
     const userId = session?.user?.id;
@@ -18,7 +18,8 @@ export default async function CandidatesPage({
         return <div>Unauthorized</div>;
     }
 
-    const page = Number(searchParams.page) || 1;
+    const { page: pageParam } = await searchParams;
+    const page = Number(pageParam) || 1;
     const itemsPerPage = 10;
 
     // Get employer's jobs and all interviews

@@ -6,8 +6,6 @@ const nextConfig = {
         return config;
     },
     experimental: {
-        // Disable Turbopack to allow custom webpack config
-        turbopack: false,
     },
 };
 
