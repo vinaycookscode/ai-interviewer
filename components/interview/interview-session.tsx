@@ -9,6 +9,8 @@ import { gradeAnswer } from "@/actions/scoring";
 import { AudioVisualizer } from "./audio-visualizer";
 import { useRouter } from "next/navigation";
 import { useProctoring } from "@/hooks/use-proctoring";
+import { useScreenDetection } from "@/hooks/use-screen-detection";
+import { GazeTracker } from "./gaze-tracker";
 
 interface Question {
     id: string;
@@ -32,6 +34,8 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
     const router = useRouter();
     // const { interviewId, questions, stream } = interview; // Removed incorrect destructuring
     const { warningCount, warnings, isFullScreen, enterFullScreen, addWarning } = useProctoring(interviewId);
+    const { screenCount, isMultiScreen } = useScreenDetection(true);
+    const [screenViolationCount, setScreenViolationCount] = useState(0);
     const [terminationReason, setTerminationReason] = useState<string | null>(null);
     const [questionsState, setQuestionsState] = useState<Question[]>(questions);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -194,7 +198,7 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
         addWarning(message, type);
     });
 
-    // Auto-termination check
+    // Auto-termination check (Warnings)
     useEffect(() => {
         if (warningCount >= 11 && !isCompleted && !terminationReason) {
             const terminate = async () => {
@@ -213,7 +217,37 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
             };
             terminate();
         }
-    }, [warningCount, isCompleted, terminationReason]);
+    }, [warningCount, isCompleted, terminationReason, interviewId, stream]);
+
+    // Screen Detection Logic
+    useEffect(() => {
+        if (screenCount > 1) {
+            // First offense: Warning (handled by UI below)
+            // Second offense: Terminate? 
+            // The requirement was: "If we found 2 time after this again we will terminate"
+            // This implies state tracking for screen violations.
+            // Let's add a specific warning for screens first.
+            addWarning("Multiple screens detected", "MULTI_SCREEN", `Count: ${screenCount}`);
+            setScreenViolationCount(prev => prev + 1);
+        }
+    }, [screenCount, addWarning]);
+
+    // Track screen violations for termination
+    useEffect(() => {
+        if (screenViolationCount >= 2 && !isCompleted && !terminationReason) {
+            const terminate = async () => {
+                setTerminationReason("Multiple screens detected repeatedly.");
+                await stopRecording();
+                await completeInterview(interviewId);
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                setIsCompleted(true);
+            };
+            terminate();
+        }
+    }, [screenViolationCount, isCompleted, terminationReason, interviewId, stream]);
+
 
     if (isCompleted) {
         if (terminationReason) {
@@ -237,6 +271,27 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
                     <Button onClick={() => router.push("/candidate/dashboard")} variant="outline" size="lg" className="border-red-500/20 hover:bg-red-500/10 hover:text-red-200">
                         Return to Dashboard
                     </Button>
+                </div>
+            );
+        }
+
+        if (screenCount > 1) {
+            return (
+                <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4 select-none">
+                    <div className="max-w-md w-full bg-card border border-red-500/50 shadow-lg rounded-xl p-8 text-center space-y-6">
+                        <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                            <Square className="w-8 h-8 text-red-600" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-red-500">Multiple Screens Detected</h2>
+                        <p className="text-muted-foreground">
+                            Please disconnect additional monitors to continue.
+                            <br />
+                            <span className="font-bold text-red-400">Warning {screenViolationCount}/2</span>
+                        </p>
+                        <p className="text-xs text-white/40">
+                            The interview will be terminated if multiple screens are detected again.
+                        </p>
+                    </div>
                 </div>
             );
         }
@@ -429,6 +484,13 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
                                     <AudioVisualizer stream={stream} />
                                 </div>
                             </div>
+
+                            {/* Gaze Tracker (Invisible/Background) */}
+                            <GazeTracker
+                                videoElement={videoRef.current}
+                                isActive={!isCompleted && !terminationReason}
+                                onWarning={(msg, type) => addWarning(msg, type)}
+                            />
                         </div>
                     </div>
                 </div>
