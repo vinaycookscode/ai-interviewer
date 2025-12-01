@@ -48,6 +48,7 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
     const [interimTranscript, setInterimTranscript] = useState("");
 
     const recognitionRef = useRef<any>(null);
+    const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
 
     const currentQuestion = questionsState[currentIndex];
@@ -56,10 +57,16 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
     // Initialize Video Preview using callback ref to handle strict mode/remounts correctly
     const setVideoRef = (element: HTMLVideoElement | null) => {
         videoRef.current = element;
+        setVideoElement(element); // Trigger re-render so GazeTracker gets the element
+
         if (element && stream) {
             element.srcObject = stream;
             element.onloadedmetadata = () => {
-                element.play().catch(e => console.error("InterviewSession: Play error", e));
+                element.play().catch(e => {
+                    if (e.name !== "AbortError") {
+                        console.error("InterviewSession: Play error", e);
+                    }
+                });
             };
         }
     };
@@ -68,7 +75,11 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
     useEffect(() => {
         if (videoRef.current && stream) {
             videoRef.current.srcObject = stream;
-            videoRef.current.play().catch(e => console.error("InterviewSession: Play error (update)", e));
+            videoRef.current.play().catch(e => {
+                if (e.name !== "AbortError") {
+                    console.error("InterviewSession: Play error (update)", e);
+                }
+            });
         }
     }, [stream]);
 
@@ -206,6 +217,7 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
     };
 
     // Enable copy/paste prevention
+    // Enable copy/paste prevention with warning logging
     // Enable copy/paste prevention with warning logging
     useCopyPastePrevention(true, (message, type) => {
         addWarning(message, type);
@@ -500,7 +512,7 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
 
                             {/* Gaze Tracker (Invisible/Background) */}
                             <GazeTracker
-                                videoElement={videoRef.current}
+                                videoElement={videoElement}
                                 isActive={!isCompleted && !terminationReason}
                                 onWarning={(msg, type) => addWarning(msg, type)}
                             />

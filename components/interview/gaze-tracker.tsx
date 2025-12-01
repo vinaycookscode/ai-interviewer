@@ -25,6 +25,8 @@ export function GazeTracker({ videoElement, onWarning, isActive }: GazeTrackerPr
     const isMounted = useRef(true);
     const [scriptsLoaded, setScriptsLoaded] = useState({ faceMesh: false });
 
+    const [debugInfo, setDebugInfo] = useState<string>("");
+
     useEffect(() => {
         isMounted.current = true;
         return () => {
@@ -42,10 +44,10 @@ export function GazeTracker({ videoElement, onWarning, isActive }: GazeTrackerPr
             if (!window.FaceMesh) return;
 
             try {
-                // console.log("GazeTracker: Initializing MediaPipe FaceMesh");
+                console.log("GazeTracker: Initializing MediaPipe FaceMesh");
                 const faceMesh = new window.FaceMesh({
                     locateFile: (file: string) => {
-                        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/${file}`;
+                        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
                     },
                 });
 
@@ -61,7 +63,7 @@ export function GazeTracker({ videoElement, onWarning, isActive }: GazeTrackerPr
 
                     // 1. Check if face is detected
                     if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
-                        // console.log("GazeTracker: No face detected");
+                        setDebugInfo("No Face Detected");
                         if (!lookAwayStartTime.current) {
                             lookAwayStartTime.current = Date.now();
                         } else {
@@ -91,37 +93,51 @@ export function GazeTracker({ videoElement, onWarning, isActive }: GazeTrackerPr
                     const rightEyeTop = landmarks[159];
                     const rightEyeBottom = landmarks[145];
 
-                    // Calculate horizontal gaze
-                    const getHorizontalRatio = (inner: any, outer: any, iris: any) => {
-                        const eyeWidth = Math.abs(outer.x - inner.x);
-                        const irisDist = Math.abs(iris.x - inner.x);
-                        return irisDist / eyeWidth;
+                    // Calculate horizontal gaze (0 = Looking Right/Image Left, 1 = Looking Left/Image Right)
+                    const getHorizontalRatio = (leftPoint: any, rightPoint: any, iris: any) => {
+                        const width = Math.abs(rightPoint.x - leftPoint.x);
+                        const dist = iris.x - leftPoint.x;
+
+                        // Debug raw values if ratio is out of bounds
+                        if (dist / width > 1.0 || dist / width < 0.0) {
+                            // console.log("GazeTracker: Out of bounds", {
+                            //     width, dist,
+                            //     leftX: leftPoint.x,
+                            //     rightX: rightPoint.x,
+                            //     irisX: iris.x
+                            // });
+                        }
+
+                        return Math.min(Math.max(dist / width, 0), 1);
                     };
+
+                    // Right Eye (Image Left): Outer(33) is Left, Inner(133) is Right
+                    const rightRatio = getHorizontalRatio(rightEyeOuter, rightEyeInner, rightIris);
+
+                    // Left Eye (Image Right): Inner(362) is Left, Outer(263) is Right
+                    const leftRatio = getHorizontalRatio(leftEyeInner, leftEyeOuter, leftIris);
+
+                    const avgHorizontalRatio = (leftRatio + rightRatio) / 2;
 
                     // Calculate vertical gaze
                     const getVerticalRatio = (top: any, bottom: any, iris: any) => {
                         const eyeHeight = Math.abs(bottom.y - top.y);
                         const irisDist = Math.abs(iris.y - top.y);
-                        return irisDist / eyeHeight;
+                        return Math.min(Math.max(irisDist / eyeHeight, 0), 1);
                     };
-
-                    const leftRatio = getHorizontalRatio(leftEyeInner, leftEyeOuter, leftIris);
-                    const rightRatio = getHorizontalRatio(rightEyeInner, rightEyeOuter, rightIris);
-                    const avgHorizontalRatio = (leftRatio + rightRatio) / 2;
 
                     const leftVerticalRatio = getVerticalRatio(leftEyeTop, leftEyeBottom, leftIris);
                     const rightVerticalRatio = getVerticalRatio(rightEyeTop, rightEyeBottom, rightIris);
                     const avgVerticalRatio = (leftVerticalRatio + rightVerticalRatio) / 2;
 
-                    // console.log(`GazeTracker: H=${avgHorizontalRatio.toFixed(2)}, V=${avgVerticalRatio.toFixed(2)}`);
-
                     let direction: "CENTER" | "LEFT" | "RIGHT" | "UP" | "DOWN" = "CENTER";
 
-                    // Tuned Thresholds
-                    if (avgHorizontalRatio > 0.6) {
-                        direction = "RIGHT";
-                    } else if (avgHorizontalRatio < 0.4) {
+                    // Tuned Thresholds (0 = User Right, 1 = User Left)
+                    // Center is approx 0.5
+                    if (avgHorizontalRatio > 0.6) { // Looking towards Image Right (User Left)
                         direction = "LEFT";
+                    } else if (avgHorizontalRatio < 0.4) { // Looking towards Image Left (User Right)
+                        direction = "RIGHT";
                     } else if (avgVerticalRatio < 0.3) { // Iris closer to top
                         direction = "UP";
                     } else if (avgVerticalRatio > 0.7) { // Iris closer to bottom
@@ -131,12 +147,15 @@ export function GazeTracker({ videoElement, onWarning, isActive }: GazeTrackerPr
                     }
 
                     setGazeDirection(direction);
+                    setDebugInfo(`H: ${avgHorizontalRatio.toFixed(2)} | V: ${avgVerticalRatio.toFixed(2)} | Dir: ${direction}`);
 
                     if (direction !== "CENTER") {
                         if (!lookAwayStartTime.current) {
                             lookAwayStartTime.current = Date.now();
                         } else {
                             const duration = Date.now() - lookAwayStartTime.current;
+
+
                             if (duration > 5000 && !warningTriggered.current) {
                                 console.log(`GazeTracker: Warning - Looking away (${direction})`);
                                 onWarning(`Looking away detected (${direction})`, "GAZE_DETECTED");
@@ -157,10 +176,13 @@ export function GazeTracker({ videoElement, onWarning, isActive }: GazeTrackerPr
 
                     if (videoElement && videoElement.readyState >= 2 && !videoElement.paused && !videoElement.ended) {
                         try {
+                            // console.log("GazeTracker: Sending frame");
                             await faceMeshRef.current.send({ image: videoElement });
                         } catch (error) {
                             console.warn("FaceMesh send error:", error);
                         }
+                    } else {
+                        // console.log("GazeTracker: Video not ready", videoElement?.readyState);
                     }
 
                     // Throttle to ~10 FPS to save performance
@@ -195,13 +217,30 @@ export function GazeTracker({ videoElement, onWarning, isActive }: GazeTrackerPr
         };
     }, [isActive, videoElement, onWarning, scriptsLoaded]);
 
-    return (
-        <>
-            <Script
-                src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/face_mesh.js"
-                onLoad={() => setScriptsLoaded(prev => ({ ...prev, faceMesh: true }))}
-                strategy="lazyOnload"
-            />
-        </>
-    );
+    useEffect(() => {
+        if (scriptsLoaded.faceMesh) return;
+
+        const script = document.createElement("script");
+        script.src = "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js";
+        script.async = true;
+        script.crossOrigin = "anonymous";
+
+        script.onload = () => {
+            console.log("GazeTracker: Manual script loaded");
+            setScriptsLoaded(prev => ({ ...prev, faceMesh: true }));
+        };
+
+        script.onerror = (e) => {
+            console.error("GazeTracker: Manual script failed", e);
+            setDebugInfo("Error: Manual script load failed");
+        };
+
+        document.body.appendChild(script);
+
+        return () => {
+            document.body.removeChild(script);
+        };
+    }, [scriptsLoaded.faceMesh]);
+
+    return null;
 }
