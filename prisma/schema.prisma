@@ -104,12 +104,18 @@ model Job {
   interviews Interview[]
 }
 
+enum QuestionType {
+  TEXT
+  CODE
+}
+
 model Question {
-  id        String   @id @default(uuid())
+  id        String       @id @default(uuid())
   text      String
+  type      QuestionType @default(TEXT)
   jobId     String
-  job       Job      @relation(fields: [jobId], references: [id])
-  createdAt DateTime @default(now())
+  job       Job          @relation(fields: [jobId], references: [id])
+  createdAt DateTime     @default(now())
 
   answers Answer[]
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { LayoutDashboard, PlusCircle, Users, Settings, Shield, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -17,7 +18,7 @@ const NavLinks = ({ userRole, onLinkClick }: { userRole?: string; onLinkClick?: 
             onClick={onLinkClick}
             className="flex items-center gap-3 px-4 py-3 text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-all font-medium group"
         >
-            <LayoutDashboard size={20} className="group-hover:scale-110 transition-transform" />
+            <Image src="/logo.png" alt="Get Back To U Logo" width={32} height={32} />
             <span>Overview</span>
         </Link>
         <Link

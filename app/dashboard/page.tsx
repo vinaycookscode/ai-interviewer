@@ -101,7 +101,7 @@ export default async function DashboardPage() {
     }));
 
     return (
-        <div className="p-4 md:p-8 pb-24">
+        <div className="p-4 md:p-8 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 pb-6 border-b gap-4">
                 <div>
                     <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">

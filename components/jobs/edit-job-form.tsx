@@ -18,9 +18,17 @@ import {
 import { updateJob } from "@/actions/job";
 import { generateQuestions } from "@/actions/questions";
 import { useRouter } from "next/navigation";
-import { Loader2, Sparkles, X } from "lucide-react";
+import { Loader2, Sparkles, X, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { useLimit } from "@/components/providers/limit-provider";
 
 const formSchema = z.object({
     title: z.string().min(2, "Title must be at least 2 characters"),
@@ -30,6 +38,12 @@ const formSchema = z.object({
     requirePAN: z.boolean().default(false),
 });
 
+interface Question {
+    id?: string;
+    text: string;
+    type: "TEXT" | "CODE";
+}
+
 interface EditJobFormProps {
     jobId: string;
     initialData: {
@@ -38,7 +52,7 @@ interface EditJobFormProps {
         requireResume: boolean;
         requireAadhar: boolean;
         requirePAN: boolean;
-        questions: { text: string }[];
+        questions: { id: string; text: string; type: "TEXT" | "CODE" }[];
     };
 }
 
@@ -46,7 +60,10 @@ export function EditJobForm({ jobId, initialData }: EditJobFormProps) {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
-    const [questions, setQuestions] = useState<string[]>(initialData.questions.map(q => q.text));
+    const [questions, setQuestions] = useState<Question[]>(
+        initialData.questions.map(q => ({ id: q.id, text: q.text, type: q.type || "TEXT" }))
+    );
+    const { setRateLimited } = useLimit();
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema) as any,
@@ -71,9 +88,18 @@ export function EditJobForm({ jobId, initialData }: EditJobFormProps) {
             const result = await generateQuestions(description);
             if (result.success && result.questions) {
                 // Append new questions to existing ones
-                setQuestions(prevQuestions => [...prevQuestions, ...result.questions]);
+                const newQuestions = result.questions.map((q, i) => ({
+                    id: `ai-${Date.now()}-${i}`,
+                    text: q,
+                    type: "TEXT" as const
+                }));
+                setQuestions(prevQuestions => [...prevQuestions, ...newQuestions]);
                 toast.success("Questions generated successfully");
             } else {
+                if (result.isRateLimit) {
+                    setRateLimited(true);
+                    return;
+                }
                 if (result.error?.includes("API key")) {
                     toast.error(result.error, {
                         action: {
@@ -92,14 +118,28 @@ export function EditJobForm({ jobId, initialData }: EditJobFormProps) {
         }
     }
 
-    function updateQuestion(index: number, value: string) {
-        const newQuestions = [...questions];
-        newQuestions[index] = value;
-        setQuestions(newQuestions);
+    function updateQuestionText(index: number, value: string) {
+        setQuestions(prev => {
+            const newQuestions = [...prev];
+            newQuestions[index] = { ...newQuestions[index], text: value };
+            return newQuestions;
+        });
+    }
+
+    function updateQuestionType(index: number, value: "TEXT" | "CODE") {
+        setQuestions(prev => {
+            const newQuestions = [...prev];
+            newQuestions[index] = { ...newQuestions[index], type: value };
+            return newQuestions;
+        });
     }
 
     function removeQuestion(index: number) {
-        setQuestions(questions.filter((_, i) => i !== index));
+        setQuestions(prev => prev.filter((_, i) => i !== index));
+    }
+
+    function addManualQuestion() {
+        setQuestions(prev => [...prev, { id: `temp-${Date.now()}`, text: "", type: "TEXT" }]);
     }
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -160,67 +200,69 @@ export function EditJobForm({ jobId, initialData }: EditJobFormProps) {
                         <p className="text-sm text-muted-foreground mb-4">
                             Select which documents candidates must upload before starting the interview.
                         </p>
-                        <FormField
-                            control={form.control}
-                            name="requireResume"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                    <FormControl>
-                                        <input
-                                            type="checkbox"
-                                            checked={field.value}
-                                            onChange={field.onChange}
-                                            className="h-4 w-4 rounded border-gray-300"
-                                        />
-                                    </FormControl>
-                                    <div className="space-y-1 leading-none">
-                                        <FormLabel>Require Resume</FormLabel>
-                                    </div>
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="requireAadhar"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                    <FormControl>
-                                        <input
-                                            type="checkbox"
-                                            checked={field.value}
-                                            onChange={field.onChange}
-                                            className="h-4 w-4 rounded border-gray-300"
-                                        />
-                                    </FormControl>
-                                    <div className="space-y-1 leading-none">
-                                        <FormLabel>Require Aadhar Card</FormLabel>
-                                    </div>
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="requirePAN"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                    <FormControl>
-                                        <input
-                                            type="checkbox"
-                                            checked={field.value}
-                                            onChange={field.onChange}
-                                            className="h-4 w-4 rounded border-gray-300"
-                                        />
-                                    </FormControl>
-                                    <div className="space-y-1 leading-none">
-                                        <FormLabel>Require PAN Card</FormLabel>
-                                    </div>
-                                </FormItem>
-                            )}
-                        />
+                        <div className="grid md:grid-cols-3 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="requireResume"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-4 border rounded-lg">
+                                        <FormControl>
+                                            <input
+                                                type="checkbox"
+                                                checked={field.value}
+                                                onChange={field.onChange}
+                                                className="h-4 w-4 rounded border-gray-300"
+                                            />
+                                        </FormControl>
+                                        <FormLabel className="font-normal cursor-pointer">
+                                            Require Resume
+                                        </FormLabel>
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="requireAadhar"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-4 border rounded-lg">
+                                        <FormControl>
+                                            <input
+                                                type="checkbox"
+                                                checked={field.value}
+                                                onChange={field.onChange}
+                                                className="h-4 w-4 rounded border-gray-300"
+                                            />
+                                        </FormControl>
+                                        <FormLabel className="font-normal cursor-pointer">
+                                            Require Aadhar Card
+                                        </FormLabel>
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="requirePAN"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0 p-4 border rounded-lg">
+                                        <FormControl>
+                                            <input
+                                                type="checkbox"
+                                                checked={field.value}
+                                                onChange={field.onChange}
+                                                className="h-4 w-4 rounded border-gray-300"
+                                            />
+                                        </FormControl>
+                                        <FormLabel className="font-normal cursor-pointer">
+                                            Require PAN Card
+                                        </FormLabel>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
                     </CardContent>
                 </Card>
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                     <Button
                         type="button"
                         variant="outline"
@@ -237,8 +279,9 @@ export function EditJobForm({ jobId, initialData }: EditJobFormProps) {
                     <Button
                         type="button"
                         variant="secondary"
-                        onClick={() => setQuestions([...questions, ""])}
+                        onClick={addManualQuestion}
                     >
+                        <Plus className="mr-2 h-4 w-4" />
                         Add Question Manually
                     </Button>
                 </div>
@@ -248,19 +291,36 @@ export function EditJobForm({ jobId, initialData }: EditJobFormProps) {
                         <CardHeader>
                             <CardTitle>Interview Questions ({questions.length})</CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-3">
+                        <CardContent className="space-y-4">
                             {questions.map((question, index) => (
-                                <div key={index} className="flex gap-2">
-                                    <Input
-                                        value={question}
-                                        onChange={(e) => updateQuestion(index, e.target.value)}
-                                        className="flex-1"
-                                    />
+                                <div key={question.id || `temp-${index}`} className="flex gap-4 items-start p-4 bg-muted/50 rounded-lg">
+                                    <div className="flex-1 space-y-2">
+                                        <Input
+                                            value={question.text}
+                                            onChange={(e) => updateQuestionText(index, e.target.value)}
+                                            placeholder={`Question ${index + 1}`}
+                                        />
+                                        <div className="w-[150px]">
+                                            <Select
+                                                value={question.type}
+                                                onValueChange={(value: "TEXT" | "CODE") => updateQuestionType(index, value)}
+                                            >
+                                                <SelectTrigger className="h-8">
+                                                    <SelectValue placeholder="Type" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="TEXT">Oral Answer</SelectItem>
+                                                    <SelectItem value="CODE">Code Editor</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
                                     <Button
                                         type="button"
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => removeQuestion(index)}
+                                        className="mt-0.5 text-muted-foreground hover:text-destructive"
                                     >
                                         <X className="h-4 w-4" />
                                     </Button>

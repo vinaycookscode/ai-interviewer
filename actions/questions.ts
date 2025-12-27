@@ -34,10 +34,14 @@ export async function generateQuestions(jobDescription: string) {
         const prompt = `
             Generate 5 interview questions for a job with the following description:
             ${jobDescription}
-            
-            Format the output as a JSON array of strings.
+
+            Requirements:
+            - Each question must be strictly independent and self-contained.
+            - Do NOT generate dependent follow-up questions (e.g., "How would you optimize that?").
+            - Format the output as a JSON array of strings.
             Example: ["Question 1", "Question 2", "Question 3", "Question 4", "Question 5"]
         `;
+
 
         const result = await model.generateContent(prompt);
         const response = result.response;
@@ -65,9 +69,13 @@ export async function generateQuestions(jobDescription: string) {
         return { success: true, questions };
     } catch (error: any) {
         console.error("Failed to generate questions:", error);
+
+        const isRateLimit = error.message?.includes("429") || error.message?.includes("quota") || error.message?.includes("Resource has been exhausted");
+
         return {
             success: false,
-            error: error.message || "Failed to generate questions. Please try again."
+            error: error.message || "Failed to generate questions. Please try again.",
+            isRateLimit: isRateLimit
         };
     }
 }

@@ -2,6 +2,7 @@ import { ModeToggle } from "@/components/mode-toggle";
 import { UserButton } from "@/components/auth/user-button";
 import { LayoutDashboard } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 interface DashboardHeaderProps {
     user: any;
@@ -12,9 +13,7 @@ export function DashboardHeader({ user, userRole }: DashboardHeaderProps) {
     return (
         <header className="h-16 bg-card border-b shadow-sm flex items-center justify-between px-6 sticky top-0 z-50">
             <Link href="/dashboard" className="flex items-center gap-2"> {/* Wrapped the logo area with Link */}
-                <div className="bg-primary/10 p-2 rounded-lg">
-                    <LayoutDashboard className="h-6 w-6 text-primary" />
-                </div>
+                <Image src="/logo.png" alt="Logo" width={40} height={40} className="h-10 w-10 object-contain" />
                 <div>
                     <h1 className="text-xl font-bold">
                         <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Get Back To U</span> {/* Applied gradient to span */}

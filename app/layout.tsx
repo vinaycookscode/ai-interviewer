@@ -15,6 +15,8 @@ const geistMono = Geist_Mono({
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AnalyticsTracker } from "@/components/analytics-tracker";
+import { LimitProvider } from "@/components/providers/limit-provider";
+import { RateLimitBanner } from "@/components/ui/rate-limit-banner";
 
 export const metadata: Metadata = {
   title: "Get Back To U",
@@ -37,9 +39,12 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
-          <Toaster />
-          <AnalyticsTracker />
+          <LimitProvider>
+            <RateLimitBanner />
+            {children}
+            <Toaster />
+            <AnalyticsTracker />
+          </LimitProvider>
         </ThemeProvider>
       </body>
     </html>

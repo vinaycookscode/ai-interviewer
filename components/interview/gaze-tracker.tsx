@@ -16,7 +16,9 @@ declare global {
     }
 }
 
-export function GazeTracker({ videoElement, onWarning, isActive }: GazeTrackerProps) {
+import React from "react";
+
+export function GazeTrackerBase({ videoElement, onWarning, isActive }: GazeTrackerProps) {
     const [gazeDirection, setGazeDirection] = useState<"CENTER" | "LEFT" | "RIGHT" | "UP" | "DOWN">("CENTER");
     const lookAwayStartTime = useRef<number | null>(null);
     const warningTriggered = useRef<boolean>(false);
@@ -37,6 +39,13 @@ export function GazeTracker({ videoElement, onWarning, isActive }: GazeTrackerPr
         };
     }, []);
 
+    // Use refs for callbacks to avoid re-initializing effect when they change
+    const onWarningRef = useRef(onWarning);
+
+    useEffect(() => {
+        onWarningRef.current = onWarning;
+    }, [onWarning]);
+
     useEffect(() => {
         if (!isActive || !videoElement || !scriptsLoaded.faceMesh) return;
 
@@ -47,7 +56,7 @@ export function GazeTracker({ videoElement, onWarning, isActive }: GazeTrackerPr
                 console.log("GazeTracker: Initializing MediaPipe FaceMesh");
                 const faceMesh = new window.FaceMesh({
                     locateFile: (file: string) => {
-                        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+                        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/${file}`;
                     },
                 });
 
@@ -70,7 +79,7 @@ export function GazeTracker({ videoElement, onWarning, isActive }: GazeTrackerPr
                             const duration = Date.now() - lookAwayStartTime.current;
                             if (duration > 5000 && !warningTriggered.current) {
                                 console.log("GazeTracker: Warning - Face missing");
-                                onWarning("Face not visible", "FACE_MISSING");
+                                onWarningRef.current("Face not visible", "FACE_MISSING");
                                 warningTriggered.current = true;
                             }
                         }
@@ -97,17 +106,6 @@ export function GazeTracker({ videoElement, onWarning, isActive }: GazeTrackerPr
                     const getHorizontalRatio = (leftPoint: any, rightPoint: any, iris: any) => {
                         const width = Math.abs(rightPoint.x - leftPoint.x);
                         const dist = iris.x - leftPoint.x;
-
-                        // Debug raw values if ratio is out of bounds
-                        if (dist / width > 1.0 || dist / width < 0.0) {
-                            // console.log("GazeTracker: Out of bounds", {
-                            //     width, dist,
-                            //     leftX: leftPoint.x,
-                            //     rightX: rightPoint.x,
-                            //     irisX: iris.x
-                            // });
-                        }
-
                         return Math.min(Math.max(dist / width, 0), 1);
                     };
 
@@ -158,7 +156,7 @@ export function GazeTracker({ videoElement, onWarning, isActive }: GazeTrackerPr
 
                             if (duration > 5000 && !warningTriggered.current) {
                                 console.log(`GazeTracker: Warning - Looking away (${direction})`);
-                                onWarning(`Looking away detected (${direction})`, "GAZE_DETECTED");
+                                onWarningRef.current(`Looking away detected (${direction})`, "GAZE_DETECTED");
                                 warningTriggered.current = true;
                             }
                         }
@@ -177,20 +175,19 @@ export function GazeTracker({ videoElement, onWarning, isActive }: GazeTrackerPr
                     if (videoElement && videoElement.readyState >= 2 && !videoElement.paused && !videoElement.ended) {
                         try {
                             // console.log("GazeTracker: Sending frame");
-                            await faceMeshRef.current.send({ image: videoElement });
+                            // Check if faceMeshRef.current is valid before sending
+                            if (faceMeshRef.current) {
+                                await faceMeshRef.current.send({ image: videoElement });
+                            }
                         } catch (error) {
                             console.warn("FaceMesh send error:", error);
                         }
-                    } else {
-                        // console.log("GazeTracker: Video not ready", videoElement?.readyState);
                     }
 
-                    // Throttle to ~10 FPS to save performance
-                    // setTimeout(() => {
-                    //     requestRef.current = requestAnimationFrame(processFrame);
-                    // }, 100);
-                    // Actually, requestAnimationFrame is fine, FaceMesh is heavy so it might naturally throttle
-                    requestRef.current = requestAnimationFrame(processFrame);
+                    // Throttle to avoid overloading the main thread
+                    if (isMounted.current) {
+                        requestRef.current = requestAnimationFrame(processFrame);
+                    }
                 };
 
                 requestRef.current = requestAnimationFrame(processFrame);
@@ -215,13 +212,13 @@ export function GazeTracker({ videoElement, onWarning, isActive }: GazeTrackerPr
                 faceMeshRef.current = null;
             }
         };
-    }, [isActive, videoElement, onWarning, scriptsLoaded]);
+    }, [isActive, videoElement, scriptsLoaded]); // Removed onWarning from dependencies
 
     useEffect(() => {
         if (scriptsLoaded.faceMesh) return;
 
         const script = document.createElement("script");
-        script.src = "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js";
+        script.src = "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/face_mesh.js";
         script.async = true;
         script.crossOrigin = "anonymous";
 
@@ -244,3 +241,5 @@ export function GazeTracker({ videoElement, onWarning, isActive }: GazeTrackerPr
 
     return null;
 }
+
+export const GazeTracker = React.memo(GazeTrackerBase);

@@ -21,6 +21,14 @@ import { useRouter } from "next/navigation";
 import { Loader2, Sparkles, X, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { useLimit } from "@/components/providers/limit-provider";
 
 const formSchema = z.object({
     title: z.string().min(2, "Title must be at least 2 characters"),
@@ -34,7 +42,8 @@ export function CreateJobForm() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
-    const [questions, setQuestions] = useState<string[]>([]);
+    const [questions, setQuestions] = useState<{ text: string, type: "TEXT" | "CODE" }[]>([]);
+    const { setRateLimited } = useLimit();
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -62,9 +71,15 @@ export function CreateJobForm() {
             const result = await generateQuestions(description);
             if (result.success && result.questions) {
                 // Append new questions to existing ones from state
-                setQuestions(prev => [...prev, ...result.questions!]);
+                // Default to TEXT type for generated questions
+                const newQuestions = result.questions.map(q => ({ text: q, type: "TEXT" as const }));
+                setQuestions(prev => [...prev, ...newQuestions]);
                 toast.success("Questions generated successfully");
             } else {
+                if (result.isRateLimit) {
+                    setRateLimited(true);
+                    return;
+                }
                 if (result.error?.includes("API key")) {
                     toast.error(result.error, {
                         action: {
@@ -83,9 +98,9 @@ export function CreateJobForm() {
         }
     }
 
-    function updateQuestion(index: number, value: string) {
+    function updateQuestion(index: number, field: "text" | "type", value: string) {
         const newQuestions = [...questions];
-        newQuestions[index] = value;
+        newQuestions[index] = { ...newQuestions[index], [field]: value };
         setQuestions(newQuestions);
     }
 
@@ -228,7 +243,7 @@ export function CreateJobForm() {
                     <Button
                         type="button"
                         variant="outline"
-                        onClick={() => setQuestions([...questions, ""])}
+                        onClick={() => setQuestions([...questions, { text: "", type: "TEXT" }])}
                         className="w-full sm:w-auto flex items-center justify-center"
                     >
                         <Plus className="mr-2 h-4 w-4" />
@@ -244,12 +259,29 @@ export function CreateJobForm() {
                         </CardHeader>
                         <CardContent className="space-y-3">
                             {questions.map((question, index) => (
-                                <div key={index} className="flex gap-2">
-                                    <Input
-                                        value={question}
-                                        onChange={(e) => updateQuestion(index, e.target.value)}
-                                        className="flex-1"
-                                    />
+                                <div key={index} className="flex gap-2 items-start">
+                                    <div className="flex-1 space-y-2">
+                                        <div className="flex gap-2">
+                                            <Input
+                                                value={question.text}
+                                                onChange={(e) => updateQuestion(index, "text", e.target.value)}
+                                                className="flex-1"
+                                                placeholder="Question text"
+                                            />
+                                            <Select
+                                                value={question.type}
+                                                onValueChange={(value) => updateQuestion(index, "type", value)}
+                                            >
+                                                <SelectTrigger className="w-[110px]">
+                                                    <SelectValue placeholder="Type" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="TEXT">Oral</SelectItem>
+                                                    <SelectItem value="CODE">Code</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
                                     <Button
                                         type="button"
                                         variant="ghost"

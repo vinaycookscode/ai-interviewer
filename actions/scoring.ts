@@ -35,8 +35,13 @@ export async function gradeAnswer(answerId: string) {
         });
 
         return { success: true, evaluation };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error grading answer:", error);
+
+        if (error.name === "RateLimitError" || error.message?.includes("RateLimitError")) {
+            return { success: false, error: "Rate limit reached", isRateLimit: true };
+        }
+
         return { success: false, error: "Failed to grade answer" };
     }
 }

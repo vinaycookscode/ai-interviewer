@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 export async function createJob(data: {
     title: string;
     description: string;
-    questions?: string[];
+    questions?: { text: string, type: "TEXT" | "CODE" }[];
     requireResume?: boolean;
     requireAadhar?: boolean;
     requirePAN?: boolean;
@@ -38,7 +38,7 @@ export async function createJob(data: {
             requireAadhar: data.requireAadhar || false,
             requirePAN: data.requirePAN || false,
             questions: data.questions ? {
-                create: data.questions.map((text) => ({ text })),
+                create: data.questions.map((q) => ({ text: q.text, type: q.type })),
             } : undefined,
         },
     });
@@ -75,7 +75,7 @@ export async function deleteJob(jobId: string) {
 export async function updateJob(jobId: string, data: {
     title: string;
     description: string;
-    questions?: string[];
+    questions?: { id?: string, text: string, type: "TEXT" | "CODE" }[];
     requireResume?: boolean;
     requireAadhar?: boolean;
     requirePAN?: boolean;
@@ -97,18 +97,43 @@ export async function updateJob(jobId: string, data: {
         throw new Error("Unauthorized");
     }
 
-    // Update job
-    // First, delete only questions that have no answers
-    await db.question.deleteMany({
+    // Categorize questions
+    const questionsToCreate = data.questions?.filter(q => !q.id) || [];
+    const questionsToUpdate = data.questions?.filter(q => q.id) || [];
+    const submittedIds = questionsToUpdate.map(q => q.id as string);
+
+    // 1. Delete removed questions (only if no answers)
+    // We do this in a separate transaction or call because nested deleteMany 
+    // does not allow filtering by relation existence (answers: none).
+    // 1. Identify questions to delete
+    const questionsToDeleteDetails = await db.question.findMany({
         where: {
             jobId: jobId,
-            answers: {
-                none: {}
-            }
-        }
+            id: { notIn: submittedIds }
+        },
+        select: { id: true }
     });
 
-    // Then update the job details and add new questions
+    const idsToDelete = questionsToDeleteDetails.map(q => q.id);
+
+    if (idsToDelete.length > 0) {
+        // Delete associated answers first (manual cascade)
+        await db.answer.deleteMany({
+            where: {
+                questionId: { in: idsToDelete }
+            }
+        });
+
+        // Now safe to delete the questions
+        await db.question.deleteMany({
+            where: {
+                id: { in: idsToDelete }
+            }
+        });
+    }
+
+    // 2. Update existing questions and create new ones
+    // Note: We don't include deleteMany here anymore.
     await db.job.update({
         where: { id: jobId },
         data: {
@@ -118,7 +143,16 @@ export async function updateJob(jobId: string, data: {
             requireAadhar: data.requireAadhar,
             requirePAN: data.requirePAN,
             questions: {
-                create: data.questions?.map((text) => ({ text })), // Create new ones (will append to existing used ones)
+                // Update existing questions
+                update: questionsToUpdate.map(q => ({
+                    where: { id: q.id },
+                    data: { text: q.text, type: q.type }
+                })),
+                // Create new questions
+                create: questionsToCreate.map(q => ({
+                    text: q.text,
+                    type: q.type
+                }))
             },
         },
     });

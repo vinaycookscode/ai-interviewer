@@ -15,6 +15,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 
 import { DeleteCandidateButton } from "@/components/dashboard/delete-candidate-button";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface Candidate {
     id: string;
@@ -47,9 +48,11 @@ export function CandidateList({ interviews }: CandidateListProps) {
 
     if (interviews.length === 0) {
         return (
-            <div className="text-center py-10 text-gray-500">
-                No candidates invited yet.
-            </div>
+            <EmptyState
+                title="No candidates yet"
+                description="Share the interview link to start receiving applications."
+                icon={FileText}
+            />
         );
     }
 

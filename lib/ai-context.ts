@@ -11,6 +11,10 @@ export async function generateFollowUp(
         model: "gemini-flash-latest",
     });
 
+    if (answer.includes("[CODE SUBMISSION]")) {
+        return null;
+    }
+
     const prompt = `
     You are an expert interviewer for the role of ${jobTitle}.
     
