@@ -1,15 +1,15 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getGeminiModelInstance } from "@/lib/gemini";
+import { getGeminiModel } from "@/actions/gemini-config";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+// const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!); // Removed
 
 export async function generateFollowUp(
     question: string,
     answer: string,
     jobTitle: string
 ): Promise<string | null> {
-    const model = genAI.getGenerativeModel({
-        model: "gemini-flash-latest",
-    });
+    const model = await getGeminiModelInstance();
+
 
     const prompt = `
     You are an expert interviewer for the role of ${jobTitle}.

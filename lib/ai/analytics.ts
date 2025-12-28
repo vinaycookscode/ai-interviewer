@@ -1,16 +1,15 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { GrowthDataPoint } from "@/actions/analytics";
+import { getGeminiModelInstance } from "@/lib/gemini";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+// const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!); // Removed
 
 export async function generateGrowthInsights(history: GrowthDataPoint[]) {
     if (history.length === 0) {
         return "No interview data available yet. Complete some mock or real interviews to get personalized insights!";
     }
 
-    const model = genAI.getGenerativeModel({
-        model: "gemini-flash-latest",
-    });
+    const model = await getGeminiModelInstance();
+
 
     // Prepare data summary for the prompt
     const summaryData = history.map(h =>

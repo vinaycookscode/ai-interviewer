@@ -1,7 +1,9 @@
 "use server";
 
 import { auth } from "@/auth";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getGeminiModelInstance } from "@/lib/gemini";
+// import { GoogleGenerativeAI } from "@google/generative-ai"; // Removed
+import { getGeminiModel } from "@/actions/gemini-config";
 
 // Polyfill for pdf-parse dependencies if needed
 if (typeof Promise.withResolvers === "undefined") {
@@ -18,7 +20,7 @@ if (typeof Promise.withResolvers === "undefined") {
 
 const pdf = require("pdf-parse/lib/pdf-parse.js");
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+// const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!); // Removed global instance
 
 export async function analyzeResume(formData: FormData) {
     const session = await auth();
@@ -47,7 +49,8 @@ export async function analyzeResume(formData: FormData) {
         }
 
         // Analyze with Gemini
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = await getGeminiModelInstance();
+
         const prompt = `
             You are an expert ATS (Applicant Tracking System) and Resume Coach.
             Analyze the following resume text and provide a structured evaluation.
@@ -83,6 +86,15 @@ export async function analyzeResume(formData: FormData) {
 
     } catch (error: any) {
         console.error("Error analyzing resume:", error);
+
+        // Check for rate limit
+        if (error.status === 429 || error.message?.includes('429') || error.message?.includes('Resource has been exhausted')) {
+            const { markModelRateLimited } = await import("@/actions/gemini-config");
+            const modelName = await getGeminiModel();
+            await markModelRateLimited(modelName);
+            return { error: `Rate limit reached for ${modelName}. Please switch models.` };
+        }
+
         return { error: `Failed to analyze resume: ${error.message || error}` };
     }
 }
@@ -95,7 +107,8 @@ export async function rewriteResume(currentText: string, analysis: any, customIn
     }
 
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        const model = await getGeminiModelInstance();
+
         const prompt = `
             You are an expert Professional Resume Writer.
             Your task is to rewrite the following resume text to improve its ATS score and professional appeal.
@@ -141,6 +154,15 @@ export async function rewriteResume(currentText: string, analysis: any, customIn
 
     } catch (error: any) {
         console.error("Error rewriting resume:", error);
+
+        // Check for rate limit
+        if (error.status === 429 || error.message?.includes('429') || error.message?.includes('Resource has been exhausted')) {
+            const { markModelRateLimited } = await import("@/actions/gemini-config");
+            const modelName = await getGeminiModel();
+            await markModelRateLimited(modelName);
+            return { error: `Rate limit reached for ${modelName}. Please switch models.` };
+        }
+
         return { error: `Failed to rewrite resume: ${error.message || error}` };
     }
 }
