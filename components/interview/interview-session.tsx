@@ -13,18 +13,17 @@ import { useProctoring } from "@/hooks/use-proctoring";
 import { useScreenDetection } from "@/hooks/use-screen-detection";
 import { GazeTracker } from "./gaze-tracker";
 import { LANGUAGE_CODES, InterviewLanguage } from "@/lib/constants";
-
-interface Question {
-    id: string;
-    text: string;
-}
-
 import { useCopyPastePrevention } from "@/hooks/use-copy-paste-prevention";
 import {
     HoverCard,
     HoverCardContent,
     HoverCardTrigger,
 } from "@/components/ui/hover-card";
+
+interface Question {
+    id: string;
+    text: string;
+}
 
 interface InterviewSessionProps {
     interviewId: string;
@@ -36,7 +35,6 @@ interface InterviewSessionProps {
 
 export function InterviewSession({ interviewId, questions, stream, language = "en", onLanguageChange }: InterviewSessionProps) {
     const router = useRouter();
-    // const { interviewId, questions, stream } = interview; // Removed incorrect destructuring
     const { warningCount, warnings, isFullScreen, enterFullScreen, addWarning } = useProctoring(interviewId);
     const { screenCount, isMultiScreen } = useScreenDetection(true);
     const [screenViolationCount, setScreenViolationCount] = useState(0);
@@ -47,6 +45,7 @@ export function InterviewSession({ interviewId, questions, stream, language = "e
     const [transcript, setTranscript] = useState("");
     const [interimTranscript, setInterimTranscript] = useState("");
     const isRecordingRef = useRef(isRecording);
+    const [translatedQuestionText, setTranslatedQuestionText] = useState<string | null>(null);
 
     // Sync ref
     useEffect(() => {
@@ -63,8 +62,20 @@ export function InterviewSession({ interviewId, questions, stream, language = "e
 
     const currentQuestion = questionsState[currentIndex];
 
-    // Initialize Video Preview
-    // Initialize Video Preview using callback ref to handle strict mode/remounts correctly
+    // Safety guard for empty questions
+    if (!currentQuestion) {
+        return (
+            <div className="flex items-center justify-center min-h-screen text-red-500">
+                <p>Error: No questions available for this interview.</p>
+            </div>
+        );
+    }
+
+    // Normalize language for Select component
+    const normalizedLanguageCode = Object.values(LANGUAGE_CODES).includes(language)
+        ? language
+        : (LANGUAGE_CODES[Object.keys(LANGUAGE_CODES).find(k => k.toLowerCase() === language.toLowerCase()) as InterviewLanguage] || 'en-US');
+
     // Initialize Video Preview using callback ref to handle strict mode/remounts correctly
     const setVideoRef = useCallback((element: HTMLVideoElement | null) => {
         videoRef.current = element;
@@ -196,7 +207,9 @@ export function InterviewSession({ interviewId, questions, stream, language = "e
     // Start Interview on Mount
     useEffect(() => {
         startInterview(interviewId);
-        handleNewQuestion(questionsState[0].text);
+        if (questionsState.length > 0) {
+            handleNewQuestion(questionsState[0].text);
+        }
     }, []);
 
     const handleNewQuestion = async (text: string) => {
@@ -226,26 +239,18 @@ export function InterviewSession({ interviewId, questions, stream, language = "e
         speakQuestion(textToSpeak);
     };
 
-    const [translatedQuestionText, setTranslatedQuestionText] = useState<string | null>(null);
+
+
 
     const speakQuestion = (text: string) => {
         if ("speechSynthesis" in window) {
             setIsSpeaking(true);
             const utterance = new SpeechSynthesisUtterance(text);
 
-            // Set voice logic if needed, but defaults usually work.
-            // Some browsers support lang setting
-            // Map our codes to BCP 47
-            const langMap: Record<string, string> = {
-                'hi': 'hi-IN',
-                'mr': 'mr-IN',
-                'ta': 'ta-IN',
-                'kn': 'kn-IN',
-                'es': 'es-ES'
-            };
-
-            if (langMap[language]) {
-                utterance.lang = langMap[language];
+            // Use the normalized code we computed earlier
+            // This ensures we always pass a valid BCP 47 code (e.g., 'mr-IN')
+            if (normalizedLanguageCode) {
+                utterance.lang = normalizedLanguageCode;
             }
 
             utterance.onend = () => setIsSpeaking(false);
@@ -514,7 +519,7 @@ export function InterviewSession({ interviewId, questions, stream, language = "e
 
                                         {/* Language Selector */}
                                         {onLanguageChange && (
-                                            <Select value={language} onValueChange={onLanguageChange}>
+                                            <Select value={normalizedLanguageCode} onValueChange={onLanguageChange}>
                                                 <SelectTrigger className="w-[140px] h-8 bg-white/5 border-white/10 text-xs backdrop-blur-md">
                                                     <Globe className="w-3 h-3 mr-2 opacity-50" />
                                                     <SelectValue placeholder="Language" />
