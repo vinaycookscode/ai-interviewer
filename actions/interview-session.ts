@@ -38,7 +38,7 @@ export async function submitAnswer(data: {
 
         // Generate Follow-up Logic
         let followUpQuestion = null;
-        if (data.transcript && data.transcript.length > 20) {
+        if (data.transcript && data.transcript.length > 50) {
             // Get context for AI
             const interview = await db.interview.findUnique({
                 where: { id: data.interviewId },

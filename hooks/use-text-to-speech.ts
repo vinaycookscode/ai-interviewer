@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 interface UseTextToSpeechReturn {
     isSpeaking: boolean;
@@ -10,18 +10,18 @@ interface UseTextToSpeechReturn {
 
 export function useTextToSpeech(): UseTextToSpeechReturn {
     const [isSpeaking, setIsSpeaking] = useState(false);
-    const [synthesis, setSynthesis] = useState<SpeechSynthesis | null>(null);
+    const synthesisRef = useRef<SpeechSynthesis | null>(null);
 
     useEffect(() => {
         if (typeof window !== "undefined" && "speechSynthesis" in window) {
-            setSynthesis(window.speechSynthesis);
+            synthesisRef.current = window.speechSynthesis;
         }
     }, []);
 
     const speak = useCallback((text: string) => {
-        if (synthesis) {
+        if (synthesisRef.current) {
             // Cancel any ongoing speech
-            synthesis.cancel();
+            synthesisRef.current.cancel();
 
             const utterance = new SpeechSynthesisUtterance(text);
 
@@ -29,16 +29,16 @@ export function useTextToSpeech(): UseTextToSpeechReturn {
             utterance.onend = () => setIsSpeaking(false);
             utterance.onerror = () => setIsSpeaking(false);
 
-            synthesis.speak(utterance);
+            synthesisRef.current.speak(utterance);
         }
-    }, [synthesis]);
+    }, []);
 
     const stop = useCallback(() => {
-        if (synthesis) {
-            synthesis.cancel();
+        if (synthesisRef.current) {
+            synthesisRef.current.cancel();
             setIsSpeaking(false);
         }
-    }, [synthesis]);
+    }, []);
 
     return {
         isSpeaking,

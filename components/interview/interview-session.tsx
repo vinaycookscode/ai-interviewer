@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mic, Square, Volume2, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Mic, Square, Volume2, ArrowRight, CheckCircle2, Globe } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { startInterview, submitAnswer, completeInterview } from "@/actions/interview-session";
 import { gradeAnswer } from "@/actions/scoring";
 import { AudioVisualizer } from "./audio-visualizer";
@@ -11,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { useProctoring } from "@/hooks/use-proctoring";
 import { useScreenDetection } from "@/hooks/use-screen-detection";
 import { GazeTracker } from "./gaze-tracker";
+import { LANGUAGE_CODES, InterviewLanguage } from "@/lib/constants";
 
 interface Question {
     id: string;
@@ -28,9 +30,11 @@ interface InterviewSessionProps {
     interviewId: string;
     questions: Question[];
     stream: MediaStream;
+    language?: string;
+    onLanguageChange?: (lang: string) => void;
 }
 
-export function InterviewSession({ interviewId, questions, stream }: InterviewSessionProps) {
+export function InterviewSession({ interviewId, questions, stream, language = "en", onLanguageChange }: InterviewSessionProps) {
     const router = useRouter();
     // const { interviewId, questions, stream } = interview; // Removed incorrect destructuring
     const { warningCount, warnings, isFullScreen, enterFullScreen, addWarning } = useProctoring(interviewId);
@@ -55,7 +59,8 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
 
     // Initialize Video Preview
     // Initialize Video Preview using callback ref to handle strict mode/remounts correctly
-    const setVideoRef = (element: HTMLVideoElement | null) => {
+    // Initialize Video Preview using callback ref to handle strict mode/remounts correctly
+    const setVideoRef = useCallback((element: HTMLVideoElement | null) => {
         videoRef.current = element;
         setVideoElement(element); // Trigger re-render so GazeTracker gets the element
 
@@ -69,7 +74,7 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
                 });
             };
         }
-    };
+    }, [stream]);
 
     // Update srcObject if stream changes while element is already mounted
     useEffect(() => {
@@ -87,11 +92,49 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
     useEffect(() => {
         if (typeof window !== "undefined") {
             const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+            // Cleanup previous instance
+            if (recognitionRef.current) {
+                try {
+                    recognitionRef.current.abort();
+                } catch (e) {
+                    console.warn("Error aborting previous recognition:", e);
+                }
+            }
+
             if (SpeechRecognition) {
                 const recognition = new SpeechRecognition();
                 recognition.continuous = true;
                 recognition.interimResults = true;
-                recognition.lang = "en-US";
+
+                // Robust Language Mapping
+                let langCode = "en-US"; // Default
+                if (language) {
+                    const normalizedInput = language.trim().toLowerCase();
+
+                    // Direct code match (e.g., if "mr-IN" is passed)
+                    if (Object.values(LANGUAGE_CODES).includes(language)) {
+                        langCode = language;
+                    }
+                    // Name match (e.g., "Marathi" -> "mr-IN")
+                    else {
+                        const foundKey = Object.keys(LANGUAGE_CODES).find(
+                            key => key.toLowerCase() === normalizedInput
+                        ) as InterviewLanguage | undefined;
+
+                        if (foundKey) {
+                            langCode = LANGUAGE_CODES[foundKey];
+                        } else {
+                            // Only fallback if absolutely no match
+                            // Fallback mapping for common manual codes if not in enum
+                            if (normalizedInput === 'mr' || normalizedInput === 'marathi') langCode = 'mr-IN';
+                            else if (normalizedInput === 'hi' || normalizedInput === 'hindi') langCode = 'hi-IN';
+                        }
+                    }
+                }
+
+                console.log(`[STT] Initializing SpeechRecognition. Language: ${language} -> Code: ${langCode}`);
+                recognition.lang = langCode;
 
                 recognition.onresult = (event: any) => {
                     let final = "";
@@ -111,21 +154,78 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
                     setInterimTranscript(interim);
                 };
 
+                recognition.onerror = (event: any) => {
+                    console.error("[STT] Recognition error:", event.error);
+                };
+
                 recognitionRef.current = recognition;
             }
         }
-    }, []);
+
+        return () => {
+            if (recognitionRef.current) {
+                try {
+                    recognitionRef.current.abort();
+                } catch (e) { }
+            }
+        };
+    }, [language]);
 
     // Start Interview on Mount
     useEffect(() => {
         startInterview(interviewId);
-        speakQuestion(questionsState[0].text);
+        handleNewQuestion(questionsState[0].text);
     }, []);
+
+    const handleNewQuestion = async (text: string) => {
+        let textToSpeak = text;
+
+        // Translate if necessary
+        if (language !== 'en' && language !== 'english') {
+            try {
+                // We'll use a dynamic import or the action directly
+                const { translateText } = await import("@/actions/translation");
+                const result = await translateText(text, language);
+                if (result.success && result.translatedText) {
+                    textToSpeak = result.translatedText;
+                    // Also update the display text for the current question?
+                    // Ideally yes, but that changes state array. 
+                    // Let's just store the translated text in a local state for display override?
+                    // Or simpler: We speak the translated text. The user requested: "AI should convert that question in maradhi langauge on the go"
+                    setTranslatedQuestionText(result.translatedText);
+                }
+            } catch (e) {
+                console.error("Translation failed", e);
+            }
+        } else {
+            setTranslatedQuestionText(null);
+        }
+
+        speakQuestion(textToSpeak);
+    };
+
+    const [translatedQuestionText, setTranslatedQuestionText] = useState<string | null>(null);
 
     const speakQuestion = (text: string) => {
         if ("speechSynthesis" in window) {
             setIsSpeaking(true);
             const utterance = new SpeechSynthesisUtterance(text);
+
+            // Set voice logic if needed, but defaults usually work.
+            // Some browsers support lang setting
+            // Map our codes to BCP 47
+            const langMap: Record<string, string> = {
+                'hi': 'hi-IN',
+                'mr': 'mr-IN',
+                'ta': 'ta-IN',
+                'kn': 'kn-IN',
+                'es': 'es-ES'
+            };
+
+            if (langMap[language]) {
+                utterance.lang = langMap[language];
+            }
+
             utterance.onend = () => setIsSpeaking(false);
             window.speechSynthesis.speak(utterance);
         }
@@ -201,7 +301,7 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
 
             // Let's use a timeout to allow state to settle or just speak the target text directly
             const nextQuestionText = result.followUp ? result.followUp.text : questionsState[currentIndex + 1].text;
-            speakQuestion(nextQuestionText);
+            handleNewQuestion(nextQuestionText);
         } else {
             await completeInterview(interviewId);
 
@@ -388,7 +488,28 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
                                             <span className="text-xs font-medium text-blue-100">
                                                 Question {currentIndex + 1} <span className="text-white/40">/</span> {questionsState.length}
                                             </span>
+                                            <span className="text-xs font-medium text-blue-100">
+                                                Question {currentIndex + 1} <span className="text-white/40">/</span> {questionsState.length}
+                                            </span>
                                         </div>
+
+                                        {/* Language Selector */}
+                                        {onLanguageChange && (
+                                            <Select value={language} onValueChange={onLanguageChange}>
+                                                <SelectTrigger className="w-[140px] h-8 bg-white/5 border-white/10 text-xs backdrop-blur-md">
+                                                    <Globe className="w-3 h-3 mr-2 opacity-50" />
+                                                    <SelectValue placeholder="Language" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {Object.entries(LANGUAGE_CODES).map(([name, code]) => (
+                                                        <SelectItem key={code} value={name}>
+                                                            {name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        )}
+
                                         {isSpeaking && (
                                             <div className="flex items-center gap-2 text-blue-400">
                                                 <Volume2 className="h-4 w-4 animate-pulse" />
@@ -399,8 +520,13 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
 
                                     <div className="space-y-4 min-h-[120px]">
                                         <h2 className="text-2xl md:text-3xl font-bold leading-tight bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent">
-                                            {currentQuestion.text}
+                                            {translatedQuestionText || currentQuestion.text}
                                         </h2>
+                                        {translatedQuestionText && (
+                                            <p className="text-sm text-white/40 mt-2">
+                                                (Original: {currentQuestion.text})
+                                            </p>
+                                        )}
                                     </div>
 
                                     <div className="space-y-4 pt-4">
@@ -428,7 +554,7 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
 
                                         {isProcessing && (
                                             <p className="text-center text-sm text-white/50 animate-pulse">
-                                                Processing your answer...
+                                                AI is analyzing your answer...
                                             </p>
                                         )}
                                     </div>

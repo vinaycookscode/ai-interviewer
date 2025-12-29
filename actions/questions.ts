@@ -6,7 +6,7 @@ import { auth } from "@/auth"; // Assuming auth is from next-auth or similar
 import { db } from "@/lib/db"; // Assuming db is your Prisma client or ORM instance
 // import { GoogleGenerativeAI } from "@google/generative-ai"; // No longer needed directly
 
-export async function generateQuestions(jobDescription: string) {
+export async function generateQuestions(jobDescription: string, language?: string) {
     const session = await auth();
 
     if (!session?.user?.id) {
@@ -31,10 +31,17 @@ export async function generateQuestions(jobDescription: string) {
     try {
         const model = await getGeminiModelInstance(apiKey);
 
+        const languageInstruction = language
+            ? `Questions MUST be in ${language}.`
+            : `Questions MUST be in the same language as the Job Description provided above.`;
 
         const prompt = `
             Generate 5 interview questions for a job with the following description:
             ${jobDescription}
+            
+            Requirements:
+            - Generate exactly 5 questions
+            - ${languageInstruction}
             
             Format the output as a JSON array of strings.
             Example: ["Question 1", "Question 2", "Question 3", "Question 4", "Question 5"]

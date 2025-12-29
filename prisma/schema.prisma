@@ -39,6 +39,7 @@ model User {
   // Candidate Profile
   resumeUrl     String?
   resumeName    String?
+  features      Json?     // Feature flags for this user (e.g. { "multilingual": true })
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -136,6 +137,7 @@ model Interview {
   // Results
   score     Float? // Overall score
   feedback  String? // Overall feedback
+  language  String   @default("en") // Interview language (en, hi, mr, etc.)
   createdAt DateTime @default(now())
 
   answers Answer[]

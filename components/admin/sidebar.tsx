@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { LayoutDashboard, Users, Settings, Shield, MapPin, Menu } from "lucide-react";
+import { LayoutDashboard, Users, Settings, Shield, MapPin, Menu, ToggleLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -34,6 +34,14 @@ const NavLinks = ({ onLinkClick }: { onLinkClick?: () => void }) => (
         >
             <MapPin size={20} className="group-hover:scale-110 transition-transform" />
             <span>User Locations</span>
+        </Link>
+        <Link
+            href="/admin/features"
+            onClick={onLinkClick}
+            className="flex items-center gap-3 px-4 py-3 text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-all font-medium group"
+        >
+            <ToggleLeft size={20} className="group-hover:scale-110 transition-transform" />
+            <span>Feature Management</span>
         </Link>
         <Link
             href="/dashboard"

@@ -9,7 +9,7 @@ export async function setGeminiModel(model: string) {
 
 export async function getGeminiModel() {
     const cookieStore = await cookies();
-    return cookieStore.get('gemini_model')?.value || 'gemini-1.5-flash';
+    return cookieStore.get('gemini_model')?.value || 'gemini-1.5-pro';
 }
 
 export async function markModelRateLimited(model: string) {

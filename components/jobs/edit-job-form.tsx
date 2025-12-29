@@ -1,5 +1,14 @@
 "use client";
 
+import { INTERVIEW_LANGUAGES } from "@/lib/constants";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,6 +30,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, Sparkles, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { TranslationButton } from "@/components/jobs/translation-button";
 
 const formSchema = z.object({
     title: z.string().min(2, "Title must be at least 2 characters"),
@@ -47,6 +57,7 @@ export function EditJobForm({ jobId, initialData }: EditJobFormProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [questions, setQuestions] = useState<string[]>(initialData.questions.map(q => q.text));
+    const [generationLanguage, setGenerationLanguage] = useState<string>("auto");
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema) as any,
@@ -68,7 +79,8 @@ export function EditJobForm({ jobId, initialData }: EditJobFormProps) {
 
         setIsGenerating(true);
         try {
-            const result = await generateQuestions(description);
+            const lang = generationLanguage === "auto" ? undefined : generationLanguage;
+            const result = await generateQuestions(description, lang);
             if (result.success && result.questions) {
                 // Append new questions to existing ones
                 setQuestions(prevQuestions => [...prevQuestions, ...result.questions]);
@@ -91,6 +103,8 @@ export function EditJobForm({ jobId, initialData }: EditJobFormProps) {
             setIsGenerating(false);
         }
     }
+
+    // ... helper functions
 
     function updateQuestion(index: number, value: string) {
         const newQuestions = [...questions];
@@ -120,6 +134,7 @@ export function EditJobForm({ jobId, initialData }: EditJobFormProps) {
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                {/* ... fields ... */}
                 <FormField
                     control={form.control}
                     name="title"
@@ -138,7 +153,27 @@ export function EditJobForm({ jobId, initialData }: EditJobFormProps) {
                     name="description"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Job Description</FormLabel>
+                            <div className="flex items-center justify-between">
+                                <FormLabel>Job Description</FormLabel>
+                                <div className="flex items-center gap-2">
+                                    <TranslationButton
+                                        onTranslate={async (lang: string) => {
+                                            const currentText = form.getValues("description");
+                                            if (!currentText) return;
+
+                                            const { translateText } = await import("@/actions/translation");
+                                            const result = await translateText(currentText, lang);
+
+                                            if (result.success && result.translatedText) {
+                                                form.setValue("description", result.translatedText);
+                                                toast.success("Description translated");
+                                            } else {
+                                                toast.error(result.error || "Translation failed");
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
                             <FormControl>
                                 <Textarea
                                     placeholder="Paste the full job description here..."
@@ -234,10 +269,28 @@ export function EditJobForm({ jobId, initialData }: EditJobFormProps) {
                         )}
                         Generate Questions with AI
                     </Button>
+                    <Select
+                        value={generationLanguage}
+                        onValueChange={setGenerationLanguage}
+                    >
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Output Language (Auto)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="auto">Same as Description</SelectItem>
+                            {INTERVIEW_LANGUAGES.map((lang) => (
+                                <SelectItem key={lang} value={lang}>
+                                    {lang}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
                     <Button
                         type="button"
                         variant="secondary"
                         onClick={() => setQuestions([...questions, ""])}
+                        className="ml-auto"
                     >
                         Add Question Manually
                     </Button>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { PermissionCheck } from "@/components/interview/permission-check";
 import { InterviewSession } from "@/components/interview/interview-session";
+import { LanguageSelector } from "@/components/interview/language-selector";
 
 interface InterviewClientPageProps {
     interview: any;
@@ -10,15 +11,19 @@ interface InterviewClientPageProps {
 }
 
 export function InterviewClientPage({ interview, questions }: InterviewClientPageProps) {
+    const [language, setLanguage] = useState(interview.language || null);
     const [hasPermissions, setHasPermissions] = useState(false);
     const [stream, setStream] = useState<MediaStream | null>(null);
+
+    const handleLanguageSelected = (lang: string) => {
+        setLanguage(lang);
+    };
 
     const handlePermissionsGranted = (mediaStream: MediaStream) => {
         setStream(mediaStream);
         setHasPermissions(true);
     };
 
-    // Cleanup stream on unmount
     useEffect(() => {
         return () => {
             if (stream) {
@@ -26,6 +31,10 @@ export function InterviewClientPage({ interview, questions }: InterviewClientPag
             }
         };
     }, [stream]);
+
+    if (!language) {
+        return <LanguageSelector interviewId={interview.id} onLanguageSelected={handleLanguageSelected} />;
+    }
 
     if (!hasPermissions || !stream) {
         return <PermissionCheck onPermissionsGranted={handlePermissionsGranted} />;
@@ -36,6 +45,8 @@ export function InterviewClientPage({ interview, questions }: InterviewClientPag
             interviewId={interview.id}
             questions={questions}
             stream={stream}
+            language={language}
+            onLanguageChange={setLanguage}
         />
     );
 }
