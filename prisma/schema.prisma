@@ -111,6 +111,7 @@ model Question {
   jobId     String
   job       Job      @relation(fields: [jobId], references: [id])
   createdAt DateTime @default(now())
+  archived  Boolean  @default(false)
 
   answers Answer[]
 }

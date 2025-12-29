@@ -29,7 +29,10 @@ export default async function InterviewPage({
         include: {
             job: {
                 include: {
-                    questions: true,
+                    questions: {
+                        where: { archived: false },
+                        orderBy: { createdAt: 'asc' }
+                    },
                 },
             },
             candidate: true,

@@ -97,18 +97,36 @@ export async function updateJob(jobId: string, data: {
         throw new Error("Unauthorized");
     }
 
-    // Update job
-    // First, delete only questions that have no answers
-    await db.question.deleteMany({
-        where: {
-            jobId: jobId,
-            answers: {
-                none: {}
-            }
-        }
+    // Soft-Delete Logic:
+    // 1. Fetch current active questions
+    const currentQuestions = await db.question.findMany({
+        where: { jobId: jobId, archived: false },
     });
 
-    // Then update the job details and add new questions
+    const newQuestionTexts = data.questions || [];
+
+    // 2. Identify questions to Archive (in DB but not in new list)
+    // We match by TEXT because that's what we have.
+    const questionsToArchive = currentQuestions.filter(
+        (q) => !newQuestionTexts.includes(q.text)
+    );
+
+    // 3. Identify questions to Create (in new list but not in DB)
+    const questionsToCreate = newQuestionTexts.filter(
+        (text) => !currentQuestions.some((q) => q.text === text)
+    );
+
+    // Execute Archival
+    if (questionsToArchive.length > 0) {
+        await db.question.updateMany({
+            where: {
+                id: { in: questionsToArchive.map((q) => q.id) },
+            },
+            data: { archived: true },
+        });
+    }
+
+    // Execute Creation (and Job Update)
     await db.job.update({
         where: { id: jobId },
         data: {
@@ -118,7 +136,7 @@ export async function updateJob(jobId: string, data: {
             requireAadhar: data.requireAadhar,
             requirePAN: data.requirePAN,
             questions: {
-                create: data.questions?.map((text) => ({ text })), // Create new ones (will append to existing used ones)
+                create: questionsToCreate.map((text) => ({ text })),
             },
         },
     });

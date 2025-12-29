@@ -19,7 +19,10 @@ export default async function EditJobPage({
     const job = await db.job.findUnique({
         where: { id },
         include: {
-            questions: true,
+            questions: {
+                where: { archived: false },
+                orderBy: { createdAt: 'asc' }
+            },
             employer: true,
         },
     });

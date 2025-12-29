@@ -25,7 +25,10 @@ export default async function JobDetailsPage({
     const job = await db.job.findUnique({
         where: { id },
         include: {
-            questions: true,
+            questions: {
+                where: { archived: false },
+                orderBy: { createdAt: 'asc' }
+            },
             employer: true,
             _count: {
                 select: { interviews: true },
