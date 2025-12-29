@@ -52,6 +52,8 @@ export async function submitAnswer(data: {
             // Only generate follow-up if we haven't asked too many questions already
             // and if it's not already a follow-up (simple check: prevent infinite loop)
             // For now, limit total questions or just check probability
+            // Follow-up generation disabled per user request to improve latency
+            /*
             if (interview && question && interview.answers.length < 15) {
                 const generatedText = await generateFollowUp(
                     question.text,
@@ -71,6 +73,7 @@ export async function submitAnswer(data: {
                     followUpQuestion = newQuestion;
                 }
             }
+            */
         }
 
         return { success: true, answerId: answer.id, followUp: followUpQuestion };

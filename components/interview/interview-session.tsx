@@ -45,13 +45,19 @@ export function InterviewSession({ interviewId, questions, stream, language = "e
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isRecording, setIsRecording] = useState(false);
     const [transcript, setTranscript] = useState("");
+    const [interimTranscript, setInterimTranscript] = useState("");
+    const isRecordingRef = useRef(isRecording);
+
+    // Sync ref
+    useEffect(() => {
+        isRecordingRef.current = isRecording;
+    }, [isRecording]);
+
+    const recognitionRef = useRef<any>(null);
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [isCompleted, setIsCompleted] = useState(false);
 
-    const [interimTranscript, setInterimTranscript] = useState("");
-
-    const recognitionRef = useRef<any>(null);
     const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -154,8 +160,24 @@ export function InterviewSession({ interviewId, questions, stream, language = "e
                     setInterimTranscript(interim);
                 };
 
+                recognition.onend = () => {
+                    // Auto-restart if we are supposed to be recording
+                    // We use a ref to check the latest state without triggering re-effects
+                    if (isRecordingRef.current) {
+                        try {
+                            console.log("[STT] Restarting recognition...");
+                            recognition.start();
+                        } catch (e) {
+                            console.error("[STT] Restart error:", e);
+                        }
+                    }
+                };
+
                 recognition.onerror = (event: any) => {
                     console.error("[STT] Recognition error:", event.error);
+                    if (event.error === 'not-allowed') {
+                        setIsRecording(false);
+                    }
                 };
 
                 recognitionRef.current = recognition;
@@ -282,25 +304,22 @@ export function InterviewSession({ interviewId, questions, stream, language = "e
             gradeAnswer(result.answerId);
 
             // Check for follow-up question
+            /* Follow-ups disabled
             if (result.followUp) {
                 // Insert follow-up question after current question
                 const newQuestions = [...questionsState];
                 newQuestions.splice(currentIndex + 1, 0, result.followUp);
                 setQuestionsState(newQuestions);
             }
+            */
         }
 
         if (currentIndex < questionsState.length - 1) {
             setCurrentIndex((prev) => prev + 1);
             setTranscript("");
-            // We need to wait for state update to speak next question? 
-            // Actually, we can just speak the next question from the new array if we had it, 
-            // but since setQuestionsState is async, we might need a useEffect or just speak it here carefully.
-            // If we added a follow-up, it's at currentIndex + 1.
-            // If we didn't, the next original question is at currentIndex + 1.
 
-            // Let's use a timeout to allow state to settle or just speak the target text directly
-            const nextQuestionText = result.followUp ? result.followUp.text : questionsState[currentIndex + 1].text;
+            // Use next question text directly
+            const nextQuestionText = questionsState[currentIndex + 1].text;
             handleNewQuestion(nextQuestionText);
         } else {
             await completeInterview(interviewId);
@@ -502,7 +521,7 @@ export function InterviewSession({ interviewId, questions, stream, language = "e
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     {Object.entries(LANGUAGE_CODES).map(([name, code]) => (
-                                                        <SelectItem key={code} value={name}>
+                                                        <SelectItem key={code} value={code}>
                                                             {name}
                                                         </SelectItem>
                                                     ))}
