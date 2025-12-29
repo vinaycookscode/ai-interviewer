@@ -1,11 +1,12 @@
 "use server";
 
-import { generateInterviewQuestions } from "@/lib/gemini";
+import { getGeminiModel } from "@/actions/gemini-config";
+import { getGeminiModelInstance } from "@/lib/gemini";
 import { auth } from "@/auth"; // Assuming auth is from next-auth or similar
 import { db } from "@/lib/db"; // Assuming db is your Prisma client or ORM instance
-import { GoogleGenerativeAI } from "@google/generative-ai"; // Import GoogleGenerativeAI
+// import { GoogleGenerativeAI } from "@google/generative-ai"; // No longer needed directly
 
-export async function generateQuestions(jobDescription: string) {
+export async function generateQuestions(jobDescription: string, language?: string) {
     const session = await auth();
 
     if (!session?.user?.id) {
@@ -28,17 +29,23 @@ export async function generateQuestions(jobDescription: string) {
     }
 
     try {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+        const model = await getGeminiModelInstance(apiKey);
+
+        const languageInstruction = language
+            ? `Questions MUST be in ${language}.`
+            : `Questions MUST be in the same language as the Job Description provided above.`;
 
         const prompt = `
             Generate 5 interview questions for a job with the following description:
             ${jobDescription}
 
             Requirements:
-            - Each question must be strictly independent and self-contained.
-            - Do NOT generate dependent follow-up questions (e.g., "How would you optimize that?").
-            - Format the output as a JSON array of strings.
+            - Generate exactly 5 questions.
+            - Questions must be strictly independent and self-contained.
+            - Do NOT generate dependent follow-up questions.
+            - ${languageInstruction}
+            
+            Format the output as a JSON array of strings.
             Example: ["Question 1", "Question 2", "Question 3", "Question 4", "Question 5"]
         `;
 
@@ -70,12 +77,22 @@ export async function generateQuestions(jobDescription: string) {
     } catch (error: any) {
         console.error("Failed to generate questions:", error);
 
-        const isRateLimit = error.message?.includes("429") || error.message?.includes("quota") || error.message?.includes("Resource has been exhausted");
+        // Check for rate limit
+        if (error.status === 429 || error.message?.includes('429') || error.message?.includes('Resource has been exhausted')) {
+            const { markModelRateLimited } = await import("@/actions/gemini-config");
+            const modelName = await getGeminiModel(); // Re-fetch to be sure which model failed
+            await markModelRateLimited(modelName);
+
+            return {
+                success: false,
+                error: `Rate limit reached for ${modelName}. Please select a different model in the dashboard header.`
+            };
+        }
 
         return {
             success: false,
             error: error.message || "Failed to generate questions. Please try again.",
-            isRateLimit: isRateLimit
+            isRateLimit: error.message?.includes('429') || error.message?.includes('Resource has been exhausted')
         };
     }
 }

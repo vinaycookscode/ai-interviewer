@@ -121,3 +121,34 @@ export async function inviteCandidate(data: {
         return { success: false, error: error.message || "Failed to send invitation" };
     }
 }
+
+export async function updateInterviewLanguage(interviewId: string, language: string) {
+    if (!interviewId || !language) return { error: "Missing required fields" };
+
+    try {
+        await db.interview.update({
+            where: { id: interviewId },
+            data: { language: language }
+        });
+        // Dynamically import revalidatePath to avoid top-level import conflicts if any, though standard import is fine.
+        // But better to use the existing import if present. 
+        // Re-checking imports... file only imports auth, db, Resend, crypto. 
+        // Need to add revalidatePath import or use it fully qualified? No, need import.
+        // Let's add import at top or just use standard module pattern? 
+        // Since I'm appending, I can't easily add to top imports without another replace.
+        // I'll try to add import at top first.
+        // Wait, let's do this in two steps or use MultiReplace.
+        // Actually MultiReplace is better for this file.
+        // But wait, I'll just overwite the whole file since I have content.
+        // NO, checking previous file content (Step 467). It matches my expectation.
+        // I will use `write_to_file` for `actions/interview.ts` too to be safe? 
+        // No, it's 124 lines. 
+        // I'll just add the function and the import.
+        const { revalidatePath } = await import("next/cache");
+        revalidatePath(`/interview/${interviewId}`);
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update language:", error);
+        return { error: "Failed to update language" };
+    }
+}

@@ -21,6 +21,8 @@ import { useRouter } from "next/navigation";
 import { Loader2, Sparkles, X, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
+import { TranslationButton } from "@/components/jobs/translation-button";
+import { INTERVIEW_LANGUAGES } from "@/lib/constants";
 import {
     Select,
     SelectContent,
@@ -43,6 +45,7 @@ export function CreateJobForm() {
     const [isLoading, setIsLoading] = useState(false);
     const [isGenerating, setIsGenerating] = useState(false);
     const [questions, setQuestions] = useState<{ text: string, type: "TEXT" | "CODE" }[]>([]);
+    const [generationLanguage, setGenerationLanguage] = useState<string>("auto");
     const { setRateLimited } = useLimit();
 
     const form = useForm<z.infer<typeof formSchema>>({
@@ -56,9 +59,6 @@ export function CreateJobForm() {
         },
     });
 
-    // Watch for changes in questions array to re-render
-    // const questions = form.watch("questions") || [];
-
     async function handleGenerateQuestions() {
         const description = form.getValues("description");
         if (!description || description.length < 10) {
@@ -68,7 +68,8 @@ export function CreateJobForm() {
 
         setIsGenerating(true);
         try {
-            const result = await generateQuestions(description);
+            const lang = generationLanguage === "auto" ? undefined : generationLanguage;
+            const result = await generateQuestions(description, lang);
             if (result.success && result.questions) {
                 // Append new questions to existing ones from state
                 // Default to TEXT type for generated questions
@@ -99,9 +100,12 @@ export function CreateJobForm() {
     }
 
     function updateQuestion(index: number, field: "text" | "type", value: string) {
-        const newQuestions = [...questions];
-        newQuestions[index] = { ...newQuestions[index], [field]: value };
-        setQuestions(newQuestions);
+        setQuestions(prev => {
+            const newQuestions = [...prev];
+            // @ts-ignore
+            newQuestions[index] = { ...newQuestions[index], [field]: value };
+            return newQuestions;
+        });
     }
 
     function removeQuestion(index: number) {
@@ -142,7 +146,27 @@ export function CreateJobForm() {
                     name="description"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Job Description</FormLabel>
+                            <div className="flex items-center justify-between">
+                                <FormLabel>Job Description</FormLabel>
+                                <div className="flex items-center gap-2">
+                                    <TranslationButton
+                                        onTranslate={async (lang) => {
+                                            const currentText = form.getValues("description");
+                                            if (!currentText) return;
+
+                                            const { translateText } = await import("@/actions/translation");
+                                            const result = await translateText(currentText, lang);
+
+                                            if (result.success && result.translatedText) {
+                                                form.setValue("description", result.translatedText);
+                                                toast.success("Description translated");
+                                            } else {
+                                                toast.error(result.error || "Translation failed");
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
                             <FormControl>
                                 <Textarea
                                     placeholder="Paste the full job description here..."
@@ -224,32 +248,54 @@ export function CreateJobForm() {
                     </CardContent>
                 </Card>
 
-                <div className="flex flex-col sm:flex-row gap-2">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleGenerateQuestions}
-                        disabled={isGenerating}
-                        className="w-full sm:w-auto flex items-center justify-center"
-                    >
-                        {isGenerating ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <Sparkles className="mr-2 h-4 w-4" />
-                        )}
-                        <span className="hidden sm:inline">Generate Questions with AI</span>
-                        <span className="sm:hidden">Generate with AI</span>
-                    </Button>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setQuestions([...questions, { text: "", type: "TEXT" }])}
-                        className="w-full sm:w-auto flex items-center justify-center"
-                    >
-                        <Plus className="mr-2 h-4 w-4" />
-                        <span className="hidden sm:inline">Add Question Manually</span>
-                        <span className="sm:hidden">Add Manually</span>
-                    </Button>
+                <div className="flex flex-col gap-4">
+                    <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleGenerateQuestions}
+                            disabled={isGenerating}
+                            className="w-full sm:w-auto flex items-center justify-center"
+                        >
+                            {isGenerating ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <Sparkles className="mr-2 h-4 w-4" />
+                            )}
+                            <span className="hidden sm:inline">Generate Questions with AI</span>
+                            <span className="sm:hidden">Generate with AI</span>
+                        </Button>
+
+                        <div className="w-full sm:w-[180px]">
+                            <Select
+                                value={generationLanguage}
+                                onValueChange={setGenerationLanguage}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Output Language (Auto)" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="auto">Same as Description</SelectItem>
+                                    {INTERVIEW_LANGUAGES.map((lang) => (
+                                        <SelectItem key={lang} value={lang}>
+                                            {lang}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setQuestions([...questions, { text: "", type: "TEXT" }])}
+                            className="w-full sm:w-auto flex items-center justify-center ml-auto"
+                        >
+                            <Plus className="mr-2 h-4 w-4" />
+                            <span className="hidden sm:inline">Add Question Manually</span>
+                            <span className="sm:hidden">Add Manually</span>
+                        </Button>
+                    </div>
                 </div>
 
                 {questions.length > 0 && (
@@ -304,4 +350,3 @@ export function CreateJobForm() {
         </Form>
     );
 }
-

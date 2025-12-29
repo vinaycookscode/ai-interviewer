@@ -1,6 +1,6 @@
 "use client";
 
-import Script from "next/script";
+
 import { useEffect, useRef, useState } from "react";
 
 interface GazeTrackerProps {
@@ -25,7 +25,8 @@ export function GazeTrackerBase({ videoElement, onWarning, isActive }: GazeTrack
     const faceMeshRef = useRef<any>(null);
     const requestRef = useRef<number | null>(null);
     const isMounted = useRef(true);
-    const [scriptsLoaded, setScriptsLoaded] = useState({ faceMesh: false });
+    const [scriptLoaded, setScriptLoaded] = useState(false);
+
 
     const [debugInfo, setDebugInfo] = useState<string>("");
 
@@ -47,15 +48,20 @@ export function GazeTrackerBase({ videoElement, onWarning, isActive }: GazeTrack
     }, [onWarning]);
 
     useEffect(() => {
-        if (!isActive || !videoElement || !scriptsLoaded.faceMesh) return;
+        if (!isActive || !videoElement || !scriptLoaded) return;
 
-        const initMediaPipe = () => {
-            if (!window.FaceMesh) return;
+        const initMediaPipe = async () => {
+            if (!window.FaceMesh) {
+                console.error("GazeTracker: window.FaceMesh not found despite script load");
+                return;
+            }
 
             try {
-                console.log("GazeTracker: Initializing MediaPipe FaceMesh");
+                console.log("GazeTracker: Initializing MediaPipe FaceMesh via Local Script");
                 const faceMesh = new window.FaceMesh({
                     locateFile: (file: string) => {
+                        // Use JSDelivr for assets to ensure correct MIME types and headers.
+                        // The local script (0.4.1633) is guaranteed to be compatible with this pinned version.
                         return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/${file}`;
                     },
                 });
@@ -180,7 +186,7 @@ export function GazeTrackerBase({ videoElement, onWarning, isActive }: GazeTrack
                                 await faceMeshRef.current.send({ image: videoElement });
                             }
                         } catch (error) {
-                            console.warn("FaceMesh send error:", error);
+                            // Suppress
                         }
                     }
 
@@ -205,39 +211,49 @@ export function GazeTrackerBase({ videoElement, onWarning, isActive }: GazeTrack
             }
             if (faceMeshRef.current) {
                 try {
-                    faceMeshRef.current.close();
+                    // Do NOT close FaceMesh, as it might terminate the shared WASM backend
+                    // and cause subsequent re-initializations to fail with "undefined" asset errors.
+                    // faceMeshRef.current.close();
+                    faceMeshRef.current = null;
                 } catch (e) {
-                    console.warn("Error closing FaceMesh:", e);
+                    // ignore
                 }
-                faceMeshRef.current = null;
             }
         };
-    }, [isActive, videoElement, scriptsLoaded]); // Removed onWarning from dependencies
+    }, [isActive, videoElement, scriptLoaded]); // Using scriptLoaded (correct variable name)
 
     useEffect(() => {
-        if (scriptsLoaded.faceMesh) return;
+        if (scriptLoaded) return;
+
+        // Use local self-hosted script
+        const scriptUrl = "/mediapipe/face_mesh/face_mesh.js";
+
+        // Check if already in DOM
+        if (document.querySelector(`script[src="${scriptUrl}"]`)) {
+            setScriptLoaded(true);
+            return;
+        }
 
         const script = document.createElement("script");
-        script.src = "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/face_mesh.js";
+        script.src = scriptUrl;
         script.async = true;
-        script.crossOrigin = "anonymous";
 
         script.onload = () => {
-            console.log("GazeTracker: Manual script loaded");
-            setScriptsLoaded(prev => ({ ...prev, faceMesh: true }));
+            console.log("GazeTracker: Script loaded successfully (local)");
+            setScriptLoaded(true);
         };
 
         script.onerror = (e) => {
-            console.error("GazeTracker: Manual script failed", e);
-            setDebugInfo("Error: Manual script load failed");
+            console.error("GazeTracker: Script load failed", e);
+            setDebugInfo("Error: FaceMesh script failed to load (local)");
         };
 
         document.body.appendChild(script);
 
         return () => {
-            document.body.removeChild(script);
+            // document.body.removeChild(script);
         };
-    }, [scriptsLoaded.faceMesh]);
+    }, [scriptLoaded]);
 
     return null;
 }

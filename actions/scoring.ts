@@ -5,10 +5,15 @@ import { evaluateAnswer } from "@/lib/gemini";
 
 export async function gradeAnswer(answerId: string) {
     try {
-        // 1. Fetch Answer and Question
+        // 1. Fetch Answer and Question with Interview Language
         const answer = await db.answer.findUnique({
             where: { id: answerId },
-            include: { question: true },
+            include: {
+                question: true,
+                interview: {
+                    select: { language: true }
+                }
+            },
         });
 
         if (!answer) {
@@ -21,7 +26,11 @@ export async function gradeAnswer(answerId: string) {
         }
 
         // 2. Evaluate with Gemini
-        const evaluation = await evaluateAnswer(answer.question.text, answer.transcript);
+        const evaluation = await evaluateAnswer(
+            answer.question.text,
+            answer.transcript,
+            answer.interview?.language || "en"
+        );
 
         // 3. Update Database
         await db.answer.update({

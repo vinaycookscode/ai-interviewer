@@ -3,13 +3,17 @@ import { UserButton } from "@/components/auth/user-button";
 import { LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { GeminiModelSelector } from "@/components/gemini-model-selector";
+import { getGeminiModel } from "@/actions/gemini-config";
 
 interface DashboardHeaderProps {
     user: any;
     userRole?: string;
 }
 
-export function DashboardHeader({ user, userRole }: DashboardHeaderProps) {
+export async function DashboardHeader({ user, userRole }: DashboardHeaderProps) {
+    const currentModel = await getGeminiModel();
+
     return (
         <header className="h-16 bg-card border-b shadow-sm flex items-center justify-between px-6 sticky top-0 z-50">
             <Link href="/dashboard" className="flex items-center gap-2"> {/* Wrapped the logo area with Link */}
@@ -23,6 +27,13 @@ export function DashboardHeader({ user, userRole }: DashboardHeaderProps) {
             </Link>
 
             <div className="flex items-center gap-4">
+                {/* Only show selector for ADMIN or if we want it global. User request says "usable all around". 
+                     I'll assume it's for everyone or at least visible. 
+                     Since there is no strict rule, I'll put it for everyone for now or check userRole if needed. 
+                     But the request implies global usage.
+                  */}
+                <GeminiModelSelector currentModel={currentModel} />
+
                 {user && (
                     <div className="flex flex-col items-end mr-2 hidden md:flex">
                         <span className="text-sm font-medium">{user.name}</span>

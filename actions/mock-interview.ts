@@ -2,19 +2,22 @@
 
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getGeminiModelInstance } from "@/lib/gemini";
+// import { GoogleGenerativeAI } from "@google/generative-ai"; // Removed
+import { getGeminiModel } from "@/actions/gemini-config";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+// const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!); // Removed
 
 // Check if API is available
 export async function checkApiStatus() {
     try {
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = await getGeminiModelInstance();
         // Simple test to check if API is responsive
         const result = await model.generateContent("Say hello");
         await result.response;
         return { available: true };
     } catch (error: any) {
+
         console.error("API health check failed:", error);
 
         // Return available: true but with fallback flag so users can still practice
@@ -51,7 +54,8 @@ export async function createMockInterview(role: string, difficulty: string) {
 }
 
 export async function generateMockQuestions(role: string, difficulty: string) {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = await getGeminiModelInstance();
+
 
     const prompt = `Generate 5 interview questions for a ${difficulty} ${role} position. 
   Return ONLY a JSON array of strings, like this: ["Question 1", "Question 2", ...]. 
@@ -69,6 +73,18 @@ export async function generateMockQuestions(role: string, difficulty: string) {
         return { questions };
     } catch (error: any) {
         console.error("Error generating questions:", error);
+
+        // Check for rate limit
+        if (error.status === 429 || error.message?.includes('429') || error.message?.includes('Resource has been exhausted')) {
+            const { markModelRateLimited } = await import("@/actions/gemini-config");
+            const modelName = await getGeminiModel();
+            await markModelRateLimited(modelName);
+            return {
+                questions: [],
+                isFallback: true,
+                error: `Rate limit reached for ${modelName}. Using fallback questions.`
+            };
+        }
 
         // Fallback questions if API fails
         const fallbackQuestions = [
@@ -103,7 +119,8 @@ export async function saveMockAnswer(
 
     try {
         // Generate immediate feedback for this answer
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = await getGeminiModelInstance();
+
         const prompt = `
       Question: ${question}
       Candidate Answer: ${transcript}
@@ -123,6 +140,14 @@ export async function saveMockAnswer(
         evaluation = JSON.parse(cleanedText);
     } catch (error: any) {
         console.error("Error generating feedback:", error);
+
+        // Check for rate limit
+        if (error.status === 429 || error.message?.includes('429') || error.message?.includes('Resource has been exhausted')) {
+            const { markModelRateLimited } = await import("@/actions/gemini-config");
+            const modelName = await getGeminiModel();
+            await markModelRateLimited(modelName);
+        }
+
         // Fallback evaluation
         evaluation = {
             score: 0,
@@ -170,7 +195,8 @@ export async function completeMockInterview(mockInterviewId: string) {
         const averageScore = totalScore / answers.length;
 
         // Generate overall feedback
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = await getGeminiModelInstance();
+
         const prompt = `
       Based on these ${answers.length} answers, provide a short summary feedback for the candidate.
       Average Score: ${averageScore}/10.
@@ -185,6 +211,14 @@ export async function completeMockInterview(mockInterviewId: string) {
             feedback = result.response.text();
         } catch (apiError: any) {
             console.error("Error generating feedback:", apiError);
+
+            // Check for rate limit
+            if (apiError.status === 429 || apiError.message?.includes('429') || apiError.message?.includes('Resource has been exhausted')) {
+                const { markModelRateLimited } = await import("@/actions/gemini-config");
+                const modelName = await getGeminiModel();
+                await markModelRateLimited(modelName);
+            }
+
             // Use default feedback if API fails
             feedback = `Your practice session is complete! AI feedback is currently unavailable. Your average score: ${averageScore.toFixed(1)}/10`;
         }

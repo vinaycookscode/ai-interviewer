@@ -1,7 +1,8 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getGeminiModelInstance } from "@/lib/gemini";
 import { db } from "@/lib/db";
+import { getGeminiModel } from "@/actions/gemini-config";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+// const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!); // Removed
 
 export async function generatePersonalityProfile(interviewId: string) {
     try {
@@ -49,9 +50,8 @@ export async function generatePersonalityProfile(interviewId: string) {
     `;
 
         // 3. Call Gemini API
-        const model = genAI.getGenerativeModel({
-            model: "gemini-flash-latest",
-        });
+        const model = await getGeminiModelInstance();
+
 
         const result = await model.generateContent(prompt);
         const response = result.response;

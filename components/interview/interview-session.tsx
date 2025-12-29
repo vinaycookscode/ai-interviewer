@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Mic, Square, Volume2, CheckCircle2, Code, Maximize2, Minimize2, Play, Loader2, Sparkles } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Mic, Square, Volume2, ArrowRight, CheckCircle2, Globe, Code, Maximize2, Minimize2, Play, Loader2, Sparkles } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { startInterview, submitAnswer, completeInterview } from "@/actions/interview-session";
 import { runCode } from "@/actions/code-execution";
 import { gradeAnswer } from "@/actions/scoring";
@@ -14,35 +15,31 @@ import { useScreenDetection } from "@/hooks/use-screen-detection";
 import { GazeTracker } from "./gaze-tracker";
 import { CodeEditor } from "@/components/ui/code-editor";
 import { cn } from "@/lib/utils";
+import { LANGUAGE_CODES, InterviewLanguage } from "@/lib/constants";
 import { useCopyPastePrevention } from "@/hooks/use-copy-paste-prevention";
 import {
     HoverCard,
     HoverCardContent,
     HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
 import { useLimit } from "@/components/providers/limit-provider";
 
 // Define strict types for questions
 interface Question {
     id: string;
     text: string;
-    type: "TEXT" | "CODE";
+    type?: "TEXT" | "CODE"; // Optional for backward compatibility, defaults to TEXT
 }
 
 interface InterviewSessionProps {
     interviewId: string;
     questions: Question[];
     stream: MediaStream;
+    language?: string;
+    onLanguageChange?: (lang: string) => void;
 }
 
-export function InterviewSession({ interviewId, questions, stream }: InterviewSessionProps) {
+export function InterviewSession({ interviewId, questions, stream, language = "en", onLanguageChange }: InterviewSessionProps) {
     const router = useRouter();
     const { warningCount, warnings, isFullScreen, enterFullScreen, addWarning } = useProctoring(interviewId);
     const { screenCount } = useScreenDetection(true);
@@ -52,27 +49,49 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isRecording, setIsRecording] = useState(false);
     const [transcript, setTranscript] = useState("");
-    const [isSpeaking, setIsSpeaking] = useState(false);
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [isCompleted, setIsCompleted] = useState(false);
     const [interimTranscript, setInterimTranscript] = useState("");
+    const isRecordingRef = useRef(isRecording);
+    const [translatedQuestionText, setTranslatedQuestionText] = useState<string | null>(null);
 
     // Code Editor State
     const [codeAnswer, setCodeAnswer] = useState("// Write your solution here...\n");
     const [editorExpanded, setEditorExpanded] = useState(false);
     const [isRunning, setIsRunning] = useState(false);
-    const [language, setLanguage] = useState("javascript");
+    const [editorLanguage, setEditorLanguage] = useState("javascript");
     const [codeOutput, setCodeOutput] = useState<{ stdout?: string; stderr?: string; error?: string }>({});
     const { setRateLimited } = useLimit();
 
+    // Sync ref
+    useEffect(() => {
+        isRecordingRef.current = isRecording;
+    }, [isRecording]);
+
     const recognitionRef = useRef<any>(null);
+    const [isSpeaking, setIsSpeaking] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [isCompleted, setIsCompleted] = useState(false);
+
     const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
 
     const currentQuestion = questionsState[currentIndex] || questionsState[questionsState.length - 1];
     const isCodingQuestion = currentQuestion?.type === "CODE";
 
-    // Initialize Video Preview
+    // Safety guard for empty questions
+    if (!currentQuestion) {
+        return (
+            <div className="flex items-center justify-center min-h-screen text-red-500">
+                <p>Error: No questions available for this interview.</p>
+            </div>
+        );
+    }
+
+    // Normalize language for Select component
+    const normalizedLanguageCode = Object.values(LANGUAGE_CODES).includes(language)
+        ? language
+        : (LANGUAGE_CODES[Object.keys(LANGUAGE_CODES).find(k => k.toLowerCase() === language.toLowerCase()) as InterviewLanguage] || 'en-US');
+
+    // Initialize Video Preview using callback ref to handle strict mode/remounts correctly
     const setVideoRef = useCallback((element: HTMLVideoElement | null) => {
         videoRef.current = element;
         setVideoElement(element);
@@ -93,8 +112,6 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
     }, [stream]);
 
 
-
-    // Update srcObject if stream changes
     // Update srcObject if stream changes
     useEffect(() => {
         if (videoRef.current && stream && videoRef.current.srcObject !== stream) {
@@ -107,11 +124,49 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
     useEffect(() => {
         if (typeof window !== "undefined") {
             const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+            // Cleanup previous instance
+            if (recognitionRef.current) {
+                try {
+                    recognitionRef.current.abort();
+                } catch (e) {
+                    console.warn("Error aborting previous recognition:", e);
+                }
+            }
+
             if (SpeechRecognition) {
                 const recognition = new SpeechRecognition();
                 recognition.continuous = true;
                 recognition.interimResults = true;
-                recognition.lang = "en-US";
+
+                // Robust Language Mapping
+                let langCode = "en-US"; // Default
+                if (language) {
+                    const normalizedInput = language.trim().toLowerCase();
+
+                    // Direct code match (e.g., if "mr-IN" is passed)
+                    if (Object.values(LANGUAGE_CODES).includes(language)) {
+                        langCode = language;
+                    }
+                    // Name match (e.g., "Marathi" -> "mr-IN")
+                    else {
+                        const foundKey = Object.keys(LANGUAGE_CODES).find(
+                            key => key.toLowerCase() === normalizedInput
+                        ) as InterviewLanguage | undefined;
+
+                        if (foundKey) {
+                            langCode = LANGUAGE_CODES[foundKey];
+                        } else {
+                            // Only fallback if absolutely no match
+                            // Fallback mapping for common manual codes if not in enum
+                            if (normalizedInput === 'mr' || normalizedInput === 'marathi') langCode = 'mr-IN';
+                            else if (normalizedInput === 'hi' || normalizedInput === 'hindi') langCode = 'hi-IN';
+                        }
+                    }
+                }
+
+                console.log(`[STT] Initializing SpeechRecognition. Language: ${language} -> Code: ${langCode}`);
+                recognition.lang = langCode;
 
                 recognition.onresult = (event: any) => {
                     let final = "";
@@ -126,10 +181,39 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
                     if (final) setTranscript((prev) => prev + " " + final);
                     setInterimTranscript(interim);
                 };
+
+                recognition.onend = () => {
+                    // Auto-restart if we are supposed to be recording
+                    // We use a ref to check the latest state without triggering re-effects
+                    if (isRecordingRef.current) {
+                        try {
+                            console.log("[STT] Restarting recognition...");
+                            recognition.start();
+                        } catch (e) {
+                            console.error("[STT] Restart error:", e);
+                        }
+                    }
+                };
+
+                recognition.onerror = (event: any) => {
+                    console.error("[STT] Recognition error:", event.error);
+                    if (event.error === 'not-allowed') {
+                        setIsRecording(false);
+                    }
+                };
+
                 recognitionRef.current = recognition;
             }
         }
-    }, []);
+
+        return () => {
+            if (recognitionRef.current) {
+                try {
+                    recognitionRef.current.abort();
+                } catch (e) { }
+            }
+        };
+    }, [language]);
 
     // Start Interview logic (Session Init Only)
     const hasStartedRef = useRef(false);
@@ -139,15 +223,15 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
         if (isFullScreen && !hasStartedRef.current) {
             hasStartedRef.current = true;
             startInterview(interviewId);
-            // Audio is handled by the effect below
+            if (questionsState.length > 0) {
+                handleNewQuestion(questionsState[0].text);
+            }
         }
-    }, [isFullScreen, interviewId]);
+    }, [isFullScreen, interviewId, questionsState]);
 
     // Centralized Audio Playback Logic
     useEffect(() => {
         if (!isFullScreen) {
-            // Optional: reset spoken index if we want to replay when re-entering full screen
-            // lastSpokenIndex.current = -1; 
             return;
         }
 
@@ -158,12 +242,12 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
             const timer = setTimeout(() => {
                 const textToSpeak = questionsState[currentIndex]?.text;
                 if (textToSpeak) {
-                    speakQuestion(textToSpeak);
+                    handleNewQuestion(textToSpeak);
                 }
             }, 500);
             return () => clearTimeout(timer);
         }
-    }, [isFullScreen, currentIndex, questionsState]);
+    }, [isFullScreen, currentIndex, questionsState]); // We handle new question trigger mostly here now
 
     // cleanup speech on unmount
     useEffect(() => {
@@ -174,7 +258,7 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
         };
     }, []);
 
-    // Question Change Logic
+    // Question Change Logic - Reset Code Editor
     useEffect(() => {
         if (isCodingQuestion) {
             setCodeAnswer("// Write your solution here...\n");
@@ -192,7 +276,7 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
         setCodeOutput({}); // Clear previous output
 
         try {
-            const result = await runCode(language, codeAnswer);
+            const result = await runCode(editorLanguage, codeAnswer);
 
             const hasOutput = result.output && result.output.trim().length > 0;
 
@@ -209,13 +293,38 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
         }
     };
 
+    const handleNewQuestion = async (text: string) => {
+        let textToSpeak = text;
 
+        // Translate if necessary
+        if (language !== 'en' && language !== 'english') {
+            try {
+                const { translateText } = await import("@/actions/translation");
+                const result = await translateText(text, language);
+                if (result.success && result.translatedText) {
+                    textToSpeak = result.translatedText;
+                    setTranslatedQuestionText(result.translatedText);
+                }
+            } catch (e) {
+                console.error("Translation failed", e);
+            }
+        } else {
+            setTranslatedQuestionText(null);
+        }
+
+        speakQuestion(textToSpeak);
+    };
 
     const speakQuestion = (text: string) => {
         if ("speechSynthesis" in window) {
             window.speechSynthesis.cancel();
             setIsSpeaking(true);
             const utterance = new SpeechSynthesisUtterance(text);
+
+            if (normalizedLanguageCode) {
+                utterance.lang = normalizedLanguageCode;
+            }
+
             utterance.onend = () => setIsSpeaking(false);
             window.speechSynthesis.speak(utterance);
         }
@@ -259,20 +368,21 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
                 setRateLimited(true);
             }
 
+            // Follow-up logic if enabled later
+            /* 
             if (result.followUp) {
                 const newQuestions = [...questionsState];
-                // Ensure followUp has a type, default to TEXT
-                // @ts-ignore
                 const followUpWithType = { ...result.followUp, type: result.followUp.type || "TEXT" };
                 newQuestions.splice(currentIndex + 1, 0, followUpWithType as Question);
                 setQuestionsState(newQuestions);
             }
+            */
         }
 
         if (currentIndex < questionsState.length - 1) {
             setCurrentIndex((prev) => prev + 1);
             setTranscript("");
-            // Logic handled by useEffect now
+            // Logic handled by useEffect (lastSpokenIndex check) now triggers handleNewQuestion
         } else {
             await completeInterview(interviewId);
             stream?.getTracks().forEach(track => track.stop());
@@ -420,239 +530,180 @@ export function InterviewSession({ interviewId, questions, stream }: InterviewSe
                                             <span className="text-xs font-medium text-blue-100">
                                                 Question {currentIndex + 1} <span className="text-white/40">/</span> {questionsState.length}
                                             </span>
+                                            <span className="text-xs font-medium text-blue-100">
+                                                {isCodingQuestion ? "(Coding Challenge)" : "(Behavioral)"}
+                                            </span>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            {isCodingQuestion && <Code className="w-4 h-4 text-purple-400" />}
-                                            {!isCodingQuestion && <Mic className="w-4 h-4 text-blue-400" />}
-                                        </div>
-                                    </div>
 
-                                    <div className="space-y-4 shrink-0">
-                                        <h2 className={cn(
-                                            "font-bold leading-tight bg-gradient-to-br from-white to-white/60 bg-clip-text text-transparent transition-all",
-                                            isCodingQuestion ? "text-xl" : "text-2xl md:text-3xl"
-                                        )}>
-                                            {currentQuestion.text}
-                                        </h2>
-                                        {isCodingQuestion && (
-                                            <div className="space-y-3">
-                                                <div className="text-sm text-white/60 bg-white/5 p-3 rounded-lg border border-white/5 uppercase tracking-wider font-medium">
-                                                    Coding Challenge
-                                                </div>
-
-                                                {/* Best Practices Card */}
-                                                <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3">
-                                                    <h4 className="text-xs font-semibold text-blue-200 mb-2 flex items-center">
-                                                        <Sparkles className="w-3 h-3 mr-1" />
-                                                        Tips for High AI Score
-                                                    </h4>
-                                                    <ul className="text-xs text-blue-100/70 space-y-1 list-disc pl-4">
-                                                        <li>Write clean, self-documenting code</li>
-                                                        <li>Handle edge cases (null, empty inputs)</li>
-                                                        <li>Add comments to explain complex logic</li>
-                                                    </ul>
-                                                </div>
+                                        {/* Language Selector (Visible only if onLanguageChange provided) */}
+                                        {onLanguageChange && (
+                                            <div className="flex items-center gap-2">
+                                                <Globe className="w-4 h-4 text-muted-foreground" />
+                                                <Select value={normalizedLanguageCode} onValueChange={onLanguageChange}>
+                                                    <SelectTrigger className="w-[140px] h-8 bg-white/5 border-white/10 text-xs">
+                                                        <SelectValue placeholder="Language" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {Object.keys(LANGUAGE_CODES).map((langName) => (
+                                                            <SelectItem key={langName} value={LANGUAGE_CODES[langName as InterviewLanguage]}>
+                                                                {langName}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
                                             </div>
                                         )}
                                     </div>
 
-                                    {/* Action Buttons (Voice Mode) */}
-                                    {!isCodingQuestion && (
-                                        <div className="mt-auto pt-6 space-y-4 shrink-0">
+                                    <div className="space-y-4">
+                                        <h2 className="text-2xl md:text-3xl font-bold leading-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-100 via-white to-purple-100">
+                                            {currentQuestion.text}
+                                        </h2>
+                                        {translatedQuestionText && (
+                                            <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-100 text-lg">
+                                                {translatedQuestionText}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Action Area */}
+                                    <div className="mt-auto pt-6 border-t border-white/10 space-y-4">
+                                        <div className="flex gap-4">
                                             {!isRecording ? (
                                                 <Button
                                                     onClick={startRecording}
-                                                    size="lg"
-                                                    className="w-full h-14 text-lg bg-white text-black hover:bg-white/90 shadow-[0_0_30px_-10px_rgba(255,255,255,0.3)]"
-                                                    disabled={isSpeaking || isProcessing}
+                                                    disabled={isProcessing}
+                                                    className="flex-1 bg-blue-600 hover:bg-blue-500 text-white border-0 py-6 text-lg font-semibold shadow-lg shadow-blue-500/20 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                                                 >
-                                                    <Mic className="mr-2 h-5 w-5" />
-                                                    Start Answering
+                                                    <Mic className="mr-2 h-5 w-5" /> Start Answering
                                                 </Button>
                                             ) : (
                                                 <Button
                                                     onClick={stopRecording}
                                                     variant="destructive"
-                                                    size="lg"
-                                                    className="w-full h-14 text-lg bg-red-500 hover:bg-red-600 shadow-[0_0_30px_-10px_rgba(239,68,68,0.5)]"
+                                                    className="flex-1 bg-red-500 hover:bg-red-600 border-0 py-6 text-lg font-semibold shadow-lg shadow-red-500/20 animate-pulse"
                                                 >
-                                                    <Square className="mr-2 h-5 w-5 fill-current" />
-                                                    Stop & Submit
+                                                    <Square className="mr-2 h-5 w-5" /> Stop Recording
                                                 </Button>
                                             )}
-
-                                            {(transcript || interimTranscript) && (
-                                                <div className="p-4 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md max-h-[150px] overflow-y-auto custom-scrollbar">
-                                                    <p className="text-sm text-white/80 italic leading-relaxed">
-                                                        "{transcript} <span className="text-white/40">{interimTranscript}</span>"
-                                                    </p>
-                                                </div>
-                                            )}
                                         </div>
-                                    )}
 
-                                    {/* Action Buttons (Code Mode) */}
-                                    {isCodingQuestion && (
                                         <Button
-                                            onClick={handleNext}
-                                            size="lg"
-                                            className="w-full bg-green-600 hover:bg-green-700 text-white mt-auto shrink-0"
-                                            disabled={isProcessing}
+                                            variant="ghost"
+                                            onClick={() => speakQuestion(translatedQuestionText || currentQuestion.text)}
+                                            disabled={isSpeaking}
+                                            className="w-full text-white/50 hover:text-white hover:bg-white/5"
                                         >
-                                            <CheckCircle2 className="mr-2 h-5 w-5" />
-                                            Submit Solution
+                                            {isSpeaking ? <Volume2 className="mr-2 h-4 w-4 animate-pulse text-blue-400" /> : <Volume2 className="mr-2 h-4 w-4" />}
+                                            {isSpeaking ? "Speaking..." : "Read Question Again"}
                                         </Button>
-                                    )}
+                                    </div>
                                 </CardContent>
                             </Card>
                         </div>
 
-                        {/* Mini Video Feed for Coding Mode */}
-                        {isCodingQuestion && (
-                            <div className="h-[200px] shrink-0 relative rounded-2xl overflow-hidden bg-black border border-white/10 shadow-lg group">
-                                <video
-                                    ref={setVideoRef}
-                                    autoPlay
-                                    playsInline
-                                    muted
-                                    className="w-full h-full object-cover transform scale-x-[-1]"
-                                />
-                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors pointer-events-none" />
-                                <GazeTracker
-                                    videoElement={videoElement}
-                                    isActive={!isCompleted && !terminationReason}
-                                    onWarning={handleWarningWrapper}
-                                />
-                            </div>
-                        )}
+                        {/* Transcript (Compact) */}
+                        <div className="h-[200px] shrink-0">
+                            <Card className="h-full bg-black/40 border-white/10 backdrop-blur-xl">
+                                <CardContent className="p-4 h-full overflow-y-auto font-mono text-sm text-white/70">
+                                    {transcript || interimTranscript ? (
+                                        <>
+                                            <span className="text-white/90">{transcript}</span>
+                                            <span className="text-white/50 italic">{interimTranscript}</span>
+                                        </>
+                                    ) : (
+                                        <span className="text-white/30 italic">Detailed transcript will appear here...</span>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
                     </div>
 
                     {/* RIGHT COLUMN */}
-                    <div className="flex flex-col h-full min-h-0">
+                    <div className="flex flex-col gap-6 h-full min-h-0">
 
-                        {/* VIDEO FEED (Voice Mode Only) */}
-                        {!isCodingQuestion && (
-                            <div className="relative w-full h-full rounded-3xl overflow-hidden bg-black border border-white/10 shadow-2xl ring-1 ring-white/5">
-                                <video
-                                    ref={setVideoRef}
-                                    autoPlay
-                                    playsInline
-                                    muted
-                                    className="w-full h-full object-cover transform scale-x-[-1]"
-                                />
-                                {/* Overlays */}
-                                <div className="absolute top-6 right-6 flex flex-col gap-2 items-end">
-                                    {isRecording && (
-                                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-500/20 border border-red-500/30 backdrop-blur-md text-red-200 animate-pulse shadow-lg">
-                                            <div className="w-2 h-2 rounded-full bg-red-500" />
-                                            <span className="text-xs font-medium">Recording</span>
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/90 to-transparent p-6 flex items-end justify-center">
-                                    <div className="w-full max-w-xs opacity-80">
-                                        <AudioVisualizer stream={stream} />
-                                    </div>
-                                </div>
-                                <GazeTracker
-                                    videoElement={videoElement}
-                                    isActive={!isCompleted && !terminationReason}
-                                    onWarning={handleWarningWrapper}
-                                />
-
-                                {warningCount > 0 && (
-                                    <div className="absolute top-6 left-6">
-                                        <HoverCard>
-                                            <HoverCardTrigger asChild>
-                                                <div className={`px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-md flex items-center gap-2 shadow-lg cursor-help ${warningCount >= 10 ? "bg-red-500/20 text-red-200" : "bg-yellow-500/20 text-yellow-200"}`}>
-                                                    Warnings: {warningCount}
-                                                </div>
-                                            </HoverCardTrigger>
-                                            <HoverCardContent className="w-80 bg-black/90 border-white/10 text-white backdrop-blur-xl">
-                                                <div className="space-y-3">
-                                                    {warnings.map((w, i) => (
-                                                        <div key={i} className="flex flex-col gap-1 p-2 rounded bg-white/5 border border-white/5">
-                                                            <span className="font-medium text-yellow-200">{w.message}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </HoverCardContent>
-                                        </HoverCard>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* CODE EDITOR (Coding Mode Only) */}
-                        {isCodingQuestion && (
-                            <div className={cn("flex flex-col gap-4 h-full min-h-0 transition-all", editorExpanded && "fixed inset-4 z-50 bg-[#0a0a0a]")}>
-                                {/* Editor Container */}
-                                <div className="flex-1 border border-white/10 rounded-2xl overflow-hidden bg-[#1e1e1e] shadow-2xl flex flex-col min-h-0">
-                                    <div className="h-10 bg-white/5 border-b border-white/5 flex items-center justify-between px-4 shrink-0">
-                                        <div className="flex items-center gap-2 text-xs font-medium text-white/40">
-                                            <Code className="w-3.5 h-3.5" />
-                                            Code Editor
-                                        </div>
-                                        {/* Language Selector */}
-                                        <Select value={language} onValueChange={setLanguage}>
-                                            <SelectTrigger className="h-7 w-32 bg-white/5 border-white/10 text-xs text-white">
+                        {/* Code Editor or Video */}
+                        {isCodingQuestion ? (
+                            <div className="flex-1 flex flex-col gap-4 min-h-0">
+                                {/* Editor */}
+                                <div className="flex-1 min-h-0 rounded-xl overflow-hidden border border-white/10 shadow-2xl bg-[#1e1e1e]">
+                                    <CodeEditor
+                                        value={codeAnswer}
+                                        onChange={handleCodeChange}
+                                        language={editorLanguage}
+                                        height="100%"
+                                        theme="vs-dark"
+                                    />
+                                    {/* Editor Controls Overlay */}
+                                    <div className="absolute top-4 right-8 flex gap-2">
+                                        <Select value={editorLanguage} onValueChange={setEditorLanguage}>
+                                            <SelectTrigger className="w-[120px] h-8 bg-[#1e1e1e] border-white/20 text-xs">
                                                 <SelectValue placeholder="Language" />
                                             </SelectTrigger>
-                                            <SelectContent className="bg-[#1e1e1e] border-white/10 text-white">
+                                            <SelectContent>
                                                 <SelectItem value="javascript">JavaScript</SelectItem>
                                                 <SelectItem value="python">Python</SelectItem>
                                                 <SelectItem value="java">Java</SelectItem>
                                                 <SelectItem value="cpp">C++</SelectItem>
-                                                <SelectItem value="go">Go</SelectItem>
                                             </SelectContent>
                                         </Select>
-                                        <div className="flex items-center gap-2">
-                                            <Button
-                                                onClick={handleRunCode}
-                                                disabled={isRunning}
-                                                size="sm"
-                                                className="h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white border-none"
-                                            >
-                                                {isRunning ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Play className="w-3 h-3 mr-1 fill-current" />}
-                                                Run
-                                            </Button>
-                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditorExpanded(!editorExpanded)}>
-                                                {editorExpanded ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
-                                            </Button>
-                                        </div>
-                                    </div>
-                                    <div className="flex-1 relative min-h-0">
-                                        <CodeEditor
-                                            key={editorExpanded ? "expanded" : "collapsed"}
-                                            value={codeAnswer}
-                                            onChange={handleCodeChange}
-                                            height="100%"
-                                            language={language}
-                                        />
+
+                                        <Button
+                                            size="sm"
+                                            onClick={handleRunCode}
+                                            disabled={isRunning}
+                                            className="h-8 bg-green-600 hover:bg-green-500 text-white"
+                                        >
+                                            {isRunning ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Play className="w-3 h-3 mr-1" />}
+                                            Run Code
+                                        </Button>
                                     </div>
                                 </div>
 
-                                {/* Console Output Panel */}
-                                <div className="h-48 border border-white/10 rounded-2xl overflow-hidden bg-black/50 shadow-xl flex flex-col shrink-0">
-                                    <div className="h-8 bg-white/5 border-b border-white/5 flex items-center px-4 shrink-0">
-                                        <span className="text-xs font-medium text-white/40">Console Output</span>
-                                    </div>
-                                    <div className="flex-1 p-4 font-mono text-xs overflow-y-auto custom-scrollbar">
-                                        {codeOutput.error ? (
-                                            <div className="text-red-400 whitespace-pre-wrap">{codeOutput.error}</div>
-                                        ) : codeOutput.stdout || codeOutput.stderr ? (
-                                            <div className="whitespace-pre-wrap">
-                                                {codeOutput.stdout && <span className="text-green-300">{codeOutput.stdout}</span>}
-                                                {codeOutput.stderr && <span className="text-yellow-400 block mt-2">{codeOutput.stderr}</span>}
-                                            </div>
-                                        ) : (
-                                            <div className="text-white/20 italic">Run your code to see output...</div>
-                                        )}
-                                    </div>
+                                {/* Terminal Output */}
+                                <div className="h-[150px] shrink-0 rounded-xl bg-black border border-white/10 p-4 font-mono text-xs overflow-auto">
+                                    <div className="text-white/50 mb-2 border-b border-white/10 pb-1">Tagline Terminal</div>
+                                    {codeOutput.error ? (
+                                        <pre className="text-red-400 whitespace-pre-wrap">{codeOutput.error}</pre>
+                                    ) : codeOutput.stderr ? (
+                                        <pre className="text-yellow-400 whitespace-pre-wrap">{codeOutput.stderr}</pre>
+                                    ) : (
+                                        <pre className="text-green-400 whitespace-pre-wrap">{codeOutput.stdout || "Ready to execute..."}</pre>
+                                    )}
                                 </div>
                             </div>
-                        )}
+                        ) : (
+                            // Use the standard large video view + visualizer for Non-Coding Questions
+                            <div className="flex-1 relative rounded-3xl overflow-hidden bg-black border border-white/10 shadow-2xl group">
+                                <video
+                                    ref={setVideoRef}
+                                    autoPlay
+                                    playsInline
+                                    muted
+                                    className="w-full h-full object-cover transform scale-x-[-1]"
+                                />
 
+                                {/* Audio Visualizer Overlay */}
+                                <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/90 to-transparent pointer-events-none">
+                                    <div className="absolute bottom-4 left-4 right-4 h-16 flex items-end justify-center gap-1">
+                                        <AudioVisualizer stream={stream} />
+                                    </div>
+                                </div>
+
+                                {/* Status Badge */}
+                                <div className="absolute top-4 right-4 px-3 py-1.5 rounded-full bg-red-500/20 border border-red-500/30 backdrop-blur-md flex items-center gap-2 animate-pulse">
+                                    <div className="w-2 h-2 rounded-full bg-red-500" />
+                                    <span className="text-xs font-semibold text-red-100 tracking-wide uppercase">Live Rec</span>
+                                </div>
+
+                                {/* Gaze Tracker */}
+                                <GazeTracker
+                                    videoElement={videoElement}
+                                    isActive={isRecording}
+                                    onWarning={handleWarningWrapper}
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

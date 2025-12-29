@@ -11,6 +11,7 @@ interface CodeEditorProps {
     language?: string;
     height?: string;
     readOnly?: boolean;
+    theme?: string;
 }
 
 const CodeEditor = React.memo(({
@@ -18,10 +19,11 @@ const CodeEditor = React.memo(({
     onChange,
     language = "javascript",
     height = "300px",
-    readOnly = false
+    readOnly = false,
+    theme: propTheme
 }: CodeEditorProps) => {
     const { theme } = useTheme();
-    const editorTheme = theme === "dark" ? "vs-dark" : "light";
+    const editorTheme = propTheme || (theme === "dark" ? "vs-dark" : "light");
 
     const handleEditorChange: OnChange = (value, event) => {
         onChange(value);

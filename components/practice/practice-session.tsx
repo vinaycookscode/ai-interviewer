@@ -51,7 +51,10 @@ export function PracticeSession({ mockInterviewId, role, difficulty }: PracticeS
     // Update answer from transcript
     useEffect(() => {
         if (transcript) {
-            setAnswer(transcript);
+            setAnswer(prev => {
+                if (prev !== transcript) return transcript;
+                return prev;
+            });
         }
     }, [transcript]);
 

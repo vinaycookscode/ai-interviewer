@@ -97,43 +97,41 @@ export async function updateJob(jobId: string, data: {
         throw new Error("Unauthorized");
     }
 
-    // Categorize questions
-    const questionsToCreate = data.questions?.filter(q => !q.id) || [];
-    const questionsToUpdate = data.questions?.filter(q => q.id) || [];
-    const submittedIds = questionsToUpdate.map(q => q.id as string);
-
-    // 1. Delete removed questions (only if no answers)
-    // We do this in a separate transaction or call because nested deleteMany 
-    // does not allow filtering by relation existence (answers: none).
-    // 1. Identify questions to delete
-    const questionsToDeleteDetails = await db.question.findMany({
-        where: {
-            jobId: jobId,
-            id: { notIn: submittedIds }
-        },
-        select: { id: true }
+    // Soft-Delete + Type Support Logic:
+    // 1. Fetch current active questions
+    const currentQuestions = await db.question.findMany({
+        where: { jobId: jobId, archived: false },
     });
 
-    const idsToDelete = questionsToDeleteDetails.map(q => q.id);
+    const newQuestions = data.questions || [];
 
-    if (idsToDelete.length > 0) {
-        // Delete associated answers first (manual cascade)
-        await db.answer.deleteMany({
-            where: {
-                questionId: { in: idsToDelete }
-            }
-        });
+    // 2. Identify questions to Archive
+    // A question is archived if it exists in DB but is NOT present in the new list (matching text AND type)
+    const questionsToArchive = currentQuestions.filter(
+        (currentQ) => !newQuestions.some(
+            (newQ) => newQ.text === currentQ.text && newQ.type === currentQ.type
+        )
+    );
 
-        // Now safe to delete the questions
-        await db.question.deleteMany({
+    // 3. Identify questions to Create
+    // A question is created if it exists in the new list but is NOT present in the DB (matching text AND type)
+    const questionsToCreate = newQuestions.filter(
+        (newQ) => !currentQuestions.some(
+            (currentQ) => currentQ.text === newQ.text && currentQ.type === newQ.type
+        )
+    );
+
+    // Execute Archival
+    if (questionsToArchive.length > 0) {
+        await db.question.updateMany({
             where: {
-                id: { in: idsToDelete }
-            }
+                id: { in: questionsToArchive.map((q) => q.id) },
+            },
+            data: { archived: true },
         });
     }
 
-    // 2. Update existing questions and create new ones
-    // Note: We don't include deleteMany here anymore.
+    // Execute Creation (and Job Update)
     await db.job.update({
         where: { id: jobId },
         data: {
@@ -143,16 +141,10 @@ export async function updateJob(jobId: string, data: {
             requireAadhar: data.requireAadhar,
             requirePAN: data.requirePAN,
             questions: {
-                // Update existing questions
-                update: questionsToUpdate.map(q => ({
-                    where: { id: q.id },
-                    data: { text: q.text, type: q.type }
-                })),
-                // Create new questions
-                create: questionsToCreate.map(q => ({
+                create: questionsToCreate.map((q) => ({
                     text: q.text,
                     type: q.type
-                }))
+                })),
             },
         },
     });

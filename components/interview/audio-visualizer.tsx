@@ -13,6 +13,11 @@ export function AudioVisualizer({ stream }: { stream: MediaStream | null }) {
         const source = audioContext.createMediaStreamSource(stream);
         source.connect(analyser);
 
+        // Resume context if suspended (browser policy)
+        if (audioContext.state === 'suspended') {
+            audioContext.resume().catch(e => console.error("Audio resume failed", e));
+        }
+
         analyser.fftSize = 256;
         const bufferLength = analyser.frequencyBinCount;
         const dataArray = new Uint8Array(bufferLength);
