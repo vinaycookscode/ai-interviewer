@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckCircle2, XCircle, AlertCircle, Lightbulb, Wand2, Loader2, ArrowRight, FileText, Copy, Check } from "lucide-react";
 import { rewriteResume, generateCoverLetter } from "@/actions/resume-screener";
-import { ResumePdfGenerator } from "./resume-pdf-generator";
+import { ResumeDownloader } from "./resume-downloader";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 
@@ -386,7 +386,7 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                                         <p className="text-sm text-muted-foreground">Predicted New Score: <span className="font-bold text-foreground">{rewrittenResume.score}</span></p>
                                     </div>
                                     <div className="flex gap-2">
-                                        <ResumePdfGenerator content={rewrittenResume.content} />
+                                        <ResumeDownloader content={rewrittenResume.content} />
                                         <Button variant="ghost" onClick={() => setRewrittenResume(null)}>Back</Button>
                                     </div>
                                 </CardHeader>

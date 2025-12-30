@@ -108,9 +108,33 @@ export async function analyzeResume(formData: FormData) {
         const response = await result.response;
         const text = response.text();
 
-        // Clean up response
-        const cleanedText = text.replace(/```json/g, "").replace(/```/g, "").trim();
-        const analysis = JSON.parse(cleanedText);
+        // Clean up response - Robust JSON extraction
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+            console.error("No JSON found in response:", text);
+            throw new Error("AI response format error. Please try again.");
+        }
+
+        const jsonString = jsonMatch[0];
+        let analysis;
+
+        try {
+            analysis = JSON.parse(jsonString);
+        } catch (e) {
+            console.error("Initial JSON Parse failed, attempting repair:", e);
+            // Common AI JSON errors: Trailing commas, unescaped newlines
+            try {
+                // Remove trailing commas before } or ]
+                const repaired = jsonString.replace(/,(\s*[\]}])/g, '$1')
+                    // Escape unescaped newlines within strings (basic attempt)
+                    // .replace(/(?<!\\)\n/g, "\\n") // Risky if it hits formatting
+                    ;
+                analysis = JSON.parse(repaired);
+            } catch (e2) {
+                console.error("JSON Repair failed:", e2, "Raw:", jsonString);
+                throw new Error("Failed to parse analysis results. The AI response was malformed.");
+            }
+        }
 
         // Include original text for rewriting purposes
         analysis.resumeText = resumeText;
@@ -209,7 +233,13 @@ export async function rewriteResume(currentText: string, analysis: any, customIn
             3. Organize the content into clear sections (Summary, Experience, Education, Skills, etc.).
             4. Ensure the tone is professional and concise.
             5. Do NOT invent new facts. Stick to the information provided in the original text, but present it better.
-            ${customInstructions ? "6. STRICTLY FOLLOW the user's custom instructions provided above." : ""}
+            6. FORMATTING REQUIREMENTS:
+               - Use professional Markdown.
+               - Find and correctly format all links (LinkedIn, Portfolio, Email) using Markdown syntax \`[Link Text](url)\`.
+               - Use bullet points \`- \` for all lists.
+               - Separate each job position or project entry with a horizontal rule \`---\` on a new line.
+               - Ensure consistent spacing between sections.
+            ${customInstructions ? "7. STRICTLY FOLLOW the user's custom instructions provided above." : ""}
             
             Return ONLY a valid JSON object with the following structure:
             {
@@ -225,9 +255,28 @@ export async function rewriteResume(currentText: string, analysis: any, customIn
         const response = await result.response;
         const text = response.text();
 
-        // Clean up response
-        const cleanedText = text.replace(/```json/g, "").replace(/```/g, "").trim();
-        const rewriteResult = JSON.parse(cleanedText);
+        // Clean up response - Robust JSON extraction
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+            console.error("No JSON found in response:", text);
+            throw new Error("AI response format error. Please try again.");
+        }
+
+        const jsonString = jsonMatch[0];
+        let rewriteResult;
+
+        try {
+            rewriteResult = JSON.parse(jsonString);
+        } catch (e) {
+            console.error("Initial JSON Parse failed, attempting repair:", e);
+            try {
+                const repaired = jsonString.replace(/,(\s*[\]}])/g, '$1');
+                rewriteResult = JSON.parse(repaired);
+            } catch (e2) {
+                console.error("JSON Repair failed:", e2, "Raw:", jsonString);
+                throw new Error("Failed to parse rewrite results. The AI response was malformed.");
+            }
+        }
 
         return { success: true, ...rewriteResult };
 

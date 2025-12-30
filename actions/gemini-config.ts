@@ -63,11 +63,18 @@ export async function getAvailableGeminiModels() {
             })
             .map((m: any) => {
                 const id = m.name.replace('models/', '');
-                const isRateLimited = cookieStore.get(`rate_limit_${id}`)?.value === 'true';
+
+                // Fuzzy rate limit check to handle aliases vs specific versions
+                // e.g. gemini-1.5-pro-001 vs gemini-1.5-pro
+                const baseId = id.replace(/-latest$/, '').replace(/-\d+$/, '');
+
+                const isExactLimited = cookieStore.get(`rate_limit_${id}`)?.value === 'true';
+                const isBaseLimited = cookieStore.get(`rate_limit_${baseId}`)?.value === 'true';
+
                 return {
                     id: id,
                     name: m.displayName,
-                    disabled: isRateLimited, // Add disabled flag
+                    disabled: isExactLimited || isBaseLimited, // Add disabled flag
                 };
             })
             .sort((a: any, b: any) => {
