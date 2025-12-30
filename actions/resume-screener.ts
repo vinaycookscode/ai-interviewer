@@ -48,26 +48,59 @@ export async function analyzeResume(formData: FormData) {
             return { error: "Could not extract sufficient text from the resume. Please ensure it is a text-based PDF." };
         }
 
+        // Get optional Job Description
+        const jobDescription = formData.get("jobDescription") as string;
+
         // Analyze with Gemini
         const model = await getGeminiModelInstance();
 
-        const prompt = `
+        let prompt = `
             You are an expert ATS (Applicant Tracking System) and Resume Coach.
             Analyze the following resume text and provide a structured evaluation.
 
             Resume Text:
             "${resumeText.slice(0, 10000)}"
+        `;
 
+        // Add JD Context if provided
+        if (jobDescription && jobDescription.trim().length > 10) {
+            prompt += `
+            
+            Target Job Description:
+            "${jobDescription.slice(0, 5000)}"
+
+            Perform a COMPARATIVE ANALYSIS.
+            
+            Return ONLY a valid JSON object with the following structure:
+            {
+                "atsScore": number (0-100, based on match with JD),
+                "summary": "Brief professional summary of the candidate (max 2 sentences)",
+                "strengths": ["List of 3-5 key strengths identified in relation to the JD"],
+                "weaknesses": ["List of 3-5 areas where the resume falls short of the JD"],
+                "formattingIssues": ["List of any formatting issues"],
+                "improvementTips": ["List of 3-5 actionable tips to tailor the resume for THIS specific job"],
+                "missingKeywords": ["List of 5-10 important keywords/skills from the JD that are MISSING from the resume"],
+                "matchScore": number (0-100, similarity score)
+            }
+            `;
+        } else {
+            prompt += `
+            
             Return ONLY a valid JSON object with the following structure:
             {
                 "atsScore": number (0-100),
                 "summary": "Brief professional summary of the candidate (max 2 sentences)",
                 "strengths": ["List of 3-5 key strengths identified"],
                 "weaknesses": ["List of 3-5 areas for improvement"],
-                "formattingIssues": ["List of any formatting issues (e.g., missing sections, bad layout hints)"],
-                "improvementTips": ["List of 3-5 actionable tips to improve the resume"]
+                "formattingIssues": ["List of any formatting issues"],
+                "improvementTips": ["List of 3-5 actionable tips to improve the resume"],
+                "missingKeywords": [],
+                "matchScore": null
             }
-            
+            `;
+        }
+
+        prompt += `
             Do not include any markdown formatting (like \`\`\`json). Just the raw JSON string.
         `;
 
@@ -81,6 +114,7 @@ export async function analyzeResume(formData: FormData) {
 
         // Include original text for rewriting purposes
         analysis.resumeText = resumeText;
+        analysis.jobDescription = jobDescription; // Pass back for cover letter generation
 
         return { success: true, analysis };
 
@@ -96,6 +130,51 @@ export async function analyzeResume(formData: FormData) {
         }
 
         return { error: `Failed to analyze resume: ${error.message || error}` };
+    }
+}
+
+export async function generateCoverLetter(resumeText: string, jobDescription: string) {
+    const session = await auth();
+
+    if (!session || !session.user) {
+        return { error: "Unauthorized" };
+    }
+
+    try {
+        const model = await getGeminiModelInstance();
+
+        const prompt = `
+            You are an expert Career Coach and Professional Writer.
+            Write a compelling, professional Cover Letter for a candidate applying to a specific job.
+
+            Candidate's Resume Context:
+            "${resumeText.slice(0, 10000)}"
+
+            Target Job Description:
+            "${jobDescription.slice(0, 5000)}"
+
+            Instructions:
+            1. Address the hiring manager professionally.
+            2. Hook the reader in the first paragraph by mentioning the specific role and why the candidate is a great fit.
+            3. In the body paragraphs, map the candidate's specific achievements (from resume) to the key requirements of the JD.
+            4. Keep the tone confident, enthusiastic, and professional.
+            5. Use Markdown formatting for readability.
+
+            Return ONLY the cover letter text in Markdown. Do not include any JSON wrapping.
+        `;
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const coverLetter = response.text();
+
+        return { success: true, coverLetter };
+
+    } catch (error: any) {
+        console.error("Error generating cover letter:", error);
+        if (error.status === 429 || error.message?.includes('429') || error.message?.includes('Resource has been exhausted')) {
+            return { error: "Rate limit reached. Please try again later." };
+        }
+        return { error: `Failed to generate cover letter: ${error.message}` };
     }
 }
 

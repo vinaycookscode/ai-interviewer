@@ -5,20 +5,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle2, XCircle, AlertCircle, Lightbulb, Wand2, Loader2, ArrowRight } from "lucide-react";
-import { rewriteResume } from "@/actions/resume-screener";
+import { CheckCircle2, XCircle, AlertCircle, Lightbulb, Wand2, Loader2, ArrowRight, FileText, Copy, Check } from "lucide-react";
+import { rewriteResume, generateCoverLetter } from "@/actions/resume-screener";
 import { ResumePdfGenerator } from "./resume-pdf-generator";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 
 interface AnalysisResult {
     atsScore: number;
+    matchScore?: number | null; // New field
     summary: string;
     strengths: string[];
     weaknesses: string[];
     formattingIssues: string[];
     improvementTips: string[];
-    resumeText?: string; // We need the original text to rewrite it
+    missingKeywords?: string[]; // New field
+    resumeText?: string;
+    jobDescription?: string; // New field
 }
 
 interface ResumeAnalysisViewProps {
@@ -29,6 +32,11 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
     const [isRewriting, setIsRewriting] = useState(false);
     const [rewrittenResume, setRewrittenResume] = useState<{ content: string; score: number } | null>(null);
     const [customInstructions, setCustomInstructions] = useState("");
+
+    // Cover Letter State
+    const [isGeneratingCoverLetter, setIsGeneratingCoverLetter] = useState(false);
+    const [coverLetter, setCoverLetter] = useState<string | null>(null);
+    const [hasCopiedCL, setHasCopiedCL] = useState(false);
 
     const getScoreColor = (score: number) => {
         if (score >= 80) return "text-green-500";
@@ -67,71 +75,131 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
         }
     };
 
+    const handleGenerateCoverLetter = async () => {
+        if (!analysis.resumeText || !analysis.jobDescription) {
+            toast.error("Missing Resume or Job Description.");
+            return;
+        }
+
+        setIsGeneratingCoverLetter(true);
+        try {
+            const result = await generateCoverLetter(analysis.resumeText, analysis.jobDescription);
+            if (result.error) {
+                toast.error(result.error);
+            } else if (result.coverLetter) {
+                setCoverLetter(result.coverLetter);
+                toast.success("Cover Letter Generated!");
+            }
+        } catch (error) {
+            toast.error("Failed to generate cover letter.");
+        } finally {
+            setIsGeneratingCoverLetter(false);
+        }
+    };
+
+    const copyCoverLetter = () => {
+        if (coverLetter) {
+            navigator.clipboard.writeText(coverLetter);
+            setHasCopiedCL(true);
+            setTimeout(() => setHasCopiedCL(false), 2000);
+            toast.success("Copied to clipboard");
+        }
+    };
+
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Score Card */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>ATS Compatibility Score</CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col items-center justify-center py-6">
-                    <div className="relative w-40 h-40 flex items-center justify-center rounded-full border-8 border-muted">
-                        <div className={`absolute inset-0 rounded-full border-8 border-transparent border-t-${getScoreBg(analysis.atsScore).replace("bg-", "")} opacity-20`}></div>
-                        <div className="text-center">
-                            <span className={`text-5xl font-bold ${getScoreColor(analysis.atsScore)}`}>
-                                {analysis.atsScore}
-                            </span>
-                            <span className="text-sm text-muted-foreground block mt-1">/ 100</span>
-                        </div>
-                    </div>
-                    <p className="mt-4 text-center text-muted-foreground max-w-md">
-                        {analysis.summary}
-                    </p>
-                </CardContent>
-            </Card>
-
-            {/* Rewrite Action - HIDDEN FOR NOW */}
-            {/*
-            {!rewrittenResume && (
-                <Card className="border-purple-500/20 bg-purple-500/5">
+            {/* Score Cards Grid */}
+            <div className="grid gap-6 md:grid-cols-2">
+                {/* ATS Score */}
+                <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-purple-600">
-                            <Wand2 className="h-5 w-5" />
-                            AI Resume Rewrite
-                        </CardTitle>
+                        <CardTitle>{analysis.matchScore ? "Target Job Match Score" : "General ATS Score"}</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <p className="text-sm text-muted-foreground">
-                            Want to improve your resume? Our AI can rewrite it for you, fixing issues and applying best practices. You can also give specific instructions.
+                    <CardContent className="flex flex-col items-center justify-center py-6">
+                        <div className="relative w-40 h-40 flex items-center justify-center rounded-full border-8 border-muted">
+                            <div className={`absolute inset-0 rounded-full border-8 border-transparent border-t-${getScoreBg(analysis.matchScore || analysis.atsScore).replace("bg-", "")} opacity-20`}></div>
+                            <div className="text-center">
+                                <span className={`text-5xl font-bold ${getScoreColor(analysis.matchScore || analysis.atsScore)}`}>
+                                    {analysis.matchScore || analysis.atsScore}
+                                </span>
+                                <span className="text-sm text-muted-foreground block mt-1">/ 100</span>
+                            </div>
+                        </div>
+                        <p className="mt-4 text-center text-muted-foreground max-w-md">
+                            {analysis.summary}
                         </p>
-                        <Textarea
-                            placeholder="Optional: Add custom instructions (e.g., 'Focus on my leadership experience', 'Make it more concise', 'Target a Senior Developer role')..."
-                            value={customInstructions}
-                            onChange={(e) => setCustomInstructions(e.target.value)}
-                            className="bg-background"
-                        />
-                        <Button
-                            size="lg"
-                            onClick={handleRewrite}
-                            disabled={isRewriting}
-                            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg transition-all hover:scale-[1.02]"
-                        >
-                            {isRewriting ? (
-                                <>
-                                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                    AI is rewriting your resume...
-                                </>
-                            ) : (
-                                <>
-                                    <Wand2 className="mr-2 h-5 w-5" />
-                                    Fix My Resume with AI
-                                </>
-                            )}
+                    </CardContent>
+                </Card>
+
+                {/* Missing Keywords (if JD provided) */}
+                {analysis.missingKeywords && analysis.missingKeywords.length > 0 && (
+                    <Card className="border-red-500/20 bg-red-500/5">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-red-600">
+                                <AlertCircle className="h-5 w-5" />
+                                Missing Keywords
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-sm text-muted-foreground mb-4">
+                                These important keywords found in the Job Description are missing from your resume:
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                                {analysis.missingKeywords.map((keyword, i) => (
+                                    <span key={i} className="px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm font-medium dark:bg-red-900/50 dark:text-red-200">
+                                        {keyword}
+                                    </span>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
+
+            {/* Cover Letter Generator Section */}
+            {analysis.jobDescription && !coverLetter && (
+                <div className="flex justify-center">
+                    <Button
+                        size="lg"
+                        onClick={handleGenerateCoverLetter}
+                        disabled={isGeneratingCoverLetter}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                    >
+                        {isGeneratingCoverLetter ? (
+                            <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Writing Cover Letter...
+                            </>
+                        ) : (
+                            <>
+                                <FileText className="mr-2 h-4 w-4" />
+                                Generate Tailored Cover Letter
+                            </>
+                        )}
+                    </Button>
+                </div>
+            )}
+
+            {/* Display Generated Cover Letter */}
+            {coverLetter && (
+                <Card className="border-indigo-500/20 bg-indigo-500/5">
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <CardTitle className="flex items-center gap-2 text-indigo-600">
+                            <FileText className="h-5 w-5" />
+                            Tailored Cover Letter
+                        </CardTitle>
+                        <Button variant="ghost" size="sm" onClick={copyCoverLetter}>
+                            {hasCopiedCL ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                            {hasCopiedCL ? "Copied" : "Copy Text"}
                         </Button>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="p-4 bg-background rounded-md border text-sm max-h-96 overflow-y-auto font-sans prose dark:prose-invert max-w-none shadow-inner">
+                            <ReactMarkdown>{coverLetter}</ReactMarkdown>
+                        </div>
                     </CardContent>
                 </Card>
             )}
-            */}
 
             {/* Rewritten Resume Result */}
             {rewrittenResume && (
