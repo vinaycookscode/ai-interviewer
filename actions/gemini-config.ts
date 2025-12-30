@@ -14,8 +14,9 @@ export async function getGeminiModel() {
 
 export async function markModelRateLimited(model: string) {
     const cookieStore = await cookies();
-    // Block the model for 1 hour
-    cookieStore.set(`rate_limit_${model}`, 'true', { maxAge: 3600 });
+    // Block the model for 1 hour, store the expiry timestamp
+    const expiry = Date.now() + 3600000;
+    cookieStore.set(`rate_limit_${model}`, expiry.toString(), { maxAge: 3600 });
 }
 
 export async function getAvailableGeminiModels() {
@@ -68,13 +69,26 @@ export async function getAvailableGeminiModels() {
                 // e.g. gemini-1.5-pro-001 vs gemini-1.5-pro
                 const baseId = id.replace(/-latest$/, '').replace(/-\d+$/, '');
 
-                const isExactLimited = cookieStore.get(`rate_limit_${id}`)?.value === 'true';
-                const isBaseLimited = cookieStore.get(`rate_limit_${baseId}`)?.value === 'true';
+                const getLimitTime = (key: string) => {
+                    const val = cookieStore.get(key)?.value;
+                    if (!val) return null;
+                    if (val === 'true') return null; // Legacy
+                    const num = Number(val);
+                    return !isNaN(num) && num > Date.now() ? num : null;
+                };
+
+                const exactLimit = getLimitTime(`rate_limit_${id}`);
+                const baseLimit = getLimitTime(`rate_limit_${baseId}`);
+
+                // Only disable if we have a valid future timestamp
+                const disabled = !!exactLimit || !!baseLimit;
+                const availableAt = exactLimit || baseLimit || undefined;
 
                 return {
                     id: id,
                     name: m.displayName,
-                    disabled: isExactLimited || isBaseLimited, // Add disabled flag
+                    disabled: disabled,
+                    availableAt: availableAt
                 };
             })
             .sort((a: any, b: any) => {

@@ -25,7 +25,7 @@ interface GeminiModelSelectorProps {
 
 export function GeminiModelSelector({ currentModel }: GeminiModelSelectorProps) {
     const [model, setModel] = React.useState(currentModel);
-    const [models, setModels] = React.useState<{ value: string; label: string; disabled?: boolean }[]>(DEFAULT_MODELS); // Updated type
+    const [models, setModels] = React.useState<{ value: string; label: string; disabled?: boolean; availableAt?: number }[]>(DEFAULT_MODELS);
 
     const fetchModels = React.useCallback(async () => {
         try {
@@ -34,7 +34,8 @@ export function GeminiModelSelector({ currentModel }: GeminiModelSelectorProps) 
                 const formatted = availableModels.map((m: any) => ({
                     value: m.id,
                     label: m.name,
-                    disabled: m.disabled
+                    disabled: m.disabled,
+                    availableAt: m.availableAt
                 }));
                 setModels(formatted);
             }
@@ -75,9 +76,15 @@ export function GeminiModelSelector({ currentModel }: GeminiModelSelectorProps) 
                 <SelectContent className="max-h-[300px]">
                     {models.map((m) => (
                         <SelectItem key={m.value} value={m.value} className="text-xs" disabled={m.disabled}>
-                            <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center justify-between w-full gap-2">
                                 <span>{m.label}</span>
-                                {m.disabled && <span className="text-[10px] text-destructive ml-2">(Limit Reached)</span>}
+                                {m.disabled && (
+                                    <span className="text-[10px] text-destructive whitespace-nowrap">
+                                        {m.availableAt
+                                            ? `Avail ${new Date(m.availableAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                                            : "(Limit Reached)"}
+                                    </span>
+                                )}
                             </div>
                         </SelectItem>
                     ))}
