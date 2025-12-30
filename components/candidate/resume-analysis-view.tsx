@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckCircle2, XCircle, AlertCircle, Lightbulb, Wand2, Loader2, ArrowRight, FileText, Copy, Check } from "lucide-react";
 import { rewriteResume, generateCoverLetter } from "@/actions/resume-screener";
 import { ResumePdfGenerator } from "./resume-pdf-generator";
@@ -108,217 +110,296 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Score Cards Grid */}
-            <div className="grid gap-6 md:grid-cols-2">
-                {/* ATS Score */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{analysis.matchScore ? "Target Job Match Score" : "General ATS Score"}</CardTitle>
+            {/* Top Metrics Row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Card className="col-span-2 md:col-span-1">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                            {analysis.matchScore ? "JD Match Score" : "ATS Score"}
+                        </CardTitle>
                     </CardHeader>
-                    <CardContent className="flex flex-col items-center justify-center py-6">
-                        <div className="relative w-40 h-40 flex items-center justify-center rounded-full border-8 border-muted">
-                            <div className={`absolute inset-0 rounded-full border-8 border-transparent border-t-${getScoreBg(analysis.matchScore || analysis.atsScore).replace("bg-", "")} opacity-20`}></div>
-                            <div className="text-center">
-                                <span className={`text-5xl font-bold ${getScoreColor(analysis.matchScore || analysis.atsScore)}`}>
-                                    {analysis.matchScore || analysis.atsScore}
-                                </span>
-                                <span className="text-sm text-muted-foreground block mt-1">/ 100</span>
+                    <CardContent>
+                        <div className="flex items-baseline gap-2">
+                            <span className={`text-4xl font-bold ${getScoreColor(analysis.matchScore || analysis.atsScore)}`}>
+                                {analysis.matchScore || analysis.atsScore}
+                            </span>
+                            <span className="text-sm text-muted-foreground">/100</span>
+                        </div>
+                        {analysis.matchScore && (
+                            <p className="text-xs text-muted-foreground mt-1">Based on Job Description</p>
+                        )}
+                    </CardContent>
+                </Card>
+
+                <Card className="col-span-2 md:col-span-1">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">
+                            Key Findings
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2 text-sm">
+                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                <span className="font-medium">{analysis.strengths.length} Strengths</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm">
+                                <XCircle className="h-4 w-4 text-red-500" />
+                                <span className="font-medium">{analysis.weaknesses.length} Weaknesses</span>
                             </div>
                         </div>
-                        <p className="mt-4 text-center text-muted-foreground max-w-md">
+                    </CardContent>
+                </Card>
+
+                <Card className="col-span-2">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Executive Summary</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-sm text-muted-foreground line-clamp-2 md:line-clamp-3">
                             {analysis.summary}
                         </p>
                     </CardContent>
                 </Card>
-
-                {/* Missing Keywords (if JD provided) */}
-                {analysis.missingKeywords && analysis.missingKeywords.length > 0 && (
-                    <Card className="border-red-500/20 bg-red-500/5">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-red-600">
-                                <AlertCircle className="h-5 w-5" />
-                                Missing Keywords
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-muted-foreground mb-4">
-                                These important keywords found in the Job Description are missing from your resume:
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                                {analysis.missingKeywords.map((keyword, i) => (
-                                    <span key={i} className="px-3 py-1 rounded-full bg-red-100 text-red-700 text-sm font-medium dark:bg-red-900/50 dark:text-red-200">
-                                        {keyword}
-                                    </span>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
             </div>
 
-            {/* Cover Letter Generator Section */}
-            {analysis.jobDescription && !coverLetter && (
-                <div className="flex justify-center">
-                    <Button
-                        size="lg"
-                        onClick={handleGenerateCoverLetter}
-                        disabled={isGeneratingCoverLetter}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white"
-                    >
-                        {isGeneratingCoverLetter ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Writing Cover Letter...
-                            </>
-                        ) : (
-                            <>
-                                <FileText className="mr-2 h-4 w-4" />
-                                Generate Tailored Cover Letter
-                            </>
-                        )}
-                    </Button>
-                </div>
-            )}
+            {/* Main Content Tabs */}
+            <Tabs defaultValue="analysis" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 lg:grid-cols-3 lg:w-[400px]">
+                    <TabsTrigger value="analysis">Detail Analysis</TabsTrigger>
+                    {analysis.jobDescription && <TabsTrigger value="cover-letter">Cover Letter</TabsTrigger>}
+                    <TabsTrigger value="rewrite">Resume Fixer</TabsTrigger>
+                </TabsList>
 
-            {/* Display Generated Cover Letter */}
-            {coverLetter && (
-                <Card className="border-indigo-500/20 bg-indigo-500/5">
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle className="flex items-center gap-2 text-indigo-600">
-                            <FileText className="h-5 w-5" />
-                            Tailored Cover Letter
-                        </CardTitle>
-                        <Button variant="ghost" size="sm" onClick={copyCoverLetter}>
-                            {hasCopiedCL ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                            {hasCopiedCL ? "Copied" : "Copy Text"}
-                        </Button>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="p-4 bg-background rounded-md border text-sm max-h-96 overflow-y-auto font-sans prose dark:prose-invert max-w-none shadow-inner">
-                            <ReactMarkdown>{coverLetter}</ReactMarkdown>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Rewritten Resume Result */}
-            {rewrittenResume && (
-                <Card className="border-purple-500/50 bg-purple-500/5 overflow-hidden">
-                    <CardHeader className="bg-purple-500/10 border-b border-purple-500/20">
-                        <CardTitle className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <Wand2 className="h-5 w-5 text-purple-600" />
-                                Improved Resume Ready!
-                            </div>
-                            <div className="flex items-center gap-2 text-sm">
-                                <span className="text-muted-foreground">Predicted Score:</span>
-                                <span className="font-bold text-green-600 text-lg">{rewrittenResume.score}</span>
-                                <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                            </div>
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-6 space-y-4">
-                        <p className="text-sm text-muted-foreground">
-                            Your resume has been rewritten to address the identified issues, improve formatting, and highlight your strengths.
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-4">
-                            <ResumePdfGenerator content={rewrittenResume.content} />
-                            <Button variant="outline" onClick={() => setRewrittenResume(null)}>
-                                Close Preview
-                            </Button>
-                        </div>
-                        <div className="mt-4 p-4 bg-background rounded-md border text-sm max-h-96 overflow-y-auto font-sans prose dark:prose-invert max-w-none">
-                            <ReactMarkdown>{rewrittenResume.content}</ReactMarkdown>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            <div className="grid gap-6 md:grid-cols-2">
-                {/* Strengths */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <CheckCircle2 className="h-5 w-5 text-green-500" />
-                            Key Strengths
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ul className="space-y-2">
-                            {analysis.strengths.map((item, i) => (
-                                <li key={i} className="flex items-start gap-2 text-sm">
-                                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-green-500 shrink-0" />
-                                    {item}
-                                </li>
-                            ))}
-                        </ul>
-                    </CardContent>
-                </Card>
-
-                {/* Weaknesses */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <XCircle className="h-5 w-5 text-red-500" />
-                            Areas for Improvement
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ul className="space-y-2">
-                            {analysis.weaknesses.map((item, i) => (
-                                <li key={i} className="flex items-start gap-2 text-sm">
-                                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-red-500 shrink-0" />
-                                    {item}
-                                </li>
-                            ))}
-                        </ul>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Formatting Issues */}
-            {analysis.formattingIssues.length > 0 && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <AlertCircle className="h-5 w-5 text-yellow-500" />
-                            Formatting Issues
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ul className="space-y-2">
-                            {analysis.formattingIssues.map((item, i) => (
-                                <li key={i} className="flex items-start gap-2 text-sm">
-                                    <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-yellow-500 shrink-0" />
-                                    {item}
-                                </li>
-                            ))}
-                        </ul>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Improvement Tips */}
-            <Card className="border-blue-500/20 bg-blue-500/5">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
-                        <Lightbulb className="h-5 w-5" />
-                        Actionable Tips
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <ul className="space-y-3">
-                        {analysis.improvementTips.map((item, i) => (
-                            <li key={i} className="flex gap-3 text-sm">
-                                <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-600 dark:bg-blue-900 dark:text-blue-300">
-                                    {i + 1}
+                {/* Tab 1: Detailed Analysis */}
+                <TabsContent value="analysis" className="space-y-4 mt-4">
+                    {/* Missing Keywords Alert */}
+                    {analysis.missingKeywords && analysis.missingKeywords.length > 0 && (
+                        <Card className="border-red-500/20 bg-red-500/5">
+                            <CardHeader className="py-3">
+                                <CardTitle className="flex items-center gap-2 text-base text-red-600">
+                                    <AlertCircle className="h-4 w-4" />
+                                    Missing Keywords from JD
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="py-3">
+                                <div className="flex flex-wrap gap-2">
+                                    {analysis.missingKeywords.map((keyword, i) => (
+                                        <Badge key={i} variant="outline" className="bg-red-100 text-red-700 hover:bg-red-100 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800">
+                                            {keyword}
+                                        </Badge>
+                                    ))}
                                 </div>
-                                <span className="pt-0.5">{item}</span>
-                            </li>
-                        ))}
-                    </ul>
-                </CardContent>
-            </Card>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-base">
+                                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                                    Strengths
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ul className="space-y-2">
+                                    {analysis.strengths.map((item, i) => (
+                                        <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                                            <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-green-500 shrink-0" />
+                                            {item}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-base">
+                                    <XCircle className="h-5 w-5 text-red-500" />
+                                    Weaknesses & Gaps
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ul className="space-y-2">
+                                    {analysis.weaknesses.map((item, i) => (
+                                        <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                                            <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-red-500 shrink-0" />
+                                            {item}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-base">
+                                    <AlertCircle className="h-5 w-5 text-yellow-500" />
+                                    Formatting Checks
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                {analysis.formattingIssues.length > 0 ? (
+                                    <ul className="space-y-2">
+                                        {analysis.formattingIssues.map((item, i) => (
+                                            <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                                                <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-yellow-500 shrink-0" />
+                                                {item}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <div className="flex items-center gap-2 text-sm text-green-600">
+                                        <Check className="h-4 w-4" /> No formatting issues found!
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        <Card className="border-blue-500/20 bg-blue-500/5">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-base text-blue-600 dark:text-blue-400">
+                                    <Lightbulb className="h-5 w-5" />
+                                    Improvement Tips
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <ul className="space-y-2">
+                                    {analysis.improvementTips.map((item, i) => (
+                                        <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                                            <span className="mt-1.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-600 dark:bg-blue-900 dark:text-blue-300">
+                                                {i + 1}
+                                            </span>
+                                            {item}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </TabsContent>
+
+                {/* Tab 2: Cover Letter (If JD provided) */}
+                {analysis.jobDescription && (
+                    <TabsContent value="cover-letter" className="mt-4">
+                        <Card className="min-h-[400px]">
+                            <CardHeader>
+                                <CardTitle className="flex items-center justify-between">
+                                    <span>Tailored Cover Letter</span>
+                                    {coverLetter && (
+                                        <Button variant="outline" size="sm" onClick={copyCoverLetter}>
+                                            {hasCopiedCL ? <Check className="h-4 w-4 text-green-500 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+                                            {hasCopiedCL ? "Copied" : "Copy to Clipboard"}
+                                        </Button>
+                                    )}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                {!coverLetter ? (
+                                    <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                                        <FileText className="h-16 w-16 text-muted-foreground/20" />
+                                        <div className="text-center space-y-2">
+                                            <h3 className="text-lg font-medium">Ready to Write?</h3>
+                                            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                                                Generate a professional cover letter specifically tailored to match your resume with the provided job description.
+                                            </p>
+                                        </div>
+                                        <Button
+                                            size="lg"
+                                            onClick={handleGenerateCoverLetter}
+                                            disabled={isGeneratingCoverLetter}
+                                            className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                                        >
+                                            {isGeneratingCoverLetter ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    Writing...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Wand2 className="mr-2 h-4 w-4" />
+                                                    Generate Cover Letter
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="p-6 bg-muted/30 rounded-lg border text-sm leading-relaxed font-sans whitespace-pre-wrap">
+                                        <ReactMarkdown>{coverLetter}</ReactMarkdown>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                )}
+
+                {/* Tab 3: Resume Rewrite */}
+                <TabsContent value="rewrite" className="mt-4">
+                    <div className="space-y-4">
+                        {!rewrittenResume ? (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>AI Resume Fixer</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <p className="text-sm text-muted-foreground">
+                                        Use AI to rewrite your resume. We'll fix formatting, improve bullet points, and better align your experience with the target job.
+                                    </p>
+                                    <Textarea
+                                        placeholder="Optional: Add custom instructions (e.g., 'Emphasize my leadership roles', 'Keep it to 1 page')..."
+                                        value={customInstructions}
+                                        onChange={(e) => setCustomInstructions(e.target.value)}
+                                        className="bg-background min-h-[100px]"
+                                    />
+                                    <Button
+                                        size="lg"
+                                        onClick={handleRewrite}
+                                        disabled={isRewriting}
+                                        className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 text-white"
+                                    >
+                                        {isRewriting ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Rewriting...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Wand2 className="mr-2 h-4 w-4" />
+                                                Rewrite & Improve Resume
+                                            </>
+                                        )}
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <Card className="border-green-500/20">
+                                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                    <div className="space-y-1">
+                                        <CardTitle className="text-green-600 flex items-center gap-2">
+                                            <CheckCircle2 className="h-5 w-5" />
+                                            Rewrite Complete
+                                        </CardTitle>
+                                        <p className="text-sm text-muted-foreground">Predicted New Score: <span className="font-bold text-foreground">{rewrittenResume.score}</span></p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <ResumePdfGenerator content={rewrittenResume.content} />
+                                        <Button variant="ghost" onClick={() => setRewrittenResume(null)}>Back</Button>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="p-6 bg-background rounded-md border text-sm max-h-[600px] overflow-y-auto font-sans prose dark:prose-invert max-w-none">
+                                        <ReactMarkdown>{rewrittenResume.content}</ReactMarkdown>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }
