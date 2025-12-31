@@ -2,6 +2,13 @@
 export const FEATURES = {
     MULTILINGUAL_SUPPORT: 'multilingual_support',
     MOBILE_ACCESS: 'mobile_access',
+    // Global Features
+    RESUME_SCREENER: 'resume_screener',
+    PRACTICE_INTERVIEWS: 'practice_interviews',
+    JOB_MANAGEMENT: 'job_management',
+    CANDIDATE_SEARCH: 'candidate_search',
+    ANALYTICS: 'analytics',
+    MODEL_SELECTION: 'model_selection',
 } as const;
 
 export type FeatureKey = typeof FEATURES[keyof typeof FEATURES];

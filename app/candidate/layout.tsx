@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { ModeToggle } from "@/components/mode-toggle";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { CandidateSidebar } from "@/components/candidate/sidebar";
+import { getFeatureFlags } from "@/actions/feature-flags";
 
 export default async function CandidateLayout({
     children,
@@ -22,12 +23,15 @@ export default async function CandidateLayout({
         redirect("/dashboard");
     }
 
+    const flags = await getFeatureFlags();
+    const flagMap = flags.reduce((acc: Record<string, boolean>, f: any) => ({ ...acc, [f.key]: f.enabled }), {});
+
     return (
         <div className="min-h-screen bg-background flex flex-col">
             <DashboardHeader user={session.user} userRole={session.user.role} />
 
             <div className="flex flex-1">
-                <CandidateSidebar />
+                <CandidateSidebar featureFlags={flagMap} />
 
                 {/* Main Content Area */}
                 <main className="flex-1 overflow-y-auto">

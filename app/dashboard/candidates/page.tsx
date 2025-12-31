@@ -1,16 +1,38 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Briefcase } from "lucide-react";
+import { Briefcase, Lock } from "lucide-react";
 import { CandidatesTable } from "@/components/dashboard/candidates-table";
+import { checkFeature } from "@/actions/feature-flags";
+import { FEATURES } from "@/lib/features";
 
 export default async function CandidatesPage({
     searchParams,
 }: {
     searchParams: Promise<{ page?: string }>;
 }) {
+    const isEnabled = await checkFeature(FEATURES.CANDIDATE_SEARCH);
+
+    if (!isEnabled) {
+        return (
+            <div className="flex h-full items-center justify-center p-6">
+                <Card className="max-w-md text-center">
+                    <CardHeader>
+                        <div className="mx-auto bg-muted p-3 rounded-full mb-4 w-fit">
+                            <Lock className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <CardTitle>Feature Unavailable</CardTitle>
+                        <CardDescription>
+                            Candidate search is currently disabled by the administrator.
+                        </CardDescription>
+                    </CardHeader>
+                </Card>
+            </div>
+        );
+    }
+
     const session = await auth();
     const userId = session?.user?.id;
 

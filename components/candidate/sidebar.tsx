@@ -6,52 +6,74 @@ import { LayoutDashboard, Sparkles, Menu, User, FileText, TrendingUp } from "luc
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
-const NavLinks = ({ onLinkClick }: { onLinkClick?: () => void }) => (
-    <>
-        <Link
-            href="/candidate/dashboard"
-            onClick={onLinkClick}
-            className="flex items-center gap-3 px-4 py-3 text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-all font-medium group"
-        >
-            <LayoutDashboard size={20} className="group-hover:scale-110 transition-transform" />
-            <span>My Interviews</span>
-        </Link>
-        <Link
-            href="/candidate/dashboard/analytics"
-            onClick={onLinkClick}
-            className="flex items-center gap-3 px-4 py-3 text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-all font-medium group"
-        >
-            <TrendingUp size={20} className="group-hover:scale-110 transition-transform text-green-500" />
-            <span>Analytics</span>
-        </Link>
-        <Link
-            href="/candidate/practice"
-            onClick={onLinkClick}
-            className="flex items-center gap-3 px-4 py-3 text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-all font-medium group"
-        >
-            <Sparkles size={20} className="group-hover:scale-110 transition-transform text-purple-500" />
-            <span>AI Practice</span>
-        </Link>
-        <Link
-            href="/candidate/profile"
-            onClick={onLinkClick}
-            className="flex items-center gap-3 px-4 py-3 text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-all font-medium group"
-        >
-            <User size={20} className="group-hover:scale-110 transition-transform" />
-            <span>Profile</span>
-        </Link>
-        <Link
-            href="/candidate/resume-screener"
-            onClick={onLinkClick}
-            className="flex items-center gap-3 px-4 py-3 text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-all font-medium group"
-        >
-            <FileText size={20} className="group-hover:scale-110 transition-transform text-blue-500" />
-            <span>Resume Screener</span>
-        </Link>
-    </>
-);
+import { FEATURES } from "@/lib/features";
 
-export function CandidateSidebar() {
+interface SidebarProps {
+    featureFlags?: Record<string, boolean>;
+}
+
+const NavLinks = ({ onLinkClick, featureFlags = {} }: { onLinkClick?: () => void, featureFlags?: Record<string, boolean> }) => {
+    // Helper to check if enabled (default true if missing, per fail-open/safe preference, but here we assume passed map is complete or we default to true/false)
+    // Actually, plan said default ENABLED.
+    const isEnabled = (key: string) => featureFlags[key] !== false;
+
+    return (
+        <>
+            <Link
+                href="/candidate/dashboard"
+                onClick={onLinkClick}
+                className="flex items-center gap-3 px-4 py-3 text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-all font-medium group"
+            >
+                <LayoutDashboard size={20} className="group-hover:scale-110 transition-transform" />
+                <span>My Interviews</span>
+            </Link>
+
+            {isEnabled(FEATURES.ANALYTICS) && (
+                <Link
+                    href="/candidate/dashboard/analytics"
+                    onClick={onLinkClick}
+                    className="flex items-center gap-3 px-4 py-3 text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-all font-medium group"
+                >
+                    <TrendingUp size={20} className="group-hover:scale-110 transition-transform text-green-500" />
+                    <span>Analytics</span>
+                </Link>
+            )}
+
+            {isEnabled(FEATURES.PRACTICE_INTERVIEWS) && (
+                <Link
+                    href="/candidate/practice"
+                    onClick={onLinkClick}
+                    className="flex items-center gap-3 px-4 py-3 text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-all font-medium group"
+                >
+                    <Sparkles size={20} className="group-hover:scale-110 transition-transform text-purple-500" />
+                    <span>AI Practice</span>
+                </Link>
+            )}
+
+            <Link
+                href="/candidate/profile"
+                onClick={onLinkClick}
+                className="flex items-center gap-3 px-4 py-3 text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-all font-medium group"
+            >
+                <User size={20} className="group-hover:scale-110 transition-transform" />
+                <span>Profile</span>
+            </Link>
+
+            {isEnabled(FEATURES.RESUME_SCREENER) && (
+                <Link
+                    href="/candidate/resume-screener"
+                    onClick={onLinkClick}
+                    className="flex items-center gap-3 px-4 py-3 text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-all font-medium group"
+                >
+                    <FileText size={20} className="group-hover:scale-110 transition-transform text-blue-500" />
+                    <span>Resume Screener</span>
+                </Link>
+            )}
+        </>
+    );
+};
+
+export function CandidateSidebar({ featureFlags }: SidebarProps) {
     const [open, setOpen] = useState(false);
 
     return (
@@ -67,7 +89,7 @@ export function CandidateSidebar() {
                     <div className="py-6">
                         <h2 className="px-4 mb-4 text-lg font-semibold">Navigation</h2>
                         <nav className="space-y-1">
-                            <NavLinks onLinkClick={() => setOpen(false)} />
+                            <NavLinks onLinkClick={() => setOpen(false)} featureFlags={featureFlags} />
                         </nav>
                     </div>
                 </SheetContent>
@@ -76,7 +98,7 @@ export function CandidateSidebar() {
             {/* Desktop Sidebar */}
             <aside className="w-64 bg-card border-r shadow-sm hidden md:block h-[calc(100vh-4rem)] sticky top-16 overflow-y-auto">
                 <nav className="px-4 py-6 space-y-2">
-                    <NavLinks />
+                    <NavLinks featureFlags={featureFlags} />
                 </nav>
             </aside>
         </>

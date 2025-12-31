@@ -17,6 +17,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AnalyticsTracker } from "@/components/analytics-tracker";
 import { LimitProvider } from "@/components/providers/limit-provider";
 import { RateLimitBanner } from "@/components/ui/rate-limit-banner";
+import { FeatureWatcher } from "@/components/feature-watcher";
 
 export const metadata: Metadata = {
   title: "Get Back To U",
@@ -40,6 +41,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <LimitProvider>
+            <FeatureWatcher />
             <RateLimitBanner />
             {children}
             <Toaster />

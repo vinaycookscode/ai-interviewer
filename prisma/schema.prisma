@@ -260,3 +260,11 @@ model ProctoringEvent {
   timestamp   DateTime @default(now())
   details     String?  // Optional context
 }
+
+model FeatureFlag {
+  key         String   @id
+  enabled     Boolean  @default(true)
+  description String?
+  category    String   // "CANDIDATE", "EMPLOYER", "SYSTEM"
+  updatedAt   DateTime @updatedAt
+}

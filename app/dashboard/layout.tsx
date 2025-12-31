@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { ModeToggle } from "@/components/mode-toggle";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
+import { getFeatureFlags } from "@/actions/feature-flags";
 
 export default async function DashboardLayout({
     children,
@@ -23,12 +24,15 @@ export default async function DashboardLayout({
         redirect("/candidate/dashboard");
     }
 
+    const flags = await getFeatureFlags();
+    const flagMap = flags.reduce((acc: Record<string, boolean>, f: any) => ({ ...acc, [f.key]: f.enabled }), {});
+
     return (
         <div className="min-h-screen bg-background flex flex-col">
             <DashboardHeader user={session.user} userRole={session.user.role} />
 
             <div className="flex flex-1">
-                <DashboardSidebar userRole={session.user.role} />
+                <DashboardSidebar userRole={session.user.role} featureFlags={flagMap} />
 
                 {/* Main Content Area */}
                 <main className="flex-1 overflow-y-auto">

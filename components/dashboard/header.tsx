@@ -6,13 +6,19 @@ import Image from "next/image";
 import { GeminiModelSelector } from "@/components/gemini-model-selector";
 import { getGeminiModel } from "@/actions/gemini-config";
 
+import { checkFeature } from "@/actions/feature-flags";
+import { FEATURES } from "@/lib/features";
+
 interface DashboardHeaderProps {
     user: any;
     userRole?: string;
 }
 
 export async function DashboardHeader({ user, userRole }: DashboardHeaderProps) {
-    const currentModel = await getGeminiModel();
+    const [currentModel, canSelectModel] = await Promise.all([
+        getGeminiModel(),
+        checkFeature(FEATURES.MODEL_SELECTION)
+    ]);
 
     return (
         <header className="h-16 bg-card border-b shadow-sm flex items-center justify-between px-6 sticky top-0 z-50">
@@ -27,12 +33,7 @@ export async function DashboardHeader({ user, userRole }: DashboardHeaderProps) 
             </Link>
 
             <div className="flex items-center gap-4">
-                {/* Only show selector for ADMIN or if we want it global. User request says "usable all around". 
-                     I'll assume it's for everyone or at least visible. 
-                     Since there is no strict rule, I'll put it for everyone for now or check userRole if needed. 
-                     But the request implies global usage.
-                  */}
-                <GeminiModelSelector currentModel={currentModel} />
+                {canSelectModel && <GeminiModelSelector currentModel={currentModel} />}
 
                 {user && (
                     <div className="flex flex-col items-end mr-2 hidden md:flex">
