@@ -13,17 +13,13 @@ async function listModels() {
     const genAI = new GoogleGenerativeAI(apiKey);
 
     try {
-        console.log("Fetching available models via REST API...");
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
         const data = await response.json();
 
         if (data.models) {
-            console.log("Available Models:");
             data.models.forEach((m: any) => {
-                console.log(`- ${m.name} (${m.supportedGenerationMethods.join(", ")})`);
             });
         } else {
-            console.log("No models found or error:", data);
         }
     } catch (error: any) {
         console.error("Error listing models:", error.message);

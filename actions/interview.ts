@@ -102,13 +102,12 @@ export async function inviteCandidate(data: {
           <p>Good luck!</p>
         `,
                 });
-                console.log("Email sent successfully:", emailResult);
+                if (emailResult.error) {
+                    console.error("Failed to send email:", emailResult.error);
+                }
             } catch (emailError) {
                 console.error("Failed to send email:", emailError);
-                // Continue anyway - the link is still displayed in the UI
             }
-        } else {
-            console.log("RESEND_API_KEY not configured - skipping email send");
         }
 
         return {

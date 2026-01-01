@@ -56,7 +56,7 @@ export function useScreenDetection(isActive: boolean = true) {
                     setIsMultiScreen(count > 1);
 
                     if (count > 1) {
-                        console.log("Multiple screens detected:", count);
+
                     }
                 };
 

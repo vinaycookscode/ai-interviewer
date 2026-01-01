@@ -20,7 +20,7 @@ const FEATURES = {
 };
 
 async function main() {
-    console.log('Seeding feature flags...');
+
 
     const defaults = [
         { key: FEATURES.RESUME_SCREENER, category: 'CANDIDATE', description: "Upload and analyze resumes" },
@@ -47,7 +47,7 @@ async function main() {
                 description: feat.description
             }
         });
-        console.log(`- ${feat.key} ensured.`);
+
     }
 }
 

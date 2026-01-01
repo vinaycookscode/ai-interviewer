@@ -20,7 +20,7 @@ export async function generatePersonalityProfile(interviewId: string) {
         });
 
         if (!interview || interview.answers.length === 0) {
-            console.log("No interview or answers found for personality analysis");
+
             return null;
         }
 

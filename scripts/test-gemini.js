@@ -20,21 +20,16 @@ async function listModels() {
             "gemini-1.0-pro"
         ];
 
-        console.log("Testing models...");
 
         for (const modelName of modelsToTest) {
             try {
-                console.log(`Testing ${modelName}...`);
                 const model = genAI.getGenerativeModel({ model: modelName });
                 const result = await model.generateContent("Hello");
                 const response = await result.response;
-                console.log(`SUCCESS: ${modelName} works! Response: ${response.text()}`);
                 return; // Found one!
             } catch (error) {
-                console.log(`FAILED: ${modelName} - ${error.message}`);
             }
         }
-        console.log("All tested models failed.");
 
     } catch (error) {
         console.error("Error:", error);

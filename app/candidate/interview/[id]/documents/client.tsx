@@ -134,12 +134,9 @@ export function DocumentUploadClient({
                                             type="file"
                                             accept=".pdf,.jpg,.jpeg,.png"
                                             onChange={(e) => {
-                                                console.log("Resume file input changed", e.target.files);
                                                 handleFileChange("resume", e.target.files?.[0] || null);
                                             }}
-                                            onClick={(e) => {
-                                                console.log("Resume file input clicked", { uploading, disabled: uploading });
-                                            }}
+
                                             disabled={false}
                                         />
                                         {existingDocs.resumeUrl && (

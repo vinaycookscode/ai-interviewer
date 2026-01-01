@@ -20,19 +20,15 @@ async function main() {
         // In the Node SDK, it might be different.
         // Let's try a different approach: just try a few common ones.
 
-        console.log("Testing common models...");
 
         const modelsToTest = ["gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-1.0-pro", "gemini-pro"];
 
         for (const modelName of modelsToTest) {
-            console.log(`Testing ${modelName}...`);
             try {
                 const m = genAI.getGenerativeModel({ model: modelName });
                 const result = await m.generateContent("Hello");
-                console.log(`✅ ${modelName} is WORKING`);
                 break; // Found one!
             } catch (e: any) {
-                console.log(`❌ ${modelName} failed: ${e.message}`);
             }
         }
 

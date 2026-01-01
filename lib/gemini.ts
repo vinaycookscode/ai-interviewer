@@ -136,7 +136,7 @@ export async function evaluateAnswer(question: string, answer: string, contextLa
         const result = await model.generateContent(prompt);
         const response = result.response;
         const text = response.text();
-        console.log("Gemini Raw Response:", text);
+
 
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {

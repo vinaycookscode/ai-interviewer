@@ -165,7 +165,7 @@ export function InterviewSession({ interviewId, questions, stream, language = "e
                     }
                 }
 
-                console.log(`[STT] Initializing SpeechRecognition. Language: ${language} -> Code: ${langCode}`);
+
                 recognition.lang = langCode;
 
                 recognition.onresult = (event: any) => {
@@ -187,7 +187,7 @@ export function InterviewSession({ interviewId, questions, stream, language = "e
                     // We use a ref to check the latest state without triggering re-effects
                     if (isRecordingRef.current) {
                         try {
-                            console.log("[STT] Restarting recognition...");
+
                             recognition.start();
                         } catch (e) {
                             console.error("[STT] Restart error:", e);

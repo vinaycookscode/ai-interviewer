@@ -1,0 +1,18 @@
+{
+    "Sidebar": {
+        "myInterviews": "My Interviews",
+        "analytics": "Analytics",
+        "aiPractice": "AI Practice",
+        "profile": "Profile",
+        "resumeScreener": "Resume Screener",
+        "jobManagement": "Job Management",
+        "candidateSearch": "Candidate Search",
+        "settings": "Settings",
+        "navigation": "Navigation"
+    },
+    "Common": {
+        "upload": "Upload",
+        "cancel": "Cancel",
+        "save": "Save"
+    }
+}

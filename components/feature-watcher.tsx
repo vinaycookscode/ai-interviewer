@@ -20,7 +20,7 @@ export function FeatureWatcher() {
 
             // If timestamp changed and we had a previous value, refresh
             if (prev > 0 && latest > prev) {
-                console.log("Feature flag update detected, refreshing...");
+
                 router.refresh();
             }
 

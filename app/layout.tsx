@@ -18,6 +18,8 @@ import { AnalyticsTracker } from "@/components/analytics-tracker";
 import { LimitProvider } from "@/components/providers/limit-provider";
 import { RateLimitBanner } from "@/components/ui/rate-limit-banner";
 import { FeatureWatcher } from "@/components/feature-watcher";
+import { NextIntlClientProvider } from 'next-intl';
+import messages from '../messages/en.json'; // Direct import for performance & simplicity
 
 export const metadata: Metadata = {
   title: "Get Back To U",
@@ -29,6 +31,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -40,13 +44,15 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <LimitProvider>
-            <FeatureWatcher />
-            <RateLimitBanner />
-            {children}
-            <Toaster />
-            <AnalyticsTracker />
-          </LimitProvider>
+          <NextIntlClientProvider messages={messages} locale="en">
+            <LimitProvider>
+              <FeatureWatcher />
+              <RateLimitBanner />
+              {children}
+              <Toaster />
+              <AnalyticsTracker />
+            </LimitProvider>
+          </NextIntlClientProvider>
         </ThemeProvider>
       </body>
     </html>

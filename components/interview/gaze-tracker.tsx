@@ -57,7 +57,7 @@ export function GazeTrackerBase({ videoElement, onWarning, isActive }: GazeTrack
             }
 
             try {
-                console.log("GazeTracker: Initializing MediaPipe FaceMesh via Local Script");
+
                 const faceMesh = new window.FaceMesh({
                     locateFile: (file: string) => {
                         // Use JSDelivr for assets to ensure correct MIME types and headers.
@@ -84,7 +84,7 @@ export function GazeTrackerBase({ videoElement, onWarning, isActive }: GazeTrack
                         } else {
                             const duration = Date.now() - lookAwayStartTime.current;
                             if (duration > 5000 && !warningTriggered.current) {
-                                console.log("GazeTracker: Warning - Face missing");
+
                                 onWarningRef.current("Face not visible", "FACE_MISSING");
                                 warningTriggered.current = true;
                             }
@@ -161,7 +161,7 @@ export function GazeTrackerBase({ videoElement, onWarning, isActive }: GazeTrack
 
 
                             if (duration > 5000 && !warningTriggered.current) {
-                                console.log(`GazeTracker: Warning - Looking away (${direction})`);
+
                                 onWarningRef.current(`Looking away detected (${direction})`, "GAZE_DETECTED");
                                 warningTriggered.current = true;
                             }
@@ -180,7 +180,7 @@ export function GazeTrackerBase({ videoElement, onWarning, isActive }: GazeTrack
 
                     if (videoElement && videoElement.readyState >= 2 && !videoElement.paused && !videoElement.ended) {
                         try {
-                            // console.log("GazeTracker: Sending frame");
+
                             // Check if faceMeshRef.current is valid before sending
                             if (faceMeshRef.current) {
                                 await faceMeshRef.current.send({ image: videoElement });
@@ -239,7 +239,7 @@ export function GazeTrackerBase({ videoElement, onWarning, isActive }: GazeTrack
         script.async = true;
 
         script.onload = () => {
-            console.log("GazeTracker: Script loaded successfully (local)");
+
             setScriptLoaded(true);
         };
 
