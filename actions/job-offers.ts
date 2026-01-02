@@ -94,6 +94,52 @@ export async function deleteOffer(offerId: string) {
     return { success: true };
 }
 
+export async function updateOffer(offerId: string, data: {
+    company?: string;
+    role?: string;
+    location?: string;
+    baseSalary?: number;
+    bonus?: number;
+    stocks?: number;
+    joiningDate?: Date;
+    deadline?: Date;
+    notes?: string;
+    offerLetterUrl?: string;
+}) {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return { error: "Not authenticated" };
+    }
+
+    // Verify ownership
+    const existing = await db.jobOffer.findFirst({
+        where: { id: offerId, userId: session.user.id }
+    });
+
+    if (!existing) {
+        return { error: "Offer not found" };
+    }
+
+    await db.jobOffer.update({
+        where: { id: offerId },
+        data: {
+            company: data.company,
+            role: data.role,
+            location: data.location,
+            baseSalary: data.baseSalary,
+            bonus: data.bonus,
+            stocks: data.stocks,
+            joiningDate: data.joiningDate,
+            deadline: data.deadline,
+            notes: data.notes,
+            offerLetterUrl: data.offerLetterUrl,
+        }
+    });
+
+    revalidatePath("/candidate/offers");
+    return { success: true };
+}
+
 // ============================================
 // COMPARISON
 // ============================================

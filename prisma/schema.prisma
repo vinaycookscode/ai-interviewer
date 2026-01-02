@@ -565,6 +565,9 @@ model JobOffer {
   offerDate   DateTime @default(now())
   deadline    DateTime?
   
+  // Documents
+  offerLetterUrl String?  // Uploaded offer letter PDF
+  
   status      String   @default("PENDING") // "PENDING", "ACCEPTED", "REJECTED", "NEGOTIATING"
   
   notes       String?  @db.Text
