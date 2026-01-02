@@ -218,9 +218,9 @@ export function ProblemTask({ content, onComplete, isPending }: ProblemTaskProps
     };
 
     return (
-        <div className="space-y-6 max-h-[80vh] overflow-y-auto">
+        <div className="flex flex-col h-[80vh]">
             {/* Problem Header */}
-            <div className="flex items-center justify-between sticky top-0 bg-background/95 backdrop-blur pb-4 border-b z-10">
+            <div className="flex items-center justify-between pb-4 border-b shrink-0">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-green-500/10 rounded-lg">
                         <Code className="h-5 w-5 text-green-500" />
@@ -263,9 +263,9 @@ export function ProblemTask({ content, onComplete, isPending }: ProblemTaskProps
             </div>
 
             {activeTab === "problem" ? (
-                <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-6 h-full">
-                    {/* Left: Problem Description */}
-                    <div className="space-y-6 overflow-y-auto max-h-[70vh] pr-2">
+                <div className="flex-1 grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-6 mt-4 min-h-0">
+                    {/* Left: Problem Description - Scrollable */}
+                    <div className="overflow-y-auto pr-3 space-y-6">
                         {/* Description */}
                         <div className="prose prose-sm dark:prose-invert max-w-none">
                             <div className="flex items-center gap-2 text-green-500 mb-2">
@@ -365,25 +365,25 @@ export function ProblemTask({ content, onComplete, isPending }: ProblemTaskProps
                         </div>
                     </div>
 
-                    {/* Right: Code Editor + Analysis */}
-                    <div className="space-y-4 flex flex-col">
+                    {/* Right: Code Editor + Analysis - Scrollable */}
+                    <div className="flex flex-col min-h-0 overflow-hidden">
                         {/* Code Editor */}
-                        <div className="flex-1 flex flex-col min-h-0">
+                        <div className="shrink-0">
                             <label className="text-sm font-medium mb-2 block">Your Solution</label>
                             <textarea
                                 value={code}
                                 onChange={(e) => setCode(e.target.value)}
-                                className="flex-1 min-h-[400px] w-full px-4 py-3 bg-[#1e1e1e] text-[#d4d4d4] font-mono text-sm rounded-lg border border-[#3e3e3e] focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                                className="h-[300px] w-full px-4 py-3 bg-[#1e1e1e] text-[#d4d4d4] font-mono text-sm rounded-lg border border-[#3e3e3e] focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
                                 spellCheck={false}
                             />
                         </div>
 
-                        {/* Action Buttons */}
-                        <div className="flex gap-3">
+                        {/* Action Buttons - Fixed Width */}
+                        <div className="grid grid-cols-2 gap-3 mt-4 shrink-0">
                             <button
                                 onClick={handleRunCode}
                                 disabled={isAnalyzing}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
+                                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 font-medium"
                             >
                                 {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
                                 Run Tests
@@ -391,139 +391,143 @@ export function ProblemTask({ content, onComplete, isPending }: ProblemTaskProps
                             <button
                                 onClick={handleAnalyzeCode}
                                 disabled={isAnalyzing}
-                                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:opacity-50"
+                                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:opacity-50 font-medium"
                             >
                                 {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
                                 Analyze Code
                             </button>
                         </div>
 
-                        {/* Test Results */}
-                        {testResults && (
-                            <div className="bg-[#1e1e1e] rounded-lg p-4">
-                                <h4 className="text-sm font-medium text-white mb-3">Test Results</h4>
-                                <div className="space-y-2">
-                                    {testResults.map((result, i) => (
-                                        <div key={i} className={cn(
-                                            "flex items-center justify-between p-2 rounded",
-                                            result.passed ? "bg-green-500/10" : "bg-red-500/10"
-                                        )}>
-                                            <span className="text-sm text-gray-300">Test Case {i + 1}</span>
-                                            <span className={cn(
-                                                "text-xs font-medium",
-                                                result.passed ? "text-green-500" : "text-red-500"
+                        {/* Scrollable Results Area */}
+                        <div className="flex-1 overflow-y-auto mt-4 space-y-4 min-h-0">
+
+                            {/* Test Results */}
+                            {testResults && (
+                                <div className="bg-[#1e1e1e] rounded-lg p-4">
+                                    <h4 className="text-sm font-medium text-white mb-3">Test Results</h4>
+                                    <div className="space-y-2">
+                                        {testResults.map((result, i) => (
+                                            <div key={i} className={cn(
+                                                "flex items-center justify-between p-2 rounded",
+                                                result.passed ? "bg-green-500/10" : "bg-red-500/10"
                                             )}>
-                                                {result.passed ? "✓ Passed" : "✗ Failed"}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* AI Analysis */}
-                        {analysis && (
-                            <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-xl p-4 space-y-4">
-                                <div className="flex items-center gap-2">
-                                    <Zap className="h-5 w-5 text-purple-500" />
-                                    <h4 className="font-semibold">AI Code Analysis</h4>
-                                </div>
-
-                                {/* Complexity Metrics */}
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="bg-background/50 rounded-lg p-3">
-                                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                                            <Clock className="h-4 w-4" />
-                                            Time Complexity
-                                        </div>
-                                        <p className="text-lg font-mono font-bold text-blue-500">{analysis.timeComplexity}</p>
-                                    </div>
-                                    <div className="bg-background/50 rounded-lg p-3">
-                                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                                            <Cpu className="h-4 w-4" />
-                                            Space Complexity
-                                        </div>
-                                        <p className="text-lg font-mono font-bold text-green-500">{analysis.spaceComplexity}</p>
-                                    </div>
-                                </div>
-
-                                {/* Score Bars */}
-                                <div className="space-y-3">
-                                    <div>
-                                        <div className="flex justify-between text-sm mb-1">
-                                            <span className="text-muted-foreground">Correctness</span>
-                                            <span className="font-medium">{analysis.correctness}%</span>
-                                        </div>
-                                        <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                            <div
-                                                className="h-full bg-green-500 rounded-full transition-all"
-                                                style={{ width: `${analysis.correctness}%` }}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div className="flex justify-between text-sm mb-1">
-                                            <span className="text-muted-foreground">Code Quality</span>
-                                            <span className="font-medium">{analysis.codeQuality}%</span>
-                                        </div>
-                                        <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                            <div
-                                                className="h-full bg-purple-500 rounded-full transition-all"
-                                                style={{ width: `${analysis.codeQuality}%` }}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Feedback */}
-                                <div>
-                                    <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
-                                        <CheckCircle className="h-4 w-4 text-green-500" />
-                                        Feedback
-                                    </h5>
-                                    <ul className="space-y-1">
-                                        {analysis.feedback.map((f, i) => (
-                                            <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                                                <span className="text-green-500 mt-1">•</span>
-                                                {f}
-                                            </li>
+                                                <span className="text-sm text-gray-300">Test Case {i + 1}</span>
+                                                <span className={cn(
+                                                    "text-xs font-medium",
+                                                    result.passed ? "text-green-500" : "text-red-500"
+                                                )}>
+                                                    {result.passed ? "✓ Passed" : "✗ Failed"}
+                                                </span>
+                                            </div>
                                         ))}
-                                    </ul>
+                                    </div>
                                 </div>
+                            )}
 
-                                {/* Improvements */}
-                                {analysis.improvements.length > 0 && (
+                            {/* AI Analysis */}
+                            {analysis && (
+                                <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-xl p-4 space-y-4">
+                                    <div className="flex items-center gap-2">
+                                        <Zap className="h-5 w-5 text-purple-500" />
+                                        <h4 className="font-semibold">AI Code Analysis</h4>
+                                    </div>
+
+                                    {/* Complexity Metrics */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="bg-background/50 rounded-lg p-3">
+                                            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                                                <Clock className="h-4 w-4" />
+                                                Time Complexity
+                                            </div>
+                                            <p className="text-lg font-mono font-bold text-blue-500">{analysis.timeComplexity}</p>
+                                        </div>
+                                        <div className="bg-background/50 rounded-lg p-3">
+                                            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                                                <Cpu className="h-4 w-4" />
+                                                Space Complexity
+                                            </div>
+                                            <p className="text-lg font-mono font-bold text-green-500">{analysis.spaceComplexity}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Score Bars */}
+                                    <div className="space-y-3">
+                                        <div>
+                                            <div className="flex justify-between text-sm mb-1">
+                                                <span className="text-muted-foreground">Correctness</span>
+                                                <span className="font-medium">{analysis.correctness}%</span>
+                                            </div>
+                                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-green-500 rounded-full transition-all"
+                                                    style={{ width: `${analysis.correctness}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div className="flex justify-between text-sm mb-1">
+                                                <span className="text-muted-foreground">Code Quality</span>
+                                                <span className="font-medium">{analysis.codeQuality}%</span>
+                                            </div>
+                                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-purple-500 rounded-full transition-all"
+                                                    style={{ width: `${analysis.codeQuality}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Feedback */}
                                     <div>
                                         <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
-                                            <TrendingUp className="h-4 w-4 text-amber-500" />
-                                            How to Improve
+                                            <CheckCircle className="h-4 w-4 text-green-500" />
+                                            Feedback
                                         </h5>
                                         <ul className="space-y-1">
-                                            {analysis.improvements.map((imp, i) => (
+                                            {analysis.feedback.map((f, i) => (
                                                 <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                                                    <span className="text-amber-500 mt-1">→</span>
-                                                    {imp}
+                                                    <span className="text-green-500 mt-1">•</span>
+                                                    {f}
                                                 </li>
                                             ))}
                                         </ul>
                                     </div>
-                                )}
 
-                                {analysis.isOptimal && (
-                                    <div className="flex items-center gap-2 p-3 bg-green-500/10 rounded-lg border border-green-500/30">
-                                        <CheckCircle className="h-5 w-5 text-green-500" />
-                                        <span className="text-sm font-medium text-green-500">
-                                            Your solution has optimal time complexity!
-                                        </span>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                                    {/* Improvements */}
+                                    {analysis.improvements.length > 0 && (
+                                        <div>
+                                            <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
+                                                <TrendingUp className="h-4 w-4 text-amber-500" />
+                                                How to Improve
+                                            </h5>
+                                            <ul className="space-y-1">
+                                                {analysis.improvements.map((imp, i) => (
+                                                    <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                                                        <span className="text-amber-500 mt-1">→</span>
+                                                        {imp}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                    {analysis.isOptimal && (
+                                        <div className="flex items-center gap-2 p-3 bg-green-500/10 rounded-lg border border-green-500/30">
+                                            <CheckCircle className="h-5 w-5 text-green-500" />
+                                            <span className="text-sm font-medium text-green-500">
+                                                Your solution has optimal time complexity!
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             ) : (
                 /* Solution Tab */
-                <div className="space-y-4">
+                <div className="flex-1 overflow-y-auto mt-4 space-y-4">
                     <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
                         <p className="text-sm text-amber-500 flex items-center gap-2">
                             <Lightbulb className="h-4 w-4" />
@@ -537,8 +541,8 @@ export function ProblemTask({ content, onComplete, isPending }: ProblemTaskProps
                 </div>
             )}
 
-            {/* Complete Button */}
-            <div className="sticky bottom-0 bg-background/95 backdrop-blur pt-4 border-t">
+            {/* Complete Button - Fixed at bottom */}
+            <div className="shrink-0 pt-4 border-t mt-4">
                 <button
                     onClick={() => onComplete(analysis?.correctness || (testResults ? 85 : 70))}
                     disabled={isPending}
