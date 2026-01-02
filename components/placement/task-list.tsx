@@ -55,6 +55,7 @@ interface DailyTask {
     order: number;
     content: any;
     isCompleted: boolean;
+    isStarted?: boolean;
 }
 
 interface TaskCardProps {
@@ -116,6 +117,11 @@ export function TaskCard({ task, onComplete, onStart, disabled }: TaskCardProps)
                         <Clock className="h-3 w-3" />
                         {task.duration} min
                     </span>
+                    {task.isStarted && !task.isCompleted && (
+                        <span className="px-2 py-0.5 rounded text-xs bg-amber-500/10 text-amber-500">
+                            In Progress
+                        </span>
+                    )}
                 </div>
             </div>
 
@@ -124,9 +130,14 @@ export function TaskCard({ task, onComplete, onStart, disabled }: TaskCardProps)
                 <button
                     onClick={() => onStart?.(task.id)}
                     disabled={disabled}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm hover:bg-primary/90 transition-colors"
+                    className={cn(
+                        "flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm transition-colors",
+                        task.isStarted
+                            ? "bg-amber-500 text-white hover:bg-amber-600"
+                            : "bg-primary text-primary-foreground hover:bg-primary/90"
+                    )}
                 >
-                    Start
+                    {task.isStarted ? "Resume" : "Start"}
                     <ChevronRight className="h-4 w-4" />
                 </button>
             )}
