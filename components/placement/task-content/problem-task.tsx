@@ -263,9 +263,9 @@ export function ProblemTask({ content, onComplete, isPending }: ProblemTaskProps
             </div>
 
             {activeTab === "problem" ? (
-                <div className="grid lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-6 h-full">
                     {/* Left: Problem Description */}
-                    <div className="space-y-6">
+                    <div className="space-y-6 overflow-y-auto max-h-[70vh] pr-2">
                         {/* Description */}
                         <div className="prose prose-sm dark:prose-invert max-w-none">
                             <div className="flex items-center gap-2 text-green-500 mb-2">
@@ -366,14 +366,14 @@ export function ProblemTask({ content, onComplete, isPending }: ProblemTaskProps
                     </div>
 
                     {/* Right: Code Editor + Analysis */}
-                    <div className="space-y-4">
+                    <div className="space-y-4 flex flex-col">
                         {/* Code Editor */}
-                        <div>
+                        <div className="flex-1 flex flex-col min-h-0">
                             <label className="text-sm font-medium mb-2 block">Your Solution</label>
                             <textarea
                                 value={code}
                                 onChange={(e) => setCode(e.target.value)}
-                                className="w-full h-64 px-4 py-3 bg-[#1e1e1e] text-[#d4d4d4] font-mono text-sm rounded-lg border border-[#3e3e3e] focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
+                                className="flex-1 min-h-[400px] w-full px-4 py-3 bg-[#1e1e1e] text-[#d4d4d4] font-mono text-sm rounded-lg border border-[#3e3e3e] focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
                                 spellCheck={false}
                             />
                         </div>

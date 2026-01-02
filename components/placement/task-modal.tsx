@@ -118,11 +118,15 @@ export function TaskModal({ task, onComplete, onClose, isPending }: TaskModalPro
         }
     };
 
+    // Determine if this is a problem task (needs more space)
+    const isProblemTask = task.type === "PROBLEM";
+
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-background border rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+            <div className={`bg-background border rounded-2xl w-full max-h-[95vh] overflow-hidden flex flex-col ${isProblemTask ? "max-w-[95vw]" : "max-w-4xl"
+                }`}>
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b">
+                <div className="flex items-center justify-between p-4 border-b shrink-0">
                     <div>
                         <h2 className="text-xl font-bold">{task.title}</h2>
                         <p className="text-sm text-muted-foreground">
@@ -145,3 +149,4 @@ export function TaskModal({ task, onComplete, onClose, isPending }: TaskModalPro
         </div>
     );
 }
+
