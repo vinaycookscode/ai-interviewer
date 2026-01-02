@@ -16,9 +16,21 @@ import {
     ChevronRight
 } from "lucide-react";
 import { TaskList } from "@/components/placement/task-list";
+import { TaskModal } from "@/components/placement/task-modal";
 import { StreakCounter, StreakWarning } from "@/components/placement/streak-counter";
 import { completeTask, advanceToNextDay, pauseEnrollment, resumeEnrollment } from "@/actions/placement-program";
 import { cn } from "@/lib/utils";
+import { TaskType } from "@prisma/client";
+
+interface DailyTask {
+    id: string;
+    title: string;
+    type: TaskType;
+    duration: number;
+    order: number;
+    content: any;
+    isCompleted: boolean;
+}
 
 interface DayData {
     module: {
@@ -27,15 +39,7 @@ interface DayData {
         title: string;
         description: string | null;
     };
-    tasks: {
-        id: string;
-        title: string;
-        type: string;
-        duration: number;
-        order: number;
-        content: any;
-        isCompleted: boolean;
-    }[];
+    tasks: DailyTask[];
     allCompleted: boolean;
 }
 
@@ -64,13 +68,22 @@ export function ProgramDashboardClient({
 }: ProgramDashboardClientProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
+    const [selectedTask, setSelectedTask] = useState<DailyTask | null>(null);
     const progressPercent = (enrollment.currentDay / program.durationDays) * 100;
 
-    const handleCompleteTask = async (taskId: string) => {
+    const handleCompleteTask = async (taskId: string, score?: number) => {
         startTransition(async () => {
-            await completeTask(enrollment.id, taskId);
+            await completeTask(enrollment.id, taskId, score);
+            setSelectedTask(null);
             router.refresh();
         });
+    };
+
+    const handleStartTask = (taskId: string) => {
+        const task = dayData?.tasks.find(t => t.id === taskId);
+        if (task) {
+            setSelectedTask(task);
+        }
     };
 
     const handleAdvanceDay = async () => {
@@ -227,11 +240,8 @@ export function ProgramDashboardClient({
                 {dayData ? (
                     <TaskList
                         tasks={dayData.tasks as any}
-                        onComplete={handleCompleteTask}
-                        onStart={(taskId) => {
-                            // TODO: Open task modal or navigate to task page
-                            handleCompleteTask(taskId);
-                        }}
+                        onComplete={(taskId) => handleCompleteTask(taskId)}
+                        onStart={handleStartTask}
                         disabled={isPaused || isPending}
                     />
                 ) : (
@@ -275,6 +285,16 @@ export function ProgramDashboardClient({
                     <p className="text-sm text-muted-foreground">Days Completed</p>
                 </div>
             </div>
+
+            {/* Task Modal */}
+            {selectedTask && (
+                <TaskModal
+                    task={selectedTask}
+                    onComplete={handleCompleteTask}
+                    onClose={() => setSelectedTask(null)}
+                    isPending={isPending}
+                />
+            )}
         </div>
     );
 }
