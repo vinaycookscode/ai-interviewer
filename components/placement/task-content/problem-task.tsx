@@ -4,7 +4,7 @@ import { useState } from "react";
 import {
     Code, Play, CheckCircle, Lightbulb, Eye, EyeOff,
     Clock, Zap, Cpu, TrendingUp, AlertTriangle, Loader2,
-    ChevronDown, ChevronUp, Target, BookOpen
+    ChevronDown, ChevronUp, Target, BookOpen, Briefcase, GraduationCap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -166,7 +166,62 @@ You can return the answer in any order.`,
 }
 
 // Time Complexity: O(n)
-// Space Complexity: O(n)`
+// Space Complexity: O(n)`,
+        // EDUCATIONAL CONTENT
+        conceptTitle: "HashMap for Fast Lookups",
+        conceptExplanation: `**The Two Sum problem** is one of the most popular coding interview questions. It teaches a fundamental concept: **trading space for time**.
+
+### The Core Insight
+Instead of checking every pair (O(n²)), we store each number we've seen in a HashMap. For each new number, we check if its "complement" (target - current) already exists in our map. This is O(1) lookup!
+
+### Pattern Recognition
+This problem belongs to the **"Complement Search"** pattern. Whenever you need to find pairs that satisfy a condition, think HashMap first.
+
+### Why HashMap?
+- **O(1) average lookup time** - finding if a value exists is instant
+- **O(1) insertion** - adding new key-value pairs is fast
+- **Perfect for frequency counting and pair finding**`,
+        keyLearnings: [
+            "HashMap provides O(1) lookup time, making it perfect for search optimizations",
+            "The 'complement search' pattern: for each element, search for (target - element)",
+            "Trade-off: We use O(n) extra space to achieve O(n) time instead of O(n²)",
+            "Single-pass solution: We can check and insert in the same loop"
+        ],
+        realWorldUseCases: [
+            {
+                title: "E-commerce: Finding Product Bundles",
+                description: "When a customer has a budget of ₹1000, quickly find two products that together equal exactly ₹1000 for bundle deals.",
+                icon: "🛒"
+            },
+            {
+                title: "Financial Apps: Transaction Matching",
+                description: "In accounting software, find two transactions that sum to a specific amount for reconciliation.",
+                icon: "💰"
+            },
+            {
+                title: "Gaming: Resource Combination",
+                description: "In a game, find two items whose power levels combine to unlock a specific ability or level.",
+                icon: "🎮"
+            },
+            {
+                title: "Social Networks: Mutual Connections",
+                description: "Find pairs of users whose combined friend count reaches a threshold for group recommendations.",
+                icon: "👥"
+            }
+        ],
+        interviewTips: [
+            "Always clarify: Can numbers be negative? Can the same element be used twice?",
+            "Start with brute force O(n²), then optimize to O(n) using HashMap",
+            "Discuss the space-time trade-off explicitly - interviewers love this!",
+            "Handle edge cases: empty array, no solution found, duplicate numbers"
+        ],
+        relatedTopics: [
+            { name: "Three Sum", difficulty: "MEDIUM" },
+            { name: "Four Sum", difficulty: "MEDIUM" },
+            { name: "Two Sum II (Sorted Array)", difficulty: "MEDIUM" },
+            { name: "SubArray Sum Equals K", difficulty: "MEDIUM" }
+        ],
+        companyAsked: ["Google", "Amazon", "Microsoft", "Facebook", "Apple", "TCS", "Infosys", "Wipro"]
     }
 };
 
@@ -178,7 +233,7 @@ export function ProblemTask({ content, onComplete, isPending }: ProblemTaskProps
     };
 
     const [code, setCode] = useState(problem.starterCode || SAMPLE_PROBLEMS.default.starterCode);
-    const [activeTab, setActiveTab] = useState<"problem" | "solution">("problem");
+    const [activeTab, setActiveTab] = useState<"problem" | "learn" | "solution">("problem");
     const [showHints, setShowHints] = useState<number[]>([]);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysis, setAnalysis] = useState<CodeAnalysis | null>(null);
@@ -313,6 +368,15 @@ export function ProblemTask({ content, onComplete, isPending }: ProblemTaskProps
                         Problem
                     </button>
                     <button
+                        onClick={() => setActiveTab("learn")}
+                        className={cn(
+                            "px-3 py-1.5 rounded text-sm font-medium transition-colors",
+                            activeTab === "learn" ? "bg-background shadow" : "hover:bg-background/50"
+                        )}
+                    >
+                        Learn
+                    </button>
+                    <button
                         onClick={() => setActiveTab("solution")}
                         className={cn(
                             "px-3 py-1.5 rounded text-sm font-medium transition-colors",
@@ -324,7 +388,7 @@ export function ProblemTask({ content, onComplete, isPending }: ProblemTaskProps
                 </div>
             </div>
 
-            {activeTab === "problem" ? (
+            {activeTab === "problem" && (
                 <div className="flex-1 grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-6 mt-4 min-h-0">
                     {/* Left: Problem Description - Scrollable */}
                     <div className="overflow-y-auto pr-3 space-y-6">
@@ -593,7 +657,7 @@ export function ProblemTask({ content, onComplete, isPending }: ProblemTaskProps
                                             Feedback
                                         </h5>
                                         <ul className="space-y-1">
-                                            {analysis.feedback.map((f, i) => (
+                                            {analysis.feedback.map((f: string, i: number) => (
                                                 <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
                                                     <span className="text-green-500 mt-1">•</span>
                                                     {f}
@@ -610,7 +674,7 @@ export function ProblemTask({ content, onComplete, isPending }: ProblemTaskProps
                                                 How to Improve
                                             </h5>
                                             <ul className="space-y-1">
-                                                {analysis.improvements.map((imp, i) => (
+                                                {analysis.improvements.map((imp: string, i: number) => (
                                                     <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
                                                         <span className="text-amber-500 mt-1">→</span>
                                                         {imp}
@@ -633,7 +697,86 @@ export function ProblemTask({ content, onComplete, isPending }: ProblemTaskProps
                         </div>
                     </div>
                 </div>
-            ) : (
+            )}
+
+            {activeTab === "learn" && (
+                <div className="flex-1 overflow-y-auto mt-4 space-y-6">
+                    {/* Concept Header */}
+                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-6">
+                        <div className="flex items-start gap-4">
+                            <div className="p-3 bg-blue-500/20 rounded-lg shrink-0">
+                                <Lightbulb className="h-6 w-6 text-blue-500" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold mb-2 text-blue-500">
+                                    {problem.conceptTitle || SAMPLE_PROBLEMS.default.conceptTitle}
+                                </h3>
+                                <div className="prose prose-sm dark:prose-invert">
+                                    <div dangerouslySetInnerHTML={{
+                                        __html: (problem.conceptExplanation || SAMPLE_PROBLEMS.default.conceptExplanation)
+                                            .split('\n').map((line: string) =>
+                                                line.replace(/\*\*([^*]+)\*\*/g, '<strong class="text-blue-400">$1</strong>')
+                                            ).join('<br/>')
+                                    }} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Key Learnings */}
+                    <div>
+                        <div className="flex items-center gap-2 text-green-500 mb-3 ml-1">
+                            <Target className="h-5 w-5" />
+                            <h4 className="font-semibold">Key Takeaways</h4>
+                        </div>
+                        <div className="grid sm:grid-cols-2 gap-4">
+                            {(problem.keyLearnings || SAMPLE_PROBLEMS.default.keyLearnings).map((learning: string, i: number) => (
+                                <div key={i} className="flex gap-3 p-4 bg-card border rounded-lg">
+                                    <span className="text-green-500 font-bold hidden sm:block">{i + 1}.</span>
+                                    <p className="text-sm text-muted-foreground">{learning}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Real World Use Cases */}
+                    <div>
+                        <div className="flex items-center gap-2 text-purple-500 mb-3 ml-1">
+                            <Briefcase className="h-5 w-5" />
+                            <h4 className="font-semibold">Real-World Applications</h4>
+                        </div>
+                        <div className="grid sm:grid-cols-2 gap-4">
+                            {(problem.realWorldUseCases || SAMPLE_PROBLEMS.default.realWorldUseCases).map((useCase: any, i: number) => (
+                                <div key={i} className="p-4 bg-muted/30 border rounded-lg hover:border-purple-500/30 transition-colors">
+                                    <div className="text-2xl mb-2">{useCase.icon}</div>
+                                    <h5 className="font-medium mb-1">{useCase.title}</h5>
+                                    <p className="text-xs text-muted-foreground">{useCase.description}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Interview Tips */}
+                    <div>
+                        <div className="flex items-center gap-2 text-amber-500 mb-3 ml-1">
+                            <GraduationCap className="h-5 w-5" />
+                            <h4 className="font-semibold">Interview Tips</h4>
+                        </div>
+                        <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-5">
+                            <ul className="space-y-3">
+                                {(problem.interviewTips || SAMPLE_PROBLEMS.default.interviewTips).map((tip: string, i: number) => (
+                                    <li key={i} className="flex items-start gap-3 text-sm">
+                                        <CheckCircle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                                        <span className="text-muted-foreground">{tip}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {activeTab === "solution" && (
                 /* Solution Tab */
                 <div className="flex-1 overflow-y-auto mt-4 space-y-4">
                     <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
