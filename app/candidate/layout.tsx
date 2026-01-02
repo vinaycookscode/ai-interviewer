@@ -34,7 +34,7 @@ export default async function CandidateLayout({
                 <CandidateSidebar featureFlags={flagMap} />
 
                 {/* Main Content Area */}
-                <main className="flex-1 overflow-y-auto">
+                <main className="flex-1 overflow-y-auto p-6 lg:p-8">
                     {children}
                 </main>
             </div>
