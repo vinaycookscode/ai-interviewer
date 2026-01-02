@@ -147,6 +147,48 @@ export async function resumeEnrollment(enrollmentId: string) {
 // TASK COMPLETION
 // ============================================
 
+export async function startTask(enrollmentId: string, taskId: string) {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return { error: "Not authenticated" };
+    }
+
+    // Verify ownership
+    const enrollment = await db.programEnrollment.findFirst({
+        where: { id: enrollmentId, userId: session.user.id }
+    });
+
+    if (!enrollment) {
+        return { error: "Enrollment not found" };
+    }
+
+    // Check if already started
+    const existing = await db.taskCompletion.findUnique({
+        where: {
+            enrollmentId_taskId: { enrollmentId, taskId }
+        }
+    });
+
+    if (existing) {
+        // Already started, just return it
+        return { success: true, completion: existing };
+    }
+
+    // Create started task (not completed yet)
+    const completion = await db.taskCompletion.create({
+        data: {
+            enrollmentId,
+            taskId,
+            startedAt: new Date(),
+            completedAt: null,
+            score: null
+        }
+    });
+
+    revalidatePath("/candidate/placement-program");
+    return { success: true, completion };
+}
+
 export async function completeTask(enrollmentId: string, taskId: string, score?: number) {
     const session = await auth();
     if (!session?.user?.id) {
@@ -155,41 +197,40 @@ export async function completeTask(enrollmentId: string, taskId: string, score?:
 
     // Verify ownership
     const enrollment = await db.programEnrollment.findFirst({
-        where: { id: enrollmentId, userId: session.user.id },
-        include: {
-            program: {
-                include: {
-                    modules: {
-                        where: { dayNumber: { lte: 1 } }, // Get current day module
-                        include: { tasks: true }
-                    }
-                }
-            }
-        }
+        where: { id: enrollmentId, userId: session.user.id }
     });
 
     if (!enrollment) {
         return { error: "Enrollment not found" };
     }
 
-    // Check if task already completed
+    // Check if already completed
     const existing = await db.taskCompletion.findUnique({
         where: {
             enrollmentId_taskId: { enrollmentId, taskId }
         }
     });
 
-    if (existing) {
+    if (existing?.completedAt) {
         return { error: "Task already completed" };
     }
 
-    // Create completion
-    const completion = await db.taskCompletion.create({
-        data: {
+    // Upsert - update if started, create if not
+    const completion = await db.taskCompletion.upsert({
+        where: {
+            enrollmentId_taskId: { enrollmentId, taskId }
+        },
+        create: {
             enrollmentId,
             taskId,
+            startedAt: new Date(),
+            completedAt: new Date(),
+            score
+        },
+        update: {
+            completedAt: new Date(),
             score,
-            completedAt: new Date()
+            timeSpent: existing ? Math.round((Date.now() - existing.startedAt.getTime()) / 60000) : null
         }
     });
 
@@ -332,15 +373,28 @@ export async function getDayTasks(enrollmentId: string, dayNumber: number) {
     }
 
     const module = enrollment.program.modules[0];
-    const completedTaskIds = new Set(enrollment.completions.map(c => c.taskId));
+
+    // Create a map of task completions for quick lookup
+    const completionMap = new Map(
+        enrollment.completions.map(c => [c.taskId, c])
+    );
 
     return {
         module,
-        tasks: module.tasks.map(task => ({
-            ...task,
-            isCompleted: completedTaskIds.has(task.id)
-        })),
-        allCompleted: module.tasks.every(task => completedTaskIds.has(task.id))
+        tasks: module.tasks.map(task => {
+            const completion = completionMap.get(task.id);
+            return {
+                ...task,
+                isStarted: !!completion,
+                isCompleted: !!completion?.completedAt,
+                score: completion?.score ?? null,
+                timeSpent: completion?.timeSpent ?? null
+            };
+        }),
+        allCompleted: module.tasks.every(task => {
+            const completion = completionMap.get(task.id);
+            return !!completion?.completedAt;
+        })
     };
 }
 

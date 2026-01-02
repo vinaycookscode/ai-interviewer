@@ -372,7 +372,8 @@ model TaskCompletion {
   taskId       String
   task         DailyTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
   
-  completedAt  DateTime @default(now())
+  startedAt    DateTime @default(now())
+  completedAt  DateTime?  // null if started but not completed
   score        Float?   // For quizzes/problems
   timeSpent    Int?     // Actual minutes
   

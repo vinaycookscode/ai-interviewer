@@ -18,7 +18,7 @@ import {
 import { TaskList } from "@/components/placement/task-list";
 import { TaskModal } from "@/components/placement/task-modal";
 import { StreakCounter, StreakWarning } from "@/components/placement/streak-counter";
-import { completeTask, advanceToNextDay, pauseEnrollment, resumeEnrollment } from "@/actions/placement-program";
+import { completeTask, startTask, advanceToNextDay, pauseEnrollment, resumeEnrollment } from "@/actions/placement-program";
 import { cn } from "@/lib/utils";
 import { TaskType } from "@prisma/client";
 
@@ -30,6 +30,9 @@ interface DailyTask {
     order: number;
     content: any;
     isCompleted: boolean;
+    isStarted?: boolean;
+    score?: number | null;
+    timeSpent?: number | null;
 }
 
 interface DayData {
@@ -79,9 +82,14 @@ export function ProgramDashboardClient({
         });
     };
 
-    const handleStartTask = (taskId: string) => {
+    const handleStartTask = async (taskId: string) => {
         const task = dayData?.tasks.find(t => t.id === taskId);
         if (task) {
+            // Mark task as started in database
+            startTransition(async () => {
+                await startTask(enrollment.id, taskId);
+                router.refresh();
+            });
             setSelectedTask(task);
         }
     };
