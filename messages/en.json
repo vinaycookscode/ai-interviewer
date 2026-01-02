@@ -8,7 +8,13 @@
         "jobManagement": "Job Management",
         "candidateSearch": "Candidate Search",
         "settings": "Settings",
-        "navigation": "Navigation"
+        "navigation": "Navigation",
+        "placementProgram": "90-Day Program",
+        "companyPrep": "Company Prep",
+        "studySquad": "Study Squad",
+        "mentors": "Find Mentors",
+        "aptitude": "Aptitude Prep",
+        "offers": "My Offers"
     },
     "Common": {
         "upload": "Upload",

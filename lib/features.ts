@@ -9,6 +9,13 @@ export const FEATURES = {
     CANDIDATE_SEARCH: 'candidate_search',
     ANALYTICS: 'analytics',
     MODEL_SELECTION: 'model_selection',
+    // Placement Platform Features
+    PLACEMENT_PROGRAM: 'placement_program',
+    COMPANY_PREP: 'company_prep',
+    STUDY_SQUAD: 'study_squad',
+    MENTOR_MATCHING: 'mentor_matching',
+    APTITUDE_TRAINING: 'aptitude_training',
+    OFFER_COMPARATOR: 'offer_comparator',
 } as const;
 
 export type FeatureKey = typeof FEATURES[keyof typeof FEATURES];

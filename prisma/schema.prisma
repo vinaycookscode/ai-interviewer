@@ -44,11 +44,19 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  // Core Relations
   accounts      Account[]
   sessions      Session[]
   jobs          Job[]       @relation("EmployerJobs")
   interviews    Interview[]
   mockInterviews MockInterview[]
+  
+  // Placement Platform Relations
+  programEnrollments ProgramEnrollment[]
+  squadMemberships   SquadMember[]
+  mentorProfile      MentorProfile?
+  mentorships        Mentorship[]  @relation("MenteeRelation")
+  jobOffers          JobOffer[]
 }
 
 model Account {
@@ -268,3 +276,300 @@ model FeatureFlag {
   category    String   // "CANDIDATE", "EMPLOYER", "SYSTEM"
   updatedAt   DateTime @updatedAt
 }
+
+// ============================================
+// CAMPUS PLACEMENT SUCCESS PLATFORM
+// ============================================
+
+// --- Placement Program ---
+enum TaskType {
+  PROBLEM
+  VIDEO
+  QUIZ
+  READING
+  MOCK_INTERVIEW
+  APTITUDE
+  HR_PREP
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  DROPPED
+}
+
+model PlacementProgram {
+  id           String   @id @default(cuid())
+  name         String   // "90-Day Placement Bootcamp"
+  slug         String   @unique
+  description  String   @db.Text
+  durationDays Int      @default(90)
+  isActive     Boolean  @default(true)
+  
+  modules      ProgramModule[]
+  enrollments  ProgramEnrollment[]
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model ProgramModule {
+  id          String   @id @default(cuid())
+  programId   String
+  program     PlacementProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  
+  dayNumber   Int      // Day 1, 2, 3...
+  title       String
+  description String?
+  
+  tasks       DailyTask[]
+  
+  @@unique([programId, dayNumber])
+}
+
+model DailyTask {
+  id          String   @id @default(cuid())
+  moduleId    String
+  module      ProgramModule @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  
+  title       String
+  type        TaskType
+  content     Json     // Flexible content based on type
+  duration    Int      // Expected minutes
+  order       Int      // Task order within day
+  
+  completions TaskCompletion[]
+}
+
+model ProgramEnrollment {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  programId     String
+  program       PlacementProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  
+  startDate     DateTime @default(now())
+  currentDay    Int      @default(1)
+  status        EnrollmentStatus @default(ACTIVE)
+  
+  streak        Int      @default(0)
+  longestStreak Int      @default(0)
+  lastActiveAt  DateTime @default(now())
+  
+  completions   TaskCompletion[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@unique([userId, programId])
+}
+
+model TaskCompletion {
+  id           String   @id @default(cuid())
+  enrollmentId String
+  enrollment   ProgramEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  taskId       String
+  task         DailyTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  
+  completedAt  DateTime @default(now())
+  score        Float?   // For quizzes/problems
+  timeSpent    Int?     // Actual minutes
+  
+  @@unique([enrollmentId, taskId])
+}
+
+// --- Company Prep Kits ---
+model CompanyPrepKit {
+  id          String   @id @default(cuid())
+  company     String   @unique // "TCS", "Amazon", "Google"
+  slug        String   @unique
+  logo        String?
+  description String   @db.Text
+  
+  // Interview Process
+  rounds      Json     // [{name, type, duration, tips}]
+  salaryRange Json?    // {min, max, currency}
+  difficulty  String   @default("MEDIUM") // Overall difficulty
+  
+  // Content
+  questions   CompanyQuestion[]
+  resources   CompanyResource[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CompanyQuestion {
+  id          String   @id @default(cuid())
+  kitId       String
+  kit         CompanyPrepKit @relation(fields: [kitId], references: [id], onDelete: Cascade)
+  
+  question    String   @db.Text
+  type        String   // "CODING", "APTITUDE", "HR", "GD"
+  difficulty  String   // "EASY", "MEDIUM", "HARD"
+  frequency   Float    @default(5) // How often asked (1-10)
+  year        Int?     // Year reported
+  
+  answer      String?  @db.Text
+  tips        String?
+  tags        String[] // Topic tags
+  
+  createdAt   DateTime @default(now())
+}
+
+model CompanyResource {
+  id          String   @id @default(cuid())
+  kitId       String
+  kit         CompanyPrepKit @relation(fields: [kitId], references: [id], onDelete: Cascade)
+  
+  title       String
+  type        String   // "VIDEO", "ARTICLE", "PDF"
+  url         String
+  
+  createdAt   DateTime @default(now())
+}
+
+// --- Study Squad ---
+model StudySquad {
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique
+  description     String?
+  maxMembers      Int      @default(5)
+  isPublic        Boolean  @default(false)
+  
+  // Target
+  targetCompanies String[]
+  targetRole      String?
+  
+  members         SquadMember[]
+  activities      SquadActivity[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model SquadMember {
+  id             String   @id @default(cuid())
+  squadId        String
+  squad          StudySquad @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  role           String   @default("MEMBER") // "LEADER", "MEMBER"
+  joinedAt       DateTime @default(now())
+  
+  // Stats
+  problemsSolved Int      @default(0)
+  daysActive     Int      @default(0)
+  totalPoints    Int      @default(0)
+  
+  @@unique([squadId, userId])
+}
+
+model SquadActivity {
+  id          String   @id @default(cuid())
+  squadId     String
+  squad       StudySquad @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  userId      String
+  
+  type        String   // "PROBLEM_SOLVED", "TASK_COMPLETED", "CHECK_IN"
+  description String
+  points      Int      @default(0)
+  
+  createdAt   DateTime @default(now())
+}
+
+// --- Mentor Matching ---
+model MentorProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  company     String   // Current company
+  role        String   // Current role
+  experience  Int      // Years of experience
+  college     String?  // Alma mater
+  gradYear    Int?     // Graduation year
+  
+  bio         String?  @db.Text
+  linkedin    String?
+  
+  // Availability
+  isAvailable Boolean  @default(true)
+  maxMentees  Int      @default(3)
+  
+  // Expertise
+  skills      String[]
+  companies   String[] // Companies they can mentor for
+  
+  mentorships Mentorship[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Mentorship {
+  id          String   @id @default(cuid())
+  mentorId    String
+  mentor      MentorProfile @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  menteeId    String
+  mentee      User     @relation("MenteeRelation", fields: [menteeId], references: [id], onDelete: Cascade)
+  
+  status      String   @default("PENDING") // "PENDING", "ACTIVE", "COMPLETED", "REJECTED"
+  startDate   DateTime?
+  endDate     DateTime?
+  
+  // Sessions
+  sessions    MentorSession[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([mentorId, menteeId])
+}
+
+model MentorSession {
+  id           String   @id @default(cuid())
+  mentorshipId String
+  mentorship   Mentorship @relation(fields: [mentorshipId], references: [id], onDelete: Cascade)
+  
+  scheduledAt  DateTime
+  duration     Int      @default(30) // minutes
+  topic        String?
+  notes        String?  @db.Text
+  completed    Boolean  @default(false)
+  
+  createdAt    DateTime @default(now())
+}
+
+// --- Job Offers ---
+model JobOffer {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  company     String
+  role        String
+  location    String
+  
+  // Compensation
+  baseSalary  Float
+  bonus       Float?
+  stocks      Float?
+  otherBenefits Json?  // {insurance, wfh, etc}
+  
+  // Details
+  joiningDate DateTime?
+  offerDate   DateTime @default(now())
+  deadline    DateTime?
+  
+  status      String   @default("PENDING") // "PENDING", "ACCEPTED", "REJECTED", "NEGOTIATING"
+  
+  notes       String?  @db.Text
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+

@@ -8,19 +8,22 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useTranslations } from 'next-intl';
 import { cn } from "@/lib/utils";
 
-export interface NavItem {
-    icon: React.ElementType; // Lucide icon
-    labelKey: string;        // Translation key for 'Sidebar' namespace
+// Discriminated union for NavItem - either a regular nav link or a divider
+export type NavItem = {
+    icon: React.ElementType;
+    labelKey: string;
     href: string;
-    featureKey?: string;     // Optional feature flag key to check
-    colorClass?: string;     // Optional tailwind text color class
-    requiredRole?: string;   // Optional role requirement (e.g. "ADMIN")
-    isDivider?: boolean;     // If true, renders a divider before this item
-}
+    featureKey?: string;
+    colorClass?: string;
+    requiredRole?: string;
+    isDivider?: false;
+} | {
+    isDivider: true;
+};
 
 interface AppSidebarProps {
     items: NavItem[];
-    featureFlags?: Record<string, boolean>; // Passed from server
+    featureFlags?: Record<string, boolean>;
     userRole?: string;
     translationNamespace?: string;
 }
@@ -36,31 +39,36 @@ const NavLinks = ({
     featureFlags: Record<string, boolean>;
     userRole?: string;
     onLinkClick?: () => void;
-    t: any;
+    t: (key: string) => string;
 }) => {
-    // Helper to check if enabled (default true if missing)
     const isEnabled = (key?: string) => !key || featureFlags[key] !== false;
     const hasRole = (role?: string) => !role || userRole === role;
 
     return (
         <>
             {items.map((item, index) => {
-                if (!isEnabled(item.featureKey) || !hasRole(item.requiredRole)) return null;
+                // Handle divider
+                if (item.isDivider) {
+                    return <div key={`divider-${index}`} className="border-t border-border my-3" />;
+                }
+
+                // Check feature flag and role
+                if (!isEnabled(item.featureKey) || !hasRole(item.requiredRole)) {
+                    return null;
+                }
 
                 const Icon = item.icon;
 
                 return (
-                    <div key={item.href + index}>
-                        {item.isDivider && <div className="border-t my-2" />}
-                        <Link
-                            href={item.href}
-                            onClick={onLinkClick}
-                            className="flex items-center gap-3 px-4 py-3 text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-all font-medium group"
-                        >
-                            <Icon size={20} className={cn("group-hover:scale-110 transition-transform", item.colorClass)} />
-                            <span>{t(item.labelKey)}</span>
-                        </Link>
-                    </div>
+                    <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={onLinkClick}
+                        className="flex items-center gap-3 px-4 py-3 text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-all font-medium group"
+                    >
+                        <Icon size={20} className={cn("group-hover:scale-110 transition-transform", item.colorClass)} />
+                        <span>{t(item.labelKey)}</span>
+                    </Link>
                 );
             })}
         </>

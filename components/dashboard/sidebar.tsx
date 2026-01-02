@@ -30,12 +30,14 @@ const DASHBOARD_NAV_ITEMS: NavItem[] = [
         colorClass: "text-purple-500",
     },
     {
+        isDivider: true,
+    },
+    {
         icon: Settings,
-        labelKey: "settings", // We need to add this key to en.json
+        labelKey: "settings",
         href: "/admin/features",
         requiredRole: "ADMIN",
         colorClass: "text-orange-500",
-        isDivider: true,
     },
 ];
 
