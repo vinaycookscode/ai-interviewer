@@ -186,16 +186,78 @@ export function ProblemTask({ content, onComplete, isPending }: ProblemTaskProps
 
     const difficultyClass = DIFFICULTY_COLORS[problem.difficulty] || DIFFICULTY_COLORS.MEDIUM;
 
+    // Define test cases for the Two Sum problem
+    const testCases = problem.testCases || [
+        { input: { nums: [2, 7, 11, 15], target: 9 }, expected: [0, 1] },
+        { input: { nums: [3, 2, 4], target: 6 }, expected: [1, 2] },
+        { input: { nums: [3, 3], target: 6 }, expected: [0, 1] }
+    ];
+
+    // Execute user code safely
+    const executeCode = (userCode: string, testCase: any): { passed: boolean; output: string; error?: string } => {
+        try {
+            // Create a function from user code
+            // This wraps the user's function and calls it with test input
+            const wrappedCode = `
+                ${userCode}
+                
+                // Call the function with test input
+                if (typeof twoSum === 'function') {
+                    return twoSum(input.nums, input.target);
+                } else {
+                    throw new Error('Function twoSum not defined');
+                }
+            `;
+
+            // Create and execute the function in a sandboxed way
+            const func = new Function('input', wrappedCode);
+            const result = func(testCase.input);
+
+            // Check if result matches expected
+            const resultStr = JSON.stringify(result);
+            const expectedStr = JSON.stringify(testCase.expected);
+
+            // For Two Sum, order might not matter - check both orders
+            const passed =
+                resultStr === expectedStr ||
+                (Array.isArray(result) && Array.isArray(testCase.expected) &&
+                    result.length === 2 && testCase.expected.length === 2 &&
+                    ((result[0] === testCase.expected[0] && result[1] === testCase.expected[1]) ||
+                        (result[0] === testCase.expected[1] && result[1] === testCase.expected[0])));
+
+            return {
+                passed,
+                output: resultStr,
+                error: passed ? undefined : `Expected ${expectedStr}, got ${resultStr}`
+            };
+        } catch (err: any) {
+            return {
+                passed: false,
+                output: 'Error',
+                error: err.message || 'Execution error'
+            };
+        }
+    };
+
     const handleRunCode = async () => {
         setIsAnalyzing(true);
-        // Simulate running tests
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        setTestResults(null);
 
-        setTestResults([
-            { passed: true, output: "[0, 1]" },
-            { passed: true, output: "[1, 2]" },
-            { passed: Math.random() > 0.3, output: "[0, 3]" }
-        ]);
+        // Small delay to show loading state
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        const results = testCases.map((testCase: any, index: number) => {
+            const result = executeCode(code, testCase);
+            return {
+                passed: result.passed,
+                output: result.output,
+                expected: JSON.stringify(testCase.expected),
+                input: `nums = [${testCase.input.nums.join(', ')}], target = ${testCase.input.target}`,
+                error: result.error
+            };
+        });
+
+        setTestResults(results);
         setIsAnalyzing(false);
     };
 
@@ -404,20 +466,66 @@ export function ProblemTask({ content, onComplete, isPending }: ProblemTaskProps
                             {/* Test Results */}
                             {testResults && (
                                 <div className="bg-[#1e1e1e] rounded-lg p-4">
-                                    <h4 className="text-sm font-medium text-white mb-3">Test Results</h4>
-                                    <div className="space-y-2">
-                                        {testResults.map((result, i) => (
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h4 className="text-sm font-medium text-white">Test Results</h4>
+                                        <span className={cn(
+                                            "text-xs px-2 py-1 rounded",
+                                            testResults.every(r => r.passed)
+                                                ? "bg-green-500/20 text-green-400"
+                                                : "bg-red-500/20 text-red-400"
+                                        )}>
+                                            {testResults.filter(r => r.passed).length}/{testResults.length} Passed
+                                        </span>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {testResults.map((result: any, i: number) => (
                                             <div key={i} className={cn(
-                                                "flex items-center justify-between p-2 rounded",
-                                                result.passed ? "bg-green-500/10" : "bg-red-500/10"
+                                                "p-3 rounded-lg border",
+                                                result.passed
+                                                    ? "bg-green-500/5 border-green-500/30"
+                                                    : "bg-red-500/5 border-red-500/30"
                                             )}>
-                                                <span className="text-sm text-gray-300">Test Case {i + 1}</span>
-                                                <span className={cn(
-                                                    "text-xs font-medium",
-                                                    result.passed ? "text-green-500" : "text-red-500"
-                                                )}>
-                                                    {result.passed ? "✓ Passed" : "✗ Failed"}
-                                                </span>
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="text-sm font-medium text-gray-200">Test Case {i + 1}</span>
+                                                    <span className={cn(
+                                                        "text-xs font-medium px-2 py-0.5 rounded",
+                                                        result.passed
+                                                            ? "bg-green-500/20 text-green-400"
+                                                            : "bg-red-500/20 text-red-400"
+                                                    )}>
+                                                        {result.passed ? "✓ Passed" : "✗ Failed"}
+                                                    </span>
+                                                </div>
+
+                                                {/* Input */}
+                                                {result.input && (
+                                                    <div className="text-xs mb-1">
+                                                        <span className="text-gray-500">Input: </span>
+                                                        <span className="text-blue-400 font-mono">{result.input}</span>
+                                                    </div>
+                                                )}
+
+                                                {/* Expected vs Got */}
+                                                <div className="text-xs space-y-1">
+                                                    <div>
+                                                        <span className="text-gray-500">Expected: </span>
+                                                        <span className="text-green-400 font-mono">{result.expected}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-gray-500">Output: </span>
+                                                        <span className={cn(
+                                                            "font-mono",
+                                                            result.passed ? "text-green-400" : "text-red-400"
+                                                        )}>{result.output}</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* Error message */}
+                                                {result.error && !result.passed && (
+                                                    <div className="mt-2 text-xs text-red-400 bg-red-500/10 p-2 rounded">
+                                                        ⚠️ {result.error}
+                                                    </div>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
