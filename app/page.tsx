@@ -4,6 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, Zap, Users, BarChart, Shield, Clock, Sparkles } from "lucide-react";
 
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "AI Mock Interviews & Placement Prep",
+  description: "Get hired faster with Get Back To U. Practice with our AI interviewer, receive instant feedback, and follow our 90-day placement program track.",
+};
+
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-background">
