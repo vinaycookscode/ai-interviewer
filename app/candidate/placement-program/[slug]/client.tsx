@@ -116,7 +116,12 @@ export function ProgramDashboardClient({
     const handleAdvanceDay = async () => {
         startTransition(async () => {
             const result = await advanceToNextDay(enrollment.id);
-            if (result.success) {
+            if (result.success && result.newDay) {
+                // Force navigation to the new day
+                router.push(`?day=${result.newDay}`);
+                router.refresh();
+            } else if (result.success) {
+                // Just refresh if no new day (e.g. program completed)
                 router.refresh();
             }
         });
@@ -229,10 +234,10 @@ export function ProgramDashboardClient({
             <StreakWarning lastActiveDate={new Date(enrollment.lastActiveAt)} />
 
             {/* Content Grid */}
-            <div className="grid lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_450px] gap-6 items-start">
+            <div className="grid lg:grid-cols-3 gap-6 items-start">
 
                 {/* LEFT COLUMN: Educational Content */}
-                <div className="order-2 lg:order-1 h-auto lg:h-[calc(100vh-200px)] lg:min-h-[500px] lg:sticky lg:top-24">
+                <div className="order-2 lg:order-1 lg:col-span-2 h-auto lg:h-[calc(100vh-200px)] lg:min-h-[500px] lg:sticky lg:top-24">
                     {isPending || isNavigating ? (
                         <div className="bg-card border rounded-xl p-6 h-full overflow-hidden flex flex-col shadow-sm">
                             <KnowledgeSkeleton />

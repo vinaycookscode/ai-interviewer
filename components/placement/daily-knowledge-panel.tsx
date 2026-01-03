@@ -47,9 +47,15 @@ export function DailyKnowledgePanel({ dayNumber, title, content }: DailyKnowledg
                     <div className="p-3 md:p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-sm md:text-base">
                         <div dangerouslySetInnerHTML={{
                             __html: content.conceptExplanation
-                                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-blue-400">$1</strong>')
-                                .replace(/`([^`]+)`/g, '<code class="bg-muted px-1 py-0.5 rounded text-xs md:text-sm">$1</code>')
+                                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-blue-500 font-bold">$1</strong>')
+                                .replace(/`([^`]+)`/g, '<code class="bg-muted px-1.5 py-0.5 rounded text-xs md:text-sm font-mono text-foreground">$1</code>')
+                                .replace(/^### (.*$)/gm, '<h3 class="text-lg font-bold text-foreground mt-6 mb-3">$1</h3>')
+                                .replace(/^- (.*$)/gm, '<div class="flex gap-2 my-1 ml-2"><span class="text-blue-500 font-bold">•</span><span>$1</span></div>')
                                 .replace(/\n/g, '<br/>')
+                                .replace(/(<br\/>)+<h3/g, '<h3')
+                                .replace(/<\/h3>(<br\/>)+/g, '</h3>')
+                                .replace(/(<br\/>)+<div/g, '<div')
+                                .replace(/<\/div>(<br\/>)+/g, '</div>')
                         }} />
                     </div>
                 </div>
@@ -84,7 +90,7 @@ export function DailyKnowledgePanel({ dayNumber, title, content }: DailyKnowledg
                                 </div>
                                 <div className="min-w-0">
                                     <h5 className="font-medium text-xs md:text-sm mb-0.5 truncate">{useCase.title}</h5>
-                                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                                    <p className="text-xs text-muted-foreground leading-relaxed">
                                         {useCase.description}
                                     </p>
                                 </div>

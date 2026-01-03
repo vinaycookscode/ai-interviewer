@@ -52,7 +52,7 @@ export function FeedbackButton() {
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className={cn(
-                    "fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-full shadow-lg transition-all duration-300",
+                    "fixed bottom-6 left-6 md:left-auto md:right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-full shadow-lg transition-all duration-300",
                     "bg-gradient-to-r from-purple-500 to-indigo-500 text-white hover:from-purple-600 hover:to-indigo-600",
                     "hover:shadow-xl hover:scale-105",
                     isOpen && "scale-0 opacity-0"
@@ -72,7 +72,7 @@ export function FeedbackButton() {
                     />
 
                     {/* Modal */}
-                    <div className="fixed bottom-6 right-6 z-50 w-[400px] max-w-[calc(100vw-48px)] bg-card border rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
+                    <div className="fixed bottom-6 left-6 md:left-auto md:right-6 z-50 w-[400px] max-w-[calc(100vw-48px)] bg-card border rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
                         {/* Header */}
                         <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-purple-500/10 to-indigo-500/10">
                             <div className="flex items-center gap-2">
