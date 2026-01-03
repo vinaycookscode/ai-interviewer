@@ -17,8 +17,9 @@ interface TaskModalProps {
         type: TaskType;
         duration: number;
         content: any;
+        metadata?: any;
     };
-    onComplete: (taskId: string, score?: number) => void;
+    onComplete: (taskId: string, score?: number, metadata?: any) => void;
     onClose: () => void;
     isPending?: boolean;
 }
@@ -26,9 +27,9 @@ interface TaskModalProps {
 export function TaskModal({ task, onComplete, onClose, isPending }: TaskModalProps) {
     const [isCompleting, setIsCompleting] = useState(false);
 
-    const handleComplete = (score?: number) => {
+    const handleComplete = (score?: number, metadata?: any) => {
         setIsCompleting(true);
-        onComplete(task.id, score);
+        onComplete(task.id, score, metadata);
     };
 
     const renderContent = () => {
@@ -45,6 +46,7 @@ export function TaskModal({ task, onComplete, onClose, isPending }: TaskModalPro
                 return (
                     <ProblemTask
                         content={task.content}
+                        initialCode={task.metadata?.code}
                         onComplete={handleComplete}
                         isPending={isCompleting || isPending}
                     />

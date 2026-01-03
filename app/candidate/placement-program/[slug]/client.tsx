@@ -38,6 +38,7 @@ interface DailyTask {
     isStarted?: boolean;
     score?: number | null;
     timeSpent?: number | null;
+    metadata?: any;
 }
 
 interface DayData {
@@ -93,9 +94,9 @@ export function ProgramDashboardClient({
         });
     };
 
-    const handleCompleteTask = async (taskId: string, score?: number) => {
+    const handleCompleteTask = async (taskId: string, score?: number, metadata?: any) => {
         startTransition(async () => {
-            await completeTask(enrollment.id, taskId, score);
+            await completeTask(enrollment.id, taskId, score, metadata);
             setSelectedTask(null);
             router.refresh();
         });
