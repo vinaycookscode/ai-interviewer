@@ -4,9 +4,8 @@ import * as z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useTransition } from "react";
-import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
-import { LoginSchema } from "@/schemas";
 import { Input } from "@/components/ui/input";
 import {
     Form,
@@ -20,39 +19,40 @@ import { CardWrapper } from "@/components/auth/card-wrapper";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/auth/form-error";
 import { FormSuccess } from "@/components/auth/form-success";
-import { login } from "@/actions/auth";
-import { Loader2 } from "lucide-react";
+import { forgotPassword } from "@/actions/auth";
+import { Loader2, Mail } from "lucide-react";
 
-export const LoginForm = () => {
-    const searchParams = useSearchParams();
-    const urlError = searchParams.get("error") === "OAuthAccountNotLinked"
-        ? "Email already in use with different provider!"
-        : "";
+const ForgotPasswordSchema = z.object({
+    email: z.string().email("Please enter a valid email"),
+});
 
+export const ForgotPasswordForm = () => {
+    const t = useTranslations("Auth");
     const [error, setError] = useState<string | undefined>("");
     const [success, setSuccess] = useState<string | undefined>("");
     const [isPending, startTransition] = useTransition();
 
-    const form = useForm<z.infer<typeof LoginSchema>>({
-        resolver: zodResolver(LoginSchema),
+    const form = useForm<z.infer<typeof ForgotPasswordSchema>>({
+        resolver: zodResolver(ForgotPasswordSchema),
         defaultValues: {
             email: "",
-            password: "",
         },
     });
 
-    const onSubmit = (values: z.infer<typeof LoginSchema>) => {
+    const onSubmit = (values: z.infer<typeof ForgotPasswordSchema>) => {
         setError("");
         setSuccess("");
 
         startTransition(() => {
-            login(values)
+            forgotPassword(values)
                 .then((data) => {
                     if (data?.error) {
-                        form.reset();
                         setError(data.error);
                     }
-                    // Success is handled by redirect in server action
+                    if (data?.success) {
+                        setSuccess(data.success);
+                        form.reset();
+                    }
                 })
                 .catch(() => setError("Something went wrong"));
         });
@@ -60,19 +60,22 @@ export const LoginForm = () => {
 
     return (
         <CardWrapper
-            headerLabel="Welcome back"
-            backButtonLabel="Don't have an account?"
-            backButtonHref="/auth/register"
+            headerLabel={t("forgotPassword.title")}
+            backButtonLabel={t("forgotPassword.backToLogin")}
+            backButtonHref="/auth/login"
         >
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     <div className="space-y-4">
+                        <p className="text-sm text-muted-foreground text-center">
+                            {t("forgotPassword.description")}
+                        </p>
                         <FormField
                             control={form.control}
                             name="email"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Email</FormLabel>
+                                    <FormLabel>{t("email")}</FormLabel>
                                     <FormControl>
                                         <Input
                                             {...field}
@@ -85,34 +88,8 @@ export const LoginForm = () => {
                                 </FormItem>
                             )}
                         />
-                        <FormField
-                            control={form.control}
-                            name="password"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Password</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            disabled={isPending}
-                                            placeholder="******"
-                                            type="password"
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <div className="text-right">
-                            <a
-                                href="/auth/forgot-password"
-                                className="text-sm text-primary hover:underline"
-                            >
-                                Forgot password?
-                            </a>
-                        </div>
                     </div>
-                    <FormError message={error || urlError} />
+                    <FormError message={error} />
                     <FormSuccess message={success} />
                     <Button
                         disabled={isPending}
@@ -122,10 +99,13 @@ export const LoginForm = () => {
                         {isPending ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Logging in...
+                                {t("forgotPassword.sending")}
                             </>
                         ) : (
-                            "Login"
+                            <>
+                                <Mail className="mr-2 h-4 w-4" />
+                                {t("forgotPassword.sendLink")}
+                            </>
                         )}
                     </Button>
                 </form>

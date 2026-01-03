@@ -4,9 +4,9 @@ import * as z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useTransition } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
-import { LoginSchema } from "@/schemas";
 import { Input } from "@/components/ui/input";
 import {
     Form,
@@ -20,39 +20,67 @@ import { CardWrapper } from "@/components/auth/card-wrapper";
 import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/auth/form-error";
 import { FormSuccess } from "@/components/auth/form-success";
-import { login } from "@/actions/auth";
-import { Loader2 } from "lucide-react";
+import { resetPassword } from "@/actions/auth";
+import { Loader2, KeyRound } from "lucide-react";
 
-export const LoginForm = () => {
+const ResetPasswordSchema = z.object({
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+});
+
+export const ResetPasswordForm = () => {
+    const t = useTranslations("Auth");
     const searchParams = useSearchParams();
-    const urlError = searchParams.get("error") === "OAuthAccountNotLinked"
-        ? "Email already in use with different provider!"
-        : "";
+    const router = useRouter();
+    const token = searchParams.get("token");
 
     const [error, setError] = useState<string | undefined>("");
     const [success, setSuccess] = useState<string | undefined>("");
     const [isPending, startTransition] = useTransition();
 
-    const form = useForm<z.infer<typeof LoginSchema>>({
-        resolver: zodResolver(LoginSchema),
+    const form = useForm<z.infer<typeof ResetPasswordSchema>>({
+        resolver: zodResolver(ResetPasswordSchema),
         defaultValues: {
-            email: "",
             password: "",
+            confirmPassword: "",
         },
     });
 
-    const onSubmit = (values: z.infer<typeof LoginSchema>) => {
+    if (!token) {
+        return (
+            <CardWrapper
+                headerLabel={t("resetPassword.title")}
+                backButtonLabel={t("forgotPassword.backToLogin")}
+                backButtonHref="/auth/login"
+            >
+                <div className="text-center text-destructive">
+                    {t("resetPassword.invalidLink")}
+                </div>
+            </CardWrapper>
+        );
+    }
+
+    const onSubmit = (values: z.infer<typeof ResetPasswordSchema>) => {
         setError("");
         setSuccess("");
 
         startTransition(() => {
-            login(values)
+            resetPassword({ token, password: values.password })
                 .then((data) => {
                     if (data?.error) {
-                        form.reset();
                         setError(data.error);
                     }
-                    // Success is handled by redirect in server action
+                    if (data?.success) {
+                        setSuccess(data.success);
+                        form.reset();
+                        // Redirect to login after 2 seconds
+                        setTimeout(() => {
+                            router.push("/auth/login");
+                        }, 2000);
+                    }
                 })
                 .catch(() => setError("Something went wrong"));
         });
@@ -60,42 +88,24 @@ export const LoginForm = () => {
 
     return (
         <CardWrapper
-            headerLabel="Welcome back"
-            backButtonLabel="Don't have an account?"
-            backButtonHref="/auth/register"
+            headerLabel={t("resetPassword.title")}
+            backButtonLabel={t("forgotPassword.backToLogin")}
+            backButtonHref="/auth/login"
         >
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     <div className="space-y-4">
                         <FormField
                             control={form.control}
-                            name="email"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Email</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            disabled={isPending}
-                                            placeholder="john.doe@example.com"
-                                            type="email"
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
                             name="password"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Password</FormLabel>
+                                    <FormLabel>{t("resetPassword.newPassword")}</FormLabel>
                                     <FormControl>
                                         <Input
                                             {...field}
                                             disabled={isPending}
-                                            placeholder="******"
+                                            placeholder="••••••"
                                             type="password"
                                         />
                                     </FormControl>
@@ -103,16 +113,26 @@ export const LoginForm = () => {
                                 </FormItem>
                             )}
                         />
-                        <div className="text-right">
-                            <a
-                                href="/auth/forgot-password"
-                                className="text-sm text-primary hover:underline"
-                            >
-                                Forgot password?
-                            </a>
-                        </div>
+                        <FormField
+                            control={form.control}
+                            name="confirmPassword"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>{t("resetPassword.confirmPassword")}</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            {...field}
+                                            disabled={isPending}
+                                            placeholder="••••••"
+                                            type="password"
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                     </div>
-                    <FormError message={error || urlError} />
+                    <FormError message={error} />
                     <FormSuccess message={success} />
                     <Button
                         disabled={isPending}
@@ -122,10 +142,13 @@ export const LoginForm = () => {
                         {isPending ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Logging in...
+                                {t("resetPassword.resetting")}
                             </>
                         ) : (
-                            "Login"
+                            <>
+                                <KeyRound className="mr-2 h-4 w-4" />
+                                {t("resetPassword.reset")}
+                            </>
                         )}
                     </Button>
                 </form>

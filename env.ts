@@ -7,6 +7,8 @@ export const env = createEnv({
         GEMINI_API_KEY: z.string().min(1),
         NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
         AUTH_SECRET: z.string().min(1).optional(),
+        RESEND_API_KEY: z.string().min(1).optional(),
+        APP_URL: z.string().url().default("http://localhost:3000"),
     },
     client: {
         // NEXT_PUBLIC_CLIENT_VAR: z.string(),
@@ -16,5 +18,7 @@ export const env = createEnv({
         GEMINI_API_KEY: process.env.GEMINI_API_KEY,
         NODE_ENV: process.env.NODE_ENV,
         AUTH_SECRET: process.env.AUTH_SECRET,
+        RESEND_API_KEY: process.env.RESEND_API_KEY,
+        APP_URL: process.env.APP_URL,
     },
 });

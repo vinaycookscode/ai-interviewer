@@ -162,3 +162,115 @@ export const register = async (
 
     return { success: "User created!" };
 };
+
+// =============================================================================
+// PASSWORD RESET
+// =============================================================================
+
+import { v4 as uuidv4 } from "uuid";
+import { sendPasswordResetEmail } from "@/lib/email";
+
+const ForgotPasswordSchema = z.object({
+    email: z.string().email(),
+});
+
+const ResetPasswordSchema = z.object({
+    token: z.string().min(1),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+export const forgotPassword = async (values: z.infer<typeof ForgotPasswordSchema>) => {
+    const validatedFields = ForgotPasswordSchema.safeParse(values);
+
+    if (!validatedFields.success) {
+        return { error: "Invalid email address" };
+    }
+
+    const { email } = validatedFields.data;
+
+    // Check if user exists
+    const user = await db.user.findUnique({ where: { email } });
+
+    // Always return success to prevent email enumeration
+    if (!user) {
+        return { success: "If this email exists, you will receive a password reset link." };
+    }
+
+    // Delete any existing tokens for this email
+    await db.passwordResetToken.deleteMany({
+        where: { email }
+    });
+
+    // Generate new token
+    const token = uuidv4();
+    const expires = new Date(Date.now() + 3600 * 1000); // 1 hour
+
+    await db.passwordResetToken.create({
+        data: {
+            email,
+            token,
+            expires,
+        }
+    });
+
+    // Send email
+    const emailResult = await sendPasswordResetEmail(email, token);
+
+    if (!emailResult.success) {
+        return { error: "Failed to send reset email. Please try again." };
+    }
+
+    return { success: "If this email exists, you will receive a password reset link." };
+};
+
+export const resetPassword = async (values: z.infer<typeof ResetPasswordSchema>) => {
+    const validatedFields = ResetPasswordSchema.safeParse(values);
+
+    if (!validatedFields.success) {
+        return { error: "Invalid input" };
+    }
+
+    const { token, password } = validatedFields.data;
+
+    // Find the token
+    const resetToken = await db.passwordResetToken.findUnique({
+        where: { token }
+    });
+
+    if (!resetToken) {
+        return { error: "Invalid or expired reset link" };
+    }
+
+    // Check if token has expired
+    if (new Date() > resetToken.expires) {
+        // Clean up expired token
+        await db.passwordResetToken.delete({
+            where: { id: resetToken.id }
+        });
+        return { error: "Reset link has expired. Please request a new one." };
+    }
+
+    // Find the user
+    const user = await db.user.findUnique({
+        where: { email: resetToken.email }
+    });
+
+    if (!user) {
+        return { error: "User not found" };
+    }
+
+    // Hash new password and update
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await db.user.update({
+        where: { id: user.id },
+        data: { password: hashedPassword }
+    });
+
+    // Delete the used token
+    await db.passwordResetToken.delete({
+        where: { id: resetToken.id }
+    });
+
+    return { success: "Password updated successfully! You can now log in." };
+};

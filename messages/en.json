@@ -72,5 +72,23 @@
             "confirmDelete": "Are you sure you want to delete this feedback?",
             "anonymousUser": "Anonymous User"
         }
+    },
+    "Auth": {
+        "email": "Email",
+        "forgotPassword": {
+            "title": "Forgot Password",
+            "backToLogin": "Back to login",
+            "description": "Enter your email address and we'll send you a link to reset your password.",
+            "sending": "Sending link...",
+            "sendLink": "Send Reset Link"
+        },
+        "resetPassword": {
+            "title": "Reset Password",
+            "invalidLink": "Invalid or expired reset link. Please request a new one.",
+            "newPassword": "New Password",
+            "confirmPassword": "Confirm Password",
+            "resetting": "Resetting...",
+            "reset": "Reset Password"
+        }
     }
 }
