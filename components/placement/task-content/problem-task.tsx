@@ -793,20 +793,23 @@ export function ProblemTask({ content, onComplete, isPending, initialCode }: Pro
                 </div>
             )}
 
-            <div className="shrink-0 pt-4 border-t mt-4 flex items-center justify-between gap-4">
-                <button
-                    onClick={() => {
-                        // Just save without completing if needed, or complete
-                        // For now, we assume this button marks it as DONE.
-                        onComplete(analysis?.correctness || (testResults ? 85 : 70), { code, analysis });
-                    }}
-                    disabled={isPending}
-                    className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-green-500 text-white rounded-xl hover:bg-green-600 disabled:opacity-50 font-medium"
-                >
-                    <CheckCircle className="h-5 w-5" />
-                    {isPending ? "Completing..." : "Complete Problem"}
-                </button>
-            </div>
+            {/* Complete Button - Only show in Problem tab */}
+            {activeTab === "problem" && (
+                <div className="shrink-0 pt-4 border-t mt-4 flex items-center justify-between gap-4">
+                    <button
+                        onClick={() => {
+                            // Just save without completing if needed, or complete
+                            // For now, we assume this button marks it as DONE.
+                            onComplete(analysis?.correctness || (testResults ? 85 : 70), { code, analysis });
+                        }}
+                        disabled={isPending}
+                        className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-green-500 text-white rounded-xl hover:bg-green-600 disabled:opacity-50 font-medium"
+                    >
+                        <CheckCircle className="h-5 w-5" />
+                        {isPending ? "Completing..." : "Complete Problem"}
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
