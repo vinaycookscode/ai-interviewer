@@ -189,7 +189,7 @@ export async function startTask(enrollmentId: string, taskId: string) {
     return { success: true, completion };
 }
 
-export async function completeTask(enrollmentId: string, taskId: string, score?: number) {
+export async function completeTask(enrollmentId: string, taskId: string, score?: number, metadata?: any) {
     const session = await auth();
     if (!session?.user?.id) {
         return { error: "Not authenticated" };
@@ -230,7 +230,8 @@ export async function completeTask(enrollmentId: string, taskId: string, score?:
         update: {
             completedAt: new Date(),
             score,
-            timeSpent: existing ? Math.round((Date.now() - existing.startedAt.getTime()) / 60000) : null
+            timeSpent: existing ? Math.round((Date.now() - existing.startedAt.getTime()) / 60000) : null,
+            metadata: metadata ?? undefined
         }
     });
 
@@ -393,7 +394,8 @@ export async function getDayTasks(enrollmentId: string, dayNumber: number) {
                 isStarted: !!completion,
                 isCompleted: !!completion?.completedAt,
                 score: completion?.score ?? null,
-                timeSpent: completion?.timeSpent ?? null
+                timeSpent: completion?.timeSpent ?? null,
+                metadata: completion?.metadata ?? null
             };
         }),
         allCompleted: module.tasks.every(task => {

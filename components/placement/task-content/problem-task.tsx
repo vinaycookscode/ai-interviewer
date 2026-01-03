@@ -20,7 +20,8 @@ interface ProblemTaskProps {
         starterCode?: string;
         testCases?: { input: string; expected: string }[];
     };
-    onComplete: (score?: number) => void;
+    initialCode?: string;
+    onComplete: (score?: number, metadata?: any) => void;
     isPending?: boolean;
 }
 
@@ -225,14 +226,14 @@ This problem belongs to the **"Complement Search"** pattern. Whenever you need t
     }
 };
 
-export function ProblemTask({ content, onComplete, isPending }: ProblemTaskProps) {
+export function ProblemTask({ content, onComplete, isPending, initialCode }: ProblemTaskProps) {
     const problem = {
         ...SAMPLE_PROBLEMS.default,
         ...content,
         difficulty: content.difficulty || "MEDIUM"
     };
 
-    const [code, setCode] = useState(problem.starterCode || SAMPLE_PROBLEMS.default.starterCode);
+    const [code, setCode] = useState(initialCode || problem.starterCode || SAMPLE_PROBLEMS.default.starterCode);
     const [activeTab, setActiveTab] = useState<"problem" | "learn" | "solution">("problem");
     const [showHints, setShowHints] = useState<number[]>([]);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -792,10 +793,13 @@ export function ProblemTask({ content, onComplete, isPending }: ProblemTaskProps
                 </div>
             )}
 
-            {/* Complete Button - Fixed at bottom */}
-            <div className="shrink-0 pt-4 border-t mt-4">
+            <div className="shrink-0 pt-4 border-t mt-4 flex items-center justify-between gap-4">
                 <button
-                    onClick={() => onComplete(analysis?.correctness || (testResults ? 85 : 70))}
+                    onClick={() => {
+                        // Just save without completing if needed, or complete
+                        // For now, we assume this button marks it as DONE.
+                        onComplete(analysis?.correctness || (testResults ? 85 : 70), { code, analysis });
+                    }}
                     disabled={isPending}
                     className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-green-500 text-white rounded-xl hover:bg-green-600 disabled:opacity-50 font-medium"
                 >

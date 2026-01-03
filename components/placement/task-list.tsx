@@ -80,11 +80,16 @@ export function TaskCard({ task, onComplete, onStart, disabled }: TaskCardProps)
         )}>
             {/* Completion Status */}
             <button
-                onClick={() => !task.isCompleted && onComplete?.(task.id)}
-                disabled={disabled || task.isCompleted}
+                onClick={() => {
+                    const isManualCompletionAllowed = task.type !== "PROBLEM" && task.type !== "QUIZ";
+                    if (!task.isCompleted && isManualCompletionAllowed) {
+                        onComplete?.(task.id);
+                    }
+                }}
+                disabled={disabled || task.isCompleted || task.type === "PROBLEM" || task.type === "QUIZ"}
                 className={cn(
                     "flex-shrink-0",
-                    task.isCompleted ? "text-green-500" : "text-muted-foreground hover:text-primary"
+                    task.isCompleted ? "text-green-500" : (task.type === "PROBLEM" || task.type === "QUIZ" ? "text-muted-foreground opacity-50 cursor-not-allowed" : "text-muted-foreground hover:text-primary")
                 )}
             >
                 {task.isCompleted ? (

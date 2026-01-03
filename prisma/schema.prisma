@@ -387,6 +387,7 @@ model TaskCompletion {
   completedAt  DateTime?  // null if started but not completed
   score        Float?   // For quizzes/problems
   timeSpent    Int?     // Actual minutes
+  metadata     Json?    // Store user answers (e.g. { code: "...", answers: [...] })
   
   @@unique([enrollmentId, taskId])
 }
