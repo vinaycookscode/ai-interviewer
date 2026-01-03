@@ -322,6 +322,7 @@ model ProgramModule {
   dayNumber   Int      // Day 1, 2, 3...
   title       String
   description String?
+  content     Json?    // Educational content for the day (concept, takeaways, etc.)
   
   tasks       DailyTask[]
   
@@ -393,6 +394,9 @@ model CompanyPrepKit {
   salaryRange Json?    // {min, max, currency}
   difficulty  String   @default("MEDIUM") // Overall difficulty
   
+  // Deep Concepts & Interview Tips
+  content     Json?    // {overview, culture, interviewTips, preparationStrategy}
+  
   // Content
   questions   CompanyQuestion[]
   resources   CompanyResource[]
@@ -406,7 +410,8 @@ model CompanyQuestion {
   kitId       String
   kit         CompanyPrepKit @relation(fields: [kitId], references: [id], onDelete: Cascade)
   
-  question    String   @db.Text
+  question    String   @db.Text      // Problem title
+  description String?  @db.Text      // Detailed problem statement with examples and constraints
   type        String   // "CODING", "APTITUDE", "HR", "GD"
   difficulty  String   // "EASY", "MEDIUM", "HARD"
   frequency   Float    @default(5) // How often asked (1-10)
@@ -415,6 +420,12 @@ model CompanyQuestion {
   answer      String?  @db.Text
   tips        String?
   tags        String[] // Topic tags
+  
+  // Code Editor Support (for CODING type)
+  starterCode   String?  @db.Text  // Initial code template
+  solutionCode  String?  @db.Text  // Reference solution
+  testCases     Json?              // [{input, expected, hidden}]
+  language      String?            // javascript, python, java, cpp
   
   createdAt   DateTime @default(now())
 }
@@ -577,3 +588,20 @@ model JobOffer {
   updatedAt   DateTime @updatedAt
 }
 
+// --- User Feedback ---
+model Feedback {
+  id          String   @id @default(cuid())
+  userId      String?
+  userEmail   String?
+  userName    String?
+  
+  content     String   @db.Text
+  page        String?  // URL/route where feedback was submitted
+  category    String   @default("GENERAL") // GENERAL, BUG, FEATURE, IMPROVEMENT
+  
+  status      String   @default("NEW") // NEW, REVIEWED, RESOLVED, DISMISSED
+  adminNotes  String?  @db.Text
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

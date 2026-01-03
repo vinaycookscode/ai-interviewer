@@ -24,10 +24,30 @@ export default async function CompanyDetailPage({ params }: PageProps) {
         );
     }
 
+    // Check code editor feature flags
+    const [
+        languageSelectorEnabled,
+        codePersistenceEnabled,
+        aiCodeAnalysisEnabled
+    ] = await Promise.all([
+        checkFeature(FEATURES.CODE_EDITOR_LANGUAGE_SELECTOR),
+        checkFeature(FEATURES.CODE_PERSISTENCE),
+        checkFeature(FEATURES.AI_CODE_ANALYSIS)
+    ]);
+
     const company = await getCompanyKitBySlug(slug);
     if (!company) {
         notFound();
     }
 
-    return <CompanyDetailClient company={company} />;
+    return (
+        <CompanyDetailClient
+            company={company}
+            featureFlags={{
+                languageSelector: languageSelectorEnabled,
+                codePersistence: codePersistenceEnabled,
+                aiCodeAnalysis: aiCodeAnalysisEnabled
+            }}
+        />
+    );
 }

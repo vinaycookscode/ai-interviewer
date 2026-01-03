@@ -11,7 +11,8 @@ import {
     CheckCircle,
     Circle,
     Clock,
-    ChevronRight
+    ChevronRight,
+    Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TaskType } from "@prisma/client";
@@ -74,6 +75,7 @@ export function TaskCard({ task, onComplete, onStart, disabled }: TaskCardProps)
         <div className={cn(
             "flex items-center gap-4 p-4 bg-card border rounded-xl transition-all",
             task.isCompleted && "opacity-60",
+            task.isStarted && !task.isCompleted && "border-amber-500/50 bg-amber-500/5",
             !disabled && !task.isCompleted && "hover:border-primary/50 cursor-pointer"
         )}>
             {/* Completion Status */}
@@ -87,6 +89,13 @@ export function TaskCard({ task, onComplete, onStart, disabled }: TaskCardProps)
             >
                 {task.isCompleted ? (
                     <CheckCircle className="h-6 w-6" />
+                ) : task.isStarted ? (
+                    <div className="relative">
+                        <Circle className="h-6 w-6 text-amber-500" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="h-3 w-3 rounded-full bg-amber-500 animate-pulse" />
+                        </div>
+                    </div>
                 ) : (
                     <Circle className="h-6 w-6" />
                 )}
@@ -105,7 +114,7 @@ export function TaskCard({ task, onComplete, onStart, disabled }: TaskCardProps)
                 )}>
                     {task.title}
                 </p>
-                <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <div className="flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
                     <span className={cn(
                         "px-2 py-0.5 rounded text-xs",
                         bgColor,
@@ -118,7 +127,8 @@ export function TaskCard({ task, onComplete, onStart, disabled }: TaskCardProps)
                         {task.duration} min
                     </span>
                     {task.isStarted && !task.isCompleted && (
-                        <span className="px-2 py-0.5 rounded text-xs bg-amber-500/10 text-amber-500">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 border border-amber-500/30">
+                            <Loader2 className="h-3 w-3 animate-spin" />
                             In Progress
                         </span>
                     )}
@@ -131,9 +141,9 @@ export function TaskCard({ task, onComplete, onStart, disabled }: TaskCardProps)
                     onClick={() => onStart?.(task.id)}
                     disabled={disabled}
                     className={cn(
-                        "flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm transition-colors",
+                        "flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-all shrink-0",
                         task.isStarted
-                            ? "bg-amber-500 text-white hover:bg-amber-600"
+                            ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600 shadow-lg shadow-amber-500/25"
                             : "bg-primary text-primary-foreground hover:bg-primary/90"
                     )}
                 >

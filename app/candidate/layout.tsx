@@ -7,6 +7,7 @@ import { ModeToggle } from "@/components/mode-toggle";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { CandidateSidebar } from "@/components/candidate/sidebar";
 import { getFeatureFlags } from "@/actions/feature-flags";
+import { FeedbackButton } from "@/components/feedback-button";
 
 export default async function CandidateLayout({
     children,
@@ -38,6 +39,9 @@ export default async function CandidateLayout({
                     {children}
                 </main>
             </div>
+
+            {/* Floating Feedback Button */}
+            <FeedbackButton />
         </div>
     );
 }

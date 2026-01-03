@@ -16,6 +16,10 @@ export const FEATURES = {
     MENTOR_MATCHING: 'mentor_matching',
     APTITUDE_TRAINING: 'aptitude_training',
     OFFER_COMPARATOR: 'offer_comparator',
+    // Code Editor Features
+    CODE_EDITOR_LANGUAGE_SELECTOR: 'code_editor_language_selector',
+    CODE_PERSISTENCE: 'code_persistence',
+    AI_CODE_ANALYSIS: 'ai_code_analysis',
 } as const;
 
 export type FeatureKey = typeof FEATURES[keyof typeof FEATURES];

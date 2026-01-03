@@ -8,6 +8,7 @@ import { ModeToggle } from "@/components/mode-toggle";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { getFeatureFlags } from "@/actions/feature-flags";
+import { FeedbackButton } from "@/components/feedback-button";
 
 export default async function DashboardLayout({
     children,
@@ -39,6 +40,9 @@ export default async function DashboardLayout({
                     {children}
                 </main>
             </div>
+
+            {/* Floating Feedback Button */}
+            <FeedbackButton />
         </div>
     );
 }

@@ -13,14 +13,19 @@ import {
     Play,
     Trophy,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    BookOpen
 } from "lucide-react";
 import { TaskList } from "@/components/placement/task-list";
 import { TaskModal } from "@/components/placement/task-modal";
 import { StreakCounter, StreakWarning } from "@/components/placement/streak-counter";
-import { completeTask, startTask, advanceToNextDay, pauseEnrollment, resumeEnrollment } from "@/actions/placement-program";
+import { startTask, completeTask, advanceToNextDay, pauseEnrollment, resumeEnrollment } from "@/actions/placement-program";
 import { cn } from "@/lib/utils";
-import { TaskType } from "@prisma/client";
+import { TaskType, Prisma } from "@prisma/client";
+import { DailyKnowledgePanel } from "@/components/placement/daily-knowledge-panel";
+import { KnowledgeSkeleton } from "@/components/placement/knowledge-skeleton";
+import { TaskListSkeleton } from "@/components/placement/task-list-skeleton";
+import { Loader2 } from "lucide-react";
 
 interface DailyTask {
     id: string;
@@ -41,6 +46,7 @@ interface DayData {
         dayNumber: number;
         title: string;
         description: string | null;
+        content: any;
     };
     tasks: DailyTask[];
     allCompleted: boolean;
@@ -62,17 +68,30 @@ interface ProgramDashboardClientProps {
         lastActiveAt: Date;
     };
     dayData: DayData | null;
+    viewDay: number;
 }
 
 export function ProgramDashboardClient({
     program,
     enrollment,
-    dayData
+    dayData,
+    viewDay
 }: ProgramDashboardClientProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
+    const [isNavigating, setIsNavigating] = useState(false);
     const [selectedTask, setSelectedTask] = useState<DailyTask | null>(null);
     const progressPercent = (enrollment.currentDay / program.durationDays) * 100;
+
+    // Navigation handler with loading state
+    const handleNavigateDay = (day: number) => {
+        setIsNavigating(true);
+        startTransition(() => {
+            router.push(`?day=${day}`);
+            // Reset after navigation completes
+            setTimeout(() => setIsNavigating(false), 100);
+        });
+    };
 
     const handleCompleteTask = async (taskId: string, score?: number) => {
         startTransition(async () => {
@@ -209,88 +228,129 @@ export function ProgramDashboardClient({
             {/* Streak Warning */}
             <StreakWarning lastActiveDate={new Date(enrollment.lastActiveAt)} />
 
-            {/* Today's Tasks */}
-            <div className="bg-card border rounded-xl p-6">
-                <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <div className="flex items-center gap-2 text-orange-500 mb-1">
-                            <Calendar className="h-4 w-4" />
-                            <span className="text-sm font-medium">Day {enrollment.currentDay}</span>
+            {/* Content Grid */}
+            <div className="grid lg:grid-cols-[1fr_400px] xl:grid-cols-[1fr_450px] gap-6 items-start">
+
+                {/* LEFT COLUMN: Educational Content */}
+                <div className="order-2 lg:order-1 h-auto lg:h-[calc(100vh-200px)] lg:min-h-[500px] lg:sticky lg:top-24">
+                    {isPending || isNavigating ? (
+                        <div className="bg-card border rounded-xl p-6 h-full overflow-hidden flex flex-col shadow-sm">
+                            <KnowledgeSkeleton />
                         </div>
-                        <h2 className="text-xl font-bold">
-                            {dayData?.module.title || "Today's Tasks"}
-                        </h2>
-                        {dayData?.module.description && (
-                            <p className="text-muted-foreground text-sm mt-1">
-                                {dayData.module.description}
-                            </p>
+                    ) : dayData?.module.content ? (
+                        <div className="bg-card border rounded-xl p-6 h-full overflow-hidden flex flex-col shadow-sm">
+                            <DailyKnowledgePanel
+                                dayNumber={viewDay}
+                                title={dayData.module.title}
+                                content={dayData.module.content}
+                            />
+                        </div>
+                    ) : (
+                        <div className="bg-muted/30 border border-dashed rounded-xl p-8 text-center h-full flex flex-col items-center justify-center text-muted-foreground">
+                            <BookOpen className="h-12 w-12 mb-4 opacity-20" />
+                            <p className="font-medium">Knowledge Section</p>
+                            <p className="text-sm">Detailed concepts for this day are coming soon.</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* RIGHT COLUMN: Tasks & Actions */}
+                <div className="order-1 lg:order-2 space-y-6">
+                    {/* Today's Tasks */}
+                    <div className="bg-card border rounded-xl p-6 shadow-sm">
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <div className="flex items-center gap-2 text-orange-500 mb-1">
+                                    <Calendar className="h-4 w-4" />
+                                    <span className="text-sm font-medium">Day {viewDay}</span>
+                                </div>
+                                <h2 className="text-xl font-bold">
+                                    {dayData?.module.title || "Today's Tasks"}
+                                </h2>
+                                {dayData?.module.description && (
+                                    <p className="text-muted-foreground text-sm mt-1">
+                                        {dayData.module.description}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Day Navigation */}
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => handleNavigateDay(viewDay - 1)}
+                                    disabled={viewDay <= 1 || isPending || isNavigating}
+                                    className="p-2 rounded-lg border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    aria-label="Previous day"
+                                >
+                                    <ChevronLeft className="h-4 w-4" />
+                                </button>
+                                <span className="text-sm font-medium min-w-[3rem] text-center">
+                                    {isNavigating ? (
+                                        <Loader2 className="h-4 w-4 animate-spin mx-auto" />
+                                    ) : (
+                                        `${viewDay}/${enrollment.currentDay}`
+                                    )}
+                                </span>
+                                <button
+                                    onClick={() => handleNavigateDay(viewDay + 1)}
+                                    disabled={viewDay >= enrollment.currentDay || isPending || isNavigating}
+                                    className="p-2 rounded-lg border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    aria-label="Next day"
+                                >
+                                    <ChevronRight className="h-4 w-4" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Task List */}
+                        {dayData ? (
+                            <TaskList
+                                tasks={dayData.tasks as any}
+                                onComplete={(taskId) => handleCompleteTask(taskId)}
+                                onStart={handleStartTask}
+                                disabled={isPaused || isPending}
+                            />
+                        ) : (
+                            <div className="text-center py-8 text-muted-foreground">
+                                <p>No tasks available for this day yet.</p>
+                                <p className="text-sm">Content is being prepared.</p>
+                            </div>
+                        )}
+
+                        {/* Complete Day Button */}
+                        {dayData?.allCompleted && (
+                            <div className="mt-6 pt-6 border-t">
+                                <button
+                                    onClick={handleAdvanceDay}
+                                    disabled={isPending}
+                                    className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl hover:opacity-90 transition-opacity font-semibold text-lg"
+                                >
+                                    <CheckCircle className="h-5 w-5" />
+                                    Complete Day {enrollment.currentDay} & Continue
+                                    <ArrowRight className="h-5 w-5" />
+                                </button>
+                            </div>
                         )}
                     </div>
 
-                    {/* Day Navigation */}
-                    <div className="flex items-center gap-2">
-                        <button
-                            disabled={enrollment.currentDay <= 1}
-                            className="p-2 rounded-lg border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <ChevronLeft className="h-4 w-4" />
-                        </button>
-                        <button
-                            disabled={!dayData?.allCompleted || isPending}
-                            className="p-2 rounded-lg border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <ChevronRight className="h-4 w-4" />
-                        </button>
+                    {/* Quick Stats - Moved here */}
+                    <div className="grid grid-cols-3 gap-3">
+                        <div className="bg-card border rounded-xl p-3 text-center">
+                            <Flame className="h-5 w-5 text-orange-500 mx-auto mb-1" />
+                            <p className="text-xl font-bold">{enrollment.streak}</p>
+                            <p className="text-xs text-muted-foreground">Streak</p>
+                        </div>
+                        <div className="bg-card border rounded-xl p-3 text-center">
+                            <Trophy className="h-5 w-5 text-yellow-500 mx-auto mb-1" />
+                            <p className="text-xl font-bold">{enrollment.longestStreak}</p>
+                            <p className="text-xs text-muted-foreground">Best</p>
+                        </div>
+                        <div className="bg-card border rounded-xl p-3 text-center">
+                            <CheckCircle className="h-5 w-5 text-green-500 mx-auto mb-1" />
+                            <p className="text-xl font-bold">{enrollment.currentDay - 1}</p>
+                            <p className="text-xs text-muted-foreground">Done</p>
+                        </div>
                     </div>
-                </div>
-
-                {/* Task List */}
-                {dayData ? (
-                    <TaskList
-                        tasks={dayData.tasks as any}
-                        onComplete={(taskId) => handleCompleteTask(taskId)}
-                        onStart={handleStartTask}
-                        disabled={isPaused || isPending}
-                    />
-                ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                        <p>No tasks available for this day yet.</p>
-                        <p className="text-sm">Content is being prepared.</p>
-                    </div>
-                )}
-
-                {/* Complete Day Button */}
-                {dayData?.allCompleted && (
-                    <div className="mt-6 pt-6 border-t">
-                        <button
-                            onClick={handleAdvanceDay}
-                            disabled={isPending}
-                            className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl hover:opacity-90 transition-opacity font-semibold text-lg"
-                        >
-                            <CheckCircle className="h-5 w-5" />
-                            Complete Day {enrollment.currentDay} & Continue
-                            <ArrowRight className="h-5 w-5" />
-                        </button>
-                    </div>
-                )}
-            </div>
-
-            {/* Quick Stats */}
-            <div className="grid grid-cols-3 gap-4">
-                <div className="bg-card border rounded-xl p-4 text-center">
-                    <Flame className="h-6 w-6 text-orange-500 mx-auto mb-2" />
-                    <p className="text-2xl font-bold">{enrollment.streak}</p>
-                    <p className="text-sm text-muted-foreground">Current Streak</p>
-                </div>
-                <div className="bg-card border rounded-xl p-4 text-center">
-                    <Trophy className="h-6 w-6 text-yellow-500 mx-auto mb-2" />
-                    <p className="text-2xl font-bold">{enrollment.longestStreak}</p>
-                    <p className="text-sm text-muted-foreground">Best Streak</p>
-                </div>
-                <div className="bg-card border rounded-xl p-4 text-center">
-                    <CheckCircle className="h-6 w-6 text-green-500 mx-auto mb-2" />
-                    <p className="text-2xl font-bold">{enrollment.currentDay - 1}</p>
-                    <p className="text-sm text-muted-foreground">Days Completed</p>
                 </div>
             </div>
 

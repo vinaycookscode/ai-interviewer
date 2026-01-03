@@ -7,10 +7,12 @@ import { ProgramDashboardClient } from "./client";
 
 interface PageProps {
     params: Promise<{ slug: string }>;
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function ProgramDashboardPage({ params }: PageProps) {
+export default async function ProgramDashboardPage({ params, searchParams }: PageProps) {
     const { slug } = await params;
+    const { day } = await searchParams;
 
     const session = await auth();
     if (!session?.user?.id) redirect("/auth/login");
@@ -37,14 +39,25 @@ export default async function ProgramDashboardPage({ params }: PageProps) {
         redirect("/candidate/placement-program");
     }
 
-    // Get today's tasks
-    const dayData = await getDayTasks(enrollment.id, enrollment.currentDay);
+    // Determine day to view
+    let viewDay = enrollment.currentDay;
+    if (day && typeof day === "string") {
+        const dayNum = parseInt(day);
+        if (!isNaN(dayNum) && dayNum >= 1 && dayNum <= enrollment.currentDay) {
+            viewDay = dayNum;
+        }
+    }
+
+
+    // Get tasks for the specific day
+    const dayData = await getDayTasks(enrollment.id, viewDay);
 
     return (
         <ProgramDashboardClient
             program={program}
             enrollment={enrollment}
-            dayData={dayData}
+            dayData={dayData as any}
+            viewDay={viewDay}
         />
     );
 }

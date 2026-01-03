@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { LayoutDashboard, Users, Settings, Shield, MapPin, Menu, ToggleLeft } from "lucide-react";
+import { LayoutDashboard, Users, Settings, Shield, MapPin, Menu, ToggleLeft, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -44,6 +44,14 @@ const NavLinks = ({ onLinkClick }: { onLinkClick?: () => void }) => (
             <span>Feature Management</span>
         </Link>
         <Link
+            href="/admin/feedback"
+            onClick={onLinkClick}
+            className="flex items-center gap-3 px-4 py-3 text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-all font-medium group"
+        >
+            <MessageSquare size={20} className="group-hover:scale-110 transition-transform" />
+            <span>User Feedback</span>
+        </Link>
+        <Link
             href="/dashboard"
             onClick={onLinkClick}
             className="flex items-center gap-3 px-4 py-3 text-muted-foreground hover:bg-muted hover:text-foreground rounded-lg transition-all font-medium group mt-8"
@@ -53,6 +61,7 @@ const NavLinks = ({ onLinkClick }: { onLinkClick?: () => void }) => (
         </Link>
     </>
 );
+
 
 export function AdminSidebar() {
     const [open, setOpen] = useState(false);

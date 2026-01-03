@@ -347,32 +347,37 @@ export async function getDayTasks(enrollmentId: string, dayNumber: number) {
         return null;
     }
 
+    // 1. Get Enrollment & Completions
     const enrollment = await db.programEnrollment.findFirst({
         where: { id: enrollmentId, userId: session.user.id },
         include: {
-            program: {
-                include: {
-                    modules: {
-                        where: { dayNumber },
-                        include: {
-                            tasks: {
-                                orderBy: { order: "asc" }
-                            }
-                        }
-                    }
-                }
-            },
             completions: {
                 include: { task: true }
             }
         }
     });
 
-    if (!enrollment || enrollment.program.modules.length === 0) {
+    if (!enrollment) return null;
+
+    // 2. Fetch the specific Module directly
+    // This ensures we get the latest content and avoids deep nesting issues
+    const module = await db.programModule.findUnique({
+        where: {
+            programId_dayNumber: {
+                programId: enrollment.programId,
+                dayNumber: dayNumber
+            }
+        },
+        include: {
+            tasks: {
+                orderBy: { order: "asc" }
+            }
+        }
+    });
+
+    if (!module) {
         return null;
     }
-
-    const module = enrollment.program.modules[0];
 
     // Create a map of task completions for quick lookup
     const completionMap = new Map(

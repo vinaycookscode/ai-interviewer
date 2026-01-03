@@ -59,6 +59,13 @@ export async function seedFeatureFlags() {
         // Keep existing legacy ones valid too if needed, but we focus on these
         { key: FEATURES.MULTILINGUAL_SUPPORT, category: 'SYSTEM', description: "Support multiple languages" },
         { key: FEATURES.MOBILE_ACCESS, category: 'SYSTEM', description: "Enable mobile-optimized views" },
+        // Code Editor Features
+        { key: FEATURES.CODE_EDITOR_LANGUAGE_SELECTOR, category: 'CODE_EDITOR', description: "Multi-language support (JS, Python, Java, C#, etc.)" },
+        { key: FEATURES.CODE_PERSISTENCE, category: 'CODE_EDITOR', description: "Save user code to localStorage across sessions" },
+        { key: FEATURES.AI_CODE_ANALYSIS, category: 'CODE_EDITOR', description: "AI-powered code analysis with complexity feedback" },
+        // Placement Platform Features
+        { key: FEATURES.COMPANY_PREP, category: 'PLACEMENT', description: "Company-specific interview preparation kits" },
+        { key: FEATURES.PLACEMENT_PROGRAM, category: 'PLACEMENT', description: "90-day placement bootcamp program" },
     ];
 
     for (const feat of defaults) {

@@ -14,11 +14,63 @@
         "studySquad": "Study Squad",
         "mentors": "Find Mentors",
         "aptitude": "Aptitude Prep",
-        "offers": "My Offers"
+        "offers": "My Offers",
+        "userFeedback": "User Feedback"
     },
     "Common": {
         "upload": "Upload",
         "cancel": "Cancel",
-        "save": "Save"
+        "save": "Save",
+        "delete": "Delete",
+        "submit": "Submit",
+        "tryAgain": "Try Again",
+        "anonymous": "Anonymous",
+        "noEmail": "No email",
+        "name": "Name",
+        "email": "Email",
+        "page": "Page"
+    },
+    "Feedback": {
+        "button": "Feedback",
+        "title": "Share Your Feedback",
+        "categoryLabel": "Category",
+        "feedbackLabel": "Your Feedback",
+        "placeholder": "Tell us what you think, report a bug, or suggest an improvement...",
+        "submit": "Submit Feedback",
+        "submitting": "Submitting...",
+        "successTitle": "Thank You!",
+        "successMessage": "Your feedback helps us improve.",
+        "reviewNote": "Your feedback will be reviewed by our team.",
+        "errorRequired": "Please enter your feedback",
+        "errorSubmit": "Failed to submit feedback. Please try again.",
+        "errorGeneric": "Something went wrong",
+        "successSubmit": "Thank you for your feedback!",
+        "categories": {
+            "general": "General Feedback",
+            "bug": "Bug Report",
+            "feature": "Feature Request",
+            "improvement": "Improvement Suggestion"
+        },
+        "status": {
+            "all": "All",
+            "new": "New",
+            "reviewed": "Reviewed",
+            "resolved": "Resolved",
+            "dismissed": "Dismissed"
+        },
+        "admin": {
+            "title": "User Feedback",
+            "subtitle": "View and manage feedback submitted by users",
+            "total": "total",
+            "noFeedback": "No feedback found",
+            "fullFeedback": "Full Feedback",
+            "markReviewed": "Mark Reviewed",
+            "resolve": "Resolve",
+            "dismiss": "Dismiss",
+            "statusUpdated": "Status updated",
+            "deleted": "Feedback deleted",
+            "confirmDelete": "Are you sure you want to delete this feedback?",
+            "anonymousUser": "Anonymous User"
+        }
     }
 }
