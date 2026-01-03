@@ -4,6 +4,39 @@ import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { EnrollmentStatus, TaskType } from "@prisma/client";
+import crypto from "crypto";
+
+// ============================================
+// DAY TOKEN UTILITIES (Security)
+// ============================================
+
+const DAY_TOKEN_SECRET = process.env.DAY_TOKEN_SECRET || 'bootcamp-default-secret-change-in-production';
+
+/**
+ * Generate a secure token for a specific day
+ * Token = hash(enrollmentId + dayNumber + secret)
+ */
+export async function generateDayToken(enrollmentId: string, dayNumber: number): Promise<string> {
+    const hash = crypto
+        .createHmac('sha256', DAY_TOKEN_SECRET)
+        .update(`${enrollmentId}-${dayNumber}`)
+        .digest('hex');
+    return hash.substring(0, 16); // Use first 16 chars for brevity
+}
+
+/**
+ * Validate a day token and return the day number if valid
+ */
+export async function validateDayToken(enrollmentId: string, token: string, maxDay: number = 90): Promise<number | null> {
+    // Try each possible day number up to maxDay
+    for (let day = 1; day <= maxDay; day++) {
+        const validToken = await generateDayToken(enrollmentId, day);
+        if (validToken === token) {
+            return day;
+        }
+    }
+    return null;
+}
 
 // ============================================
 // PROGRAM QUERIES
@@ -440,6 +473,9 @@ export async function advanceToNextDay(enrollmentId: string) {
         data: { currentDay: enrollment.currentDay + 1 }
     });
 
+    const newDay = enrollment.currentDay + 1;
+    const newDayToken = generateDayToken(enrollmentId, newDay);
+
     revalidatePath("/candidate/placement-program");
-    return { success: true, newDay: enrollment.currentDay + 1 };
+    return { success: true, newDay, newDayToken };
 }

@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import { redirect, notFound } from "next/navigation";
 import { checkFeature } from "@/actions/feature-flags";
 import { FEATURES } from "@/lib/features";
-import { getProgramBySlug, getUserEnrollment, getDayTasks } from "@/actions/placement-program";
+import { getProgramBySlug, getUserEnrollment, getDayTasks, generateDayToken, validateDayToken } from "@/actions/placement-program";
 import { ProgramDashboardClient } from "./client";
 
 interface PageProps {
@@ -12,7 +12,7 @@ interface PageProps {
 
 export default async function ProgramDashboardPage({ params, searchParams }: PageProps) {
     const { slug } = await params;
-    const { day } = await searchParams;
+    const urlParams = await searchParams;
 
     const session = await auth();
     if (!session?.user?.id) redirect("/auth/login");
@@ -39,18 +39,38 @@ export default async function ProgramDashboardPage({ params, searchParams }: Pag
         redirect("/candidate/placement-program");
     }
 
-    // Determine day to view
+    // Determine day to view using secure token validation
     let viewDay = enrollment.currentDay;
-    if (day && typeof day === "string") {
-        const dayNum = parseInt(day);
-        if (!isNaN(dayNum) && dayNum >= 1 && dayNum <= enrollment.currentDay) {
-            viewDay = dayNum;
+    const dayToken = urlParams.d;
+
+    if (dayToken && typeof dayToken === "string") {
+        const requestedDay = await validateDayToken(enrollment.id, dayToken, program.durationDays);
+
+        if (requestedDay !== null && requestedDay >= 1 && requestedDay <= enrollment.currentDay) {
+            viewDay = requestedDay;
+        } else {
+            // Invalid token or unauthorized day - redirect to current day
+            const currentDayToken = await generateDayToken(enrollment.id, enrollment.currentDay);
+            redirect(`/candidate/placement-program/${slug}?d=${currentDayToken}`);
         }
+    } else {
+        // No token provided, generate one for current day
+        const currentDayToken = await generateDayToken(enrollment.id, enrollment.currentDay);
+        redirect(`/candidate/placement-program/${slug}?d=${currentDayToken}`);
     }
 
 
     // Get tasks for the specific day
     const dayData = await getDayTasks(enrollment.id, viewDay);
+
+    // Generate navigation tokens
+    const currentDayToken = await generateDayToken(enrollment.id, enrollment.currentDay);
+    const prevDayToken = viewDay > 1
+        ? await generateDayToken(enrollment.id, viewDay - 1)
+        : undefined;
+    const nextDayToken = viewDay < enrollment.currentDay
+        ? await generateDayToken(enrollment.id, viewDay + 1)
+        : undefined;
 
     return (
         <ProgramDashboardClient
@@ -58,6 +78,10 @@ export default async function ProgramDashboardPage({ params, searchParams }: Pag
             enrollment={enrollment}
             dayData={dayData as any}
             viewDay={viewDay}
+            currentDayToken={currentDayToken}
+            prevDayToken={prevDayToken}
+            nextDayToken={nextDayToken}
         />
     );
 }
+

@@ -70,13 +70,19 @@ interface ProgramDashboardClientProps {
     };
     dayData: DayData | null;
     viewDay: number;
+    currentDayToken: string;
+    prevDayToken?: string;
+    nextDayToken?: string;
 }
 
 export function ProgramDashboardClient({
     program,
     enrollment,
     dayData,
-    viewDay
+    viewDay,
+    currentDayToken,
+    prevDayToken,
+    nextDayToken
 }: ProgramDashboardClientProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
@@ -84,11 +90,11 @@ export function ProgramDashboardClient({
     const [selectedTask, setSelectedTask] = useState<DailyTask | null>(null);
     const progressPercent = (enrollment.currentDay / program.durationDays) * 100;
 
-    // Navigation handler with loading state
-    const handleNavigateDay = (day: number) => {
+    // Navigation handler with loading state - now uses tokens
+    const handleNavigateDay = (token: string) => {
         setIsNavigating(true);
         startTransition(() => {
-            router.push(`?day=${day}`);
+            router.push(`?d=${token}`);
             // Reset after navigation completes
             setTimeout(() => setIsNavigating(false), 100);
         });
@@ -117,9 +123,9 @@ export function ProgramDashboardClient({
     const handleAdvanceDay = async () => {
         startTransition(async () => {
             const result = await advanceToNextDay(enrollment.id);
-            if (result.success && result.newDay) {
-                // Force navigation to the new day
-                router.push(`?day=${result.newDay}`);
+            if (result.success && result.newDayToken) {
+                // Force navigation to the new day using secure token
+                router.push(`?d=${result.newDayToken}`);
                 router.refresh();
             } else if (result.success) {
                 // Just refresh if no new day (e.g. program completed)
@@ -283,8 +289,8 @@ export function ProgramDashboardClient({
                             {/* Day Navigation */}
                             <div className="flex items-center gap-2">
                                 <button
-                                    onClick={() => handleNavigateDay(viewDay - 1)}
-                                    disabled={viewDay <= 1 || isPending || isNavigating}
+                                    onClick={() => prevDayToken && handleNavigateDay(prevDayToken)}
+                                    disabled={!prevDayToken || isPending || isNavigating}
                                     className="p-2 rounded-lg border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                     aria-label="Previous day"
                                 >
@@ -298,8 +304,8 @@ export function ProgramDashboardClient({
                                     )}
                                 </span>
                                 <button
-                                    onClick={() => handleNavigateDay(viewDay + 1)}
-                                    disabled={viewDay >= enrollment.currentDay || isPending || isNavigating}
+                                    onClick={() => nextDayToken && handleNavigateDay(nextDayToken)}
+                                    disabled={!nextDayToken || isPending || isNavigating}
                                     className="p-2 rounded-lg border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                     aria-label="Next day"
                                 >
