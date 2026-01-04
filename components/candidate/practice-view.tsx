@@ -9,8 +9,52 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { createMockInterview, checkApiStatus } from "@/actions/mock-interview";
-import { Loader2, Sparkles, AlertCircle } from "lucide-react";
+import {
+    Loader2,
+    Sparkles,
+    AlertCircle,
+    Target,
+    Brain,
+    TrendingUp,
+    Zap,
+    ChevronRight,
+    Code,
+    Users,
+    LineChart
+} from "lucide-react";
 import { toast } from "sonner";
+
+// Quick start presets for common roles
+const QUICK_START_PRESETS = [
+    {
+        role: "Frontend Developer",
+        difficulty: "Junior",
+        icon: Code,
+        gradient: "from-blue-500 to-cyan-500",
+        description: "React, JavaScript, CSS"
+    },
+    {
+        role: "Backend Developer",
+        difficulty: "Mid",
+        icon: Code,
+        gradient: "from-purple-500 to-pink-500",
+        description: "APIs, Databases, Architecture"
+    },
+    {
+        role: "Product Manager",
+        difficulty: "Mid",
+        icon: Users,
+        gradient: "from-orange-500 to-red-500",
+        description: "Strategy, Analytics, Roadmaps"
+    },
+    {
+        role: "Data Scientist",
+        difficulty: "Senior",
+        icon: LineChart,
+        gradient: "from-green-500 to-emerald-500",
+        description: "ML, Statistics, Python"
+    }
+];
 
 export function PracticeView() {
     const router = useRouter();
@@ -47,17 +91,60 @@ export function PracticeView() {
         });
     };
 
+    const handleQuickStart = (preset: typeof QUICK_START_PRESETS[0]) => {
+        setRole(preset.role);
+        setDifficulty(preset.difficulty);
+
+        // Auto-start after a brief moment to show the selection
+        setTimeout(() => {
+            startTransition(async () => {
+                const result = await createMockInterview(preset.role, preset.difficulty);
+                if (result.success && result.mockInterviewId) {
+                    toast.success(`Starting ${preset.role} interview!`);
+                    router.push(`/candidate/practice/${result.mockInterviewId}`);
+                } else {
+                    toast.error(result.error || "Something went wrong");
+                }
+            });
+        }, 300);
+    };
+
     const isDisabled = !apiStatus?.available || isPending;
 
     return (
-        <div className="container max-w-2xl pt-10 pb-24 px-4 sm:py-20">
-            <div className="mb-6 sm:mb-8 text-center">
-                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-2 bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
-                    AI Mock Interview Playground
+        <div className="container max-w-6xl py-8 px-4 sm:py-12">
+            {/* Hero Section */}
+            <div className="mb-12 text-center">
+                <div className="mb-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                    <Sparkles className="h-4 w-4" />
+                    AI-Powered Interview Practice
+                </div>
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-4 bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    Practice Makes Perfect
                 </h1>
-                <p className="text-muted-foreground text-xs sm:text-sm max-w-lg mx-auto">
-                    Practice your interview skills with our AI. Get instant feedback and improve your confidence.
+                <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
+                    Master your interview skills with AI-powered feedback. Build confidence, improve answers, and land your dream job.
                 </p>
+
+                {/* Feature Highlights */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mb-12">
+                    <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-card border">
+                        <Target className="h-6 w-6 text-primary" />
+                        <span className="text-sm font-medium">Realistic Scenarios</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-card border">
+                        <Brain className="h-6 w-6 text-primary" />
+                        <span className="text-sm font-medium">AI Feedback</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-card border">
+                        <TrendingUp className="h-6 w-6 text-primary" />
+                        <span className="text-sm font-medium">Track Progress</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-card border">
+                        <Zap className="h-6 w-6 text-primary" />
+                        <span className="text-sm font-medium">Instant Results</span>
+                    </div>
+                </div>
             </div>
 
             {isCheckingApi ? (
@@ -79,59 +166,108 @@ export function PracticeView() {
                         </Alert>
                     )}
 
-                    <Card className="border-2 border-primary/10 shadow-lg">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Sparkles className="h-5 w-5 text-primary" />
-                                Setup Your Session
-                            </CardTitle>
-                            <CardDescription>
-                                Choose the role and difficulty level you want to practice for.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="space-y-2">
-                                <Label htmlFor="role">Target Role</Label>
-                                <Input
-                                    id="role"
-                                    placeholder="e.g. Frontend Developer, Product Manager, Sales Rep"
-                                    value={role}
-                                    onChange={(e) => setRole(e.target.value)}
+                    {/* Quick Start Section */}
+                    <div className="mb-8">
+                        <h2 className="text-2xl font-bold mb-4">Quick Start</h2>
+                        <p className="text-muted-foreground mb-6">Choose a preset to start immediately</p>
+
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {QUICK_START_PRESETS.map((preset) => {
+                                const Icon = preset.icon;
+                                return (
+                                    <Card
+                                        key={preset.role}
+                                        className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50"
+                                        onClick={() => !isDisabled && handleQuickStart(preset)}
+                                    >
+                                        <CardContent className="p-6">
+                                            <div className={`mb-4 inline-flex p-3 rounded-xl bg-gradient-to-br ${preset.gradient} bg-opacity-10`}>
+                                                <Icon className="h-6 w-6 text-white" />
+                                            </div>
+                                            <h3 className="font-semibold mb-1">{preset.role}</h3>
+                                            <p className="text-xs text-muted-foreground mb-3">{preset.description}</p>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs px-2 py-1 rounded-full bg-muted">
+                                                    {preset.difficulty}
+                                                </span>
+                                                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Custom Setup Section */}
+                    <div className="mb-8">
+                        <h2 className="text-2xl font-bold mb-4">Custom Setup</h2>
+                        <p className="text-muted-foreground mb-6">Or create a personalized interview session</p>
+
+                        <Card className="border-2 border-primary/10 shadow-lg">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Sparkles className="h-5 w-5 text-primary" />
+                                    Configure Your Session
+                                </CardTitle>
+                                <CardDescription>
+                                    Customize the role and difficulty to match your needs
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="role">Target Role</Label>
+                                    <Input
+                                        id="role"
+                                        placeholder="e.g. Frontend Developer, Product Manager, Sales Rep"
+                                        value={role}
+                                        onChange={(e) => setRole(e.target.value)}
+                                        disabled={isDisabled}
+                                        className="text-base"
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        Enter the job title you're preparing for
+                                    </p>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Difficulty Level</Label>
+                                    <Select value={difficulty} onValueChange={setDifficulty} disabled={isDisabled}>
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Junior">Junior (Entry Level)</SelectItem>
+                                            <SelectItem value="Mid">Mid-Level (2-5 years)</SelectItem>
+                                            <SelectItem value="Senior">Senior (5+ years)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-xs text-muted-foreground">
+                                        Select based on your experience level
+                                    </p>
+                                </div>
+
+                                <Button
+                                    className="w-full"
+                                    size="lg"
+                                    onClick={handleStart}
                                     disabled={isDisabled}
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Difficulty Level</Label>
-                                <Select value={difficulty} onValueChange={setDifficulty} disabled={isDisabled}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Junior">Junior (Entry Level)</SelectItem>
-                                        <SelectItem value="Mid">Mid-Level</SelectItem>
-                                        <SelectItem value="Senior">Senior (Expert)</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <Button
-                                className="w-full"
-                                size="lg"
-                                onClick={handleStart}
-                                disabled={isDisabled}
-                            >
-                                {isPending ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Creating Session...
-                                    </>
-                                ) : (
-                                    "Start Practice Interview"
-                                )}
-                            </Button>
-                        </CardContent>
-                    </Card>
+                                >
+                                    {isPending ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Creating Your Interview...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Sparkles className="mr-2 h-4 w-4" />
+                                            Start Custom Interview
+                                        </>
+                                    )}
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </>
             )}
         </div>
