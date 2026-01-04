@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useTransition, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import useSWR from 'swr';
 import Link from "next/link";
 import {
     ArrowLeft,
@@ -26,6 +27,9 @@ import { DailyKnowledgePanel } from "@/components/placement/daily-knowledge-pane
 import { KnowledgeSkeleton } from "@/components/placement/knowledge-skeleton";
 import { TaskListSkeleton } from "@/components/placement/task-list-skeleton";
 import { Loader2 } from "lucide-react";
+
+// SWR fetcher
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 interface DailyTask {
     id: string;
@@ -85,18 +89,50 @@ export function ProgramDashboardClient({
     nextDayToken
 }: ProgramDashboardClientProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [isPending, startTransition] = useTransition();
-    const [isNavigating, setIsNavigating] = useState(false);
+    const [currentViewDay, setCurrentViewDay] = useState(viewDay);
     const [selectedTask, setSelectedTask] = useState<DailyTask | null>(null);
     const progressPercent = (enrollment.currentDay / program.durationDays) * 100;
 
-    // Navigation handler with loading state - now uses tokens
-    const handleNavigateDay = (token: string) => {
-        setIsNavigating(true);
+    // Build API URL for current day
+    const dayToken = searchParams.get('d') || currentDayToken;
+    const apiUrl = `/api/placement/day/${currentViewDay}?enrollmentId=${enrollment.id}&token=${dayToken}`;
+
+    // Fetch current day data with SWR
+    const { data: fetchedDayData, isLoading, mutate } = useSWR(
+        apiUrl,
+        fetcher,
+        {
+            fallbackData: dayData,
+            revalidateOnFocus: false,
+            revalidateOnReconnect: false,
+            dedupingInterval: 5000
+        }
+    );
+
+    // Prefetch adjacent days for instant navigation
+    useEffect(() => {
+        // Prefetch previous day
+        if (currentViewDay > 1 && prevDayToken) {
+            const prevUrl = `/api/placement/day/${currentViewDay - 1}?enrollmentId=${enrollment.id}&token=${prevDayToken}`;
+            fetch(prevUrl).catch(() => { }); // Silent prefetch
+        }
+
+        // Prefetch next day
+        if (currentViewDay < enrollment.currentDay && nextDayToken) {
+            const nextUrl = `/api/placement/day/${currentViewDay + 1}?enrollmentId=${enrollment.id}&token=${nextDayToken}`;
+            fetch(nextUrl).catch(() => { }); // Silent prefetch
+        }
+    }, [currentViewDay, enrollment.id, enrollment.currentDay, prevDayToken, nextDayToken]);
+
+    const displayDayData = fetchedDayData || dayData;
+
+    // Navigation handler - now uses client-side state + URL update
+    const handleNavigateDay = (token: string, targetDay: number) => {
         startTransition(() => {
-            router.push(`?d=${token}`);
-            // Reset after navigation completes
-            setTimeout(() => setIsNavigating(false), 100);
+            setCurrentViewDay(targetDay);
+            router.replace(`?d=${token}`, { scroll: false });
         });
     };
 
@@ -104,17 +140,17 @@ export function ProgramDashboardClient({
         startTransition(async () => {
             await completeTask(enrollment.id, taskId, score, metadata);
             setSelectedTask(null);
-            router.refresh();
+            mutate(); // Revalidate current day data
         });
     };
 
     const handleStartTask = async (taskId: string) => {
-        const task = dayData?.tasks.find(t => t.id === taskId);
+        const task = displayDayData?.tasks.find((t: any) => t.id === taskId);
         if (task) {
             // Mark task as started in database
             startTransition(async () => {
                 await startTask(enrollment.id, taskId);
-                router.refresh();
+                mutate(); // Revalidate current day data
             });
             setSelectedTask(task);
         }
@@ -245,16 +281,16 @@ export function ProgramDashboardClient({
 
                 {/* LEFT COLUMN: Educational Content */}
                 <div className="order-2 lg:order-1 lg:col-span-2 h-auto lg:h-[calc(100vh-200px)] lg:min-h-[500px] lg:sticky lg:top-24">
-                    {isPending || isNavigating ? (
+                    {isPending || isLoading ? (
                         <div className="bg-card border rounded-xl p-6 h-full overflow-hidden flex flex-col shadow-sm">
                             <KnowledgeSkeleton />
                         </div>
-                    ) : dayData?.module.content ? (
+                    ) : displayDayData?.module.content ? (
                         <div className="bg-card border rounded-xl p-6 h-full overflow-hidden flex flex-col shadow-sm">
                             <DailyKnowledgePanel
-                                dayNumber={viewDay}
-                                title={dayData.module.title}
-                                content={dayData.module.content}
+                                dayNumber={currentViewDay}
+                                title={displayDayData.module.title}
+                                content={displayDayData.module.content}
                             />
                         </div>
                     ) : (
@@ -274,14 +310,14 @@ export function ProgramDashboardClient({
                             <div>
                                 <div className="flex items-center gap-2 text-orange-500 mb-1">
                                     <Calendar className="h-4 w-4" />
-                                    <span className="text-sm font-medium">Day {viewDay}</span>
+                                    <span className="text-sm font-medium">Day {currentViewDay}</span>
                                 </div>
                                 <h2 className="text-xl font-bold">
-                                    {dayData?.module.title || "Today's Tasks"}
+                                    {displayDayData?.module.title || "Today's Tasks"}
                                 </h2>
-                                {dayData?.module.description && (
+                                {displayDayData?.module.description && (
                                     <p className="text-muted-foreground text-sm mt-1">
-                                        {dayData.module.description}
+                                        {displayDayData.module.description}
                                     </p>
                                 )}
                             </div>
@@ -289,23 +325,23 @@ export function ProgramDashboardClient({
                             {/* Day Navigation */}
                             <div className="flex items-center gap-2">
                                 <button
-                                    onClick={() => prevDayToken && handleNavigateDay(prevDayToken)}
-                                    disabled={!prevDayToken || isPending || isNavigating}
+                                    onClick={() => handleNavigateDay(prevDayToken!, currentViewDay - 1)}
+                                    disabled={isPending || isLoading}
                                     className="p-2 rounded-lg border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                     aria-label="Previous day"
                                 >
                                     <ChevronLeft className="h-4 w-4" />
                                 </button>
                                 <span className="text-sm font-medium min-w-[3rem] text-center">
-                                    {isNavigating ? (
+                                    {isLoading ? (
                                         <Loader2 className="h-4 w-4 animate-spin mx-auto" />
                                     ) : (
-                                        `${viewDay}/${enrollment.currentDay}`
+                                        `${currentViewDay}/${enrollment.currentDay}`
                                     )}
                                 </span>
                                 <button
-                                    onClick={() => nextDayToken && handleNavigateDay(nextDayToken)}
-                                    disabled={!nextDayToken || isPending || isNavigating}
+                                    onClick={() => handleNavigateDay(nextDayToken!, currentViewDay + 1)}
+                                    disabled={isPending || isLoading}
                                     className="p-2 rounded-lg border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                     aria-label="Next day"
                                 >
