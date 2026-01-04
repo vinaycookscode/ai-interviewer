@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { useVisibilityPolling } from "@/lib/use-visibility-polling";
+import { POLLING_INTERVALS } from "@/lib/polling-config";
 
 // Default fallback models
 const DEFAULT_MODELS = [
@@ -56,14 +58,8 @@ export function GeminiModelSelector({ currentModel }: GeminiModelSelectorProps) 
         fetchModels();
     }, [fetchModels]);
 
-    // Polling: Refresh model status every 30 seconds
-    React.useEffect(() => {
-        const interval = setInterval(() => {
-            fetchModels();
-        }, 30000); // 30 seconds
-
-        return () => clearInterval(interval);
-    }, [fetchModels]);
+    // Visibility-aware polling - pauses when tab is hidden
+    useVisibilityPolling(fetchModels, POLLING_INTERVALS.MODEL_STATUS);
 
     const handleModelChange = async (value: string) => {
         setModel(value);
