@@ -115,7 +115,7 @@ export function PracticeSession({ mockInterviewId, role, difficulty }: PracticeS
     }
 
     const currentQuestion = questions[currentQuestionIndex];
-    const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+    const progress = questions.length > 0 ? ((currentQuestionIndex + 1) / questions.length) * 100 : 0;
 
     return (
         <div className="space-y-6">
