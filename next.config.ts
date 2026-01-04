@@ -10,6 +10,12 @@ const nextConfig: NextConfig = {
   /* config options here */
   experimental: {
     // reactCompiler: true,
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+  },
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
   },
   webpack: (config) => {
     config.resolve.alias['get-nonce'] = path.resolve(__dirname, 'node_modules/get-nonce/dist/es5/index.js');
