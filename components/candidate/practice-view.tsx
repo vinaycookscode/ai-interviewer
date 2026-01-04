@@ -243,7 +243,7 @@ export function PracticeView() {
                             <h2 className="text-2xl font-bold mb-4">Quick Start</h2>
                             <p className="text-muted-foreground mb-6">Choose a preset to start immediately</p>
 
-                            <div className="grid gap-4">
+                            <div className="grid grid-cols-2 gap-4">
                                 {QUICK_START_PRESETS.map((preset) => {
                                     const Icon = preset.icon;
                                     return (
