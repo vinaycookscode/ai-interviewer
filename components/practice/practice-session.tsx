@@ -7,9 +7,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { generateMockQuestions, saveMockAnswer, completeMockInterview } from "@/actions/mock-interview";
-import { Loader2, Mic, Square, Volume2, ArrowRight, CheckCircle, AlertCircle } from "lucide-react";
+import { Loader2, Mic, Square, Volume2, ArrowRight, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSpeechToText } from "@/hooks/use-speech-to-text";
 import { useTextToSpeech } from "@/hooks/use-text-to-speech";
 
@@ -27,8 +26,7 @@ export function PracticeSession({ mockInterviewId, role, difficulty }: PracticeS
     const [isGenerating, setIsGenerating] = useState(true);
     const [isSubmitting, startTransition] = useTransition();
     const [feedback, setFeedback] = useState<{ score: number; feedback: string } | null>(null);
-    const [hasError, setHasError] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("");
+    const [generationError, setGenerationError] = useState<string | null>(null);
 
     // Hooks for audio
     const { isListening, transcript, startListening, stopListening, resetTranscript } = useSpeechToText();
@@ -37,52 +35,18 @@ export function PracticeSession({ mockInterviewId, role, difficulty }: PracticeS
     // Load questions on mount
     useEffect(() => {
         const loadQuestions = async () => {
-            const result: any = await generateMockQuestions(role, difficulty);
-
-            // Check if model was switched
-            if (result._switchInfo?.switched) {
-                toast.success(`Switched to ${result._switchInfo.to}`, {
-                    description: "Your interview will continue automatically"
-                });
-            }
-
+            const result = await generateMockQuestions(role, difficulty);
             if (result.questions && result.questions.length > 0) {
                 setQuestions(result.questions);
                 setIsGenerating(false);
+                setGenerationError(null);
                 // Speak first question
                 speak(result.questions[0]);
-
-                // Show info if using fallback but not all exhausted
-                if (result.isFallback && !result.allModelsExhausted) {
-                    toast.info("Using practice mode questions", {
-                        description: "AI-generated questions will be available soon"
-                    });
-                }
             } else {
-                let error = result.error || "Failed to generate questions";
-
-                // Friendly message for rate limits
-                if (result.allModelsExhausted) {
-                    const minutes = result.retryIn ? Math.ceil(result.retryIn / 60) : 60;
-                    error = `All AI models are temporarily busy. Available in ~${minutes} minutes. Using practice mode questions.`;
-
-                    // Still set questions to fallback
-                    if (result.questions) {
-                        setQuestions(result.questions);
-                        setIsGenerating(false);
-                        speak(result.questions[0]);
-                        toast.warning("Using Practice Mode", {
-                            description: `AI models available in ~${minutes} minutes`,
-                            duration: 10000
-                        });
-                        return;
-                    }
-                }
-
-                setErrorMessage(error);
-                setHasError(true);
+                const errorMsg = result.error || "Failed to generate questions";
+                setGenerationError(errorMsg);
+                toast.error(errorMsg);
                 setIsGenerating(false);
-                toast.error(error);
             }
         };
         loadQuestions();
@@ -154,46 +118,72 @@ export function PracticeSession({ mockInterviewId, role, difficulty }: PracticeS
         );
     }
 
-    if (hasError) {
+    // Show error state if questions failed to generate
+    if (generationError || questions.length === 0) {
         return (
-            <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Failed to Start Interview</AlertTitle>
-                <AlertDescription className="space-y-4">
-                    <p>{errorMessage}</p>
-                    <p className="text-sm">
-                        The AI could not generate interview questions. This may be due to:
-                    </p>
-                    <ul className="text-sm list-disc list-inside space-y-1">
-                        <li>API service temporarily unavailable</li>
-                        <li>Rate limit exceeded</li>
-                        <li>Network connectivity issues</li>
-                    </ul>
-                    <Button
-                        onClick={() => router.push('/candidate/practice')}
-                        variant="outline"
-                        className="mt-4"
-                    >
-                        Back to Practice Home
-                    </Button>
-                </AlertDescription>
-            </Alert>
+            <Card className="border-2 border-destructive/50">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-destructive">
+                        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        Unable to Generate Questions
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">
+                            {generationError?.includes('rate limit') || generationError?.includes('429')
+                                ? "We've hit our AI API rate limit. This happens when there's high usage."
+                                : "We couldn't generate interview questions at this time."}
+                        </p>
+                        <div className="p-4 bg-muted rounded-lg space-y-2">
+                            <p className="text-sm font-medium">What you can do:</p>
+                            <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                                <li>Wait a few minutes and try again</li>
+                                <li>Try a different role or difficulty level</li>
+                                <li>Practice with our company-specific questions instead</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div className="flex gap-3">
+                        <Button
+                            onClick={() => {
+                                setIsGenerating(true);
+                                setGenerationError(null);
+                                window.location.reload();
+                            }}
+                            variant="default"
+                        >
+                            Try Again
+                        </Button>
+                        <Button
+                            onClick={() => router.push('/candidate/practice')}
+                            variant="outline"
+                        >
+                            Go Back
+                        </Button>
+                        <Button
+                            onClick={() => router.push('/candidate/company-prep')}
+                            variant="outline"
+                        >
+                            Company Prep
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
         );
     }
 
     const currentQuestion = questions[currentQuestionIndex];
-    // Track answered questions (completed count)
-    const answeredCount = feedback ? currentQuestionIndex + 1 : currentQuestionIndex;
-    const progress = questions.length > 0
-        ? (answeredCount / questions.length) * 100
-        : 0;
+    const progress = questions.length > 0 ? ((currentQuestionIndex + 1) / questions.length) * 100 : 0;
 
     return (
         <div className="space-y-6">
             <div className="space-y-2">
                 <div className="flex justify-between text-sm text-muted-foreground">
                     <span>Question {currentQuestionIndex + 1} of {questions.length}</span>
-                    <span>{Math.round(progress)}% Completed ({answeredCount}/{questions.length})</span>
+                    <span>{Math.round(progress)}% Completed</span>
                 </div>
                 <Progress value={progress} className="h-2" />
             </div>

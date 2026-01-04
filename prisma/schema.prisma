@@ -122,6 +122,8 @@ model Job {
 
   questions  Question[]
   interviews Interview[]
+
+  @@index([employerId])
 }
 
 enum QuestionType {
@@ -169,6 +171,11 @@ model Interview {
   answers Answer[]
   personalityProfile PersonalityProfile?
   proctoringEvents ProctoringEvent[]
+
+  @@index([candidateId])
+  @@index([jobId])
+  @@index([scheduledTime])
+  @@index([status])
 }
 
 model Answer {

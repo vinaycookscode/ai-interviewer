@@ -44,31 +44,29 @@ export default async function CandidatesPage({
     const page = Number(pageParam) || 1;
     const itemsPerPage = 10;
 
-    // Get employer's jobs and all interviews
-    const employer = await db.user.findUnique({
-        where: { id: userId },
-        include: {
-            jobs: {
-                include: {
-                    interviews: {
-                        include: {
-                            candidate: true,
-                        },
-                        orderBy: {
-                            createdAt: "desc",
-                        },
-                    },
-                },
-            },
-        },
-    });
+    // Parallel data fetching - fetch employer and jobs separately
+    const [employer, jobs] = await Promise.all([
+        db.user.findUnique({
+            where: { id: userId },
+            select: { id: true, name: true, email: true }
+        }),
+        db.job.findMany({
+            where: { employerId: userId },
+            include: {
+                interviews: {
+                    include: { candidate: true },
+                    orderBy: { createdAt: "desc" }
+                }
+            }
+        })
+    ]);
 
     if (!employer) {
         return <div>Error loading data</div>;
     }
 
     // Flatten all interviews from all jobs
-    const allInterviews = employer.jobs.flatMap((job) =>
+    const allInterviews = jobs.flatMap((job) =>
         job.interviews.map((interview) => ({
             ...interview,
             jobTitle: job.title,

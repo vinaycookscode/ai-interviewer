@@ -17,19 +17,14 @@ export default async function CandidateDashboardPage() {
         redirect("/auth/login");
     }
 
-    // Find candidate user in database
+    // Parallel data fetching - faster load time
     const candidate = await db.user.findUnique({
         where: { id: userId },
-        include: {
-            interviews: {
-                include: {
-                    job: true,
-                },
-                orderBy: {
-                    createdAt: "desc",
-                },
-            },
-        },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+        }
     });
 
     if (!candidate) {
@@ -49,10 +44,17 @@ export default async function CandidateDashboardPage() {
         );
     }
 
-    const upcomingInterviews = candidate.interviews.filter(
+    // Fetch interviews separately for parallel execution
+    const interviews = await db.interview.findMany({
+        where: { candidateId: candidate.id },
+        include: { job: true },
+        orderBy: { createdAt: "desc" }
+    });
+
+    const upcomingInterviews = interviews.filter(
         (i) => i.status === "PENDING" || i.status === "IN_PROGRESS"
     );
-    const pastInterviews = candidate.interviews.filter((i) => i.status === "COMPLETED");
+    const pastInterviews = interviews.filter((i) => i.status === "COMPLETED");
 
     return (
         <div className="min-h-screen bg-background p-4 md:p-8 pb-24">
