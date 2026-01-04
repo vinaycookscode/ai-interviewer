@@ -26,6 +26,7 @@ export function PracticeSession({ mockInterviewId, role, difficulty }: PracticeS
     const [isGenerating, setIsGenerating] = useState(true);
     const [isSubmitting, startTransition] = useTransition();
     const [feedback, setFeedback] = useState<{ score: number; feedback: string } | null>(null);
+    const [generationError, setGenerationError] = useState<string | null>(null);
 
     // Hooks for audio
     const { isListening, transcript, startListening, stopListening, resetTranscript } = useSpeechToText();
@@ -35,13 +36,16 @@ export function PracticeSession({ mockInterviewId, role, difficulty }: PracticeS
     useEffect(() => {
         const loadQuestions = async () => {
             const result = await generateMockQuestions(role, difficulty);
-            if (result.questions) {
+            if (result.questions && result.questions.length > 0) {
                 setQuestions(result.questions);
                 setIsGenerating(false);
+                setGenerationError(null);
                 // Speak first question
                 speak(result.questions[0]);
             } else {
-                toast.error(result.error || "Failed to generate questions");
+                const errorMsg = result.error || "Failed to generate questions";
+                setGenerationError(errorMsg);
+                toast.error(errorMsg);
                 setIsGenerating(false);
             }
         };
@@ -111,6 +115,63 @@ export function PracticeSession({ mockInterviewId, role, difficulty }: PracticeS
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <p className="text-muted-foreground">Generating interview questions for {role}...</p>
             </div>
+        );
+    }
+
+    // Show error state if questions failed to generate
+    if (generationError || questions.length === 0) {
+        return (
+            <Card className="border-2 border-destructive/50">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-destructive">
+                        <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        Unable to Generate Questions
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <p className="text-sm text-muted-foreground">
+                            {generationError?.includes('rate limit') || generationError?.includes('429')
+                                ? "We've hit our AI API rate limit. This happens when there's high usage."
+                                : "We couldn't generate interview questions at this time."}
+                        </p>
+                        <div className="p-4 bg-muted rounded-lg space-y-2">
+                            <p className="text-sm font-medium">What you can do:</p>
+                            <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                                <li>Wait a few minutes and try again</li>
+                                <li>Try a different role or difficulty level</li>
+                                <li>Practice with our company-specific questions instead</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div className="flex gap-3">
+                        <Button
+                            onClick={() => {
+                                setIsGenerating(true);
+                                setGenerationError(null);
+                                window.location.reload();
+                            }}
+                            variant="default"
+                        >
+                            Try Again
+                        </Button>
+                        <Button
+                            onClick={() => router.push('/candidate/practice')}
+                            variant="outline"
+                        >
+                            Go Back
+                        </Button>
+                        <Button
+                            onClick={() => router.push('/candidate/company-prep')}
+                            variant="outline"
+                        >
+                            Company Prep
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
         );
     }
 
