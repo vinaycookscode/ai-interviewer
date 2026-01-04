@@ -166,107 +166,114 @@ export function PracticeView() {
                         </Alert>
                     )}
 
-                    {/* Quick Start Section */}
-                    <div className="mb-8">
-                        <h2 className="text-2xl font-bold mb-4">Quick Start</h2>
-                        <p className="text-muted-foreground mb-6">Choose a preset to start immediately</p>
+                    {/* Two Column Layout - Responsive */}
+                    <div className="grid lg:grid-cols-2 gap-8">
+                        {/* LEFT: Custom Setup */}
+                        <div className="order-2 lg:order-1">
+                            <h2 className="text-2xl font-bold mb-4">Custom Setup</h2>
+                            <p className="text-muted-foreground mb-6">Create a personalized interview session</p>
 
-                        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {QUICK_START_PRESETS.map((preset) => {
-                                const Icon = preset.icon;
-                                return (
-                                    <Card
-                                        key={preset.role}
-                                        className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50"
-                                        onClick={() => !isDisabled && handleQuickStart(preset)}
-                                    >
-                                        <CardContent className="p-6">
-                                            <div className={`mb-4 inline-flex p-3 rounded-xl bg-gradient-to-br ${preset.gradient} bg-opacity-10`}>
-                                                <Icon className="h-6 w-6 text-white" />
-                                            </div>
-                                            <h3 className="font-semibold mb-1">{preset.role}</h3>
-                                            <p className="text-xs text-muted-foreground mb-3">{preset.description}</p>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-xs px-2 py-1 rounded-full bg-muted">
-                                                    {preset.difficulty}
-                                                </span>
-                                                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                );
-                            })}
-                        </div>
-                    </div>
+                            <Card className="border-2 border-primary/10 shadow-lg">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2">
+                                        <Sparkles className="h-5 w-5 text-primary" />
+                                        Configure Your Session
+                                    </CardTitle>
+                                    <CardDescription>
+                                        Customize the role and difficulty to match your needs
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="role">Target Role</Label>
+                                        <Input
+                                            id="role"
+                                            placeholder="e.g. Frontend Developer, Product Manager, Sales Rep"
+                                            value={role}
+                                            onChange={(e) => setRole(e.target.value)}
+                                            disabled={isDisabled}
+                                            className="text-base"
+                                        />
+                                        <p className="text-xs text-muted-foreground">
+                                            Enter the job title you're preparing for
+                                        </p>
+                                    </div>
 
-                    {/* Custom Setup Section */}
-                    <div className="mb-8">
-                        <h2 className="text-2xl font-bold mb-4">Custom Setup</h2>
-                        <p className="text-muted-foreground mb-6">Or create a personalized interview session</p>
+                                    <div className="space-y-2">
+                                        <Label>Difficulty Level</Label>
+                                        <Select value={difficulty} onValueChange={setDifficulty} disabled={isDisabled}>
+                                            <SelectTrigger>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Junior">Junior (Entry Level)</SelectItem>
+                                                <SelectItem value="Mid">Mid-Level (2-5 years)</SelectItem>
+                                                <SelectItem value="Senior">Senior (5+ years)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-xs text-muted-foreground">
+                                            Select based on your experience level
+                                        </p>
+                                    </div>
 
-                        <Card className="border-2 border-primary/10 shadow-lg">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Sparkles className="h-5 w-5 text-primary" />
-                                    Configure Your Session
-                                </CardTitle>
-                                <CardDescription>
-                                    Customize the role and difficulty to match your needs
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="role">Target Role</Label>
-                                    <Input
-                                        id="role"
-                                        placeholder="e.g. Frontend Developer, Product Manager, Sales Rep"
-                                        value={role}
-                                        onChange={(e) => setRole(e.target.value)}
+                                    <Button
+                                        className="w-full"
+                                        size="lg"
+                                        onClick={handleStart}
                                         disabled={isDisabled}
-                                        className="text-base"
-                                    />
-                                    <p className="text-xs text-muted-foreground">
-                                        Enter the job title you're preparing for
-                                    </p>
-                                </div>
+                                    >
+                                        {isPending ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Creating Your Interview...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Sparkles className="mr-2 h-4 w-4" />
+                                                Start Custom Interview
+                                            </>
+                                        )}
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </div>
 
-                                <div className="space-y-2">
-                                    <Label>Difficulty Level</Label>
-                                    <Select value={difficulty} onValueChange={setDifficulty} disabled={isDisabled}>
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Junior">Junior (Entry Level)</SelectItem>
-                                            <SelectItem value="Mid">Mid-Level (2-5 years)</SelectItem>
-                                            <SelectItem value="Senior">Senior (5+ years)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <p className="text-xs text-muted-foreground">
-                                        Select based on your experience level
-                                    </p>
-                                </div>
+                        {/* RIGHT: Quick Start */}
+                        <div className="order-1 lg:order-2">
+                            <h2 className="text-2xl font-bold mb-4">Quick Start</h2>
+                            <p className="text-muted-foreground mb-6">Choose a preset to start immediately</p>
 
-                                <Button
-                                    className="w-full"
-                                    size="lg"
-                                    onClick={handleStart}
-                                    disabled={isDisabled}
-                                >
-                                    {isPending ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Creating Your Interview...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Sparkles className="mr-2 h-4 w-4" />
-                                            Start Custom Interview
-                                        </>
-                                    )}
-                                </Button>
-                            </CardContent>
-                        </Card>
+                            <div className="grid gap-4">
+                                {QUICK_START_PRESETS.map((preset) => {
+                                    const Icon = preset.icon;
+                                    return (
+                                        <Card
+                                            key={preset.role}
+                                            className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50"
+                                            onClick={() => !isDisabled && handleQuickStart(preset)}
+                                        >
+                                            <CardContent className="p-6">
+                                                <div className="flex items-start gap-4">
+                                                    <div className={`flex-shrink-0 p-3 rounded-xl bg-gradient-to-br ${preset.gradient}`}>
+                                                        <Icon className="h-6 w-6 text-white" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h3 className="font-semibold mb-1">{preset.role}</h3>
+                                                        <p className="text-sm text-muted-foreground mb-2">{preset.description}</p>
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-xs px-2 py-1 rounded-full bg-muted">
+                                                                {preset.difficulty}
+                                                            </span>
+                                                            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    );
+                                })}
+                            </div>
+                        </div>
                     </div>
                 </>
             )}
