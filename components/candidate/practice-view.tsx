@@ -112,7 +112,7 @@ export function PracticeView() {
     const isDisabled = !apiStatus?.available || isPending;
 
     return (
-        <div className="container max-w-6xl py-8 px-4 sm:py-12">
+        <div className="container max-w-screen-2xl py-8 px-4 sm:py-12">
             {/* Hero Section */}
             <div className="mb-12 text-center">
                 <div className="mb-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
