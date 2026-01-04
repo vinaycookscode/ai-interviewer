@@ -15,27 +15,29 @@ export default async function DashboardPage() {
         return <div>Please sign in</div>;
     }
 
-    // Get user from database
-    const user = await db.user.findUnique({
-        where: { id: userId },
-        include: {
-            jobs: {
-                orderBy: {
-                    createdAt: "desc",
-                },
-                include: {
-                    interviews: {
-                        include: {
-                            answers: true,
-                        },
-                    },
-                },
-            },
-        },
-    });
+    // Parallel data fetching - fetch user and jobs separately
+    const [user, jobs] = await Promise.all([
+        db.user.findUnique({
+            where: { id: userId },
+            select: { id: true, name: true, email: true }
+        }),
+        db.job.findMany({
+            where: { employerId: userId },
+            orderBy: { createdAt: "desc" },
+            include: {
+                interviews: {
+                    include: { answers: true }
+                }
+            }
+        })
+    ]);
+
+    if (!user) {
+        return <div>Please sign in</div>;
+    }
 
     // Aggregate Analytics Data
-    const allInterviews = user?.jobs.flatMap((job) => job.interviews) || [];
+    const allInterviews = jobs.flatMap((job) => job.interviews) || [];
 
     // 1. Score Distribution
     const scoreRanges = [
@@ -129,8 +131,8 @@ export default async function DashboardPage() {
 
             <h2 className="text-2xl font-bold mb-4">Recent Jobs</h2>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {user?.jobs && user.jobs.length > 0 ? (
-                    user.jobs.map((job) => (
+                {jobs && jobs.length > 0 ? (
+                    jobs.map((job) => (
                         <Card
                             key={job.id}
                             className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-2 hover:border-primary/50"
