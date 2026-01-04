@@ -95,11 +95,13 @@ export function ProgramDashboardClient({
     const [selectedTask, setSelectedTask] = useState<DailyTask | null>(null);
     const progressPercent = (enrollment.currentDay / program.durationDays) * 100;
 
-    // Build API URL for current day
-    const dayToken = searchParams.get('d') || currentDayToken;
-    const apiUrl = `/api/placement/day/${currentViewDay}?enrollmentId=${enrollment.id}&token=${dayToken}`;
+    // Use stable token from props instead of searchParams to prevent infinite loops
+    const currentToken = searchParams.get('d') || currentDayToken;
 
-    // Fetch current day data with SWR
+    // Build stable API URL - only changes when currentViewDay changes
+    const apiUrl = `/api/placement/day/${currentViewDay}?enrollmentId=${enrollment.id}&token=${currentToken}`;
+
+    // Fetch current day data with SWR - stable key prevents infinite fetching
     const { data: fetchedDayData, isLoading, mutate } = useSWR(
         apiUrl,
         fetcher,
@@ -107,7 +109,8 @@ export function ProgramDashboardClient({
             fallbackData: dayData,
             revalidateOnFocus: false,
             revalidateOnReconnect: false,
-            dedupingInterval: 5000
+            revalidateIfStale: false,
+            dedupingInterval: 10000 // Prevent duplicate requests within 10s
         }
     );
 
