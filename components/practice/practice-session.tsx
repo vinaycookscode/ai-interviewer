@@ -50,7 +50,8 @@ export function PracticeSession({ mockInterviewId, role, difficulty }: PracticeS
             }
         };
         loadQuestions();
-    }, [role, difficulty, speak]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps  
+    }, [role, difficulty]);
 
     // Update answer from transcript
     useEffect(() => {
