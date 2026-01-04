@@ -332,7 +332,7 @@ export function InterviewSession({ interviewId, questions, stream, language = "e
 
     const startRecording = () => {
         setIsRecording(true);
-        if (!transcript) setTranscript("");
+        // Don't clear transcript - preserve existing content when resuming
         setInterimTranscript("");
         recognitionRef.current?.start();
     };

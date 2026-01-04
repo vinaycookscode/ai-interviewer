@@ -126,6 +126,8 @@ export function EditOfferForm({ offer }: EditOfferFormProps) {
                             name="baseSalary"
                             type="number"
                             required
+                            min="0"
+                            step="1000"
                             defaultValue={offer.baseSalary}
                             className="w-full pl-8 pr-4 py-2 bg-muted border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                         />
@@ -140,6 +142,8 @@ export function EditOfferForm({ offer }: EditOfferFormProps) {
                             <input
                                 name="bonus"
                                 type="number"
+                                min="0"
+                                step="1000"
                                 defaultValue={offer.bonus || ""}
                                 className="w-full pl-8 pr-4 py-2 bg-muted border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                             />
@@ -152,6 +156,8 @@ export function EditOfferForm({ offer }: EditOfferFormProps) {
                             <input
                                 name="stocks"
                                 type="number"
+                                min="0"
+                                step="1000"
                                 defaultValue={offer.stocks || ""}
                                 className="w-full pl-8 pr-4 py-2 bg-muted border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                             />
@@ -169,6 +175,7 @@ export function EditOfferForm({ offer }: EditOfferFormProps) {
                         <input
                             name="deadline"
                             type="date"
+                            min={new Date().toISOString().split('T')[0]}
                             defaultValue={formatDateForInput(offer.deadline)}
                             className="w-full px-4 py-2 bg-muted border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                         />
@@ -178,6 +185,8 @@ export function EditOfferForm({ offer }: EditOfferFormProps) {
                         <input
                             name="joiningDate"
                             type="date"
+                            min={new Date().toISOString().split('T')[0]}
+                            max={new Date(new Date().setFullYear(new Date().getFullYear() + 2)).toISOString().split('T')[0]}
                             defaultValue={formatDateForInput(offer.joiningDate)}
                             className="w-full px-4 py-2 bg-muted border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                         />

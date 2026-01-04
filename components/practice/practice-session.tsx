@@ -7,8 +7,9 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
 import { generateMockQuestions, saveMockAnswer, completeMockInterview } from "@/actions/mock-interview";
-import { Loader2, Mic, Square, Volume2, ArrowRight, CheckCircle } from "lucide-react";
+import { Loader2, Mic, Square, Volume2, ArrowRight, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSpeechToText } from "@/hooks/use-speech-to-text";
 import { useTextToSpeech } from "@/hooks/use-text-to-speech";
 
@@ -26,6 +27,8 @@ export function PracticeSession({ mockInterviewId, role, difficulty }: PracticeS
     const [isGenerating, setIsGenerating] = useState(true);
     const [isSubmitting, startTransition] = useTransition();
     const [feedback, setFeedback] = useState<{ score: number; feedback: string } | null>(null);
+    const [hasError, setHasError] = useState(false);
+    const [errorMessage, setErrorMessage] = useState("");
 
     // Hooks for audio
     const { isListening, transcript, startListening, stopListening, resetTranscript } = useSpeechToText();
@@ -34,15 +37,52 @@ export function PracticeSession({ mockInterviewId, role, difficulty }: PracticeS
     // Load questions on mount
     useEffect(() => {
         const loadQuestions = async () => {
-            const result = await generateMockQuestions(role, difficulty);
-            if (result.questions) {
+            const result: any = await generateMockQuestions(role, difficulty);
+
+            // Check if model was switched
+            if (result._switchInfo?.switched) {
+                toast.success(`Switched to ${result._switchInfo.to}`, {
+                    description: "Your interview will continue automatically"
+                });
+            }
+
+            if (result.questions && result.questions.length > 0) {
                 setQuestions(result.questions);
                 setIsGenerating(false);
                 // Speak first question
                 speak(result.questions[0]);
+
+                // Show info if using fallback but not all exhausted
+                if (result.isFallback && !result.allModelsExhausted) {
+                    toast.info("Using practice mode questions", {
+                        description: "AI-generated questions will be available soon"
+                    });
+                }
             } else {
-                toast.error(result.error || "Failed to generate questions");
+                let error = result.error || "Failed to generate questions";
+
+                // Friendly message for rate limits
+                if (result.allModelsExhausted) {
+                    const minutes = result.retryIn ? Math.ceil(result.retryIn / 60) : 60;
+                    error = `All AI models are temporarily busy. Available in ~${minutes} minutes. Using practice mode questions.`;
+
+                    // Still set questions to fallback
+                    if (result.questions) {
+                        setQuestions(result.questions);
+                        setIsGenerating(false);
+                        speak(result.questions[0]);
+                        toast.warning("Using Practice Mode", {
+                            description: `AI models available in ~${minutes} minutes`,
+                            duration: 10000
+                        });
+                        return;
+                    }
+                }
+
+                setErrorMessage(error);
+                setHasError(true);
                 setIsGenerating(false);
+                toast.error(error);
             }
         };
         loadQuestions();
@@ -114,15 +154,46 @@ export function PracticeSession({ mockInterviewId, role, difficulty }: PracticeS
         );
     }
 
+    if (hasError) {
+        return (
+            <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Failed to Start Interview</AlertTitle>
+                <AlertDescription className="space-y-4">
+                    <p>{errorMessage}</p>
+                    <p className="text-sm">
+                        The AI could not generate interview questions. This may be due to:
+                    </p>
+                    <ul className="text-sm list-disc list-inside space-y-1">
+                        <li>API service temporarily unavailable</li>
+                        <li>Rate limit exceeded</li>
+                        <li>Network connectivity issues</li>
+                    </ul>
+                    <Button
+                        onClick={() => router.push('/candidate/practice')}
+                        variant="outline"
+                        className="mt-4"
+                    >
+                        Back to Practice Home
+                    </Button>
+                </AlertDescription>
+            </Alert>
+        );
+    }
+
     const currentQuestion = questions[currentQuestionIndex];
-    const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+    // Track answered questions (completed count)
+    const answeredCount = feedback ? currentQuestionIndex + 1 : currentQuestionIndex;
+    const progress = questions.length > 0
+        ? (answeredCount / questions.length) * 100
+        : 0;
 
     return (
         <div className="space-y-6">
             <div className="space-y-2">
                 <div className="flex justify-between text-sm text-muted-foreground">
                     <span>Question {currentQuestionIndex + 1} of {questions.length}</span>
-                    <span>{Math.round(progress)}% Completed</span>
+                    <span>{Math.round(progress)}% Completed ({answeredCount}/{questions.length})</span>
                 </div>
                 <Progress value={progress} className="h-2" />
             </div>

@@ -5,23 +5,27 @@ import { db } from "@/lib/db";
 import { getGeminiModelInstance } from "@/lib/gemini";
 // import { GoogleGenerativeAI } from "@google/generative-ai"; // Removed
 import { getGeminiModel } from "@/actions/gemini-config";
+import { getAIStatus } from "@/actions/ai-status";
 
 // const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!); // Removed
 
-// Check if API is available
+// Check if AI is available
 export async function checkApiStatus() {
     try {
-        const model = await getGeminiModelInstance();
-        // Simple test to check if API is responsive
-        const result = await model.generateContent("Say hello");
-        await result.response;
+        const status = await getAIStatus();
+
+        if (status.allModelsExhausted) {
+            return {
+                available: true,
+                usingFallback: true,
+                reason: "All AI models are currently rate-limited. Running in offline practice mode with fallback questions."
+            };
+        }
+
         return { available: true };
     } catch (error: any) {
+        console.error("AI status check failed:", error);
 
-        console.error("API health check failed:", error);
-
-        // Return available: true but with fallback flag so users can still practice
-        // with hardcoded questions
         return {
             available: true,
             usingFallback: true,
@@ -53,7 +57,18 @@ export async function createMockInterview(role: string, difficulty: string) {
     }
 }
 
-export async function generateMockQuestions(role: string, difficulty: string) {
+export async function generateMockQuestions(role: string, difficulty: string): Promise<{
+    questions?: string[];
+    isFallback?: boolean;
+    allModelsExhausted?: boolean;
+    retryIn?: number;
+    error?: string;
+    _switchInfo?: {
+        switched: boolean;
+        from: string;
+        to: string;
+    };
+}> {
     const model = await getGeminiModelInstance();
 
 
@@ -76,13 +91,38 @@ export async function generateMockQuestions(role: string, difficulty: string) {
 
         // Check for rate limit
         if (error.status === 429 || error.message?.includes('429') || error.message?.includes('Resource has been exhausted')) {
-            const { markModelRateLimited } = await import("@/actions/gemini-config");
             const modelName = await getGeminiModel();
-            await markModelRateLimited(modelName);
+            const { handleRateLimit } = await import("@/lib/gemini");
+            const result = await handleRateLimit(modelName);
+
+            if (result.switched) {
+                // Retry with new model
+                const retryResult = await generateMockQuestions(role, difficulty);
+                return {
+                    ...retryResult,
+                    _switchInfo: {
+                        switched: true,
+                        from: result.fromModel || '',
+                        to: result.newModelName || ''
+                    }
+                };
+            }
+
+            // All models exhausted - use fallback
+            const fallbackQuestions = [
+                `Tell me about a time you faced a challenge in your previous role as a ${role}.`,
+                `What are your key strengths and weaknesses relevant to a ${difficulty} level position?`,
+                "Describe a project you are particularly proud of.",
+                "How do you handle tight deadlines and pressure?",
+                "Where do you see yourself in 5 years?"
+            ];
+
             return {
-                questions: [],
+                questions: fallbackQuestions,
                 isFallback: true,
-                error: `Rate limit reached for ${modelName}. Using fallback questions.`
+                allModelsExhausted: true,
+                retryIn: result.retryIn,
+                error: result.message
             };
         }
 
