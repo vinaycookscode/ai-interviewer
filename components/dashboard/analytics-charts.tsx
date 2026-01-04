@@ -1,20 +1,36 @@
 "use client";
 
+import dynamic from 'next/dynamic';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-    PieChart,
-    Pie,
-    Cell,
-    LineChart,
-    Line,
-} from "recharts";
+import { Loader2 } from 'lucide-react';
+
+// Lazy load Recharts for better initial page load
+const BarChart = dynamic(() => import("recharts").then(mod => mod.BarChart), {
+    loading: () => <ChartSkeleton />,
+    ssr: false
+});
+const LineChart = dynamic(() => import("recharts").then(mod => mod.LineChart), {
+    loading: () => <ChartSkeleton />,
+    ssr: false
+});
+const Bar = dynamic(() => import("recharts").then(mod => mod.Bar), { ssr: false });
+const Line = dynamic(() => import("recharts").then(mod => mod.Line), { ssr: false });
+const XAxis = dynamic(() => import("recharts").then(mod => mod.XAxis), { ssr: false });
+const YAxis = dynamic(() => import("recharts").then(mod => mod.YAxis), { ssr: false });
+const CartesianGrid = dynamic(() => import("recharts").then(mod => mod.CartesianGrid), { ssr: false });
+const Tooltip = dynamic(() => import("recharts").then(mod => mod.Tooltip), { ssr: false });
+const ResponsiveContainer = dynamic(() => import("recharts").then(mod => mod.ResponsiveContainer), { ssr: false });
+
+function ChartSkeleton() {
+    return (
+        <div className="flex items-center justify-center h-[300px] bg-muted/30 rounded-lg">
+            <div className="flex flex-col items-center gap-2">
+                <Loader2 className="h-6 w-6 animate-spin text-primary/60" />
+                <p className="text-xs text-muted-foreground">Loading chart...</p>
+            </div>
+        </div>
+    );
+}
 
 interface AnalyticsChartsProps {
     scoreDistribution: { range: string; count: number }[];
@@ -22,130 +38,69 @@ interface AnalyticsChartsProps {
     activityData: { date: string; count: number }[];
 }
 
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
-
 export function AnalyticsCharts({
     scoreDistribution,
     statusDistribution,
     activityData,
 }: AnalyticsChartsProps) {
     return (
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {/* Score Distribution Chart */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Interview Activity (Last 7 Days)</CardTitle>
+                    <CardTitle className="text-base">Score Distribution</CardTitle>
                 </CardHeader>
-                <CardContent className="pl-2">
-                    <div className="h-[220px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={activityData}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis
-                                    dataKey="date"
-                                    stroke="#888888"
-                                    fontSize={12}
-                                    tickLine={false}
-                                    axisLine={false}
-                                />
-                                <YAxis
-                                    stroke="#888888"
-                                    fontSize={12}
-                                    tickLine={false}
-                                    axisLine={false}
-                                    tickFormatter={(value) => `${value}`}
-                                />
-                                <Tooltip />
-                                <Line
-                                    type="monotone"
-                                    dataKey="count"
-                                    stroke="#8884d8"
-                                    strokeWidth={2}
-                                    activeDot={{ r: 8 }}
-                                />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </div>
+                <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={scoreDistribution}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="range" />
+                            <YAxis />
+                            <Tooltip />
+                            <Bar dataKey="count" fill="hsl(var(--primary))" />
+                        </BarChart>
+                    </ResponsiveContainer>
                 </CardContent>
             </Card>
 
+            {/* Status Distribution Chart */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Interview Status</CardTitle>
+                    <CardTitle className="text-base">Interview Status</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="h-[220px] flex flex-col">
-                        <div className="flex-1">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={statusDistribution}
-                                        cx="50%"
-                                        cy="45%"
-                                        innerRadius={40}
-                                        outerRadius={60}
-                                        fill="#8884d8"
-                                        paddingAngle={5}
-                                        dataKey="count"
-                                    >
-                                        {statusDistribution.map((entry, index) => (
-                                            <Cell
-                                                key={`cell-${index}`}
-                                                fill={COLORS[index % COLORS.length]}
-                                            />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </div>
-                        <div className="flex flex-wrap justify-center gap-4 pb-2">
-                            {statusDistribution.map((entry, index) => (
-                                <div key={entry.status} className="flex items-center gap-2">
-                                    <div
-                                        className="w-3 h-3 rounded-full"
-                                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                                    />
-                                    <span className="text-sm text-muted-foreground capitalize">
-                                        {entry.status.toLowerCase().replace('_', ' ')}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <BarChart data={statusDistribution}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="status" />
+                            <YAxis />
+                            <Tooltip />
+                            <Bar dataKey="count" fill="hsl(var(--accent))" />
+                        </BarChart>
+                    </ResponsiveContainer>
                 </CardContent>
             </Card>
 
+            {/* Activity Chart (Last 7 Days) */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Score Distribution</CardTitle>
+                    <CardTitle className="text-base">Recent Activity</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="h-[220px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={scoreDistribution}>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis
-                                    dataKey="range"
-                                    stroke="#888888"
-                                    fontSize={12}
-                                    tickLine={false}
-                                    axisLine={false}
-                                />
-                                <YAxis
-                                    stroke="#888888"
-                                    fontSize={12}
-                                    tickLine={false}
-                                    axisLine={false}
-                                />
-                                <Tooltip />
-                                <Bar
-                                    dataKey="count"
-                                    fill="#adfa1d"
-                                    radius={[4, 4, 0, 0]}
-                                />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
+                    <ResponsiveContainer width="100%" height={300}>
+                        <LineChart data={activityData}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="date" />
+                            <YAxis />
+                            <Tooltip />
+                            <Line
+                                type="monotone"
+                                dataKey="count"
+                                stroke="hsl(var(--primary))"
+                                strokeWidth={2}
+                            />
+                        </LineChart>
+                    </ResponsiveContainer>
                 </CardContent>
             </Card>
         </div>
