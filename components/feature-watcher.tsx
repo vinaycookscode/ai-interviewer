@@ -3,32 +3,36 @@
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { getLatestFlagUpdate } from "@/actions/feature-flags";
+import { useVisibilityPolling } from "@/lib/use-visibility-polling";
+import { POLLING_INTERVALS } from "@/lib/polling-config";
 
+/**
+ * Watches for feature flag updates and refreshes the page when changes are detected
+ * Uses visibility-aware polling to reduce load when tab is hidden
+ */
 export function FeatureWatcher() {
     const router = useRouter();
     const lastUpdateRef = useRef<number>(0);
 
+    // Initial fetch to set baseline
     useEffect(() => {
-        // Initial fetch to set baseline
         getLatestFlagUpdate().then((ts) => {
             lastUpdateRef.current = ts;
         });
+    }, []);
 
-        const interval = setInterval(async () => {
-            const latest = await getLatestFlagUpdate();
-            const prev = lastUpdateRef.current;
+    // Visibility-aware polling - pauses when tab is hidden
+    useVisibilityPolling(async () => {
+        const latest = await getLatestFlagUpdate();
+        const prev = lastUpdateRef.current;
 
-            // If timestamp changed and we had a previous value, refresh
-            if (prev > 0 && latest > prev) {
+        // If timestamp changed and we had a previous value, refresh
+        if (prev > 0 && latest > prev) {
+            router.refresh();
+        }
 
-                router.refresh();
-            }
-
-            lastUpdateRef.current = latest;
-        }, 5000); // Check every 5 seconds
-
-        return () => clearInterval(interval);
-    }, [router]);
+        lastUpdateRef.current = latest;
+    }, POLLING_INTERVALS.FEATURE_FLAGS);
 
     return null; // Invisible component
 }
