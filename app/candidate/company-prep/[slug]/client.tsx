@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
     ArrowLeft,
@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { CompanyKnowledgePanel } from "@/components/company-prep/company-knowledge-panel";
 import { CompanyDetailSkeleton } from "@/components/company-prep/company-detail-skeleton";
 import { CompanyProblemSolver } from "@/components/company-prep/company-problem-solver";
+import { getUserSolvedQuestions } from "@/actions/company-prep";
 
 interface InterviewRound {
     name: string;
@@ -107,6 +108,19 @@ export function CompanyDetailClient({ company, featureFlags }: CompanyDetailClie
 
     // Code editor modal state
     const [codeModalOpen, setCodeModalOpen] = useState(false);
+    const [solvedQuestions, setSolvedQuestions] = useState<Set<string>>(new Set());
+
+    // Load solved questions on mount
+    useEffect(() => {
+        const loadSolvedQuestions = async () => {
+            const result = await getUserSolvedQuestions();
+            if (result.success && result.solutions) {
+                const solvedIds = new Set(result.solutions.map((s: any) => s.questionId));
+                setSolvedQuestions(solvedIds);
+            }
+        };
+        loadSolvedQuestions();
+    }, []);
     const [activeQuestion, setActiveQuestion] = useState<Question | null>(null);
 
     const rounds = (company.rounds as InterviewRound[]) || [];
@@ -323,6 +337,13 @@ export function CompanyDetailClient({ company, featureFlags }: CompanyDetailClie
                                             >
                                                 <div className="flex-1 min-w-0">
                                                     <p className="font-medium text-sm mb-2 line-clamp-2">{question.question}</p>
+                                                    {solvedQuestions.has(question.id) && (
+                                                        <div className="mb-2">
+                                                            <span className="text-xs px-2 py-0.5 rounded bg-green-500/20 text-green-400 font-medium">
+                                                                ✓ Solved
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                     <div className="flex flex-wrap gap-1.5 sm:gap-2">
                                                         <span className={cn("text-xs px-2 py-0.5 rounded", TYPE_COLORS[question.type] || "bg-gray-500/10")}>
                                                             {question.type}

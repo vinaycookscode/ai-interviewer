@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { saveUserSolution, getUserSolution } from "@/actions/company-prep";
+import { toast } from "sonner";
 
 interface CompanyQuestion {
     id: string;
@@ -141,6 +143,8 @@ function solution(input) {
     const [analysis, setAnalysis] = useState<CodeAnalysis | null>(null);
     const [testResults, setTestResults] = useState<any[] | null>(null);
     const [selectedLanguage, setSelectedLanguage] = useState<string>("javascript");
+    const [hasSavedSolution, setHasSavedSolution] = useState(false);
+    const [solutionInfo, setSolutionInfo] = useState<{passedTests: number; totalTests: number} | null>(null);
 
     // Supported programming languages
     const SUPPORTED_LANGUAGES = [
@@ -223,24 +227,44 @@ function solution(input) {
 
     // Get localStorage key with language
     const getCodeStorageKeyWithLang = (lang: string) => `company-prep-code-${question.id}-${lang}`;
-
-    // Load saved code on mount or when language changes
+    // Load saved solution from database on mount
     useEffect(() => {
-        if (typeof window === 'undefined') return;
-
-        // Only load from localStorage if code persistence is enabled
-        if (featureFlags.codePersistence) {
-            const saved = localStorage.getItem(getCodeStorageKeyWithLang(selectedLanguage));
-            if (saved) {
-                setCode(saved);
-                return;
+        const loadSolution = async () => {
+            if (typeof window === 'undefined') return;
+            
+            try {
+                const result = await getUserSolution(question.id, selectedLanguage);
+                if (result.success && result.solution) {
+                    setCode(result.solution.code);
+                    setHasSavedSolution(true);
+                    setSolutionInfo({
+                        passedTests: result.solution.passedTests,
+                        totalTests: result.solution.totalTests
+                    });
+                    return;
+                }
+            } catch (error) {
+                console.error("Error loading solution:", error);
             }
-        }
-        // Use starter code for the selected language
-        setCode(featureFlags.languageSelector
-            ? getStarterCodeForLanguage(selectedLanguage)
-            : defaultStarterCode);
-    }, [question.id, selectedLanguage, featureFlags.codePersistence, featureFlags.languageSelector]);
+
+            // Fallback to localStorage if no database solution
+            if (featureFlags.codePersistence) {
+                const saved = localStorage.getItem(getCodeStorageKeyWithLang(selectedLanguage));
+                if (saved) {
+                    setCode(saved);
+                    return;
+                }
+            }
+            
+            // Use starter code
+            setCode(featureFlags.languageSelector
+                ? getStarterCodeForLanguage(selectedLanguage)
+                : defaultStarterCode);
+        };
+        
+        loadSolution();
+    }, [question.id, selectedLanguage]);
+
 
     // Save code to localStorage when it changes (only if persistence is enabled)
     useEffect(() => {
@@ -417,7 +441,19 @@ function solution(input) {
                 inputArg = testCase.input;
             } else if (typeof testCase.input === 'string') {
                 try {
-                    inputArg = JSON.parse(testCase.input);
+                    // Handle format like "[2,7,11,15], 9" (array, value)
+                    if (testCase.input.includes(',') && testCase.input.includes('[')) {
+                        const parts = testCase.input.split('],');
+                        if (parts.length === 2) {
+                            const nums = JSON.parse(parts[0] + ']');
+                            const target = parseInt(parts[1].trim());
+                            inputArg = { nums, target };
+                        } else {
+                            inputArg = JSON.parse(testCase.input);
+                        }
+                    } else {
+                        inputArg = JSON.parse(testCase.input);
+                    }
                 } catch {
                     inputArg = testCase.input;
                 }
@@ -520,6 +556,28 @@ function solution(input) {
         );
     };
 
+    const handleSubmitAnswer = async () => {
+        if (!code.trim()) {
+            toast.error("Please write some code before submitting");
+            return;
+        }
+        try {
+            let passedTests = 0;
+            let totalTests = testCases.length;
+            if (testResults) {
+                passedTests = testResults.filter((r: any) => r.passed).length;
+            }
+            const result = await saveUserSolution(question.id, code, selectedLanguage, passedTests, totalTests);
+            if (result.success) {
+                toast.success("Answer submitted successfully! ✓");
+            } else {
+                toast.error("Failed to submit answer");
+            }
+        } catch (error) {
+            toast.error("Error submitting answer");
+            console.error(error);
+        }
+    };
     return (
         <div className="fixed inset-0 bg-background z-50 flex flex-col">
             {/* Header */}
@@ -731,8 +789,14 @@ function solution(input) {
                             {/* Code Editor */}
                             <div className="shrink-0">
                                 <div className="flex items-center justify-between mb-2">
-                                    <label className="text-sm font-medium">Your Solution</label>
-                                    {/* Language Selector - conditionally rendered */}
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm font-medium">Your Solution</label>
+                                        {hasSavedSolution && solutionInfo && (
+                                            <span className="text-xs px-2 py-1 rounded bg-green-500/20 text-green-400">
+                                                ✓ Solved ({solutionInfo.passedTests}/{solutionInfo.totalTests})
+                                            </span>
+                                        )}
+                                    </div>                                    {/* Language Selector - conditionally rendered */}
                                     {featureFlags.languageSelector && (
                                         <div className="flex items-center gap-2">
                                             <Code className="h-4 w-4 text-muted-foreground" />
@@ -759,7 +823,7 @@ function solution(input) {
                             </div>
 
                             {/* Action Buttons */}
-                            <div className={cn("gap-3 mt-4 shrink-0", featureFlags.aiCodeAnalysis ? "grid grid-cols-2" : "")}>
+                            <div className="flex gap-3 mt-4 shrink-0">
                                 <button
                                     onClick={handleRunCode}
                                     disabled={isAnalyzing}
@@ -770,6 +834,14 @@ function solution(input) {
                                 >
                                     {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
                                     Run Tests
+                                </button>
+                                <button
+                                    onClick={handleSubmitAnswer}
+                                    disabled={isAnalyzing}
+                                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 font-medium"
+                                >
+                                    <CheckCircle className="h-4 w-4" />
+                                    Submit Answer
                                 </button>
                                 {featureFlags.aiCodeAnalysis && (
                                     <button

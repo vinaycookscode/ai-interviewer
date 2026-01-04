@@ -11,6 +11,45 @@ export async function getGeminiModelInstance(apiKey?: string, modelId?: string) 
     return client.getGenerativeModel({ model: modelName });
 }
 
+/**
+ * Handle rate limit errors by marking model as limited and switching to next available
+ */
+export async function handleRateLimit(currentModel: string): Promise<{
+    switched: boolean;
+    newModel?: string;
+    newModelName?: string;
+    fromModel?: string;
+    message: string;
+    retryIn?: number;
+}> {
+    const { markModelRateLimited, getAvailableGeminiModels, setGeminiModel } =
+        await import("@/actions/gemini-config");
+
+    // Mark current model as limited
+    await markModelRateLimited(currentModel);
+
+    // Try to find another available model
+    const models = await getAvailableGeminiModels();
+    const nextAvailable = models.find((m: any) => !m.disabled && m.id !== currentModel);
+
+    if (nextAvailable) {
+        await setGeminiModel(nextAvailable.id);
+        return {
+            switched: true,
+            newModel: nextAvailable.id,
+            newModelName: nextAvailable.name,
+            fromModel: currentModel,
+            message: `Automatically switched to ${nextAvailable.name}`
+        };
+    }
+
+    return {
+        switched: false,
+        message: 'All AI models are currently rate-limited.',
+        retryIn: 3600 // 1 hour in seconds
+    };
+}
+
 // Custom Error Class
 export class RateLimitError extends Error {
     constructor(message: string) {
@@ -59,9 +98,12 @@ ${jobDescription}
         console.error("Gemini API Error:", error);
 
         if (error.status === 429 || error.message?.includes('429') || error.message?.includes('Resource has been exhausted')) {
-            const { markModelRateLimited } = await import("@/actions/gemini-config");
-            await markModelRateLimited(modelName);
-            throw new Error(`Rate limit reached for ${modelName}. Please select a different model using the selector in the top bar.`);
+            const result = await handleRateLimit(modelName);
+            if (result.switched) {
+                // Retry with new model
+                return generateInterviewQuestions(jobDescription);
+            }
+            throw new Error(result.message);
         }
 
         throw new Error(`Failed to generate questions: ${error.message}`);
@@ -150,11 +192,14 @@ export async function evaluateAnswer(question: string, answer: string, contextLa
         console.error("Gemini Evaluation Error:", error);
 
         if (error.status === 429 || error.message?.includes('429') || error.message?.includes('Resource has been exhausted')) {
-            const { markModelRateLimited } = await import("@/actions/gemini-config");
-            await markModelRateLimited(modelName);
+            const result = await handleRateLimit(modelName);
+            if (result.switched) {
+                // Retry with new model
+                return evaluateAnswer(question, answer, contextLanguage);
+            }
             return {
                 score: 0,
-                feedback: `Rate limit reached for ${modelName}. Please select a different model using the selector in the top bar.`,
+                feedback: result.message,
                 criteria: { accuracy: 0, communication: 0, relevance: 0 }
             };
         }

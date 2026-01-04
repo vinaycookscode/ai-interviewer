@@ -57,6 +57,7 @@ model User {
   mentorProfile      MentorProfile?
   mentorships        Mentorship[]  @relation("MenteeRelation")
   jobOffers          JobOffer[]
+  companySolutions   UserCompanySolution[]
 }
 
 model Account {
@@ -439,6 +440,8 @@ model CompanyQuestion {
   language      String?            // javascript, python, java, cpp
   
   createdAt   DateTime @default(now())
+  
+  userSolutions UserCompanySolution[]
 }
 
 model CompanyResource {
@@ -451,6 +454,26 @@ model CompanyResource {
   url         String
   
   createdAt   DateTime @default(now())
+}
+
+model UserCompanySolution {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionId  String
+  question    CompanyQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  
+  code        String   @db.Text  // User's solution code
+  language    String              // Programming language (javascript, python, java, cpp)
+  passedTests Int      @default(0)  // Number of tests that passed
+  totalTests  Int      @default(0)  // Total number of tests
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([userId, questionId, language])
+  @@index([userId])
+  @@index([questionId])
 }
 
 // --- Study Squad ---

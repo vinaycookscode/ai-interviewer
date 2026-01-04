@@ -9,8 +9,11 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { setGeminiModel, getAvailableGeminiModels } from "@/actions/gemini-config"; // Import the new action
+import { setGeminiModel, getAvailableGeminiModels } from "@/actions/gemini-config";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 // Default fallback models
 const DEFAULT_MODELS = [
@@ -26,9 +29,11 @@ interface GeminiModelSelectorProps {
 export function GeminiModelSelector({ currentModel }: GeminiModelSelectorProps) {
     const [model, setModel] = React.useState(currentModel);
     const [models, setModels] = React.useState<{ value: string; label: string; disabled?: boolean; availableAt?: number }[]>(DEFAULT_MODELS);
+    const [isLoading, setIsLoading] = React.useState(false);
 
     const fetchModels = React.useCallback(async () => {
         try {
+            setIsLoading(true);
             const availableModels = await getAvailableGeminiModels();
             if (availableModels && availableModels.length > 0) {
                 const formatted = availableModels.map((m: any) => ({
@@ -41,11 +46,23 @@ export function GeminiModelSelector({ currentModel }: GeminiModelSelectorProps) 
             }
         } catch (error) {
             console.error("Failed to load dynamic models", error);
+        } finally {
+            setIsLoading(false);
         }
     }, []);
 
+    // Initial fetch on mount
     React.useEffect(() => {
         fetchModels();
+    }, [fetchModels]);
+
+    // Polling: Refresh model status every 30 seconds
+    React.useEffect(() => {
+        const interval = setInterval(() => {
+            fetchModels();
+        }, 30000); // 30 seconds
+
+        return () => clearInterval(interval);
     }, [fetchModels]);
 
     const handleModelChange = async (value: string) => {
@@ -69,22 +86,33 @@ export function GeminiModelSelector({ currentModel }: GeminiModelSelectorProps) 
                     if (open) fetchModels();
                 }}
             >
-                <SelectTrigger className="w-[200px] h-9 text-xs">
+                <SelectTrigger className="w-[220px] h-9 text-xs">
                     <Sparkles className={`mr-2 h-3.5 w-3.5 ${models.find(m => m.value === model)?.disabled ? 'text-gray-400' : 'text-orange-500'}`} />
-                    <SelectValue placeholder="Select Model" />
+                    <SelectValue>
+                        {models.find(m => m.value === model)?.label || "Select Model"}
+                    </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="max-h-[300px]">
                     {models.map((m) => (
                         <SelectItem key={m.value} value={m.value} className="text-xs" disabled={m.disabled}>
                             <div className="flex items-center justify-between w-full gap-2">
-                                <span>{m.label}</span>
-                                {m.disabled && (
-                                    <span className="text-[10px] text-destructive whitespace-nowrap">
-                                        {m.availableAt
-                                            ? `Avail ${new Date(m.availableAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                                            : "(Limit Reached)"}
-                                    </span>
-                                )}
+                                <span className={m.disabled ? "text-muted-foreground" : ""}>{m.label}</span>
+                                <div className="flex items-center gap-1">
+                                    {m.value === model && !m.disabled && (
+                                        <Badge variant="default" className="text-[10px] px-1 py-0">Active</Badge>
+                                    )}
+                                    {m.disabled && (
+                                        <Badge variant="destructive" className="text-[10px] px-1 py-0">
+                                            {m.availableAt
+                                                ? new Date(m.availableAt).toLocaleTimeString('en-US', {
+                                                    hour: 'numeric',
+                                                    minute: '2-digit',
+                                                    hour12: true
+                                                })
+                                                : "Limited"}
+                                        </Badge>
+                                    )}
+                                </div>
                             </div>
                         </SelectItem>
                     ))}

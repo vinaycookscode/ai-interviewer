@@ -103,6 +103,8 @@ export function AddOfferForm() {
                             name="baseSalary"
                             type="number"
                             required
+                            min="0"
+                            step="1000"
                             placeholder="e.g., 1200000"
                             className="w-full pl-8 pr-4 py-2 bg-muted border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                         />
@@ -117,6 +119,8 @@ export function AddOfferForm() {
                             <input
                                 name="bonus"
                                 type="number"
+                                min="0"
+                                step="1000"
                                 placeholder="e.g., 100000"
                                 className="w-full pl-8 pr-4 py-2 bg-muted border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                             />
@@ -129,6 +133,8 @@ export function AddOfferForm() {
                             <input
                                 name="stocks"
                                 type="number"
+                                min="0"
+                                step="1000"
                                 placeholder="e.g., 500000"
                                 className="w-full pl-8 pr-4 py-2 bg-muted border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                             />
@@ -146,6 +152,7 @@ export function AddOfferForm() {
                         <input
                             name="deadline"
                             type="date"
+                            min={new Date().toISOString().split('T')[0]}
                             className="w-full px-4 py-2 bg-muted border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                     </div>
@@ -154,6 +161,8 @@ export function AddOfferForm() {
                         <input
                             name="joiningDate"
                             type="date"
+                            min={new Date().toISOString().split('T')[0]}
+                            max={new Date(new Date().setFullYear(new Date().getFullYear() + 2)).toISOString().split('T')[0]}
                             className="w-full px-4 py-2 bg-muted border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                         />
                     </div>
