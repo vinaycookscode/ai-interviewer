@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,12 +28,19 @@ export function PracticeSession({ mockInterviewId, role, difficulty }: PracticeS
     const [feedback, setFeedback] = useState<{ score: number; feedback: string } | null>(null);
     const [generationError, setGenerationError] = useState<string | null>(null);
 
+    // Ref to track if first question has been spoken (prevents double speech in dev mode)
+    const hasSpokenFirstQuestion = useRef(false);
+
     // Hooks for audio
     const { isListening, transcript, startListening, stopListening, resetTranscript } = useSpeechToText();
     const { speak, stop: stopSpeaking, isSpeaking } = useTextToSpeech();
 
     // Load questions on mount
     useEffect(() => {
+        // Prevent generating questions twice in React Strict Mode
+        if (hasSpokenFirstQuestion.current) return;
+        hasSpokenFirstQuestion.current = true;
+
         const loadQuestions = async () => {
             const result = await generateMockQuestions(role, difficulty);
             if (result.questions && result.questions.length > 0) {

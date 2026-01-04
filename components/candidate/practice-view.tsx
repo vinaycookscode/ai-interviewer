@@ -112,7 +112,7 @@ export function PracticeView() {
     const isDisabled = !apiStatus?.available || isPending;
 
     return (
-        <div className="container max-w-screen-2xl py-8 px-4 sm:py-12">
+        <div className="container max-w-7xl mx-auto py-8 px-4 sm:py-12">
             {/* Hero Section */}
             <div className="mb-12 text-center">
                 <div className="mb-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
@@ -167,13 +167,13 @@ export function PracticeView() {
                     )}
 
                     {/* Two Column Layout - Responsive */}
-                    <div className="grid lg:grid-cols-2 gap-8">
+                    <div className="grid lg:grid-cols-2 gap-8 items-start">
                         {/* LEFT: Custom Setup */}
-                        <div className="order-2 lg:order-1">
-                            <h2 className="text-2xl font-bold mb-4">Custom Setup</h2>
-                            <p className="text-muted-foreground mb-6">Create a personalized interview session</p>
+                        <div className="order-2 lg:order-1 flex flex-col">
+                            <h2 className="text-2xl font-bold mb-4 text-center">Custom Setup</h2>
+                            <p className="text-muted-foreground mb-6 text-center">Create a personalized interview session</p>
 
-                            <Card className="border-2 border-primary/10 shadow-lg">
+                            <Card className="border-2 border-primary/10 shadow-lg h-full flex-1">
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
                                         <Sparkles className="h-5 w-5 text-primary" />
@@ -239,9 +239,9 @@ export function PracticeView() {
                         </div>
 
                         {/* RIGHT: Quick Start */}
-                        <div className="order-1 lg:order-2">
-                            <h2 className="text-2xl font-bold mb-4">Quick Start</h2>
-                            <p className="text-muted-foreground mb-6">Choose a preset to start immediately</p>
+                        <div className="order-1 lg:order-2 flex flex-col">
+                            <h2 className="text-2xl font-bold mb-4 text-center">Quick Start</h2>
+                            <p className="text-muted-foreground mb-6 text-center">Choose a preset to start immediately</p>
 
                             <div className="grid grid-cols-2 gap-4">
                                 {QUICK_START_PRESETS.map((preset) => {
