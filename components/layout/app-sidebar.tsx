@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -33,16 +34,29 @@ const NavLinks = ({
     featureFlags = {},
     userRole,
     onLinkClick,
-    t
+    t,
+    pathname
 }: {
     items: NavItem[];
     featureFlags: Record<string, boolean>;
     userRole?: string;
     onLinkClick?: () => void;
     t: (key: string) => string;
+    pathname: string;
 }) => {
     const isEnabled = (key?: string) => !key || featureFlags[key] !== false;
     const hasRole = (role?: string) => !role || userRole === role;
+
+    // Check if a link is active (matches current path or is a parent route)
+    const isActive = (href: string) => {
+        if (pathname === href) return true;
+        // For nested routes, check if current path starts with the href
+        // But exclude exact matches to avoid parent routes being highlighted
+        if (href !== '/candidate/dashboard' && pathname.startsWith(href + '/')) return true;
+        // Special case for dashboard - only highlight if exact match
+        if (href === '/candidate/dashboard' && pathname === '/candidate/dashboard') return true;
+        return false;
+    };
 
     return (
         <>
@@ -58,16 +72,29 @@ const NavLinks = ({
                 }
 
                 const Icon = item.icon;
+                const active = isActive(item.href);
 
                 return (
                     <Link
                         key={item.href}
                         href={item.href}
                         onClick={onLinkClick}
-                        className="flex items-center gap-3 px-4 py-3 text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-all font-medium group"
+                        className={cn(
+                            "flex items-center gap-3 px-4 py-3 rounded-lg transition-all font-medium group",
+                            active
+                                ? "bg-primary/15 text-primary border-l-4 border-primary"
+                                : "text-foreground hover:bg-primary/10 hover:text-primary"
+                        )}
                     >
-                        <Icon size={20} className={cn("group-hover:scale-110 transition-transform", item.colorClass)} />
-                        <span>{t(item.labelKey)}</span>
+                        <Icon
+                            size={20}
+                            className={cn(
+                                "transition-transform",
+                                active ? "scale-110" : "group-hover:scale-110",
+                                active ? "text-primary" : item.colorClass
+                            )}
+                        />
+                        <span className={cn(active && "font-semibold")}>{t(item.labelKey)}</span>
                     </Link>
                 );
             })}
@@ -75,9 +102,11 @@ const NavLinks = ({
     );
 };
 
+
 export function AppSidebar({ items, featureFlags = {}, userRole, translationNamespace = 'Sidebar' }: AppSidebarProps) {
     const [open, setOpen] = useState(false);
     const t = useTranslations(translationNamespace);
+    const pathname = usePathname();
 
     return (
         <>
@@ -98,6 +127,7 @@ export function AppSidebar({ items, featureFlags = {}, userRole, translationName
                                 userRole={userRole}
                                 onLinkClick={() => setOpen(false)}
                                 t={t}
+                                pathname={pathname}
                             />
                         </nav>
                     </div>
@@ -112,9 +142,11 @@ export function AppSidebar({ items, featureFlags = {}, userRole, translationName
                         featureFlags={featureFlags}
                         userRole={userRole}
                         t={t}
+                        pathname={pathname}
                     />
                 </nav>
             </aside>
         </>
     );
 }
+

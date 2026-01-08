@@ -646,3 +646,55 @@ model Feedback {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+// ============================================
+// FLASHCARDS SYSTEM
+// ============================================
+
+model FlashcardDeck {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  category    String   // DSA, System Design, Behavioral, SQL, Custom
+  isPublic    Boolean  @default(false)
+  userId      String?  // null = system deck
+  
+  cards       Flashcard[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Flashcard {
+  id       String   @id @default(cuid())
+  deckId   String
+  front    String   @db.Text
+  back     String   @db.Text
+  
+  deck     FlashcardDeck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  progress FlashcardProgress[]
+  
+  createdAt DateTime @default(now())
+}
+
+model FlashcardProgress {
+  id         String   @id @default(cuid())
+  userId     String
+  cardId     String
+  
+  box        Int      @default(1)  // Leitner box 1-5
+  nextReview DateTime @default(now())
+  lastReview DateTime?
+  correctCount Int    @default(0)
+  incorrectCount Int  @default(0)
+  
+  card       Flashcard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  @@unique([userId, cardId])
+  @@index([userId])
+  @@index([nextReview])
+}
+

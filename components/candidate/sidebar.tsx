@@ -10,7 +10,8 @@ import {
     Building2,
     Users,
     UserCheck,
-    BriefcaseBusiness
+    BriefcaseBusiness,
+    Layers,
 } from "lucide-react";
 import { AppSidebar, NavItem } from "@/components/layout/app-sidebar";
 import { FEATURES } from "@/lib/features";
@@ -45,6 +46,12 @@ const CANDIDATE_NAV_ITEMS: NavItem[] = [
         href: "/candidate/resume-screener",
         featureKey: FEATURES.RESUME_SCREENER,
         colorClass: "text-blue-500",
+    },
+    {
+        icon: Layers,
+        labelKey: "flashcards",
+        href: "/candidate/flashcards",
+        colorClass: "text-teal-500",
     },
     // Placement Platform Section
     {

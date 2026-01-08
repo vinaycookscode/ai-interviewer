@@ -25,41 +25,83 @@ import JsonLd from "@/components/seo/json-ld";
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL || "https://getbacktou.com"),
   title: {
-    default: "Get Back To U - AI Interviewer & Placement Platform",
+    default: "AI Mock Interviews & Placement Prep | Get Back To U",
     template: "%s | Get Back To U",
   },
-  description: "Master your interviews with Get Back To U. AI-powered mock interviews, resume analysis, and placement programs to help you land your dream job.",
+  description: "Practice AI-powered mock interviews, study with flashcards, and prepare for job placements. Get personalized feedback, resume analysis, and interview coaching to land your dream job faster.",
   keywords: [
+    // Primary Keywords
+    "AI Interview",
     "AI Interviewer",
     "Mock Interview",
+    "Interview Practice",
+    "Job Interview Preparation",
+    // Study & Learning
+    "Study for Interview",
+    "Interview Flashcards",
+    "DSA Practice",
+    "System Design Interview",
+    "Behavioral Interview",
+    "Technical Interview Prep",
+    // Career & Placement
     "Placement Preparation",
+    "Campus Placement",
+    "Job Placement Program",
+    "Career Coaching",
+    "Interview Coaching",
+    // Features
+    "Resume Screener",
     "Resume Builder",
-    "Job Interview Practice",
+    "Resume Analysis",
+    "ATS Resume Check",
+    "Cover Letter Generator",
+    // Company Specific
+    "FAANG Interview Prep",
+    "Google Interview Practice",
+    "Amazon Interview Prep",
+    "Microsoft Interview",
+    "Tech Interview",
+    // General
     "Get Back To U",
-    "Career Success"
+    "Career Success",
+    "Job Search Help",
+    "Interview Tips",
+    "Land Your Dream Job"
   ],
   authors: [{ name: "Get Back To U Team" }],
   creator: "Get Back To U",
+  publisher: "Get Back To U",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   openGraph: {
     type: "website",
     locale: "en_US",
     url: "/",
-    title: "Get Back To U - Your AI Career Coach",
-    description: "Practice interviews, perfect your resume, and get hired faster with our extensive AI placement platform.",
+    title: "AI Mock Interviews & Career Prep | Get Back To U",
+    description: "Practice AI-powered interviews, study with flashcards, get resume feedback, and prepare for placements. Land your dream job with personalized coaching.",
     siteName: "Get Back To U",
     images: [
       {
         url: "/opengraph-image.png",
         width: 1200,
         height: 630,
-        alt: "Get Back To U Platform Preview",
+        alt: "Get Back To U - AI Interview Practice Platform",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Get Back To U - AI Interviewer",
-    description: "Practice interviews, perfect your resume, and get hired faster.",
+    title: "AI Mock Interviews & Placement Prep | Get Back To U",
+    description: "Practice AI interviews, study flashcards, get resume feedback. Land your dream job faster.",
     images: ["/opengraph-image.png"],
     creator: "@getbacktou",
   },
@@ -69,6 +111,10 @@ export const metadata: Metadata = {
     apple: "/icon.png",
   },
   manifest: "/manifest.json",
+  alternates: {
+    canonical: "/",
+  },
+  category: "Education",
 };
 
 export default function RootLayout({
