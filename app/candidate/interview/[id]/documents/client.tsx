@@ -17,7 +17,7 @@ interface DocumentUploadClientProps {
     requirePAN: boolean;
     existingDocs: {
         resumeUrl: string | null;
-        aadharUrl: string | null;
+        aadhaarUrl: string | null;
         panUrl: string | null;
     };
 }
@@ -34,15 +34,15 @@ export function DocumentUploadClient({
     const [uploading, setUploading] = useState(false);
     const [files, setFiles] = useState<{
         resume: File | null;
-        aadhar: File | null;
+        aadhaar: File | null;
         pan: File | null;
     }>({
         resume: null,
-        aadhar: null,
+        aadhaar: null,
         pan: null,
     });
 
-    const handleFileChange = (type: "resume" | "aadhar" | "pan", file: File | null) => {
+    const handleFileChange = (type: "resume" | "aadhaar" | "pan", file: File | null) => {
         if (file) {
             // Validate file size (5MB max)
             if (file.size > 5 * 1024 * 1024) {
@@ -67,7 +67,7 @@ export function DocumentUploadClient({
             formData.append("interviewId", interviewId);
 
             if (files.resume) formData.append("resume", files.resume);
-            if (files.aadhar) formData.append("aadhar", files.aadhar);
+            if (files.aadhaar) formData.append("aadhar", files.aadhaar);
             if (files.pan) formData.append("pan", files.pan);
 
             const response = await fetch("/api/upload/documents", {
@@ -94,7 +94,7 @@ export function DocumentUploadClient({
 
     const allRequiredUploaded =
         (!requireResume || existingDocs.resumeUrl || files.resume) &&
-        (!requireAadhar || existingDocs.aadharUrl || files.aadhar) &&
+        (!requireAadhar || existingDocs.aadhaarUrl || files.aadhaar) &&
         (!requirePAN || existingDocs.panUrl || files.pan);
 
     return (
@@ -150,8 +150,8 @@ export function DocumentUploadClient({
                                 {requireAadhar && (
                                     <div className="space-y-2">
                                         <Label htmlFor="aadhar" className="flex items-center gap-2">
-                                            Aadhar Card *
-                                            {existingDocs.aadharUrl && (
+                                            Aadhaar Card *
+                                            {existingDocs.aadhaarUrl && (
                                                 <CheckCircle className="h-4 w-4 text-green-600" />
                                             )}
                                         </Label>
@@ -159,10 +159,10 @@ export function DocumentUploadClient({
                                             id="aadhar"
                                             type="file"
                                             accept=".pdf,.jpg,.jpeg,.png"
-                                            onChange={(e) => handleFileChange("aadhar", e.target.files?.[0] || null)}
+                                            onChange={(e) => handleFileChange("aadhaar", e.target.files?.[0] || null)}
                                             disabled={false}
                                         />
-                                        {existingDocs.aadharUrl && (
+                                        {existingDocs.aadhaarUrl && (
                                             <p className="text-sm text-muted-foreground">
                                                 Already uploaded. Upload a new file to replace.
                                             </p>

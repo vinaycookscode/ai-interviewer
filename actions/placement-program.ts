@@ -385,6 +385,9 @@ export async function getDayTasks(enrollmentId: string, dayNumber: number) {
     const enrollment = await db.programEnrollment.findFirst({
         where: { id: enrollmentId, userId: session.user.id },
         include: {
+            user: {
+                include: { candidateProfile: true }
+            },
             completions: {
                 include: { task: true }
             }
@@ -409,18 +412,24 @@ export async function getDayTasks(enrollmentId: string, dayNumber: number) {
         }
     });
 
-    if (!module) {
-        return null;
-    }
+    // 3. Get User Profile for filtering
+    const userRole = enrollment.user.candidateProfile?.primaryRole;
 
     // Create a map of task completions for quick lookup
     const completionMap = new Map(
         enrollment.completions.map(c => [c.taskId, c])
     );
 
+    // 4. Filter tasks by role
+    const filteredTasks = (module?.tasks || []).filter((task: any) => {
+        if (!task.role) return true; // Common task
+        if (!userRole) return true;  // No profile yet, show everything
+        return task.role === userRole;
+    });
+
     return {
         module,
-        tasks: module.tasks.map(task => {
+        tasks: filteredTasks.map((task: any) => {
             const completion = completionMap.get(task.id);
             return {
                 ...task,
@@ -431,7 +440,7 @@ export async function getDayTasks(enrollmentId: string, dayNumber: number) {
                 metadata: completion?.metadata ?? null
             };
         }),
-        allCompleted: module.tasks.every(task => {
+        allCompleted: filteredTasks.every((task: any) => {
             const completion = completionMap.get(task.id);
             return !!completion?.completedAt;
         })

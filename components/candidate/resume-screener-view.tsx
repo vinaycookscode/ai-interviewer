@@ -11,31 +11,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { Upload, FileText, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import Link from "next/link";
 
-export function ResumeScreenerView() {
-    const [file, setFile] = useState<File | null>(null);
+export function ResumeScreenerView({ profileResumeUrl, profileResumeName }: { profileResumeUrl?: string | null; profileResumeName?: string | null }) {
+    // We no longer need local file state for upload as it's handled in the wizard
     const [jobDescription, setJobDescription] = useState("");
     const [analysis, setAnalysis] = useState<any | null>(null);
     const [isPending, startTransition] = useTransition();
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const selectedFile = e.target.files[0];
-            if (selectedFile.type !== "application/pdf") {
-                toast.error("Please upload a PDF file");
-                return;
-            }
-            setFile(selectedFile);
-            setAnalysis(null); // Reset analysis when new file selected
-        }
-    };
-
     const handleAnalyze = () => {
-        if (!file) return;
+        if (!profileResumeUrl) {
+            toast.error("Please upload your resume in the 'Level Up Your Journey' wizard first.");
+            return;
+        }
 
         startTransition(async () => {
             const formData = new FormData();
-            formData.append("file", file);
+            formData.append("resumeUrl", profileResumeUrl);
             if (jobDescription.trim()) {
                 formData.append("jobDescription", jobDescription);
             }
@@ -69,24 +61,35 @@ export function ResumeScreenerView() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid w-full items-center gap-1.5">
-                                <Label htmlFor="resume">Resume (PDF)</Label>
-                                <div className="border rounded-lg p-4 bg-muted/20 hover:bg-muted/40 transition-colors text-center cursor-pointer relative">
-                                    <Input
-                                        id="resume"
-                                        type="file"
-                                        accept=".pdf"
-                                        onChange={handleFileChange}
-                                        disabled={isPending}
-                                        className="absolute inset-0 opacity-0 cursor-pointer h-full w-full"
-                                    />
-                                    <div className="flex flex-col items-center gap-1">
-                                        <Upload className="h-6 w-6 text-muted-foreground" />
-                                        <span className="text-sm text-muted-foreground">
-                                            {file ? file.name : "Click to upload or drag and drop"}
-                                        </span>
+                                <Label>Current Resume</Label>
+                                {profileResumeUrl ? (
+                                    <div className="border rounded-xl p-6 bg-primary/5 border-primary/10 flex flex-col items-center gap-3 text-center transition-all duration-500 hover:bg-primary/10">
+                                        <div className="p-3 rounded-2xl bg-primary/10 text-primary shadow-lg shadow-primary/5">
+                                            <FileText className="h-8 w-8" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="font-black tracking-tight">{profileResumeName || "My Professional Resume"}</p>
+                                            <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold opacity-60">Sourced from your path</p>
+                                        </div>
                                     </div>
-                                </div>
+                                ) : (
+                                    <div className="border-2 border-dashed rounded-xl p-8 bg-muted/5 flex flex-col items-center gap-4 text-center">
+                                        <div className="p-4 rounded-full bg-orange-500/10 text-orange-500 shadow-lg shadow-orange-500/5">
+                                            <AlertCircle className="h-8 w-8" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <p className="font-bold">No Resume Found</p>
+                                            <p className="text-sm text-muted-foreground max-w-xs">
+                                                To analyze your resume, please upload it in the "Level Up Your Journey" wizard first.
+                                            </p>
+                                        </div>
+                                        <Button variant="outline" size="sm" asChild className="rounded-full px-6 font-bold tracking-tight">
+                                            <Link href="/candidate/profile">Complete Wizard</Link>
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
+                            drum
 
                             <div className="space-y-2">
                                 <Label htmlFor="jd" className="flex items-center gap-2">
@@ -105,8 +108,8 @@ export function ResumeScreenerView() {
 
                             <Button
                                 onClick={handleAnalyze}
-                                disabled={!file || isPending}
-                                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md h-10"
+                                disabled={!profileResumeUrl || isPending}
+                                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-[0_0_20px_rgba(59,130,246,0.2)] rounded-xl h-12 font-black tracking-tight uppercase italic"
                             >
                                 {isPending ? (
                                     <>

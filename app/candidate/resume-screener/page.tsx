@@ -2,6 +2,7 @@ import { checkFeature } from "@/actions/feature-flags";
 import { FEATURES } from "@/lib/features";
 import { ResumeScreenerView } from "@/components/candidate/resume-screener-view";
 import { redirect, notFound } from "next/navigation";
+import { getUserProfile } from "@/actions/profile";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lock } from "lucide-react";
 
@@ -26,5 +27,9 @@ export default async function ResumeScreenerPage() {
         );
     }
 
-    return <ResumeScreenerView />;
+    const user = await getUserProfile();
+    const userProfile = user as any;
+    const candidateProfile = userProfile?.candidateProfile;
+
+    return <ResumeScreenerView profileResumeUrl={candidateProfile?.resumeUrl} profileResumeName={candidateProfile?.resumeName} />;
 }

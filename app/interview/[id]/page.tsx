@@ -210,7 +210,7 @@ export default async function InterviewPage({
 
     const existingDocs = {
         resume: !!interview.resumeUrl,
-        aadhar: !!interview.aadharUrl,
+        aadhar: !!interview.aadhaarUrl,
         pan: !!interview.panUrl,
     };
 
@@ -244,6 +244,11 @@ export default async function InterviewPage({
         <InterviewClientPage
             interview={interview}
             questions={interview.job.questions}
+            userDocuments={{
+                resumeUrl: interview.candidate.resumeUrl,
+                panUrl: interview.candidate.panUrl,
+                aadhaarUrl: interview.candidate.aadhaarUrl,
+            }}
         />
     );
 }

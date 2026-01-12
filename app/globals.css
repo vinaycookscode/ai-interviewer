@@ -151,6 +151,15 @@
   .bg-300\% {
     background-size: 300% 300%;
   }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 @keyframes gradient {

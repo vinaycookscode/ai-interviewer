@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
 
         const updateData: {
             resumeUrl?: string;
-            aadharUrl?: string;
+            aadhaarUrl?: string;
             panUrl?: string;
             documentsVerified?: boolean;
         } = {};
@@ -51,11 +51,11 @@ export async function POST(req: NextRequest) {
             updateData.resumeUrl = await uploadToR2(buffer, fileName, `documents/${interviewId}`, resumeFile.type);
         }
 
-        // Handle Aadhar upload
+        // Handle Aadhaar upload
         if (aadharFile) {
             const buffer = Buffer.from(await aadharFile.arrayBuffer());
-            const fileName = `aadhar_${Date.now()}_${aadharFile.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-            updateData.aadharUrl = await uploadToR2(buffer, fileName, `documents/${interviewId}`, aadharFile.type);
+            const fileName = `aadhaar_${Date.now()}_${aadharFile.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+            updateData.aadhaarUrl = await uploadToR2(buffer, fileName, `documents/${interviewId}`, aadharFile.type);
         }
 
         // Handle PAN upload
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
         // Check if all required documents are uploaded
         const allDocsUploaded =
             (!updatedInterview.job.requireResume || updatedInterview.resumeUrl) &&
-            (!updatedInterview.job.requireAadhar || updatedInterview.aadharUrl) &&
+            (!updatedInterview.job.requireAadhar || updatedInterview.aadhaarUrl) &&
             (!updatedInterview.job.requirePAN || updatedInterview.panUrl);
 
         if (allDocsUploaded) {

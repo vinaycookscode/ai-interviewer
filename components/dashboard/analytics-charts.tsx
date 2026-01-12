@@ -57,7 +57,7 @@ export function AnalyticsCharts({
                             <XAxis dataKey="range" />
                             <YAxis />
                             <Tooltip />
-                            <Bar dataKey="count" fill="hsl(var(--primary))" />
+                            <Bar dataKey="count" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
                 </CardContent>
@@ -75,7 +75,7 @@ export function AnalyticsCharts({
                             <XAxis dataKey="status" />
                             <YAxis />
                             <Tooltip />
-                            <Bar dataKey="count" fill="hsl(var(--accent))" />
+                            <Bar dataKey="count" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
                 </CardContent>
@@ -96,7 +96,7 @@ export function AnalyticsCharts({
                             <Line
                                 type="monotone"
                                 dataKey="count"
-                                stroke="hsl(var(--primary))"
+                                stroke="var(--chart-1)"
                                 strokeWidth={2}
                             />
                         </LineChart>

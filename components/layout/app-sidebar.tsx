@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useTranslations } from 'next-intl';
@@ -19,7 +20,8 @@ export type NavItem = {
     requiredRole?: string;
     isDivider?: false;
 } | {
-    isDivider: true;
+    isDivider: true,
+    labelKey?: string;
 };
 
 interface AppSidebarProps {
@@ -27,6 +29,7 @@ interface AppSidebarProps {
     featureFlags?: Record<string, boolean>;
     userRole?: string;
     translationNamespace?: string;
+    footer?: React.ReactNode;
 }
 
 const NavLinks = ({
@@ -63,7 +66,19 @@ const NavLinks = ({
             {items.map((item, index) => {
                 // Handle divider
                 if (item.isDivider) {
-                    return <div key={`divider-${index}`} className="border-t border-border my-3" />;
+                    return (
+                        <div key={`divider-${index}`} className="mt-8 mb-4 px-4">
+                            {item.labelKey ? (
+                                <div className="flex items-center gap-3">
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/30 whitespace-nowrap">
+                                        {t(item.labelKey)}
+                                    </span>
+                                </div>
+                            ) : (
+                                <div className="h-[1px] w-full bg-white/20" />
+                            )}
+                        </div>
+                    );
                 }
 
                 // Check feature flag and role
@@ -80,21 +95,29 @@ const NavLinks = ({
                         href={item.href}
                         onClick={onLinkClick}
                         className={cn(
-                            "flex items-center gap-3 px-4 py-3 rounded-lg transition-all font-medium group",
+                            "group flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all duration-500 font-bold tracking-tight relative",
                             active
-                                ? "bg-primary/15 text-primary border-l-4 border-primary"
-                                : "text-foreground hover:bg-primary/10 hover:text-primary"
+                                ? "bg-primary/5 text-primary shadow-[0_0_20px_-5px_rgba(59,130,246,0.15)] border border-primary/10"
+                                : "text-muted-foreground/70 hover:bg-primary/[0.03] hover:text-foreground"
                         )}
                     >
-                        <Icon
-                            size={20}
-                            className={cn(
-                                "transition-transform",
-                                active ? "scale-110" : "group-hover:scale-110",
-                                active ? "text-primary" : item.colorClass
-                            )}
-                        />
-                        <span className={cn(active && "font-semibold")}>{t(item.labelKey)}</span>
+                        <div className={cn(
+                            "p-2 rounded-lg transition-all duration-500 group-hover:scale-110",
+                            active ? "bg-primary/10 text-primary shadow-[0_0_15px_rgba(59,130,246,0.3)]" : item.colorClass
+                        )}>
+                            <Icon
+                                size={18}
+                                className="transition-transform"
+                            />
+                        </div>
+                        <span className="text-sm">{t(item.labelKey)}</span>
+                        {active && (
+                            <motion.div
+                                layoutId="sidebar-active"
+                                className="absolute left-0 w-1 h-6 bg-primary rounded-r-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                                transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                            />
+                        )}
                     </Link>
                 );
             })}
@@ -103,7 +126,7 @@ const NavLinks = ({
 };
 
 
-export function AppSidebar({ items, featureFlags = {}, userRole, translationNamespace = 'Sidebar' }: AppSidebarProps) {
+export function AppSidebar({ items, featureFlags = {}, userRole, translationNamespace = 'Sidebar', footer }: AppSidebarProps) {
     const [open, setOpen] = useState(false);
     const t = useTranslations(translationNamespace);
     const pathname = usePathname();
@@ -117,10 +140,12 @@ export function AppSidebar({ items, featureFlags = {}, userRole, translationName
                         <Menu className="h-6 w-6" />
                     </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-72">
-                    <div className="py-6">
-                        <h2 className="px-4 mb-4 text-lg font-semibold">{t('navigation')}</h2>
-                        <nav className="space-y-1">
+                <SheetContent side="left" className="w-72 bg-background/60 backdrop-blur-3xl border-r border-white/5 p-0">
+                    <div className="flex flex-col h-full pt-8 pb-2">
+                        <div className="px-6 mb-8">
+                            <h2 className="text-2xl font-black tracking-tighter uppercase italic">{t('navigation')}</h2>
+                        </div>
+                        <nav className="flex-1 px-4 space-y-2 overflow-y-auto no-scrollbar">
                             <NavLinks
                                 items={items}
                                 featureFlags={featureFlags}
@@ -130,13 +155,22 @@ export function AppSidebar({ items, featureFlags = {}, userRole, translationName
                                 pathname={pathname}
                             />
                         </nav>
+                        {footer && (
+                            <div className="mt-auto p-4 mb-0">
+                                {footer}
+                            </div>
+                        )}
                     </div>
                 </SheetContent>
             </Sheet>
 
             {/* Desktop Sidebar */}
-            <aside className="w-64 bg-card border-r shadow-sm hidden md:block h-[calc(100vh-4rem)] sticky top-16 overflow-y-auto">
-                <nav className="px-4 py-6 space-y-2">
+            <aside className="w-64 bg-black/40 backdrop-blur-4xl border-r border-white/5 hidden md:block h-[calc(100vh-4rem)] sticky top-16 overflow-hidden flex flex-col no-scrollbar relative">
+                {/* Visual Ambient Glows */}
+                <div className="absolute top-0 left-0 w-full h-32 bg-primary/5 blur-[80px] pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-full h-32 bg-primary/5 blur-[80px] pointer-events-none" />
+
+                <nav className="relative z-10 px-4 pt-8 pb-32 space-y-2 flex-1 overflow-y-auto no-scrollbar">
                     <NavLinks
                         items={items}
                         featureFlags={featureFlags}
@@ -145,6 +179,11 @@ export function AppSidebar({ items, featureFlags = {}, userRole, translationName
                         pathname={pathname}
                     />
                 </nav>
+                {footer && (
+                    <div className="absolute bottom-6 left-0 w-full px-6 z-20">
+                        {footer}
+                    </div>
+                )}
             </aside>
         </>
     );

@@ -30,7 +30,7 @@ type Interview = {
     status: string;
     score: number | null;
     resumeUrl: string | null;
-    aadharUrl: string | null;
+    aadhaarUrl: string | null;
     panUrl: string | null;
     createdAt: Date;
 };
@@ -214,14 +214,14 @@ export function CandidatesTable({ interviews }: CandidatesTableProps) {
                                         Resume
                                     </a>
                                 )}
-                                {interview.aadharUrl && (
+                                {interview.aadhaarUrl && (
                                     <a
-                                        href={interview.aadharUrl}
+                                        href={interview.aadhaarUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-xs px-2 py-1 rounded bg-green-50 text-green-600 hover:bg-green-100 transition-colors border border-green-200"
                                     >
-                                        Aadhar
+                                        Aadhaar
                                     </a>
                                 )}
                                 {interview.panUrl && (
@@ -234,7 +234,7 @@ export function CandidatesTable({ interviews }: CandidatesTableProps) {
                                         PAN
                                     </a>
                                 )}
-                                {!interview.resumeUrl && !interview.aadharUrl && !interview.panUrl && (
+                                {!interview.resumeUrl && !interview.aadhaarUrl && !interview.panUrl && (
                                     <span className="text-muted-foreground text-xs italic">Pending</span>
                                 )}
                             </div>

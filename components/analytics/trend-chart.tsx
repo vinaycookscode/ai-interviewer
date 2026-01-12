@@ -56,7 +56,7 @@ export function TrendChart({ data }: TrendChartProps) {
                         <Line
                             type="monotone"
                             dataKey="score"
-                            stroke="hsl(var(--primary))"
+                            stroke="var(--chart-1)"
                             strokeWidth={2}
                             activeDot={{ r: 8 }}
                             name="Score"

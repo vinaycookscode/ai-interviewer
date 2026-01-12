@@ -36,9 +36,14 @@ model User {
   longitude     Float?
   ipAddress     String?
   
-  // Candidate Profile
+  // Candidate Identity Documents
   resumeUrl     String?
   resumeName    String?
+  panUrl        String?
+  panName       String?
+  aadhaarUrl    String?
+  aadhaarName   String?
+  
   features      Json?     // Feature flags for this user (e.g. { "multilingual": true })
   
   createdAt     DateTime  @default(now())
@@ -52,6 +57,7 @@ model User {
   mockInterviews MockInterview[]
   
   // Placement Platform Relations
+  candidateProfile CandidateProfile?
   programEnrollments ProgramEnrollment[]
   squadMemberships   SquadMember[]
   mentorProfile      MentorProfile?
@@ -158,7 +164,7 @@ model Interview {
 
   // Document uploads
   resumeUrl         String?
-  aadharUrl         String?
+  aadhaarUrl        String?
   panUrl            String?
   documentsVerified Boolean @default(false)
 
@@ -358,6 +364,10 @@ model DailyTask {
   duration    Int      // Expected minutes
   order       Int      // Task order within day
   
+  // Personalization
+  role        String?  // e.g. "Software Developer", "QA" (null = common)
+  skills      String[]
+  
   completions TaskCompletion[]
 }
 
@@ -420,6 +430,10 @@ model CompanyPrepKit {
   questions   CompanyQuestion[]
   resources   CompanyResource[]
   
+  // Personalization
+  roles       String[] // e.g. ["Software Developer", "QA"]
+  skills      String[]
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -439,6 +453,7 @@ model CompanyQuestion {
   answer      String?  @db.Text
   tips        String?
   tags        String[] // Topic tags
+  roles       String[] // e.g. ["Software Developer", "QA"]
   
   // Code Editor Support (for CODING type)
   starterCode   String?  @db.Text  // Initial code template
@@ -696,5 +711,22 @@ model FlashcardProgress {
   @@unique([userId, cardId])
   @@index([userId])
   @@index([nextReview])
+}
+
+model CandidateProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  primaryRole     String?  // e.g., "Fullstack Developer", "Automation Tester"
+  experienceLevel String?  // e.g., "Student", "Fresh Graduate", "Junior (1-2y)", "Senior (3y+)"
+  skills          String[]
+  targetCompanies String[]
+  careerGoals     String?  @db.Text
+  
+  onboardingComplete Boolean @default(false)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 

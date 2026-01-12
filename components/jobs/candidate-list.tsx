@@ -29,7 +29,7 @@ interface Interview {
     score: number | null;
     token: string | null;
     resumeUrl: string | null;
-    aadharUrl: string | null;
+    aadhaarUrl: string | null;
     panUrl: string | null;
     candidate: Candidate;
     createdAt: Date;
@@ -118,14 +118,14 @@ export function CandidateList({ interviews }: CandidateListProps) {
                                             Resume
                                         </a>
                                     )}
-                                    {interview.aadharUrl && (
+                                    {interview.aadhaarUrl && (
                                         <a
-                                            href={interview.aadharUrl}
+                                            href={interview.aadhaarUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-xs px-2 py-1 rounded bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
+                                            className="text-xs px-2 py-1 rounded bg-green-50 text-green-600 hover:bg-green-100 transition-colors border border-green-200"
                                         >
-                                            Aadhar
+                                            Aadhaar
                                         </a>
                                     )}
                                     {interview.panUrl && (
@@ -133,13 +133,13 @@ export function CandidateList({ interviews }: CandidateListProps) {
                                             href={interview.panUrl}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-xs px-2 py-1 rounded bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors"
+                                            className="text-xs px-2 py-1 rounded bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors border border-purple-200"
                                         >
                                             PAN
                                         </a>
                                     )}
-                                    {!interview.resumeUrl && !interview.aadharUrl && !interview.panUrl && (
-                                        <span className="text-muted-foreground text-sm">No docs</span>
+                                    {!interview.resumeUrl && !interview.aadhaarUrl && !interview.panUrl && (
+                                        <span className="text-muted-foreground text-sm italic">No docs</span>
                                     )}
                                 </div>
                             </TableCell>

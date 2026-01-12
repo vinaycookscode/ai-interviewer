@@ -16,11 +16,21 @@ import {
 import { AppSidebar, NavItem } from "@/components/layout/app-sidebar";
 import { FEATURES } from "@/lib/features";
 
+import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
+import { getUserProfile } from "@/actions/profile";
+import { calculateProfileCompletion, ProfileData } from "@/lib/profile-utils";
+import { ProfileCompletionCircle } from "./sidebar-profile";
+
 interface SidebarProps {
     featureFlags?: Record<string, boolean>;
 }
 
 const CANDIDATE_NAV_ITEMS: NavItem[] = [
+    {
+        isDivider: true,
+        labelKey: "coreNavigation",
+    },
     {
         icon: LayoutDashboard,
         labelKey: "myInterviews",
@@ -56,6 +66,7 @@ const CANDIDATE_NAV_ITEMS: NavItem[] = [
     // Placement Platform Section
     {
         isDivider: true,
+        labelKey: "careerTools",
     },
     {
         icon: GraduationCap,
@@ -92,22 +103,36 @@ const CANDIDATE_NAV_ITEMS: NavItem[] = [
         featureKey: FEATURES.OFFER_COMPARATOR,
         colorClass: "text-emerald-500",
     },
-    // Profile at bottom
-    {
-        isDivider: true,
-    },
-    {
-        icon: User,
-        labelKey: "profile",
-        href: "/candidate/profile",
-    },
 ];
 
 export function CandidateSidebar({ featureFlags }: SidebarProps) {
+    const [completion, setCompletion] = useState(0);
+    const pathname = usePathname();
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            const user = await getUserProfile();
+            if (user) {
+                const percentage = calculateProfileCompletion(user as ProfileData);
+                setCompletion(percentage);
+            }
+        };
+        fetchProfile();
+    }, [pathname]); // Refresh on navigation in case they updated profile
+
+    const profileFooter = (
+        <ProfileCompletionCircle
+            completionPercentage={completion}
+            href="/candidate/profile"
+            isActive={pathname.startsWith("/candidate/profile")}
+        />
+    );
+
     return (
         <AppSidebar
             items={CANDIDATE_NAV_ITEMS}
             featureFlags={featureFlags}
+            footer={profileFooter}
         />
     );
 }

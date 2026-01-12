@@ -42,6 +42,7 @@ interface Question {
     solutionCode?: string | null;
     testCases?: any;
     language?: string | null;
+    roles?: string[];
 }
 
 interface CompanyContent {
@@ -70,6 +71,7 @@ interface CompanyDetailClientProps {
         questions: Question[];
         resources: any[];
     };
+    userRole?: string;
     featureFlags?: CodeEditorFeatureFlags;
 }
 
@@ -99,7 +101,7 @@ const DIFFICULTY_COLORS: Record<string, string> = {
     HARD: "text-red-500 bg-red-500/10",
 };
 
-export function CompanyDetailClient({ company, featureFlags }: CompanyDetailClientProps) {
+export function CompanyDetailClient({ company, userRole, featureFlags }: CompanyDetailClientProps) {
     const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
     const [typeFilter, setTypeFilter] = useState<string>("ALL");
     const [difficultyFilter, setDifficultyFilter] = useState<string>("ALL");
@@ -150,9 +152,17 @@ export function CompanyDetailClient({ company, featureFlags }: CompanyDetailClie
 
     // Filter questions
     const filteredQuestions = company.questions.filter(q => {
-        if (typeFilter !== "ALL" && q.type !== typeFilter) return false;
+        if (typeFilter === "MY_ROLE" && userRole && (!q.roles || !q.roles.includes(userRole))) return false;
+        if (typeFilter !== "ALL" && typeFilter !== "MY_ROLE" && q.type !== typeFilter) return false;
         if (difficultyFilter !== "ALL" && q.difficulty !== difficultyFilter) return false;
-        if (searchQuery && !q.question.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+
+        const matchesSearch = searchQuery && (
+            q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (q.tags && q.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()))) ||
+            (q.roles && q.roles.some(r => r.toLowerCase().includes(searchQuery.toLowerCase())))
+        );
+
+        if (searchQuery && !matchesSearch) return false;
         return true;
     });
 
@@ -302,9 +312,10 @@ export function CompanyDetailClient({ company, featureFlags }: CompanyDetailClie
                                 <select
                                     value={typeFilter}
                                     onChange={(e) => setTypeFilter(e.target.value)}
-                                    className="px-3 py-2 bg-muted border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                                    className="px-3 py-2 bg-muted border-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm font-medium"
                                 >
                                     <option value="ALL">All Types</option>
+                                    {userRole && <option value="MY_ROLE" className="text-primary font-bold">✨ Recommended for {userRole}</option>}
                                     {questionTypes.map(type => (
                                         <option key={type} value={type}>{type}</option>
                                     ))}

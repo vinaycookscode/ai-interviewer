@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mic, Square, Volume2, ArrowRight, CheckCircle2, Globe, Code, Maximize2, Minimize2, Play, Loader2, Sparkles } from "lucide-react";
+import { Mic, Square, Volume2, ArrowRight, CheckCircle2, Globe, Code, Maximize2, Minimize2, Play, Loader2, Sparkles, FileText } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { startInterview, submitAnswer, completeInterview } from "@/actions/interview-session";
 import { runCode } from "@/actions/code-execution";
@@ -23,6 +23,7 @@ import {
     HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { useLimit } from "@/components/providers/limit-provider";
+import { Label } from "@/components/ui/label";
 
 // Define strict types for questions
 interface Question {
@@ -37,9 +38,21 @@ interface InterviewSessionProps {
     stream: MediaStream;
     language?: string;
     onLanguageChange?: (lang: string) => void;
+    userDocuments?: {
+        resumeUrl?: string | null;
+        panUrl?: string | null;
+        aadhaarUrl?: string | null;
+    };
 }
 
-export function InterviewSession({ interviewId, questions, stream, language = "en", onLanguageChange }: InterviewSessionProps) {
+export function InterviewSession({
+    interviewId,
+    questions,
+    stream,
+    language = "en",
+    onLanguageChange,
+    userDocuments
+}: InterviewSessionProps) {
     const router = useRouter();
     const { warningCount, warnings, isFullScreen, enterFullScreen, addWarning } = useProctoring(interviewId);
     const { screenCount } = useScreenDetection(true);
@@ -507,13 +520,13 @@ export function InterviewSession({ interviewId, questions, stream, language = "e
 
             <div className={cn(
                 "relative z-10 mx-auto h-screen p-4 md:p-8 flex flex-col gap-6 justify-center transition-all duration-500",
-                isCodingQuestion ? "max-w-[1800px]" : "max-w-6xl"
+                isCodingQuestion ? "max-w-[1800px]" : "max-w-7xl"
             )}>
 
                 {/* SPLIT LAYOUT */}
                 <div className={cn(
                     "grid gap-6 w-full max-h-[85vh] transition-all duration-500",
-                    isCodingQuestion ? "grid-cols-[450px_1fr]" : "md:grid-cols-2"
+                    isCodingQuestion ? "grid-cols-[450px_1fr_350px]" : "grid-cols-[1fr_400px]"
                 )}>
 
                     {/* LEFT COLUMN */}
@@ -704,6 +717,80 @@ export function InterviewSession({ interviewId, questions, stream, language = "e
                                 />
                             </div>
                         )}
+                    </div>
+
+                    {/* DOCUMENT PANEL (NEW) */}
+                    <div className="flex flex-col gap-6 h-full min-h-0">
+                        <Card className="bg-black/40 border-white/10 backdrop-blur-xl h-full flex flex-col">
+                            <CardHeader className="p-4 border-b border-white/10 flex flex-row items-center gap-2 shrink-0">
+                                <FileText className="w-5 h-5 text-blue-400" />
+                                <CardTitle className="text-sm font-bold uppercase tracking-wider">Reference Docs</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-4 space-y-4 flex-1 overflow-y-auto">
+                                {!userDocuments?.resumeUrl && !userDocuments?.panUrl && !userDocuments?.aadhaarUrl ? (
+                                    <div className="text-center py-10">
+                                        <p className="text-sm text-white/30 italic">No documents uploaded</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        {userDocuments?.resumeUrl && (
+                                            <div className="group space-y-2">
+                                                <Label className="text-[10px] text-white/40 uppercase font-bold tracking-widest">Resume</Label>
+                                                <div className="relative aspect-[3/4] bg-white rounded-lg overflow-hidden border border-white/10 shadow-lg group-hover:border-blue-500/50 transition-all">
+                                                    <iframe
+                                                        src={userDocuments.resumeUrl}
+                                                        className="w-full h-full pointer-events-none"
+                                                        title="Resume Preview"
+                                                    />
+                                                    <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
+                                                    <a
+                                                        href={userDocuments.resumeUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/60 transition-opacity"
+                                                    >
+                                                        <Button size="sm" variant="secondary">View Full PDF</Button>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {(userDocuments?.panUrl || userDocuments?.aadhaarUrl) && (
+                                            <div className="space-y-4 pt-4 border-t border-white/5">
+                                                <Label className="text-[10px] text-white/40 uppercase font-bold tracking-widest text-center block">Identity Proofs</Label>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    {userDocuments?.panUrl && (
+                                                        <div className="group relative aspect-video bg-muted rounded-md overflow-hidden border border-white/10">
+                                                            <img src={userDocuments.panUrl} alt="PAN Card" className="w-full h-full object-cover" />
+                                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/60 transition-opacity">
+                                                                <a href={userDocuments.panUrl} target="_blank" rel="noopener noreferrer">
+                                                                    <Maximize2 className="w-4 h-4 text-white" />
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                    {userDocuments?.aadhaarUrl && (
+                                                        <div className="group relative aspect-video bg-muted rounded-md overflow-hidden border border-white/10">
+                                                            <img src={userDocuments.aadhaarUrl} alt="Aadhaar Card" className="w-full h-full object-cover" />
+                                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/60 transition-opacity">
+                                                                <a href={userDocuments.aadhaarUrl} target="_blank" rel="noopener noreferrer">
+                                                                    <Maximize2 className="w-4 h-4 text-white" />
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </CardContent>
+                            <div className="p-3 bg-blue-500/5 border-t border-white/5 rounded-b-xl">
+                                <p className="text-[10px] text-center text-blue-300/60 leading-tight italic">
+                                    Documents are visible to the interviewer for verification.
+                                </p>
+                            </div>
+                        </Card>
                     </div>
                 </div>
             </div>

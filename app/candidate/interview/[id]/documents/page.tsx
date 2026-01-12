@@ -47,7 +47,7 @@ export default async function DocumentUploadPage({
 
     const existingDocs = {
         resume: !!interview.resumeUrl,
-        aadhar: !!interview.aadharUrl,
+        aadhar: !!interview.aadhaarUrl,
         pan: !!interview.panUrl,
     };
 

@@ -29,16 +29,26 @@ export async function analyzeResume(formData: FormData) {
         return { error: "Unauthorized" };
     }
 
-    const file = formData.get("file") as File;
+    let file = formData.get("file") as File | null;
+    const resumeUrlFromProfile = formData.get("resumeUrl") as string | null;
 
-    if (!file) {
-        return { error: "No file uploaded" };
+    if (!file && !resumeUrlFromProfile) {
+        return { error: "No resume provided. Please upload a resume or complete your profile." };
     }
 
     try {
-        // Convert file to buffer for pdf-parse
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
+        let buffer: Buffer;
+        if (file && file.size > 0) {
+            const arrayBuffer = await file.arrayBuffer();
+            buffer = Buffer.from(arrayBuffer);
+        } else if (resumeUrlFromProfile) {
+            const response = await fetch(resumeUrlFromProfile);
+            if (!response.ok) throw new Error("Failed to fetch resume from profile URL");
+            const arrayBuffer = await response.arrayBuffer();
+            buffer = Buffer.from(arrayBuffer);
+        } else {
+            return { error: "No valid resume source found." };
+        }
 
         // Extract text from PDF using simple function API (v1.1.1)
         const data = await pdf(buffer);

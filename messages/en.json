@@ -16,7 +16,9 @@
         "aptitude": "Aptitude Prep",
         "offers": "My Offers",
         "userFeedback": "User Feedback",
-        "flashcards": "Flashcards"
+        "flashcards": "Flashcards",
+        "careerTools": "Career Accelerator",
+        "coreNavigation": "Core Navigation"
     },
     "Common": {
         "upload": "Upload",

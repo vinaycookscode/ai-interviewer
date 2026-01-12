@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { checkFeature } from "@/actions/feature-flags";
 import { FEATURES } from "@/lib/features";
 import { getCompanyKitBySlug } from "@/actions/company-prep";
+import { getUserProfile } from "@/actions/profile";
 import { CompanyDetailClient } from "./client";
 
 interface PageProps {
@@ -35,7 +36,11 @@ export default async function CompanyDetailPage({ params }: PageProps) {
         checkFeature(FEATURES.AI_CODE_ANALYSIS)
     ]);
 
-    const company = await getCompanyKitBySlug(slug);
+    const [company, userProfile] = await Promise.all([
+        getCompanyKitBySlug(slug),
+        getUserProfile()
+    ]);
+
     if (!company) {
         notFound();
     }
@@ -43,6 +48,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
     return (
         <CompanyDetailClient
             company={company}
+            userRole={userProfile?.candidateProfile?.primaryRole || undefined}
             featureFlags={{
                 languageSelector: languageSelectorEnabled,
                 codePersistence: codePersistenceEnabled,

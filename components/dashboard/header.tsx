@@ -21,14 +21,22 @@ export async function DashboardHeader({ user, userRole }: DashboardHeaderProps) 
     ]);
 
     return (
-        <header className="h-16 bg-card border-b shadow-sm flex items-center justify-between px-4 md:px-6 sticky top-0 z-50">
-            <Link href="/dashboard" className="flex items-center gap-2"> {/* Wrapped the logo area with Link */}
-                <Image src="/logo.png" alt="Logo" width={40} height={40} className="h-10 w-10 object-contain" />
+        <header className="h-16 bg-background/40 backdrop-blur-3xl border-b border-white/5 flex items-center justify-between px-4 md:px-8 sticky top-0 z-50 overflow-hidden no-scrollbar">
+            {/* Minimal Header Glow */}
+            <div className="absolute top-0 right-1/4 w-32 h-full bg-primary/5 blur-3xl pointer-events-none" />
+
+            <Link href="/dashboard" className="flex items-center gap-3 group relative z-10 transition-transform active:scale-95">
+                <div className="relative">
+                    <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <Image src="/logo.png" alt="Logo" width={32} height={32} className="relative z-10 h-8 w-8 object-contain" />
+                </div>
                 <div className="hidden md:block">
-                    <h1 className="text-xl font-bold">
-                        <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Get Back To U</span> {/* Applied gradient to span */}
+                    <h1 className="text-xl font-black tracking-tighter uppercase leading-none italic mb-0.5">
+                        <span className="bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">Get</span>
+                        <span className="bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">Back</span>
+                        <span className="bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">To U</span>
                     </h1>
-                    <p className="text-muted-foreground text-[10px] leading-none">Intelligent Hiring Platform</p>
+                    <p className="text-[10px] font-black tracking-[0.2em] text-muted-foreground/40 leading-none uppercase">Apex Hiring Engine</p>
                 </div>
             </Link>
 
