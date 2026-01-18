@@ -165,9 +165,9 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
 
             {/* Main Content Tabs */}
             <Tabs defaultValue="analysis" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 lg:grid-cols-3 lg:w-[400px]">
+                <TabsList className="grid w-full grid-cols-3 lg:w-[450px]">
                     <TabsTrigger value="analysis">Detail Analysis</TabsTrigger>
-                    {analysis.jobDescription && <TabsTrigger value="cover-letter">Cover Letter</TabsTrigger>}
+                    <TabsTrigger value="cover-letter">Cover Letter</TabsTrigger>
                     <TabsTrigger value="rewrite">Resume Fixer</TabsTrigger>
                 </TabsList>
 
@@ -283,59 +283,72 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                     </div>
                 </TabsContent>
 
-                {/* Tab 2: Cover Letter (If JD provided) */}
-                {analysis.jobDescription && (
-                    <TabsContent value="cover-letter" className="mt-4">
-                        <Card className="min-h-[400px]">
-                            <CardHeader>
-                                <CardTitle className="flex items-center justify-between">
-                                    <span>Tailored Cover Letter</span>
-                                    {coverLetter && (
-                                        <Button variant="outline" size="sm" onClick={copyCoverLetter}>
-                                            {hasCopiedCL ? <Check className="h-4 w-4 text-green-500 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
-                                            {hasCopiedCL ? "Copied" : "Copy to Clipboard"}
-                                        </Button>
-                                    )}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                {!coverLetter ? (
-                                    <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                                        <FileText className="h-16 w-16 text-muted-foreground/20" />
-                                        <div className="text-center space-y-2">
-                                            <h3 className="text-lg font-medium">Ready to Write?</h3>
-                                            <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                                                Generate a professional cover letter specifically tailored to match your resume with the provided job description.
-                                            </p>
-                                        </div>
-                                        <Button
-                                            size="lg"
-                                            onClick={handleGenerateCoverLetter}
-                                            disabled={isGeneratingCoverLetter}
-                                            className="bg-indigo-600 hover:bg-indigo-700 text-white"
-                                        >
-                                            {isGeneratingCoverLetter ? (
-                                                <>
-                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                    Writing...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Wand2 className="mr-2 h-4 w-4" />
-                                                    Generate Cover Letter
-                                                </>
-                                            )}
-                                        </Button>
-                                    </div>
-                                ) : (
-                                    <div className="p-6 bg-muted/30 rounded-lg border text-sm leading-relaxed font-sans whitespace-pre-wrap">
-                                        <ReactMarkdown>{coverLetter}</ReactMarkdown>
-                                    </div>
+                {/* Tab 2: Cover Letter */}
+                <TabsContent value="cover-letter" className="mt-4">
+                    <Card className="min-h-[400px]">
+                        <CardHeader>
+                            <CardTitle className="flex items-center justify-between">
+                                <span>Tailored Cover Letter</span>
+                                {coverLetter && (
+                                    <Button variant="outline" size="sm" onClick={copyCoverLetter}>
+                                        {hasCopiedCL ? <Check className="h-4 w-4 text-green-500 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+                                        {hasCopiedCL ? "Copied" : "Copy to Clipboard"}
+                                    </Button>
                                 )}
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                )}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            {!analysis.jobDescription ? (
+                                <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                                    <div className="p-4 rounded-full bg-yellow-500/10">
+                                        <AlertCircle className="h-12 w-12 text-yellow-500" />
+                                    </div>
+                                    <div className="text-center space-y-2">
+                                        <h3 className="text-lg font-medium">Job Description Required</h3>
+                                        <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                                            To generate a tailored cover letter, please re-analyze your resume with a job description.
+                                        </p>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Paste the job description in the left panel and click "Analyze Resume" again.
+                                    </p>
+                                </div>
+                            ) : !coverLetter ? (
+                                <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                                    <FileText className="h-16 w-16 text-muted-foreground/20" />
+                                    <div className="text-center space-y-2">
+                                        <h3 className="text-lg font-medium">Ready to Write?</h3>
+                                        <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                                            Generate a professional cover letter specifically tailored to match your resume with the provided job description.
+                                        </p>
+                                    </div>
+                                    <Button
+                                        size="lg"
+                                        onClick={handleGenerateCoverLetter}
+                                        disabled={isGeneratingCoverLetter}
+                                        className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                                    >
+                                        {isGeneratingCoverLetter ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                Writing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Wand2 className="mr-2 h-4 w-4" />
+                                                Generate Cover Letter
+                                            </>
+                                        )}
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="p-6 bg-muted/30 rounded-lg border text-sm leading-relaxed font-sans whitespace-pre-wrap">
+                                    <ReactMarkdown>{coverLetter}</ReactMarkdown>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
 
                 {/* Tab 3: Resume Rewrite */}
                 <TabsContent value="rewrite" className="mt-4">
