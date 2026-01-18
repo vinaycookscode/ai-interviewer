@@ -1,9 +1,9 @@
 "use client";
-
 import { motion } from "framer-motion";
 import { Settings } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface ProfileCompletionCircleProps {
     completionPercentage: number;
@@ -16,6 +16,7 @@ export function ProfileCompletionCircle({
     href,
     isActive
 }: ProfileCompletionCircleProps) {
+    const t = useTranslations("Common");
     const radius = 18;
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (completionPercentage / 100) * circumference;
@@ -82,7 +83,7 @@ export function ProfileCompletionCircle({
                 {/* Interactive Tooltip Widget */}
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 px-3 py-2 bg-black/80 backdrop-blur-md text-[10px] text-white border border-white/10 rounded-xl shadow-2xl opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 whitespace-nowrap pointer-events-none">
                     <div className="flex flex-col gap-1 items-center">
-                        <span className="font-black tracking-tighter uppercase text-primary/80">Profile Integrity</span>
+                        <span className="font-black tracking-tighter uppercase text-primary/80">{t("profileIntegrity")}</span>
                         <span className="text-xl font-black">{completionPercentage}%</span>
                     </div>
                     <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-black/80 border-b border-r border-white/10 rotate-45 -translate-y-1" />

@@ -4,6 +4,8 @@ import { checkFeature } from "@/actions/feature-flags";
 import { FEATURES } from "@/lib/features";
 import { getProgramBySlug, getUserEnrollment, getDayTasks, generateDayToken, validateDayToken } from "@/actions/placement-program";
 import { ProgramDashboardClient } from "./client";
+import { Suspense } from "react";
+import { Loader2 } from "lucide-react";
 
 interface PageProps {
     params: Promise<{ slug: string }>;
@@ -73,15 +75,21 @@ export default async function ProgramDashboardPage({ params, searchParams }: Pag
         : undefined;
 
     return (
-        <ProgramDashboardClient
-            program={program}
-            enrollment={enrollment}
-            dayData={dayData as any}
-            viewDay={viewDay}
-            currentDayToken={currentDayToken}
-            prevDayToken={prevDayToken}
-            nextDayToken={nextDayToken}
-        />
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <Loader2 className="h-8 w-8 animate-spin text-primary opacity-20" />
+            </div>
+        }>
+            <ProgramDashboardClient
+                program={program}
+                enrollment={enrollment}
+                dayData={dayData as any}
+                viewDay={viewDay}
+                currentDayToken={currentDayToken}
+                prevDayToken={prevDayToken}
+                nextDayToken={nextDayToken}
+            />
+        </Suspense>
     );
 }
 

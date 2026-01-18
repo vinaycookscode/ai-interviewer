@@ -2,9 +2,10 @@ import { getSubscriptionStats, getTodaySubscribers, getAllSubscribers, getAdminS
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { IndianRupee, Users, Crown, TrendingUp, Calendar, Clock } from "lucide-react";
+import { IndianRupee, Users, Crown, TrendingUp, Calendar, Clock, ShieldAlert } from "lucide-react";
 import { SubscribersTable } from "./subscribers-table";
 import { PlansManager } from "./plans-manager";
+import { ResetSubscribersButton } from "./reset-subscribers-button";
 
 export default async function AdminSubscriptionsPage() {
     const [stats, todaySubscribers, allSubscribersData, plans] = await Promise.all([
@@ -17,11 +18,16 @@ export default async function AdminSubscriptionsPage() {
     return (
         <div className="space-y-8">
             {/* Header */}
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Subscription Management</h1>
-                <p className="text-muted-foreground mt-2">
-                    Monitor revenue, manage subscribers, and configure plans.
-                </p>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Subscription Management</h1>
+                    <p className="text-muted-foreground mt-2">
+                        Monitor revenue, manage subscribers, and configure plans.
+                    </p>
+                </div>
+                <div className="flex items-center gap-4">
+                    <ResetSubscribersButton />
+                </div>
             </div>
 
             {/* Stats Cards */}

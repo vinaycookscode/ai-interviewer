@@ -28,7 +28,12 @@ import Link from "next/link";
 
 import { decryptData, encryptData } from "@/lib/encryption";
 
+import { useTranslations } from "next-intl";
+
 export const RegisterForm = () => {
+    const t = useTranslations("Auth.register");
+    const tCommon = useTranslations("Common");
+    const tPricing = useTranslations("Pricing");
     const [error, setError] = useState<string | undefined>("");
     const [success, setSuccess] = useState<string | undefined>("");
     const [isPending, startTransition] = useTransition();
@@ -103,28 +108,32 @@ export const RegisterForm = () => {
 
     return (
         <CardWrapper
-            headerLabel="Create an account"
-            backButtonLabel="Already have an account?"
+            headerLabel={t("title")}
+            backButtonLabel={t("alreadyHaveAccount")}
             backButtonHref="/auth/login"
         >
             <div className="space-y-4 mb-8">
                 <div className="flex items-center justify-between px-1">
-                    <p className="text-sm font-medium text-muted-foreground">Select your plan</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t("selectPlan")}</p>
                     <div className="flex items-center gap-2 scale-75 origin-right">
-                        <span className={`text-xs ${!isYearly ? "text-foreground font-bold" : "text-muted-foreground"}`}>Monthly</span>
+                        <span className={`text-xs ${!isYearly ? "text-foreground font-bold" : "text-muted-foreground"}`}>
+                            {tPricing("monthly")}
+                        </span>
                         <Switch
                             checked={isYearly}
                             onCheckedChange={(checked) => setPeriod(checked ? "YEARLY" : "MONTHLY")}
                         />
-                        <span className={`text-xs ${isYearly ? "text-foreground font-bold" : "text-muted-foreground"}`}>Yearly</span>
+                        <span className={`text-xs ${isYearly ? "text-foreground font-bold" : "text-muted-foreground"}`}>
+                            {tPricing("yearly")}
+                        </span>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
                     {[
-                        { id: "FREE", icon: Sparkles, color: "emerald", monthly: "Free", yearly: "Free" },
-                        { id: "PRO", icon: Zap, color: "blue", monthly: "₹249", yearly: "₹2,490" },
-                        { id: "PREMIUM", icon: Crown, color: "purple", monthly: "₹499", yearly: "₹4,990" }
+                        { id: "FREE", icon: Sparkles, color: "emerald", monthly: tPricing("plans.free.price"), yearly: tPricing("plans.free.price") },
+                        { id: "PRO", icon: Zap, color: "blue", monthly: tPricing("plans.pro.priceMonthly"), yearly: tPricing("plans.pro.priceYearly") },
+                        { id: "PREMIUM", icon: Crown, color: "purple", monthly: tPricing("plans.premium.priceMonthly"), yearly: tPricing("plans.premium.priceYearly") }
                     ].map((plan) => (
                         <button
                             key={plan.id}
@@ -163,7 +172,7 @@ export const RegisterForm = () => {
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Name</FormLabel>
+                                    <FormLabel>{t("name")}</FormLabel>
                                     <FormControl>
                                         <Input
                                             {...field}
@@ -180,7 +189,7 @@ export const RegisterForm = () => {
                             name="email"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Email</FormLabel>
+                                    <FormLabel>{tCommon("email")}</FormLabel>
                                     <FormControl>
                                         <Input
                                             {...field}
@@ -198,7 +207,7 @@ export const RegisterForm = () => {
                             name="password"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Password</FormLabel>
+                                    <FormLabel>{tCommon("password")}</FormLabel>
                                     <FormControl>
                                         <Input
                                             {...field}
@@ -217,7 +226,7 @@ export const RegisterForm = () => {
                                 name="role"
                                 render={({ field }) => (
                                     <FormItem className="space-y-3">
-                                        <FormLabel>I am a...</FormLabel>
+                                        <FormLabel>{t("roleLabel")}</FormLabel>
                                         <FormControl>
                                             <RadioGroup
                                                 onValueChange={field.onChange}
@@ -230,7 +239,7 @@ export const RegisterForm = () => {
                                                         <RadioGroupItem value="CANDIDATE" />
                                                     </FormControl>
                                                     <FormLabel className="font-normal">
-                                                        Candidate (I want to be interviewed)
+                                                        {t("roleCandidate")}
                                                     </FormLabel>
                                                 </FormItem>
                                                 <FormItem className="flex items-center space-x-3 space-y-0">
@@ -238,7 +247,7 @@ export const RegisterForm = () => {
                                                         <RadioGroupItem value="EMPLOYER" />
                                                     </FormControl>
                                                     <FormLabel className="font-normal">
-                                                        Employer (I want to hire)
+                                                        {t("roleEmployer")}
                                                     </FormLabel>
                                                 </FormItem>
                                             </RadioGroup>
@@ -259,10 +268,10 @@ export const RegisterForm = () => {
                         {isPending ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Creating account...
+                                {t("submitting")}
                             </>
                         ) : (
-                            "Create an account"
+                            t("submit")
                         )}
                     </Button>
                 </form>

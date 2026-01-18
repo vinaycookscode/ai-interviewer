@@ -294,3 +294,69 @@ export async function createSubscriptionPlan(data: {
         return { success: false, error: error.message };
     }
 }
+
+/**
+ * RESET NON-PAYING SUBSCRIBERS
+ * This utility ensures that any user on a PRO or PREMIUM plan who doesn't 
+ * have a valid payment record or active Razorpay subscription is moved to the FREE plan.
+ */
+export async function resetNonPayingSubscribers() {
+    await checkAdminAccess();
+
+    try {
+        // Get the free plan ID
+        const freePlan = await db.subscriptionPlan.findUnique({
+            where: { tier: PlanTier.FREE },
+        });
+
+        if (!freePlan) {
+            throw new Error("Free plan not found in database");
+        }
+
+        // Find all users on paid tiers
+        const nonFreeSubscriptions = await db.subscription.findMany({
+            where: {
+                plan: {
+                    tier: {
+                        in: [PlanTier.PRO, PlanTier.PREMIUM]
+                    }
+                }
+            },
+            include: {
+                payments: {
+                    where: { status: "captured" },
+                },
+            }
+        });
+
+        let resetCount = 0;
+
+        for (const sub of nonFreeSubscriptions) {
+            // If they have no payments AND no external subscription ID, they should be free
+            const hasPayments = sub.payments.length > 0;
+            const hasExternalId = !!sub.razorpaySubscriptionId;
+
+            if (!hasPayments && !hasExternalId) {
+                await db.subscription.update({
+                    where: { id: sub.id },
+                    data: {
+                        planId: freePlan.id,
+                        status: "ACTIVE", // Or EXPIRED if preferred, but FREE plan is usually ACTIVE
+                    }
+                });
+                resetCount++;
+            }
+        }
+
+        revalidatePath("/admin/subscriptions");
+
+        return {
+            success: true,
+            message: `Scanned ${nonFreeSubscriptions.length} subscribers. Reset ${resetCount} users to Free plan.`,
+            resetCount
+        };
+    } catch (error: any) {
+        console.error("Failed to reset subscribers:", error);
+        return { success: false, error: error.message };
+    }
+}

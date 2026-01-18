@@ -1,15 +1,16 @@
 import { checkFeature } from "@/actions/feature-flags";
 import { FEATURES } from "@/lib/features";
 import { ResumeScreenerView } from "@/components/candidate/resume-screener-view";
-import { redirect, notFound } from "next/navigation";
 import { getUserProfile } from "@/actions/profile";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lock } from "lucide-react";
 import { getCurrentSubscription } from "@/actions/subscription";
 import { PlanTier } from "@prisma/client";
 import { UpgradePrompt } from "@/components/subscription/upgrade-prompt";
+import { getTranslations } from "next-intl/server";
 
 export default async function ResumeScreenerPage() {
+    const t = await getTranslations("ResumeScreener");
     const isEnabled = await checkFeature(FEATURES.RESUME_SCREENER);
 
     if (!isEnabled) {
@@ -20,9 +21,9 @@ export default async function ResumeScreenerPage() {
                         <div className="mx-auto bg-muted p-3 rounded-full mb-4 w-fit">
                             <Lock className="h-6 w-6 text-muted-foreground" />
                         </div>
-                        <CardTitle>Feature Unavailable</CardTitle>
+                        <CardTitle>{t("unavailable.title")}</CardTitle>
                         <CardDescription>
-                            The Resume Screener feature is currently disabled by the administrator.
+                            {t("unavailable.description")}
                         </CardDescription>
                     </CardHeader>
                 </Card>
@@ -35,7 +36,7 @@ export default async function ResumeScreenerPage() {
     const isFreeUser = !subscription || subscription.isFree || subscription.plan?.tier === PlanTier.FREE;
 
     if (isFreeUser) {
-        return <UpgradePrompt feature="Resume Screener" />;
+        return <UpgradePrompt feature={t("title")} />;
     }
 
     const user = await getUserProfile();

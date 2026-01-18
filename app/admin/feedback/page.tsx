@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { getUserFeedbackList } from "@/actions/user-feedback";
 import { FeedbackListClient } from "./client";
+import { Suspense } from "react";
+import { Loader2 } from "lucide-react";
 
 interface PageProps {
     searchParams: Promise<{ page?: string; status?: string }>;
@@ -31,12 +33,18 @@ export default async function AdminFeedbackPage({ searchParams }: PageProps) {
                 </p>
             </div>
 
-            <FeedbackListClient
-                feedback={feedback}
-                totalPages={totalPages}
-                currentPage={page}
-                currentStatus={status}
-            />
+            <Suspense fallback={
+                <div className="flex items-center justify-center p-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary opacity-20" />
+                </div>
+            }>
+                <FeedbackListClient
+                    feedback={feedback}
+                    totalPages={totalPages}
+                    currentPage={page}
+                    currentStatus={status}
+                />
+            </Suspense>
         </div>
     );
 }

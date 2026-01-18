@@ -1,23 +1,25 @@
-"use client";
-
 import Link from "next/link";
 import { Crown, Sparkles, ArrowRight, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useTranslations } from "next-intl";
 
 interface UpgradePromptProps {
     feature: string;
     description?: string;
 }
 
-const featureDescriptions: Record<string, string> = {
-    "AI Practice": "Practice unlimited mock interviews with AI-powered feedback to ace your real interviews.",
-    "Resume Screener": "Get AI-powered resume analysis, cover letter generation, and resume optimization.",
-    "AI Question Generation": "Generate tailored interview questions from any job description.",
-};
-
 export function UpgradePrompt({ feature, description }: UpgradePromptProps) {
-    const featureDesc = description || featureDescriptions[feature] || `Unlock ${feature} with a Pro subscription.`;
+    const t = useTranslations("Subscription.prompt");
+    const tPricing = useTranslations("Pricing");
+
+    const featureDescriptions: Record<string, string> = {
+        "AI Practice": t("features.aiPractice"),
+        "Resume Screener": t("features.resumeScreener"),
+        "AI Question Generation": t("features.questionGen"),
+    };
+
+    const featureDesc = description || featureDescriptions[feature] || t("unlock", { feature });
 
     return (
         <div className="flex h-full items-center justify-center p-6">
@@ -26,7 +28,7 @@ export function UpgradePrompt({ feature, description }: UpgradePromptProps) {
                     <div className="mx-auto rounded-full p-4 bg-gradient-to-br from-yellow-400 to-orange-500 text-white mb-4 w-fit">
                         <Crown className="h-8 w-8" />
                     </div>
-                    <CardTitle className="text-2xl">Upgrade to Pro</CardTitle>
+                    <CardTitle className="text-2xl">{t("upgradeToPro")}</CardTitle>
                     <CardDescription className="text-base mt-2">
                         {featureDesc}
                     </CardDescription>
@@ -39,8 +41,10 @@ export function UpgradePrompt({ feature, description }: UpgradePromptProps) {
                                 <Zap className="h-4 w-4" />
                             </div>
                             <div>
-                                <p className="font-medium text-sm">Pro Plan - ₹249/month</p>
-                                <p className="text-xs text-muted-foreground">15 Mock Interviews, 10 Resume Analysis & more</p>
+                                <p className="font-medium text-sm">
+                                    {t("planSummary", { name: tPricing("plans.pro.name"), price: tPricing("plans.pro.priceMonthly") })}
+                                </p>
+                                <p className="text-xs text-muted-foreground">{t("proFeatures")}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
@@ -48,8 +52,10 @@ export function UpgradePrompt({ feature, description }: UpgradePromptProps) {
                                 <Crown className="h-4 w-4" />
                             </div>
                             <div>
-                                <p className="font-medium text-sm">Premium Plan - ₹499/month</p>
-                                <p className="text-xs text-muted-foreground">Unlimited access to all AI features</p>
+                                <p className="font-medium text-sm">
+                                    {t("planSummary", { name: tPricing("plans.premium.name"), price: tPricing("plans.premium.priceMonthly") })}
+                                </p>
+                                <p className="text-xs text-muted-foreground">{t("premiumFeatures")}</p>
                             </div>
                         </div>
                     </div>
@@ -58,13 +64,13 @@ export function UpgradePrompt({ feature, description }: UpgradePromptProps) {
                     <Button asChild size="lg" className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700">
                         <Link href="/candidate/pricing">
                             <Sparkles className="mr-2 h-4 w-4" />
-                            Upgrade Now
+                            {t("upgradeNow")}
                             <ArrowRight className="ml-2 h-4 w-4" />
                         </Link>
                     </Button>
 
                     <p className="text-xs text-muted-foreground">
-                        Cancel anytime. No long-term commitments.
+                        {t("policy")}
                     </p>
                 </CardContent>
             </Card>

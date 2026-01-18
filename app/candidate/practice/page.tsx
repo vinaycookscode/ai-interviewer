@@ -6,8 +6,10 @@ import { Lock } from "lucide-react";
 import { getCurrentSubscription } from "@/actions/subscription";
 import { PlanTier } from "@prisma/client";
 import { UpgradePrompt } from "@/components/subscription/upgrade-prompt";
+import { getTranslations } from "next-intl/server";
 
 export default async function PracticePage() {
+    const t = await getTranslations("PracticeInterviews");
     const isEnabled = await checkFeature(FEATURES.PRACTICE_INTERVIEWS);
 
     if (!isEnabled) {
@@ -18,9 +20,9 @@ export default async function PracticePage() {
                         <div className="mx-auto bg-muted p-3 rounded-full mb-4 w-fit">
                             <Lock className="h-6 w-6 text-muted-foreground" />
                         </div>
-                        <CardTitle>Feature Unavailable</CardTitle>
+                        <CardTitle>{t("unavailable.title")}</CardTitle>
                         <CardDescription>
-                            The Practice Interview feature is currently disabled by the administrator.
+                            {t("unavailable.description")}
                         </CardDescription>
                     </CardHeader>
                 </Card>
@@ -33,7 +35,7 @@ export default async function PracticePage() {
     const isFreeUser = !subscription || subscription.isFree || subscription.plan?.tier === PlanTier.FREE;
 
     if (isFreeUser) {
-        return <UpgradePrompt feature="AI Practice" />;
+        return <UpgradePrompt feature={t("title")} />;
     }
 
     return <PracticeView />;

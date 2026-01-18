@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -20,78 +21,72 @@ import {
 } from "lucide-react";
 import { HomePricingSection } from "@/components/home/pricing-section";
 
-import { Metadata } from "next";
+export async function generateMetadata() {
+  const t = await getTranslations("Home");
+  return {
+    title: t("hero.title") + " " + t("hero.titleAccent") + " | Get Back To U",
+    description: t("hero.subtitle"),
+  };
+}
 
-export const metadata: Metadata = {
-  title: "AI Mock Interviews & Placement Prep | Get Back To U",
-  description: "Get hired faster with Get Back To U. Practice with our AI interviewer, receive instant feedback, and follow our 90-day placement program track.",
-};
+// Stats data (labels will be translated in the component)
+const STATS_DATA = [
+  { key: "practice", icon: Mic },
+  { key: "success", icon: Target },
+  { key: "companies", icon: Building2 },
+  { key: "available", icon: Brain },
+];
 
-// Enable ISR - regenerate page every hour
-export const revalidate = 3600;
-
-// Feature data with unique gradients
-const FEATURES = [
+// Feature data (titles and descriptions will be translated in the component)
+const FEATURES_DATA = [
   {
+    key: "aiPractice",
     icon: Sparkles,
-    title: "AI Practice Interviews",
-    description: "Practice with our AI interviewer anytime. Get instant feedback and improve your interview skills.",
     gradient: "from-violet-500 to-purple-600",
     bgGlow: "group-hover:shadow-violet-500/25",
   },
   {
+    key: "placement",
     icon: Calendar,
-    title: "90-Day Placement Program",
-    description: "Structured 90-day roadmap to land your dream job with daily tasks and milestone tracking.",
     gradient: "from-blue-500 to-cyan-500",
     bgGlow: "group-hover:shadow-blue-500/25",
   },
   {
+    key: "companyPrep",
     icon: Building2,
-    title: "Company Prep",
-    description: "Company-specific interview preparation with tailored questions and insights.",
     gradient: "from-emerald-500 to-teal-500",
     bgGlow: "group-hover:shadow-emerald-500/25",
   },
   {
+    key: "resumeScreener",
     icon: FileSearch,
-    title: "Resume Screener",
-    description: "AI-powered resume analysis, JD matching, and cover letter generation.",
     gradient: "from-orange-500 to-amber-500",
     bgGlow: "group-hover:shadow-orange-500/25",
   },
   {
+    key: "studySquad",
     icon: Users,
-    title: "Study Squad",
-    description: "Join collaborative learning groups and prepare together with peers.",
     gradient: "from-pink-500 to-rose-500",
     bgGlow: "group-hover:shadow-pink-500/25",
   },
   {
+    key: "mentors",
     icon: UserCircle,
-    title: "Find Mentors",
-    description: "Connect with industry mentors who can guide your career journey.",
     gradient: "from-indigo-500 to-violet-500",
     bgGlow: "group-hover:shadow-indigo-500/25",
   },
   {
+    key: "offerTracker",
     icon: DollarSign,
-    title: "Offer Tracker",
-    description: "Manage and compare multiple job offers with our smart comparison tool.",
     gradient: "from-green-500 to-emerald-500",
     bgGlow: "group-hover:shadow-green-500/25",
   },
 ];
 
-// Stats data
-const STATS = [
-  { value: "10,000+", label: "Practice Sessions", icon: Mic },
-  { value: "95%", label: "Success Rate", icon: Target },
-  { value: "500+", label: "Companies Covered", icon: Building2 },
-  { value: "24/7", label: "AI Available", icon: Brain },
-];
+export default async function HomePage() {
+  const t = await getTranslations("Home");
+  const tCommon = await getTranslations("Common");
 
-export default function HomePage() {
   return (
     <div className="min-h-screen bg-background overflow-hidden">
       {/* Navigation */}
@@ -104,20 +99,19 @@ export default function HomePage() {
             </h1>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium">
-            <Link href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</Link>
-            <Link href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</Link>
-            <Link href="#contact" className="text-muted-foreground hover:text-foreground transition-colors">Contact</Link>
+            <Link href="#features" className="text-muted-foreground hover:text-foreground transition-colors">{t("nav.features")}</Link>
+            <Link href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">{t("nav.pricing")}</Link>
+            <Link href="#contact" className="text-muted-foreground hover:text-foreground transition-colors">{t("nav.contact")}</Link>
           </div>
           <div className="flex items-center gap-4">
-
             <Link href="/auth/login">
               <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
-                Login
+                {t("nav.login")}
               </Button>
             </Link>
             <Link href="/auth/register">
               <Button className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 shadow-lg shadow-cyan-500/25">
-                Get Started
+                {tCommon("getStarted")}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
@@ -127,71 +121,63 @@ export default function HomePage() {
 
       {/* Hero Section */}
       < section className="relative py-24 md:py-32 lg:py-40" >
-        {/* Animated Gradient Background */}
         < div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-teal-500/10 to-emerald-500/20" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(34,211,238,0.3),transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(16,185,129,0.3),transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(45,212,191,0.15),transparent_70%)]" />
 
-        {/* Floating Orbs */}
         <div className="absolute top-20 left-10 w-72 h-72 bg-cyan-500/30 rounded-full blur-3xl animate-pulse" />
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-teal-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-3xl" />
 
         <div className="container mx-auto px-4 relative">
           <div className="max-w-5xl mx-auto text-center space-y-8">
-            {/* Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500/10 to-teal-500/10 border border-cyan-500/20 backdrop-blur-sm">
               <Sparkles className="h-4 w-4 text-cyan-400" />
               <span className="text-sm font-medium bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">
-                #1 AI Interview Platform
+                {t("hero.badge")}
               </span>
             </div>
 
-            {/* Main Heading */}
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold leading-tight tracking-tight">
               <span className="bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-400 bg-clip-text text-transparent">
-                Ace Your
+                {t("hero.title")}
               </span>
               <br />
-              <span className="text-foreground">AI Interview</span>
+              <span className="text-foreground">{t("hero.titleAccent")}</span>
             </h1>
 
-            {/* Subheading */}
             <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Experience the most realistic AI mock interviews, get instant feedback,
-              and follow our 90-day placement program to land your dream job.
+              {t("hero.subtitle")}
             </p>
 
-            {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6">
               <Link href="/auth/register">
                 <Button size="lg" className="text-lg px-8 py-6 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 shadow-xl shadow-cyan-500/30 hover:shadow-cyan-500/40 transition-all">
-                  Start AI Interview
+                  {t("hero.ctaPrimary")}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
               <Link href="/auth/login">
                 <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-2 hover:bg-muted/50 backdrop-blur-sm">
                   <Play className="mr-2 h-5 w-5" />
-                  Watch Demo
+                  {t("hero.ctaSecondary")}
                 </Button>
               </Link>
             </div>
 
-            {/* Trust Badges */}
             <div className="flex items-center justify-center gap-8 pt-8 text-muted-foreground">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                <span className="text-sm">No credit card required</span>
+                <span className="text-sm">{t("hero.trust.noCreditCard")}</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                <span className="text-sm">Free forever plan</span>
+                <span className="text-sm">{t("hero.trust.freeForever")}</span>
               </div>
               <div className="flex items-center gap-2 hidden sm:flex">
                 <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                <span className="text-sm">Cancel anytime</span>
+                <span className="text-sm">{t("hero.trust.cancelAnytime")}</span>
               </div>
             </div>
           </div>
@@ -202,7 +188,7 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-teal-500/5 to-emerald-500/5" />
         <div className="container mx-auto px-4 relative">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-            {STATS.map((stat, index) => {
+            {STATS_DATA.map((stat, index) => {
               const Icon = stat.icon;
               return (
                 <div
@@ -213,9 +199,11 @@ export default function HomePage() {
                     <Icon className="h-6 w-6 text-cyan-400" />
                   </div>
                   <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">
-                    {stat.value}
+                    {t(`stats.${stat.key}.value`)}
                   </div>
-                  <div className="text-sm text-muted-foreground mt-1">{index === 0 ? "AI Interviews" : stat.label}</div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    {t(`stats.${stat.key}.label`)}
+                  </div>
                 </div>
               );
             })}
@@ -225,55 +213,43 @@ export default function HomePage() {
 
       {/* Features Section */}
       <section id="features" className="py-24 relative">
-
         <div className="container mx-auto px-4">
-          {/* Section Header */}
           <div className="text-center mb-16 space-y-4">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20">
               <TrendingUp className="h-4 w-4 text-emerald-400" />
-              <span className="text-sm font-medium text-emerald-400">Everything You Need</span>
+              <span className="text-sm font-medium text-emerald-400">{t("features.badge")}</span>
             </div>
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold">
               <span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent">
-                Powerful Features
+                {t("features.title")}
               </span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Everything you need to prepare, practice, and land your dream job
+              {t("features.subtitle")}
             </p>
           </div>
 
-          {/* Features Grid */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
-            {FEATURES.map((feature, index) => {
+            {FEATURES_DATA.map((feature, index) => {
               const Icon = feature.icon;
               return (
                 <Card
                   key={index}
                   className={`group relative overflow-hidden border-2 border-transparent hover:border-white/10 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${feature.bgGlow}`}
                 >
-                  {/* Gradient Background on Hover */}
                   <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
-
                   <CardContent className="pt-6 pb-6 space-y-4 relative">
-                    {/* Icon */}
                     <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
                       <Icon className="h-7 w-7 text-white" />
                     </div>
-
-                    {/* Title */}
                     <h3 className="text-xl font-bold group-hover:text-foreground transition-colors">
-                      {feature.title}
+                      {t(`features.items.${feature.key}.title`)}
                     </h3>
-
-                    {/* Description */}
                     <p className="text-muted-foreground text-sm leading-relaxed">
-                      {feature.description}
+                      {t(`features.items.${feature.key}.description`)}
                     </p>
-
-                    {/* Arrow indicator */}
                     <div className="flex items-center text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                      <span>Learn more</span>
+                      <span>{t("features.learnMore")}</span>
                       <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </div>
                   </CardContent>
@@ -289,30 +265,26 @@ export default function HomePage() {
 
       {/* CTA Section */}
       <section className="py-24 relative overflow-hidden">
-        {/* Gradient Background */}
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/20 via-teal-600/20 to-emerald-600/20" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(45,212,191,0.2),transparent_70%)]" />
 
-        {/* Floating Orbs */}
         <div className="absolute top-10 right-20 w-64 h-64 bg-cyan-500/30 rounded-full blur-3xl" />
         <div className="absolute bottom-10 left-20 w-80 h-80 bg-teal-500/20 rounded-full blur-3xl" />
 
         <div className="container mx-auto px-4 relative">
           <div className="max-w-4xl mx-auto text-center space-y-8">
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold">
-              Ready to{" "}
               <span className="bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-400 bg-clip-text text-transparent">
-                Transform
+                {t("cta.title")}
               </span>
-              {" "}Your Career?
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Join thousands of job seekers who have accelerated their career with our AI-powered platform.
+              {t("cta.subtitle")}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
               <Link href="/auth/register">
                 <Button size="lg" className="text-lg px-10 py-6 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 shadow-xl shadow-cyan-500/30">
-                  Get Started Free
+                  {t("cta.button")}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
@@ -321,50 +293,42 @@ export default function HomePage() {
         </div>
       </section>
 
-
       {/* Privacy, Terms, Contact Section */}
       <section id="legal" className="py-16 bg-muted/20">
         <div className="container mx-auto px-4 max-w-5xl">
           <div className="grid md:grid-cols-3 gap-8">
-            {/* Privacy */}
             <div id="privacy" className="scroll-mt-20">
               <h3 className="text-lg font-bold mb-4 bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">
-                Privacy Policy
+                {t("legal.privacy.title")}
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                We collect only essential information to provide our services. Your data is encrypted, never sold,
-                and you can delete your account anytime. AI processing is done securely with your consent.
+                {t("legal.privacy.content")}
               </p>
             </div>
 
-            {/* Terms */}
             <div id="terms" className="scroll-mt-20">
               <h3 className="text-lg font-bold mb-4 bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
-                Terms of Service
+                {t("legal.terms.title")}
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                By using Get Back To U, you agree to use our services responsibly. AI feedback is guidance only -
-                we don&apos;t guarantee specific outcomes. Your content remains yours.
+                {t("legal.terms.content")}
               </p>
             </div>
 
-            {/* Contact */}
             <div id="contact" className="scroll-mt-20">
               <h3 className="text-lg font-bold mb-4 bg-gradient-to-r from-blue-400 to-sky-400 bg-clip-text text-transparent">
-                Contact Us
+                {t("legal.contact.title")}
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Email us at{" "}
+                {t("legal.contact.content")}
+                <br />
                 <a href="mailto:hello@getbacktou.com" className="text-cyan-400 hover:underline">
                   hello@getbacktou.com
                 </a>
                 <br />
-                Call us at{" "}
                 <a href="tel:+918600137191" className="text-cyan-400 hover:underline">
                   +91 8600137191
                 </a>
-                <br />
-                Support hours: Mon-Fri, 9AM-6PM IST
               </p>
             </div>
           </div>
@@ -382,12 +346,12 @@ export default function HomePage() {
               </span>
             </div>
             <div className="flex items-center gap-8 text-sm text-muted-foreground">
-              <a href="#privacy" className="hover:text-foreground transition-colors">Privacy</a>
-              <a href="#terms" className="hover:text-foreground transition-colors">Terms</a>
-              <a href="#contact" className="hover:text-foreground transition-colors">Contact</a>
+              <a href="#privacy" className="hover:text-foreground transition-colors">{t("footer.privacy")}</a>
+              <a href="#terms" className="hover:text-foreground transition-colors">{t("footer.terms")}</a>
+              <a href="#contact" className="hover:text-foreground transition-colors">{t("footer.contact")}</a>
             </div>
             <p className="text-sm text-muted-foreground">
-              © 2025 Get Back To U. All rights reserved.
+              {t("footer.rights")}
             </p>
           </div>
         </div>

@@ -27,10 +27,15 @@ import Link from "next/link";
 
 import { decryptData, encryptData } from "@/lib/encryption";
 
+import { useTranslations } from "next-intl";
+
 export const LoginForm = () => {
+    const t = useTranslations("Auth.login");
+    const tCommon = useTranslations("Common");
+    const tPricing = useTranslations("Pricing");
     const searchParams = useSearchParams();
     const urlError = searchParams.get("error") === "OAuthAccountNotLinked"
-        ? "Email already in use with different provider!"
+        ? t("errors.oauthAccountNotLinked")
         : "";
 
     const [error, setError] = useState<string | undefined>("");
@@ -95,34 +100,38 @@ export const LoginForm = () => {
                     }
                     // Success is handled by redirect in server action
                 })
-                .catch(() => setError("Something went wrong"));
+                .catch(() => setError(t("errors.generic")));
         });
     };
 
     return (
         <CardWrapper
-            headerLabel="Welcome back"
-            backButtonLabel="Don't have an account?"
+            headerLabel={t("title")}
+            backButtonLabel={t("noAccount")}
             backButtonHref="/auth/register"
         >
             <div className="space-y-4 mb-8">
                 <div className="flex items-center justify-between px-1">
-                    <p className="text-sm font-medium text-muted-foreground">Logging in for</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t("subtitle")}</p>
                     <div className="flex items-center gap-2 scale-75 origin-right">
-                        <span className={`text-xs ${!isYearly ? "text-foreground font-bold" : "text-muted-foreground"}`}>Monthly</span>
+                        <span className={`text-xs ${!isYearly ? "text-foreground font-bold" : "text-muted-foreground"}`}>
+                            {tPricing("monthly")}
+                        </span>
                         <Switch
                             checked={isYearly}
                             onCheckedChange={(checked) => setPeriod(checked ? "YEARLY" : "MONTHLY")}
                         />
-                        <span className={`text-xs ${isYearly ? "text-foreground font-bold" : "text-muted-foreground"}`}>Yearly</span>
+                        <span className={`text-xs ${isYearly ? "text-foreground font-bold" : "text-muted-foreground"}`}>
+                            {tPricing("yearly")}
+                        </span>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
                     {[
-                        { id: "FREE", icon: Sparkles, color: "emerald", monthly: "Free", yearly: "Free" },
-                        { id: "PRO", icon: Zap, color: "blue", monthly: "₹249", yearly: "₹2,490" },
-                        { id: "PREMIUM", icon: Crown, color: "purple", monthly: "₹499", yearly: "₹4,990" }
+                        { id: "FREE", icon: Sparkles, color: "emerald", monthly: tPricing("plans.free.price"), yearly: tPricing("plans.free.price") },
+                        { id: "PRO", icon: Zap, color: "blue", monthly: tPricing("plans.pro.priceMonthly"), yearly: tPricing("plans.pro.priceYearly") },
+                        { id: "PREMIUM", icon: Crown, color: "purple", monthly: tPricing("plans.premium.priceMonthly"), yearly: tPricing("plans.premium.priceYearly") }
                     ].map((plan) => (
                         <button
                             key={plan.id}
@@ -161,7 +170,7 @@ export const LoginForm = () => {
                             name="email"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Email</FormLabel>
+                                    <FormLabel>{tCommon("email")}</FormLabel>
                                     <FormControl>
                                         <Input
                                             {...field}
@@ -179,7 +188,7 @@ export const LoginForm = () => {
                             name="password"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Password</FormLabel>
+                                    <FormLabel>{tCommon("password")}</FormLabel>
                                     <FormControl>
                                         <Input
                                             {...field}
@@ -197,7 +206,7 @@ export const LoginForm = () => {
                                 href="/auth/forgot-password"
                                 className="text-sm text-primary hover:underline"
                             >
-                                Forgot password?
+                                {t("forgotPassword")}
                             </a>
                         </div>
                     </div>
@@ -211,10 +220,10 @@ export const LoginForm = () => {
                         {isPending ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Logging in...
+                                {t("submitting")}
                             </>
                         ) : (
-                            "Login"
+                            t("submit")
                         )}
                     </Button>
                 </form>

@@ -1,27 +1,26 @@
 "use client";
-
 import { useState, useTransition } from "react";
 import { analyzeResume } from "@/actions/resume-screener";
 import { ResumeAnalysisView } from "@/components/candidate/resume-analysis-view";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Upload, FileText, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 export function ResumeScreenerView({ profileResumeUrl, profileResumeName }: { profileResumeUrl?: string | null; profileResumeName?: string | null }) {
-    // We no longer need local file state for upload as it's handled in the wizard
+    const t = useTranslations("ResumeScreener");
+    const tAuth = useTranslations("Auth");
     const [jobDescription, setJobDescription] = useState("");
     const [analysis, setAnalysis] = useState<any | null>(null);
     const [isPending, startTransition] = useTransition();
 
     const handleAnalyze = () => {
         if (!profileResumeUrl) {
-            toast.error("Please upload your resume in the 'Level Up Your Journey' wizard first.");
+            toast.error(t("toast.uploadFirst"));
             return;
         }
 
@@ -38,7 +37,7 @@ export function ResumeScreenerView({ profileResumeUrl, profileResumeName }: { pr
                 toast.error(result.error);
             } else if (result.success && result.analysis) {
                 setAnalysis(result.analysis);
-                toast.success("Resume analyzed successfully!");
+                toast.success(t("toast.success"));
             }
         });
     };
@@ -49,27 +48,27 @@ export function ResumeScreenerView({ profileResumeUrl, profileResumeName }: { pr
                 {/* Left Side: Upload & Inputs */}
                 <div className="space-y-4 lg:overflow-y-auto lg:pr-4 h-full scrollbar-none">
                     <div className="space-y-1">
-                        <h1 className="text-2xl font-bold tracking-tight">AI Resume Screener</h1>
+                        <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
                         <p className="text-sm text-muted-foreground">
-                            Upload your resume and optionally paste a job description.
+                            {t("subtitle")}
                         </p>
                     </div>
 
                     <Card className="border-2 border-dashed shadow-sm">
                         <CardHeader className="pb-3">
-                            <CardTitle className="text-lg">Upload Documents</CardTitle>
+                            <CardTitle className="text-lg">{t("uploadSection")}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid w-full items-center gap-1.5">
-                                <Label>Current Resume</Label>
+                                <Label>{t("currentResume")}</Label>
                                 {profileResumeUrl ? (
                                     <div className="border rounded-xl p-6 bg-primary/5 border-primary/10 flex flex-col items-center gap-3 text-center transition-all duration-500 hover:bg-primary/10">
                                         <div className="p-3 rounded-2xl bg-primary/10 text-primary shadow-lg shadow-primary/5">
                                             <FileText className="h-8 w-8" />
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="font-black tracking-tight">{profileResumeName || "My Professional Resume"}</p>
-                                            <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold opacity-60">Sourced from your path</p>
+                                            <p className="font-black tracking-tight">{profileResumeName || t("defaultResumeName")}</p>
+                                            <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold opacity-60">{t("sourcedFromPath")}</p>
                                         </div>
                                     </div>
                                 ) : (
@@ -78,27 +77,26 @@ export function ResumeScreenerView({ profileResumeUrl, profileResumeName }: { pr
                                             <AlertCircle className="h-8 w-8" />
                                         </div>
                                         <div className="space-y-2">
-                                            <p className="font-bold">No Resume Found</p>
+                                            <p className="font-bold">{t("noResumeFound")}</p>
                                             <p className="text-sm text-muted-foreground max-w-xs">
-                                                To analyze your resume, please upload it in the "Level Up Your Journey" wizard first.
+                                                {t("wizardIncomplete")}
                                             </p>
                                         </div>
                                         <Button variant="outline" size="sm" asChild className="rounded-full px-6 font-bold tracking-tight">
-                                            <Link href="/candidate/profile">Complete Wizard</Link>
+                                            <Link href="/candidate/profile">{t("completeWizard")}</Link>
                                         </Button>
                                     </div>
                                 )}
                             </div>
 
                             <div className="space-y-2">
-
                                 <Label htmlFor="jd" className="flex items-center gap-2">
-                                    Job Description (Optional)
-                                    <span className="text-xs text-muted-foreground font-normal">(For Match Score)</span>
+                                    {t("jdLabel")}
+                                    <span className="text-xs text-muted-foreground font-normal">{t("matchScoreInfo")}</span>
                                 </Label>
                                 <Textarea
                                     id="jd"
-                                    placeholder="Paste the job description here..."
+                                    placeholder={t("jdPlaceholder")}
                                     className="min-h-[120px] resize-none"
                                     value={jobDescription}
                                     onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setJobDescription(e.target.value)}
@@ -114,12 +112,12 @@ export function ResumeScreenerView({ profileResumeUrl, profileResumeName }: { pr
                                 {isPending ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        {jobDescription.trim() ? "Matching..." : "Analyzing..."}
+                                        {jobDescription.trim() ? t("matching") : t("analyzing")}
                                     </>
                                 ) : (
                                     <>
                                         <Upload className="mr-2 h-4 w-4" />
-                                        {jobDescription.trim() ? "Analyze & Match" : "Analyze Resume"}
+                                        {jobDescription.trim() ? t("analyzeAndMatch") : t("analyzeResume")}
                                     </>
                                 )}
                             </Button>
@@ -138,11 +136,11 @@ export function ResumeScreenerView({ profileResumeUrl, profileResumeName }: { pr
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <h3 className="text-xl font-semibold">Analyzing your profile...</h3>
+                                <h3 className="text-xl font-semibold">{t("analyzingProfile")}</h3>
                                 <p className="text-muted-foreground max-w-sm mx-auto">
                                     {jobDescription.trim()
-                                        ? "Comparing your skills and experience against the job requirements."
-                                        : "Extracting key insights, strengths, and potential improvements."}
+                                        ? t("comparingSkills")
+                                        : t("extractingInsights")}
                                 </p>
                             </div>
                         </div>
@@ -152,9 +150,9 @@ export function ResumeScreenerView({ profileResumeUrl, profileResumeName }: { pr
                         <div className="flex flex-col items-center justify-center h-full space-y-4 text-center p-8 border-2 border-dashed rounded-lg bg-muted/10 text-muted-foreground">
                             <FileText className="h-16 w-16 opacity-20" />
                             <div className="space-y-1">
-                                <h3 className="text-lg font-medium text-foreground">No Analysis Yet</h3>
+                                <h3 className="text-lg font-medium text-foreground">{t("noAnalysisTitle")}</h3>
                                 <p className="text-sm max-w-xs mx-auto">
-                                    Upload a resume and click analyze to see detailed insights and AI-powered feedback here.
+                                    {t("noAnalysisDesc")}
                                 </p>
                             </div>
                         </div>

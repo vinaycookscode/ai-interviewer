@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+"use client";
+
+import { useState, useEffect, useRef, Suspense } from "react";
 import { Check, X, Loader2, Sparkles, Crown, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +13,7 @@ import { createSubscriptionOrder, verifyAndActivateSubscription } from "@/action
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { decryptData } from "@/lib/encryption";
+import { useTranslations } from "next-intl";
 
 declare global {
     interface Window {
@@ -54,57 +57,45 @@ const tierColors = {
     PREMIUM: "from-purple-500 to-pink-600",
 };
 
-function formatLimit(limit: number): string {
-    if (limit === -1) return "Unlimited";
-    if (limit === 0) return "—";
-    return limit.toString();
+/**
+ * Isolated component to handle search parameter reading safely within a Suspense boundary.
+ * This satisfies Next.js requirement during static builds.
+ */
+function SearchParamsHandler({ onParams }: { onParams: (params: URLSearchParams) => void }) {
+    const searchParams = useSearchParams();
+
+    useEffect(() => {
+        if (searchParams) {
+            onParams(searchParams);
+        }
+    }, [searchParams, onParams]);
+
+    return null;
 }
 
-
 export function PricingCards({ plans, currentPlanTier, razorpayKeyId }: PricingCardsProps) {
+    const t = useTranslations("Pricing");
+    const tCommon = useTranslations("Common");
+    const tSub = useTranslations("Subscription");
     const [isYearly, setIsYearly] = useState(false);
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
     const router = useRouter();
-    const searchParams = useSearchParams();
     const hasTriggeredRef = useRef(false);
 
-    useEffect(() => {
-        // Handle encrypted state
-        const s = searchParams.get("s");
-        const decrypted = s ? decryptData(s) : null;
-
-        const selectedPlanTier = decrypted?.plan || searchParams.get("selected");
-        const selectedPeriod = decrypted?.period || searchParams.get("period");
-
-        // Sync period from URL if present
-        if (selectedPeriod === "YEARLY") {
-            setIsYearly(true);
-        } else if (selectedPeriod === "MONTHLY") {
-            setIsYearly(false);
-        }
-
-        if (selectedPlanTier && !hasTriggeredRef.current && plans.length > 0) {
-            const planToSelect = plans.find(p => p.tier === selectedPlanTier);
-            if (planToSelect && planToSelect.tier !== currentPlanTier) {
-                hasTriggeredRef.current = true;
-                // Add a small delay for scripts to load and UI to settle
-                const timer = setTimeout(() => {
-                    handleSubscribe(planToSelect, selectedPeriod === "YEARLY" || (selectedPeriod === null && isYearly));
-                }, 500);
-                return () => clearTimeout(timer);
-            }
-        }
-    }, [searchParams, plans, currentPlanTier]);
-
+    function formatLimit(limit: number): string {
+        if (limit === -1) return tCommon("unlimited");
+        if (limit === 0) return "—";
+        return limit.toString();
+    }
 
     const handleSubscribe = async (plan: Plan, overrideYearly?: boolean) => {
         if (plan.tier === PlanTier.FREE) {
-            toast.info("You're already on the Free plan!");
+            toast.info(tSub("toast.alreadyFree"));
             return;
         }
 
         if (plan.tier === currentPlanTier) {
-            toast.info("You're already on this plan!");
+            toast.info(tSub("toast.alreadyCurrent"));
             return;
         }
 
@@ -115,9 +106,8 @@ export function PricingCards({ plans, currentPlanTier, razorpayKeyId }: PricingC
             const billingPeriod = isYearlyBilling ? BillingPeriod.YEARLY : BillingPeriod.MONTHLY;
             const result = await createSubscriptionOrder(plan.tier, billingPeriod);
 
-
             if (!result.success) {
-                toast.error(result.error || "Failed to create order");
+                toast.error(result.error || tSub("toast.orderFailed"));
                 setLoadingPlan(null);
                 return;
             }
@@ -138,7 +128,7 @@ export function PricingCards({ plans, currentPlanTier, razorpayKeyId }: PricingC
                 amount: result.amount,
                 currency: result.currency,
                 name: "AI Interviewer",
-                description: `${plan.name} Plan - ${isYearly ? "Yearly" : "Monthly"}`,
+                description: `${plan.name} Plan - ${isYearly ? t("yearly") : t("monthly")}`,
                 order_id: result.orderId,
                 prefill: result.prefill,
                 theme: {
@@ -159,10 +149,10 @@ export function PricingCards({ plans, currentPlanTier, razorpayKeyId }: PricingC
                             router.refresh();
                             router.push("/candidate/settings/subscription");
                         } else {
-                            toast.error(verifyResult.error || "Payment verification failed");
+                            toast.error(verifyResult.error || tSub("toast.verifyFailed"));
                         }
                     } catch (error) {
-                        toast.error("Failed to verify payment");
+                        toast.error(tSub("toast.verifyError"));
                     }
                     setLoadingPlan(null);
                 },
@@ -176,17 +166,43 @@ export function PricingCards({ plans, currentPlanTier, razorpayKeyId }: PricingC
             const razorpay = new window.Razorpay(options);
             razorpay.open();
         } catch (error) {
-            toast.error("Failed to initialize payment");
+            toast.error(tSub("toast.initError"));
             setLoadingPlan(null);
+        }
+    };
+
+    const handleParamsSync = (params: URLSearchParams) => {
+        const s = params.get("s");
+        const decrypted = s ? decryptData(s) : null;
+
+        const selectedPlanTier = decrypted?.plan || params.get("selected");
+        const selectedPeriod = decrypted?.period || params.get("period");
+
+        if (selectedPeriod === "YEARLY") {
+            setIsYearly(true);
+        } else if (selectedPeriod === "MONTHLY") {
+            setIsYearly(false);
+        }
+
+        if (selectedPlanTier && !hasTriggeredRef.current && plans.length > 0) {
+            const planToSelect = plans.find(p => p.tier === selectedPlanTier);
+            if (planToSelect && planToSelect.tier !== currentPlanTier) {
+                hasTriggeredRef.current = true;
+                handleSubscribe(planToSelect, selectedPeriod === "YEARLY" || (selectedPeriod === null && isYearly));
+            }
         }
     };
 
     return (
         <div className="space-y-8">
+            <Suspense fallback={null}>
+                <SearchParamsHandler onParams={handleParamsSync} />
+            </Suspense>
+
             {/* Billing Toggle */}
             <div className="flex items-center justify-center gap-4">
                 <Label htmlFor="billing-toggle" className={cn(!isYearly && "font-semibold")}>
-                    Monthly
+                    {t("monthly")}
                 </Label>
                 <Switch
                     id="billing-toggle"
@@ -194,9 +210,9 @@ export function PricingCards({ plans, currentPlanTier, razorpayKeyId }: PricingC
                     onCheckedChange={setIsYearly}
                 />
                 <Label htmlFor="billing-toggle" className={cn(isYearly && "font-semibold")}>
-                    Yearly
+                    {t("yearly")}
                     <Badge variant="secondary" className="ml-2 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                        Save 17%
+                        {t("save", { percent: 17 })}
                     </Badge>
                 </Label>
             </div>
@@ -221,7 +237,7 @@ export function PricingCards({ plans, currentPlanTier, razorpayKeyId }: PricingC
                             {isMostPopular && (
                                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                                     <Badge className="bg-gradient-to-r from-blue-500 to-indigo-600">
-                                        Most Popular
+                                        {t("popular")}
                                     </Badge>
                                 </div>
                             )}
@@ -229,7 +245,7 @@ export function PricingCards({ plans, currentPlanTier, razorpayKeyId }: PricingC
                             {isCurrentPlan && (
                                 <div className="absolute -top-3 right-4">
                                     <Badge variant="outline" className="bg-background">
-                                        Current Plan
+                                        {t("currentPlan")}
                                     </Badge>
                                 </div>
                             )}
@@ -243,9 +259,9 @@ export function PricingCards({ plans, currentPlanTier, razorpayKeyId }: PricingC
                                 </div>
                                 <CardTitle className="text-2xl">{plan.name}</CardTitle>
                                 <CardDescription>
-                                    {plan.tier === PlanTier.FREE && "Get started for free"}
-                                    {plan.tier === PlanTier.PRO && "For serious job seekers"}
-                                    {plan.tier === PlanTier.PREMIUM && "Unlimited access"}
+                                    {plan.tier === PlanTier.FREE && t("plans.free.description")}
+                                    {plan.tier === PlanTier.PRO && t("plans.pro.description")}
+                                    {plan.tier === PlanTier.PREMIUM && t("plans.premium.description")}
                                 </CardDescription>
                             </CardHeader>
 
@@ -258,13 +274,13 @@ export function PricingCards({ plans, currentPlanTier, razorpayKeyId }: PricingC
                                         </span>
                                         {plan.tier !== PlanTier.FREE && (
                                             <span className="text-muted-foreground">
-                                                /{isYearly ? "year" : "month"}
+                                                /{isYearly ? t("perYear") : t("perMonth")}
                                             </span>
                                         )}
                                     </div>
                                     {isYearly && plan.yearlySavings > 0 && (
                                         <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                                            Save ₹{plan.yearlySavings}/year
+                                            {t("saveAmount", { amount: plan.yearlySavings })}
                                         </p>
                                     )}
                                 </div>
@@ -273,31 +289,31 @@ export function PricingCards({ plans, currentPlanTier, razorpayKeyId }: PricingC
                                 <ul className="space-y-3">
                                     <FeatureItem
                                         included={true}
-                                        label={`${formatLimit(plan.mockInterviewLimit)} Mock Interviews/mo`}
+                                        label={tSub("features.mockInterviews", { limit: formatLimit(plan.mockInterviewLimit) })}
                                     />
                                     <FeatureItem
                                         included={true}
-                                        label={`${formatLimit(plan.resumeAnalysisLimit)} Resume Analysis/mo`}
+                                        label={tSub("features.resumeAnalysis", { limit: formatLimit(plan.resumeAnalysisLimit) })}
                                     />
                                     <FeatureItem
                                         included={true}
-                                        label={`${formatLimit(plan.questionGenerationLimit)} AI Question Gen/mo`}
+                                        label={tSub("features.questionGen", { limit: formatLimit(plan.questionGenerationLimit) })}
                                     />
                                     <FeatureItem
                                         included={plan.coverLetterLimit !== 0}
-                                        label={`${formatLimit(plan.coverLetterLimit)} Cover Letters/mo`}
+                                        label={tSub("features.coverLetters", { limit: formatLimit(plan.coverLetterLimit) })}
                                     />
                                     <FeatureItem
                                         included={plan.resumeRewriteLimit !== 0}
-                                        label={`${formatLimit(plan.resumeRewriteLimit)} Resume Rewrites/mo`}
+                                        label={tSub("features.resumeRewrites", { limit: formatLimit(plan.resumeRewriteLimit) })}
                                     />
                                     <FeatureItem
                                         included={plan.aiEvaluationEnabled}
-                                        label="AI Interview Evaluation"
+                                        label={tSub("features.aiEvaluation")}
                                     />
                                     <FeatureItem
                                         included={plan.prioritySupport}
-                                        label="Priority Support"
+                                        label={tSub("features.prioritySupport")}
                                     />
                                 </ul>
                             </CardContent>
@@ -315,14 +331,14 @@ export function PricingCards({ plans, currentPlanTier, razorpayKeyId }: PricingC
                                     {loadingPlan === plan.id ? (
                                         <>
                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Processing...
+                                            {tCommon("processing")}
                                         </>
                                     ) : isCurrentPlan ? (
-                                        "Current Plan"
+                                        t("currentPlan")
                                     ) : plan.tier === PlanTier.FREE ? (
-                                        "Get Started Free"
+                                        t("startFree")
                                     ) : (
-                                        `Upgrade to ${plan.name}`
+                                        t("upgradeTo", { name: plan.name })
                                     )}
                                 </Button>
                             </CardFooter>

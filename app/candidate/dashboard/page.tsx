@@ -8,8 +8,11 @@ import { FileText, Clock, CheckCircle, Calendar, Upload } from "lucide-react";
 import { redirect } from "next/navigation";
 import { canStartInterview, getTimeUntilInterview } from "@/lib/interview-timing";
 import { DashboardRefresher } from "@/components/candidate/dashboard-refresher";
+import { getTranslations } from "next-intl/server";
 
 export default async function CandidateDashboardPage() {
+    const t = await getTranslations("Dashboard");
+    const tCommon = await getTranslations("Common");
     const session = await auth();
     const userId = session?.user?.id;
 
@@ -32,11 +35,11 @@ export default async function CandidateDashboardPage() {
             <div className="flex items-center justify-center min-h-screen bg-background">
                 <Card className="max-w-md">
                     <CardHeader>
-                        <CardTitle>No Interviews Found</CardTitle>
+                        <CardTitle>{t("noInterviewsTitle")}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <p className="text-muted-foreground">
-                            You haven't been invited to any interviews yet.
+                            {t("noInterviewsDesc")}
                         </p>
                     </CardContent>
                 </Card>
@@ -63,10 +66,10 @@ export default async function CandidateDashboardPage() {
                 {/* Header */}
                 <div>
                     <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                        My Interviews
+                        {t("title")}
                     </h1>
                     <p className="text-muted-foreground mt-2">
-                        View your interview invitations and results
+                        {t("subtitle")}
                     </p>
                 </div>
 
@@ -74,14 +77,23 @@ export default async function CandidateDashboardPage() {
                 <section>
                     <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
                         <Clock className="h-6 w-6 text-primary" />
-                        Upcoming Interviews
+                        {t("upcomingTitle")}
                     </h2>
                     {upcomingInterviews.length === 0 ? (
-                        <p className="text-muted-foreground italic">No upcoming interviews.</p>
+                        <p className="text-muted-foreground italic">{t("noUpcoming")}</p>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {upcomingInterviews.map((interview) => (
-                                <InterviewCard key={interview.id} interview={interview} />
+                                <InterviewCard key={interview.id} interview={interview} translations={{
+                                    invitedOn: t("interviewCard.invitedOn"),
+                                    expiresOn: t("interviewCard.expiresOn"),
+                                    scoreLabel: t("interviewCard.scoreLabel"),
+                                    uploadDocs: t("interviewCard.uploadDocs"),
+                                    expired: tCommon("expired"),
+                                    start: tCommon("start"),
+                                    feedback: tCommon("feedback"),
+                                    continue: tCommon("continue")
+                                }} />
                             ))}
                         </div>
                     )}
@@ -91,14 +103,23 @@ export default async function CandidateDashboardPage() {
                 <section>
                     <h2 className="text-2xl font-semibold mb-6 flex items-center gap-2">
                         <CheckCircle className="h-6 w-6 text-green-600" />
-                        Past Interviews
+                        {t("pastTitle")}
                     </h2>
                     {pastInterviews.length === 0 ? (
-                        <p className="text-muted-foreground italic">No past interviews.</p>
+                        <p className="text-muted-foreground italic">{t("noPast")}</p>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {pastInterviews.map((interview) => (
-                                <InterviewCard key={interview.id} interview={interview} />
+                                <InterviewCard key={interview.id} interview={interview} translations={{
+                                    invitedOn: t("interviewCard.invitedOn"),
+                                    expiresOn: t("interviewCard.expiresOn"),
+                                    scoreLabel: t("interviewCard.scoreLabel"),
+                                    uploadDocs: t("interviewCard.uploadDocs"),
+                                    expired: tCommon("expired"),
+                                    start: tCommon("start"),
+                                    feedback: tCommon("feedback"),
+                                    continue: tCommon("continue")
+                                }} />
                             ))}
                         </div>
                     )}
@@ -108,7 +129,7 @@ export default async function CandidateDashboardPage() {
     );
 }
 
-function InterviewCard({ interview }: { interview: any }) {
+function InterviewCard({ interview, translations }: { interview: any; translations: any }) {
     const canStart = canStartInterview(interview.scheduledTime);
     const timeUntil = getTimeUntilInterview(interview.scheduledTime);
     const needsDocuments = false; // Documents are optional
@@ -134,7 +155,7 @@ function InterviewCard({ interview }: { interview: any }) {
                     </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                    Invited {new Date(interview.createdAt).toLocaleDateString()}
+                    {translations.invitedOn.replace("{date}", new Date(interview.createdAt).toLocaleDateString())}
                 </p>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col gap-4">
@@ -158,9 +179,7 @@ function InterviewCard({ interview }: { interview: any }) {
                         <div className="flex items-center gap-2 text-xs mb-2 text-muted-foreground">
                             <Clock className="h-3 w-3 shrink-0" />
                             <span>
-                                Expires: <span suppressHydrationWarning>
-                                    {new Date(interview.expiresAt).toLocaleDateString()}
-                                </span>
+                                {translations.expiresOn.replace("{date}", new Date(interview.expiresAt).toLocaleDateString())}
                             </span>
                         </div>
                     )}
@@ -172,7 +191,7 @@ function InterviewCard({ interview }: { interview: any }) {
                 {/* Score for Past Interviews */}
                 {interview.score && (
                     <div className="p-3 bg-primary/5 rounded-lg">
-                        <p className="text-xs font-medium mb-1 text-muted-foreground">Score</p>
+                        <p className="text-xs font-medium mb-1 text-muted-foreground">{translations.scoreLabel}</p>
                         <p className="text-xl font-bold text-primary">
                             {interview.score.toFixed(1)}/10
                         </p>
@@ -186,19 +205,19 @@ function InterviewCard({ interview }: { interview: any }) {
                             {interview.expiresAt && new Date() > new Date(interview.expiresAt) ? (
                                 <Button disabled className="w-full variant-destructive opacity-80">
                                     <Clock className="h-4 w-4 mr-2" />
-                                    Expired
+                                    {translations.expired}
                                 </Button>
                             ) : needsDocuments ? (
                                 <Button variant="default" className="w-full" asChild>
                                     <Link href={`/candidate/interview/${interview.id}/documents`}>
                                         <Upload className="h-4 w-4 mr-2" />
-                                        Upload Docs
+                                        {translations.uploadDocs}
                                     </Link>
                                 </Button>
                             ) : canStart && interview.token ? (
                                 <Button className="w-full" asChild>
                                     <Link href={`/interview/${interview.id}?token=${interview.token}`}>
-                                        Start
+                                        {translations.start}
                                     </Link>
                                 </Button>
                             ) : (
@@ -213,14 +232,14 @@ function InterviewCard({ interview }: { interview: any }) {
                         <Button variant="outline" className="w-full" asChild>
                             <Link href={`/candidate/interview/${interview.id}/feedback`}>
                                 <FileText className="h-4 w-4 mr-2" />
-                                Feedback
+                                {translations.feedback}
                             </Link>
                         </Button>
                     )}
                     {interview.status === "IN_PROGRESS" && interview.token && (
                         <Button variant="secondary" className="w-full" asChild>
                             <Link href={`/interview/${interview.id}?token=${interview.token}`}>
-                                Continue
+                                {translations.continue}
                             </Link>
                         </Button>
                     )}

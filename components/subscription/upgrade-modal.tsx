@@ -12,6 +12,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface UpgradeModalProps {
     open: boolean;
@@ -21,32 +22,15 @@ interface UpgradeModalProps {
     limit?: number;
 }
 
-const featureInfo: Record<string, { title: string; description: string }> = {
-    mock_interview: {
-        title: "Mock Interviews",
-        description: "Practice unlimited mock interviews with AI feedback to ace your real interviews.",
-    },
-    resume_analysis: {
-        title: "Resume Analysis",
-        description: "Get AI-powered resume reviews to optimize your resume for ATS systems.",
-    },
-    question_generation: {
-        title: "AI Question Generation",
-        description: "Generate interview questions tailored to any job description.",
-    },
-    cover_letter: {
-        title: "Cover Letter Generation",
-        description: "Create compelling cover letters with AI assistance.",
-    },
-    resume_rewrite: {
-        title: "Resume Rewriting",
-        description: "Transform your resume with AI-powered rewriting suggestions.",
-    },
-};
-
 export function UpgradeModal({ open, onOpenChange, feature, currentUsage, limit }: UpgradeModalProps) {
+    const t = useTranslations("Subscription.upgrade");
+    const tPricing = useTranslations("Pricing");
     const router = useRouter();
-    const info = featureInfo[feature] || { title: feature, description: "" };
+
+    const info = {
+        title: t(`featureInfo.${feature}.title`),
+        description: t(`featureInfo.${feature}.description`)
+    };
 
     const handleUpgrade = () => {
         onOpenChange(false);
@@ -60,9 +44,9 @@ export function UpgradeModal({ open, onOpenChange, feature, currentUsage, limit 
                     <div className="mx-auto rounded-full p-3 bg-gradient-to-br from-amber-400 to-orange-500 text-white mb-4 w-fit">
                         <Sparkles className="h-6 w-6" />
                     </div>
-                    <DialogTitle className="text-2xl">Usage Limit Reached</DialogTitle>
+                    <DialogTitle className="text-2xl">{t("title")}</DialogTitle>
                     <DialogDescription className="text-base">
-                        You've used all {limit} {info.title.toLowerCase()} this month on the Free plan.
+                        {t("description", { limit: limit ?? 0, feature: info.title.toLowerCase() })}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -73,18 +57,26 @@ export function UpgradeModal({ open, onOpenChange, feature, currentUsage, limit 
 
                     <div className="grid grid-cols-2 gap-4">
                         <PlanPreview
-                            name="Pro"
+                            name={tPricing("plans.pro.name")}
                             icon={Zap}
-                            price="₹249"
+                            price={tPricing("plans.pro.priceMonthly")}
                             gradient="from-blue-500 to-indigo-600"
-                            features={["15 Mock Interviews/mo", "10 Resume Analysis/mo", "AI Evaluation"]}
+                            features={[
+                                tPricing("plans.pro.features.0"),
+                                tPricing("plans.pro.features.1"),
+                                t("allFeatures")
+                            ]}
                         />
                         <PlanPreview
-                            name="Premium"
+                            name={tPricing("plans.premium.name")}
                             icon={Crown}
-                            price="₹499"
+                            price={tPricing("plans.premium.priceMonthly")}
                             gradient="from-purple-500 to-pink-600"
-                            features={["Unlimited Everything", "Priority Support", "All Features"]}
+                            features={[
+                                t("unlimitedEverything"),
+                                tPricing("plans.premium.features.3"),
+                                t("allFeatures")
+                            ]}
                             recommended
                         />
                     </div>
@@ -92,11 +84,11 @@ export function UpgradeModal({ open, onOpenChange, feature, currentUsage, limit 
 
                 <DialogFooter className="flex-col gap-2 sm:flex-col">
                     <Button onClick={handleUpgrade} className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700">
-                        View Upgrade Options
+                        {t("viewOptions")}
                         <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                     <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full">
-                        Maybe Later
+                        {t("maybeLater")}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -119,6 +111,8 @@ function PlanPreview({
     features: string[];
     recommended?: boolean;
 }) {
+    const t = useTranslations("Subscription.upgrade");
+    const tPricing = useTranslations("Pricing");
     return (
         <div className={cn(
             "relative rounded-lg border p-4 text-center",
@@ -127,7 +121,7 @@ function PlanPreview({
             {recommended && (
                 <div className="absolute -top-2 left-1/2 -translate-x-1/2">
                     <span className="bg-purple-500 text-white text-xs px-2 py-0.5 rounded-full">
-                        Best Value
+                        {t("bestValue")}
                     </span>
                 </div>
             )}
@@ -138,7 +132,7 @@ function PlanPreview({
                 <Icon className="h-4 w-4" />
             </div>
             <p className="font-semibold">{name}</p>
-            <p className="text-lg font-bold">{price}<span className="text-xs font-normal text-muted-foreground">/mo</span></p>
+            <p className="text-lg font-bold">{price}<span className="text-xs font-normal text-muted-foreground">/{tPricing("perMonth")}</span></p>
             <ul className="mt-2 text-xs text-muted-foreground space-y-1">
                 {features.map((f, i) => (
                     <li key={i}>{f}</li>

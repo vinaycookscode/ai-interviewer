@@ -1,5 +1,4 @@
 "use client";
-
 import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -23,46 +22,52 @@ import {
     LineChart
 } from "lucide-react";
 import { toast } from "sonner";
-
-// Quick start presets for common roles
-const QUICK_START_PRESETS = [
-    {
-        role: "Frontend Developer",
-        difficulty: "Junior",
-        icon: Code,
-        gradient: "from-blue-500 to-cyan-500",
-        description: "React, JavaScript, CSS"
-    },
-    {
-        role: "Backend Developer",
-        difficulty: "Mid",
-        icon: Code,
-        gradient: "from-purple-500 to-pink-500",
-        description: "APIs, Databases, Architecture"
-    },
-    {
-        role: "Product Manager",
-        difficulty: "Mid",
-        icon: Users,
-        gradient: "from-orange-500 to-red-500",
-        description: "Strategy, Analytics, Roadmaps"
-    },
-    {
-        role: "Data Scientist",
-        difficulty: "Senior",
-        icon: LineChart,
-        gradient: "from-green-500 to-emerald-500",
-        description: "ML, Statistics, Python"
-    }
-];
+import { useTranslations } from "next-intl";
 
 export function PracticeView() {
+    const t = useTranslations("PracticeInterviews");
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [role, setRole] = useState("");
     const [difficulty, setDifficulty] = useState("Junior");
     const [apiStatus, setApiStatus] = useState<{ available: boolean; usingFallback?: boolean; reason?: string } | null>(null);
     const [isCheckingApi, setIsCheckingApi] = useState(true);
+
+    // Quick start presets for common roles
+    const QUICK_START_PRESETS = [
+        {
+            role: t("roles.frontend"),
+            difficulty: "Junior",
+            difficultyLabel: t("roles.junior"),
+            icon: Code,
+            gradient: "from-blue-500 to-cyan-500",
+            description: t("roles.frontendDesc")
+        },
+        {
+            role: t("roles.backend"),
+            difficulty: "Mid",
+            difficultyLabel: t("roles.mid"),
+            icon: Code,
+            gradient: "from-purple-500 to-pink-500",
+            description: t("roles.backendDesc")
+        },
+        {
+            role: t("roles.pm"),
+            difficulty: "Mid",
+            difficultyLabel: t("roles.mid"),
+            icon: Users,
+            gradient: "from-orange-500 to-red-500",
+            description: t("roles.pmDesc")
+        },
+        {
+            role: t("roles.data"),
+            difficulty: "Senior",
+            difficultyLabel: t("roles.senior"),
+            icon: LineChart,
+            gradient: "from-green-500 to-emerald-500",
+            description: t("roles.dataDesc")
+        }
+    ];
 
     // Check API status on mount
     useEffect(() => {
@@ -76,17 +81,17 @@ export function PracticeView() {
 
     const handleStart = () => {
         if (!role) {
-            toast.error("Please enter a role");
+            toast.error(t("toast.enterRole"));
             return;
         }
 
         startTransition(async () => {
             const result = await createMockInterview(role, difficulty);
             if (result.success && result.mockInterviewId) {
-                toast.success("Interview created!");
+                toast.success(t("toast.created"));
                 router.push(`/candidate/practice/${result.mockInterviewId}`);
             } else {
-                toast.error(result.error || "Something went wrong");
+                toast.error(result.error || t("limitedAvailability.fallback"));
             }
         });
     };
@@ -100,10 +105,10 @@ export function PracticeView() {
             startTransition(async () => {
                 const result = await createMockInterview(preset.role, preset.difficulty);
                 if (result.success && result.mockInterviewId) {
-                    toast.success(`Starting ${preset.role} interview!`);
+                    toast.success(t("quickStart.starting", { role: preset.role }));
                     router.push(`/candidate/practice/${result.mockInterviewId}`);
                 } else {
-                    toast.error(result.error || "Something went wrong");
+                    toast.error(result.error || t("limitedAvailability.fallback"));
                 }
             });
         }, 300);
@@ -117,32 +122,32 @@ export function PracticeView() {
             <div className="mb-12 text-center">
                 <div className="mb-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
                     <Sparkles className="h-4 w-4" />
-                    AI-Powered Interview Practice
+                    {t("badge")}
                 </div>
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-4 bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    Practice Makes Perfect
+                    {t("mainTitle")}
                 </h1>
                 <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-                    Master your interview skills with AI-powered feedback. Build confidence, improve answers, and land your dream job.
+                    {t("description")}
                 </p>
 
                 {/* Feature Highlights */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mb-12">
                     <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-card border">
                         <Target className="h-6 w-6 text-primary" />
-                        <span className="text-sm font-medium">Realistic Scenarios</span>
+                        <span className="text-sm font-medium">{t("features.realistic")}</span>
                     </div>
                     <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-card border">
                         <Brain className="h-6 w-6 text-primary" />
-                        <span className="text-sm font-medium">AI Feedback</span>
+                        <span className="text-sm font-medium">{t("features.feedback")}</span>
                     </div>
                     <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-card border">
                         <TrendingUp className="h-6 w-6 text-primary" />
-                        <span className="text-sm font-medium">Track Progress</span>
+                        <span className="text-sm font-medium">{t("features.progress")}</span>
                     </div>
                     <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-card border">
                         <Zap className="h-6 w-6 text-primary" />
-                        <span className="text-sm font-medium">Instant Results</span>
+                        <span className="text-sm font-medium">{t("features.results")}</span>
                     </div>
                 </div>
             </div>
@@ -151,7 +156,7 @@ export function PracticeView() {
                 <Card className="border-2 border-primary/10 shadow-lg">
                     <CardContent className="flex flex-col items-center justify-center py-12 space-y-4">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        <p className="text-muted-foreground">Checking AI service availability...</p>
+                        <p className="text-muted-foreground">{t("checking")}</p>
                     </CardContent>
                 </Card>
             ) : (
@@ -159,9 +164,9 @@ export function PracticeView() {
                     {apiStatus?.usingFallback && (
                         <Alert className="mb-6 border-yellow-500/50 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400">
                             <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Limited AI Availability</AlertTitle>
+                            <AlertTitle>{t("limitedAvailability.title")}</AlertTitle>
                             <AlertDescription>
-                                {apiStatus?.reason || "AI service is currently unavailable. You can still practice with offline questions."}
+                                {apiStatus?.reason || t("limitedAvailability.fallback")}
                             </AlertDescription>
                         </Alert>
                     )}
@@ -170,49 +175,49 @@ export function PracticeView() {
                     <div className="grid lg:grid-cols-2 gap-8 items-start">
                         {/* LEFT: Custom Setup */}
                         <div className="order-2 lg:order-1 flex flex-col">
-                            <h2 className="text-2xl font-bold mb-4 text-center">Custom Setup</h2>
-                            <p className="text-muted-foreground mb-6 text-center">Create a personalized interview session</p>
+                            <h2 className="text-2xl font-bold mb-4 text-center">{t("customSetup.title")}</h2>
+                            <p className="text-muted-foreground mb-6 text-center">{t("customSetup.subtitle")}</p>
 
                             <Card className="border-2 border-primary/10 shadow-lg h-full flex-1">
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2">
                                         <Sparkles className="h-5 w-5 text-primary" />
-                                        Configure Your Session
+                                        {t("customSetup.config")}
                                     </CardTitle>
                                     <CardDescription>
-                                        Customize the role and difficulty to match your needs
+                                        {t("customSetup.configDesc")}
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-6">
                                     <div className="space-y-2">
-                                        <Label htmlFor="role">Target Role</Label>
+                                        <Label htmlFor="role">{t("customSetup.roleLabel")}</Label>
                                         <Input
                                             id="role"
-                                            placeholder="e.g. Frontend Developer, Product Manager, Sales Rep"
+                                            placeholder={t("customSetup.rolePlaceholder")}
                                             value={role}
                                             onChange={(e) => setRole(e.target.value)}
                                             disabled={isDisabled}
                                             className="text-base"
                                         />
                                         <p className="text-xs text-muted-foreground">
-                                            Enter the job title you're preparing for
+                                            {t("customSetup.roleHint")}
                                         </p>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label>Difficulty Level</Label>
+                                        <Label>{t("customSetup.difficultyLabel")}</Label>
                                         <Select value={difficulty} onValueChange={setDifficulty} disabled={isDisabled}>
                                             <SelectTrigger>
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="Junior">Junior (Entry Level)</SelectItem>
-                                                <SelectItem value="Mid">Mid-Level (2-5 years)</SelectItem>
-                                                <SelectItem value="Senior">Senior (5+ years)</SelectItem>
+                                                <SelectItem value="Junior">{t("customSetup.difficultyJunior")}</SelectItem>
+                                                <SelectItem value="Mid">{t("customSetup.difficultyMid")}</SelectItem>
+                                                <SelectItem value="Senior">{t("customSetup.difficultySenior")}</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <p className="text-xs text-muted-foreground">
-                                            Select based on your experience level
+                                            {t("customSetup.difficultyHint")}
                                         </p>
                                     </div>
 
@@ -225,12 +230,12 @@ export function PracticeView() {
                                         {isPending ? (
                                             <>
                                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                Creating Your Interview...
+                                                {t("customSetup.submitting")}
                                             </>
                                         ) : (
                                             <>
                                                 <Sparkles className="mr-2 h-4 w-4" />
-                                                Start Custom Interview
+                                                {t("customSetup.submit")}
                                             </>
                                         )}
                                     </Button>
@@ -240,8 +245,8 @@ export function PracticeView() {
 
                         {/* RIGHT: Quick Start */}
                         <div className="order-1 lg:order-2 flex flex-col">
-                            <h2 className="text-2xl font-bold mb-4 text-center">Quick Start</h2>
-                            <p className="text-muted-foreground mb-6 text-center">Choose a preset to start immediately</p>
+                            <h2 className="text-2xl font-bold mb-4 text-center">{t("quickStart.title")}</h2>
+                            <p className="text-muted-foreground mb-6 text-center">{t("quickStart.subtitle")}</p>
 
                             <div className="grid grid-cols-2 gap-4">
                                 {QUICK_START_PRESETS.map((preset) => {
@@ -262,7 +267,7 @@ export function PracticeView() {
                                                         <p className="text-sm text-muted-foreground mb-2">{preset.description}</p>
                                                         <div className="flex items-center justify-between">
                                                             <span className="text-xs px-2 py-1 rounded-full bg-muted">
-                                                                {preset.difficulty}
+                                                                {preset.difficultyLabel}
                                                             </span>
                                                             <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
                                                         </div>

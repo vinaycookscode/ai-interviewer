@@ -1,13 +1,12 @@
 import { ModeToggle } from "@/components/mode-toggle";
 import { UserButton } from "@/components/auth/user-button";
-import { LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { GeminiModelSelector } from "@/components/gemini-model-selector";
 import { getGeminiModel } from "@/actions/gemini-config";
-
 import { checkFeature } from "@/actions/feature-flags";
 import { FEATURES } from "@/lib/features";
+import { getTranslations } from "next-intl/server";
 
 interface DashboardHeaderProps {
     user: any;
@@ -15,6 +14,7 @@ interface DashboardHeaderProps {
 }
 
 export async function DashboardHeader({ user, userRole }: DashboardHeaderProps) {
+    const t = await getTranslations("Common");
     const [currentModel, canSelectModel] = await Promise.all([
         getGeminiModel(),
         checkFeature(FEATURES.MODEL_SELECTION)
@@ -36,7 +36,7 @@ export async function DashboardHeader({ user, userRole }: DashboardHeaderProps) 
                         <span className="bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">Back</span>
                         <span className="bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">To U</span>
                     </h1>
-                    <p className="text-[10px] font-black tracking-[0.2em] text-muted-foreground/40 leading-none uppercase">Apex Hiring Engine</p>
+                    <p className="text-[10px] font-black tracking-[0.2em] text-muted-foreground/40 leading-none uppercase">{t("tagline")}</p>
                 </div>
             </Link>
 

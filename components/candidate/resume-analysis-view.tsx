@@ -1,17 +1,16 @@
 "use client";
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle2, XCircle, AlertCircle, Lightbulb, Wand2, Loader2, ArrowRight, FileText, Copy, Check } from "lucide-react";
+import { CheckCircle2, XCircle, AlertCircle, Lightbulb, Wand2, Loader2, FileText, Copy, Check } from "lucide-react";
 import { rewriteResume, generateCoverLetter } from "@/actions/resume-screener";
 import { ResumeDownloader } from "./resume-downloader";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
+import { useTranslations } from "next-intl";
 
 interface AnalysisResult {
     atsScore: number;
@@ -31,6 +30,8 @@ interface ResumeAnalysisViewProps {
 }
 
 export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
+    const t = useTranslations("ResumeAnalysis");
+    const tCommon = useTranslations("Common");
     const [isRewriting, setIsRewriting] = useState(false);
     const [rewrittenResume, setRewrittenResume] = useState<{ content: string; score: number } | null>(null);
     const [customInstructions, setCustomInstructions] = useState("");
@@ -46,15 +47,9 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
         return "text-red-500";
     };
 
-    const getScoreBg = (score: number) => {
-        if (score >= 80) return "bg-green-500";
-        if (score >= 60) return "bg-yellow-500";
-        return "bg-red-500";
-    };
-
     const handleRewrite = async () => {
         if (!analysis.resumeText) {
-            toast.error("Original resume text is missing. Please upload again.");
+            toast.error(t("toast.missingResume"));
             return;
         }
 
@@ -68,10 +63,10 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                     content: result.rewrittenContent,
                     score: result.predictedATSScore
                 });
-                toast.success("Resume rewritten successfully!");
+                toast.success(t("toast.success"));
             }
         } catch (error) {
-            toast.error("An unexpected error occurred.");
+            toast.error(t("toast.error"));
         } finally {
             setIsRewriting(false);
         }
@@ -79,7 +74,7 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
 
     const handleGenerateCoverLetter = async () => {
         if (!analysis.resumeText || !analysis.jobDescription) {
-            toast.error("Missing Resume or Job Description.");
+            toast.error(t("toast.missingResume"));
             return;
         }
 
@@ -90,10 +85,10 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                 toast.error(result.error);
             } else if (result.coverLetter) {
                 setCoverLetter(result.coverLetter);
-                toast.success("Cover Letter Generated!");
+                toast.success(t("toast.clSuccess"));
             }
         } catch (error) {
-            toast.error("Failed to generate cover letter.");
+            toast.error(t("toast.clError"));
         } finally {
             setIsGeneratingCoverLetter(false);
         }
@@ -104,7 +99,7 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
             navigator.clipboard.writeText(coverLetter);
             setHasCopiedCL(true);
             setTimeout(() => setHasCopiedCL(false), 2000);
-            toast.success("Copied to clipboard");
+            toast.success(t("toast.copied"));
         }
     };
 
@@ -115,7 +110,7 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                 <Card className="col-span-2 md:col-span-1">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">
-                            {analysis.matchScore ? "JD Match Score" : "ATS Score"}
+                            {analysis.matchScore ? t("metrics.jdMatchScore") : t("metrics.atsScore")}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -126,7 +121,7 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                             <span className="text-sm text-muted-foreground">/100</span>
                         </div>
                         {analysis.matchScore && (
-                            <p className="text-xs text-muted-foreground mt-1">Based on Job Description</p>
+                            <p className="text-xs text-muted-foreground mt-1">{t("metrics.basedOnJd")}</p>
                         )}
                     </CardContent>
                 </Card>
@@ -134,18 +129,18 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                 <Card className="col-span-2 md:col-span-1">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Key Findings
+                            {t("metrics.keyFindings")}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-2 text-sm">
                                 <CheckCircle2 className="h-4 w-4 text-green-500" />
-                                <span className="font-medium">{analysis.strengths.length} Strengths</span>
+                                <span className="font-medium">{t("metrics.strengthsCount", { count: analysis.strengths.length })}</span>
                             </div>
                             <div className="flex items-center gap-2 text-sm">
                                 <XCircle className="h-4 w-4 text-red-500" />
-                                <span className="font-medium">{analysis.weaknesses.length} Weaknesses</span>
+                                <span className="font-medium">{t("metrics.weaknessesCount", { count: analysis.weaknesses.length })}</span>
                             </div>
                         </div>
                     </CardContent>
@@ -153,7 +148,7 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
 
                 <Card className="col-span-2">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Executive Summary</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">{t("metrics.executiveSummary")}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <p className="text-sm text-muted-foreground line-clamp-2 md:line-clamp-3">
@@ -166,9 +161,9 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
             {/* Main Content Tabs */}
             <Tabs defaultValue="analysis" className="w-full">
                 <TabsList className="grid w-full grid-cols-3 lg:w-[450px]">
-                    <TabsTrigger value="analysis">Detail Analysis</TabsTrigger>
-                    <TabsTrigger value="cover-letter">Cover Letter</TabsTrigger>
-                    <TabsTrigger value="rewrite">Resume Fixer</TabsTrigger>
+                    <TabsTrigger value="analysis">{t("tabs.analysis")}</TabsTrigger>
+                    <TabsTrigger value="cover-letter">{t("tabs.coverLetter")}</TabsTrigger>
+                    <TabsTrigger value="rewrite">{t("tabs.rewrite")}</TabsTrigger>
                 </TabsList>
 
                 {/* Tab 1: Detailed Analysis */}
@@ -179,7 +174,7 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                             <CardHeader className="py-3">
                                 <CardTitle className="flex items-center gap-2 text-base text-red-600">
                                     <AlertCircle className="h-4 w-4" />
-                                    Missing Keywords from JD
+                                    {t("missingKeywords")}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="py-3">
@@ -199,7 +194,7 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-base">
                                     <CheckCircle2 className="h-5 w-5 text-green-500" />
-                                    Strengths
+                                    {t("strengths")}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -218,7 +213,7 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-base">
                                     <XCircle className="h-5 w-5 text-red-500" />
-                                    Weaknesses & Gaps
+                                    {t("weaknesses")}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -239,7 +234,7 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-base">
                                     <AlertCircle className="h-5 w-5 text-yellow-500" />
-                                    Formatting Checks
+                                    {t("formatting.title")}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -254,7 +249,7 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                                     </ul>
                                 ) : (
                                     <div className="flex items-center gap-2 text-sm text-green-600">
-                                        <Check className="h-4 w-4" /> No formatting issues found!
+                                        <Check className="h-4 w-4" /> {t("formatting.noIssues")}
                                     </div>
                                 )}
                             </CardContent>
@@ -264,7 +259,7 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-base text-blue-600 dark:text-blue-400">
                                     <Lightbulb className="h-5 w-5" />
-                                    Improvement Tips
+                                    {t("tips")}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -288,11 +283,11 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                     <Card className="min-h-[400px]">
                         <CardHeader>
                             <CardTitle className="flex items-center justify-between">
-                                <span>Tailored Cover Letter</span>
+                                <span>{t("coverLetter.title")}</span>
                                 {coverLetter && (
                                     <Button variant="outline" size="sm" onClick={copyCoverLetter}>
                                         {hasCopiedCL ? <Check className="h-4 w-4 text-green-500 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
-                                        {hasCopiedCL ? "Copied" : "Copy to Clipboard"}
+                                        {hasCopiedCL ? t("coverLetter.copied") : t("coverLetter.copy")}
                                     </Button>
                                 )}
                             </CardTitle>
@@ -304,22 +299,22 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                                         <AlertCircle className="h-12 w-12 text-yellow-500" />
                                     </div>
                                     <div className="text-center space-y-2">
-                                        <h3 className="text-lg font-medium">Job Description Required</h3>
-                                        <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                                            To generate a tailored cover letter, please re-analyze your resume with a job description.
+                                        <h3 className="text-lg font-medium">{t("coverLetter.jdRequired")}</h3>
+                                        <p className="text-sm text-muted-foreground max-sm mx-auto">
+                                            {t("coverLetter.jdRequiredDesc")}
                                         </p>
                                     </div>
                                     <p className="text-xs text-muted-foreground">
-                                        Paste the job description in the left panel and click "Analyze Resume" again.
+                                        {t("coverLetter.jdRequiredNote")}
                                     </p>
                                 </div>
                             ) : !coverLetter ? (
                                 <div className="flex flex-col items-center justify-center py-12 space-y-4">
                                     <FileText className="h-16 w-16 text-muted-foreground/20" />
                                     <div className="text-center space-y-2">
-                                        <h3 className="text-lg font-medium">Ready to Write?</h3>
-                                        <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                                            Generate a professional cover letter specifically tailored to match your resume with the provided job description.
+                                        <h3 className="text-lg font-medium">{t("coverLetter.readyTitle")}</h3>
+                                        <p className="text-sm text-muted-foreground max-sm mx-auto">
+                                            {t("coverLetter.readyDesc")}
                                         </p>
                                     </div>
                                     <Button
@@ -331,12 +326,12 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                                         {isGeneratingCoverLetter ? (
                                             <>
                                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                Writing...
+                                                {t("coverLetter.writing")}
                                             </>
                                         ) : (
                                             <>
                                                 <Wand2 className="mr-2 h-4 w-4" />
-                                                Generate Cover Letter
+                                                {t("coverLetter.generate")}
                                             </>
                                         )}
                                     </Button>
@@ -356,14 +351,14 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                         {!rewrittenResume ? (
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>AI Resume Fixer</CardTitle>
+                                    <CardTitle>{t("rewrite.title")}</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <p className="text-sm text-muted-foreground">
-                                        Use AI to rewrite your resume. We'll fix formatting, improve bullet points, and better align your experience with the target job.
+                                        {t("rewrite.description")}
                                     </p>
                                     <Textarea
-                                        placeholder="Optional: Add custom instructions (e.g., 'Emphasize my leadership roles', 'Keep it to 1 page')..."
+                                        placeholder={t("rewrite.customPlaceholder")}
                                         value={customInstructions}
                                         onChange={(e) => setCustomInstructions(e.target.value)}
                                         className="bg-background min-h-[100px]"
@@ -377,12 +372,12 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                                         {isRewriting ? (
                                             <>
                                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                Rewriting...
+                                                {t("rewrite.rewriting")}
                                             </>
                                         ) : (
                                             <>
                                                 <Wand2 className="mr-2 h-4 w-4" />
-                                                Rewrite & Improve Resume
+                                                {t("rewrite.submit")}
                                             </>
                                         )}
                                     </Button>
@@ -394,13 +389,13 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                                     <div className="space-y-1">
                                         <CardTitle className="text-green-600 flex items-center gap-2">
                                             <CheckCircle2 className="h-5 w-5" />
-                                            Rewrite Complete
+                                            {t("rewrite.complete")}
                                         </CardTitle>
-                                        <p className="text-sm text-muted-foreground">Predicted New Score: <span className="font-bold text-foreground">{rewrittenResume.score}</span></p>
+                                        <p className="text-sm text-muted-foreground">{t("rewrite.predictedScore", { score: rewrittenResume.score })}</p>
                                     </div>
                                     <div className="flex gap-2">
                                         <ResumeDownloader content={rewrittenResume.content} />
-                                        <Button variant="ghost" onClick={() => setRewrittenResume(null)}>Back</Button>
+                                        <Button variant="ghost" onClick={() => setRewrittenResume(null)}>{t("rewrite.back")}</Button>
                                     </div>
                                 </CardHeader>
                                 <CardContent>

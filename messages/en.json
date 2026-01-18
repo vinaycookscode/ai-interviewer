@@ -33,7 +33,51 @@
         "noEmail": "No email",
         "name": "Name",
         "email": "Email",
-        "page": "Page"
+        "password": "Password",
+        "page": "Page",
+        "getStarted": "Get Started",
+        "overview": "Overview",
+        "users": "Users",
+        "unlimited": "Unlimited",
+        "processing": "Processing...",
+        "expired": "Expired",
+        "feedback": "Feedback",
+        "start": "Start",
+        "continue": "Continue",
+        "tagline": "Apex Hiring Engine",
+        "profileIntegrity": "Profile Integrity",
+        "unknown": "Unknown",
+        "days": "days"
+    },
+    "Admin": {
+        "sidebar": {
+            "title": "Admin",
+            "overview": "Overview",
+            "users": "Users",
+            "subscriptions": "Subscriptions",
+            "locations": "User Locations",
+            "features": "Feature Management",
+            "feedback": "User Feedback",
+            "exit": "Exit Admin"
+        },
+        "subscriptions": {
+            "table": {
+                "user": "User",
+                "plan": "Plan",
+                "billing": "Billing",
+                "status": "Status",
+                "daysLeft": "Days Left",
+                "amount": "Amount",
+                "subscribed": "Subscribed",
+                "noSubscribers": "No subscribers found",
+                "yearly": "Yearly",
+                "monthly": "Monthly",
+                "statusActive": "Active",
+                "statusCancelled": "Cancelled",
+                "statusExpired": "Expired",
+                "statusPastDue": "Past Due"
+            }
+        }
     },
     "Feedback": {
         "button": "Feedback",
@@ -80,6 +124,29 @@
     },
     "Auth": {
         "email": "Email",
+        "login": {
+            "title": "Welcome back",
+            "subtitle": "Logging in for",
+            "forgotPassword": "Forgot password?",
+            "submit": "Login",
+            "submitting": "Logging in...",
+            "noAccount": "Don't have an account?",
+            "errors": {
+                "oauthAccountNotLinked": "Email already in use with different provider!",
+                "generic": "Something went wrong"
+            }
+        },
+        "register": {
+            "title": "Create an account",
+            "selectPlan": "Select your plan",
+            "name": "Name",
+            "roleLabel": "I am a...",
+            "roleCandidate": "Candidate (I want to be interviewed)",
+            "roleEmployer": "Employer (I want to hire)",
+            "submit": "Create an account",
+            "submitting": "Creating account...",
+            "alreadyHaveAccount": "Already have an account?"
+        },
         "forgotPassword": {
             "title": "Forgot Password",
             "backToLogin": "Back to login",
@@ -94,6 +161,385 @@
             "confirmPassword": "Confirm Password",
             "resetting": "Resetting...",
             "reset": "Reset Password"
+        }
+    },
+    "Pricing": {
+        "badge": "Simple Pricing",
+        "title": "Choose Your Plan",
+        "subtitle": "Start free and upgrade when you need more power",
+        "monthly": "Monthly",
+        "yearly": "Yearly",
+        "save": "Save {percent}+",
+        "perMonth": "month",
+        "perYear": "year",
+        "saveAmount": "Save ₹{amount}/year",
+        "popular": "Most Popular",
+        "startFree": "Start Free",
+        "getPro": "Get Pro",
+        "getPremium": "Get Premium",
+        "currentPlan": "Current Plan",
+        "upgradeTo": "Upgrade to {name}",
+        "plans": {
+            "free": {
+                "name": "Free",
+                "price": "₹0",
+                "description": "Get started with basics",
+                "features": [
+                    "2 Mock Interviews/month",
+                    "1 Resume Analysis",
+                    "5 AI Questions"
+                ]
+            },
+            "pro": {
+                "name": "Pro",
+                "priceMonthly": "₹249",
+                "priceYearly": "₹2,490",
+                "description": "For serious job seekers",
+                "features": [
+                    "15 Mock Interviews/month",
+                    "10 Resume Analysis",
+                    "50 AI Questions",
+                    "All Premium Features"
+                ]
+            },
+            "premium": {
+                "name": "Premium",
+                "priceMonthly": "₹499",
+                "priceYearly": "₹4,990",
+                "description": "Unlimited everything",
+                "features": [
+                    "Unlimited Mock Interviews",
+                    "Unlimited Resume Analysis",
+                    "Unlimited AI Questions",
+                    "Priority Support"
+                ]
+            }
+        }
+    },
+    "Subscription": {
+        "toast": {
+            "alreadyFree": "You're already on the Free plan!",
+            "alreadyCurrent": "You're already on this plan!",
+            "orderFailed": "Failed to create order",
+            "verifyFailed": "Payment verification failed",
+            "verifyError": "Failed to verify payment",
+            "initError": "Failed to initialize payment"
+        },
+        "features": {
+            "mockInterviews": "{limit} Mock Interviews/mo",
+            "resumeAnalysis": "{limit} Resume Analysis/mo",
+            "questionGen": "{limit} AI Question Gen/mo",
+            "coverLetters": "{limit} Cover Letters/mo",
+            "resumeRewrites": "{limit} Resume Rewrites/mo",
+            "aiEvaluation": "AI Interview Evaluation",
+            "prioritySupport": "Priority Support"
+        },
+        "upgrade": {
+            "title": "Usage Limit Reached",
+            "description": "You've used all {limit} {feature} this month on the Free plan.",
+            "viewOptions": "View Upgrade Options",
+            "maybeLater": "Maybe Later",
+            "bestValue": "Best Value",
+            "unlimitedEverything": "Unlimited Everything",
+            "allFeatures": "All Features",
+            "featureInfo": {
+                "mock_interview": {
+                    "title": "Mock Interviews",
+                    "description": "Practice unlimited mock interviews with AI feedback to ace your real interviews."
+                },
+                "resume_analysis": {
+                    "title": "Resume Analysis",
+                    "description": "Get AI-powered resume reviews to optimize your resume for ATS systems."
+                },
+                "question_generation": {
+                    "title": "AI Question Generation",
+                    "description": "Generate interview questions tailored to any job description."
+                },
+                "cover_letter": {
+                    "title": "Cover Letter Generation",
+                    "description": "Create compelling cover letters with AI assistance."
+                },
+                "resume_rewrite": {
+                    "title": "Resume Rewriting",
+                    "description": "Transform your resume with AI-powered rewriting suggestions."
+                }
+            }
+        },
+        "prompt": {
+            "upgradeToPro": "Upgrade to Pro",
+            "upgradeNow": "Upgrade Now",
+            "policy": "Cancel anytime. No long-term commitments.",
+            "unlock": "Unlock {feature} with a Pro subscription.",
+            "planSummary": "{name} Plan - {price}/month",
+            "proFeatures": "15 Mock Interviews, 10 Resume Analysis & more",
+            "premiumFeatures": "Unlimited access to all AI features",
+            "features": {
+                "aiPractice": "Practice unlimited mock interviews with AI-powered feedback to ace your real interviews.",
+                "resumeScreener": "Get AI-powered resume analysis, cover letter generation, and resume optimization.",
+                "questionGen": "Generate tailored interview questions from any job description."
+            }
+        }
+    },
+    "Dashboard": {
+        "title": "My Interviews",
+        "subtitle": "View your interview invitations and results",
+        "noInterviewsTitle": "No Interviews Found",
+        "noInterviewsDesc": "You haven't been invited to any interviews yet.",
+        "upcomingTitle": "Upcoming Interviews",
+        "noUpcoming": "No upcoming interviews.",
+        "pastTitle": "Past Interviews",
+        "noPast": "No past interviews.",
+        "interviewCard": {
+            "invitedOn": "Invited {date}",
+            "expiresOn": "Expires: {date}",
+            "scoreLabel": "Score",
+            "uploadDocs": "Upload Docs"
+        }
+    },
+    "ResumeScreener": {
+        "title": "AI Resume Screener",
+        "subtitle": "Upload your resume and optionally paste a job description.",
+        "uploadSection": "Upload Documents",
+        "currentResume": "Current Resume",
+        "defaultResumeName": "My Professional Resume",
+        "sourcedFromPath": "Sourced from your path",
+        "noResumeFound": "No Resume Found",
+        "wizardIncomplete": "To analyze your resume, please upload it in the \"Level Up Your Journey\" wizard first.",
+        "completeWizard": "Complete Wizard",
+        "jdLabel": "Job Description (Optional)",
+        "matchScoreInfo": "(For Match Score)",
+        "jdPlaceholder": "Paste the job description here...",
+        "analyzeAndMatch": "Analyze & Match",
+        "analyzeResume": "Analyze Resume",
+        "matching": "Matching...",
+        "analyzing": "Analyzing...",
+        "analyzingProfile": "Analyzing your profile...",
+        "comparingSkills": "Comparing your skills and experience against the job requirements.",
+        "extractingInsights": "Extracting key insights, strengths, and potential improvements.",
+        "noAnalysisTitle": "No Analysis Yet",
+        "noAnalysisDesc": "Upload a resume and click analyze to see detailed insights and AI-powered feedback here.",
+        "toast": {
+            "uploadFirst": "Please upload your resume in the 'Level Up Your Journey' wizard first.",
+            "success": "Resume analyzed successfully!"
+        },
+        "unavailable": {
+            "title": "Feature Unavailable",
+            "description": "The Resume Screener feature is currently disabled by the administrator."
+        }
+    },
+    "ResumeAnalysis": {
+        "metrics": {
+            "jdMatchScore": "JD Match Score",
+            "atsScore": "ATS Score",
+            "basedOnJd": "Based on Job Description",
+            "keyFindings": "Key Findings",
+            "strengthsCount": "{count} Strengths",
+            "weaknessesCount": "{count} Weaknesses",
+            "executiveSummary": "Executive Summary"
+        },
+        "tabs": {
+            "analysis": "Detail Analysis",
+            "coverLetter": "Cover Letter",
+            "rewrite": "Resume Fixer"
+        },
+        "missingKeywords": "Missing Keywords from JD",
+        "strengths": "Strengths",
+        "weaknesses": "Weaknesses & Gaps",
+        "formatting": {
+            "title": "Formatting Checks",
+            "noIssues": "No formatting issues found!"
+        },
+        "tips": "Improvement Tips",
+        "coverLetter": {
+            "title": "Tailored Cover Letter",
+            "copy": "Copy to Clipboard",
+            "copied": "Copied",
+            "jdRequired": "Job Description Required",
+            "jdRequiredDesc": "To generate a tailored cover letter, please re-analyze your resume with a job description.",
+            "jdRequiredNote": "Paste the job description in the left panel and click \"Analyze Resume\" again.",
+            "readyTitle": "Ready to Write?",
+            "readyDesc": "Generate a professional cover letter specifically tailored to match your resume with the provided job description.",
+            "generate": "Generate Cover Letter",
+            "writing": "Writing..."
+        },
+        "rewrite": {
+            "title": "AI Resume Fixer",
+            "description": "Use AI to rewrite your resume. We'll fix formatting, improve bullet points, and better align your experience with the target job.",
+            "customPlaceholder": "Optional: Add custom instructions (e.g., 'Emphasize my leadership roles', 'Keep it to 1 page')...",
+            "submit": "Rewrite & Improve Resume",
+            "rewriting": "Rewriting...",
+            "complete": "Rewrite Complete",
+            "predictedScore": "Predicted New Score: {score}",
+            "back": "Back"
+        },
+        "toast": {
+            "missingResume": "Original resume text is missing. Please upload again.",
+            "success": "Resume rewritten successfully!",
+            "error": "An unexpected error occurred.",
+            "clSuccess": "Cover Letter Generated!",
+            "clError": "Failed to generate cover letter.",
+            "copied": "Copied to clipboard"
+        }
+    },
+    "PracticeInterviews": {
+        "title": "AI Practice Interview",
+        "subtitle": "Practice with AI and get instant feedback.",
+        "badge": "AI-Powered Interview Practice",
+        "mainTitle": "Practice Makes Perfect",
+        "description": "Master your interview skills with AI-powered feedback. Build confidence, improve answers, and land your dream job.",
+        "features": {
+            "realistic": "Realistic Scenarios",
+            "feedback": "AI Feedback",
+            "progress": "Track Progress",
+            "results": "Instant Results"
+        },
+        "checking": "Checking AI service availability...",
+        "limitedAvailability": {
+            "title": "Limited AI Availability",
+            "fallback": "AI service is currently unavailable. You can still practice with offline questions."
+        },
+        "customSetup": {
+            "title": "Custom Setup",
+            "subtitle": "Create a personalized interview session",
+            "config": "Configure Your Session",
+            "configDesc": "Customize the role and difficulty to match your needs",
+            "roleLabel": "Target Role",
+            "rolePlaceholder": "e.g. Frontend Developer, Product Manager, Sales Rep",
+            "roleHint": "Enter the job title you're preparing for",
+            "difficultyLabel": "Difficulty Level",
+            "difficultyJunior": "Junior (Entry Level)",
+            "difficultyMid": "Mid-Level (2-5 years)",
+            "difficultySenior": "Senior (5+ years)",
+            "difficultyHint": "Select based on your experience level",
+            "submit": "Start Custom Interview",
+            "submitting": "Creating Your Interview..."
+        },
+        "quickStart": {
+            "title": "Quick Start",
+            "subtitle": "Choose a preset to start immediately",
+            "starting": "Starting {role} interview!"
+        },
+        "toast": {
+            "enterRole": "Please enter a role",
+            "created": "Interview created!"
+        },
+        "unavailable": {
+            "title": "Feature Unavailable",
+            "description": "The Practice Interview feature is currently disabled by the administrator."
+        },
+        "roles": {
+            "frontend": "Frontend Developer",
+            "backend": "Backend Developer",
+            "pm": "Product Manager",
+            "data": "Data Scientist",
+            "frontendDesc": "React, JavaScript, CSS",
+            "backendDesc": "APIs, Databases, Architecture",
+            "pmDesc": "Strategy, Analytics, Roadmaps",
+            "dataDesc": "ML, Statistics, Python",
+            "junior": "Junior",
+            "mid": "Mid",
+            "senior": "Senior"
+        }
+    },
+    "Home": {
+        "nav": {
+            "features": "Features",
+            "pricing": "Pricing",
+            "contact": "Contact",
+            "login": "Login"
+        },
+        "hero": {
+            "badge": "#1 AI Interview Platform",
+            "title": "Ace Your",
+            "titleAccent": "AI Interview",
+            "subtitle": "Experience the most realistic AI mock interviews, get instant feedback, and follow our 90-day placement program to land your dream job.",
+            "ctaPrimary": "Start AI Interview",
+            "ctaSecondary": "Watch Demo",
+            "trust": {
+                "noCreditCard": "No credit card required",
+                "freeForever": "Free forever plan",
+                "cancelAnytime": "Cancel anytime"
+            }
+        },
+        "stats": {
+            "practice": {
+                "value": "10,000+",
+                "label": "Practice Sessions"
+            },
+            "success": {
+                "value": "95%",
+                "label": "Success Rate"
+            },
+            "companies": {
+                "value": "500+",
+                "label": "Companies Covered"
+            },
+            "available": {
+                "value": "24/7",
+                "label": "AI Available"
+            }
+        },
+        "features": {
+            "badge": "Everything You Need",
+            "title": "Powerful Features",
+            "subtitle": "Everything you need to prepare, practice, and land your dream job",
+            "learnMore": "Learn more",
+            "items": {
+                "aiPractice": {
+                    "title": "AI Practice Interviews",
+                    "description": "Practice with our AI interviewer anytime. Get instant feedback and improve your interview skills."
+                },
+                "placement": {
+                    "title": "90-Day Placement Program",
+                    "description": "Structured 90-day roadmap to land your dream job with daily tasks and milestone tracking."
+                },
+                "companyPrep": {
+                    "title": "Company Prep",
+                    "description": "Company-specific interview preparation with tailored questions and insights."
+                },
+                "resumeScreener": {
+                    "title": "Resume Screener",
+                    "description": "AI-powered resume analysis, JD matching, and cover letter generation."
+                },
+                "studySquad": {
+                    "title": "Study Squad",
+                    "description": "Join collaborative learning groups and prepare together with peers."
+                },
+                "mentors": {
+                    "title": "Find Mentors",
+                    "description": "Connect with industry mentors who can guide your career journey."
+                },
+                "offerTracker": {
+                    "title": "Offer Tracker",
+                    "description": "Manage and compare multiple job offers with our smart comparison tool."
+                }
+            }
+        },
+        "cta": {
+            "title": "Ready to {accent} Your Career?",
+            "titleAccent": "Transform",
+            "subtitle": "Join thousands of job seekers who have accelerated their career with our AI-powered platform.",
+            "button": "Get Started Free"
+        },
+        "legal": {
+            "privacy": {
+                "title": "Privacy Policy",
+                "content": "We collect only essential information to provide our services. Your data is encrypted, never sold, and you can delete your account anytime. AI processing is done securely with your consent."
+            },
+            "terms": {
+                "title": "Terms of Service",
+                "content": "By using Get Back To U, you agree to use our services responsibly. AI feedback is guidance only - we don't guarantee specific outcomes. Your content remains yours."
+            },
+            "contact": {
+                "title": "Contact Us",
+                "content": "Email us at {email}, Call us at {phone}, Support hours: Mon-Fri, 9AM-6PM IST"
+            }
+        },
+        "footer": {
+            "privacy": "Privacy",
+            "terms": "Terms",
+            "contact": "Contact",
+            "rights": "© 2025 Get Back To U. All rights reserved."
         }
     }
 }
