@@ -89,9 +89,9 @@ export function ResumeScreenerView({ profileResumeUrl, profileResumeName }: { pr
                                     </div>
                                 )}
                             </div>
-                            drum
 
                             <div className="space-y-2">
+
                                 <Label htmlFor="jd" className="flex items-center gap-2">
                                     Job Description (Optional)
                                     <span className="text-xs text-muted-foreground font-normal">(For Match Score)</span>

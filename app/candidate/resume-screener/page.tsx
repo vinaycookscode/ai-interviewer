@@ -39,9 +39,9 @@ export default async function ResumeScreenerPage() {
     }
 
     const user = await getUserProfile();
-    const userProfile = user as any;
-    const candidateProfile = userProfile?.candidateProfile;
 
-    return <ResumeScreenerView profileResumeUrl={candidateProfile?.resumeUrl} profileResumeName={candidateProfile?.resumeName} />;
+    // resumeUrl is on the user object, not candidateProfile
+    return <ResumeScreenerView profileResumeUrl={user?.resumeUrl} profileResumeName={user?.resumeName} />;
 }
+
 
