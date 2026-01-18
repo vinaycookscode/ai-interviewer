@@ -75,7 +75,8 @@ export default async function PricingPage() {
                     />
                     <FaqItem
                         question="What if I need more features?"
-                        answer="If you need custom limits or enterprise features, contact us at support@ai-interviewer.com and we'll create a tailored plan for you."
+                        answer="If you need custom limits or enterprise features, contact us at hello@getbacktou.com and we'll create a tailored plan for you."
+
                     />
                 </div>
             </div>

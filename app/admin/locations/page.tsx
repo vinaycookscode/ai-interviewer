@@ -83,8 +83,8 @@ export default async function LocationsPage() {
                                 <TableHead>Rank</TableHead>
                                 <TableHead>Country</TableHead>
                                 <TableHead>Code</TableHead>
-                                <TableHead className="text-right">Visits</TableHead>
                                 <TableHead className="text-right">Percentage</TableHead>
+                                <TableHead className="text-right">Visits</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -93,16 +93,16 @@ export default async function LocationsPage() {
                                     <TableCell className="font-medium">{index + 1}</TableCell>
                                     <TableCell>{stat.country}</TableCell>
                                     <TableCell className="font-mono text-xs">{stat.countryCode}</TableCell>
-                                    <TableCell className="text-right">{stat.count}</TableCell>
                                     <TableCell className="text-right">
                                         {totals.totalVisits > 0
                                             ? Math.round((stat.count / totals.totalVisits) * 100)
-                                            : 0}
-                                        %
+                                            : 0}%
                                     </TableCell>
+                                    <TableCell className="text-right">{stat.count}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
+
                     </Table>
                 </CardContent>
             </Card>

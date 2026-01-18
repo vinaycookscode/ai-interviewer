@@ -14,7 +14,10 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { headers } from "next/headers";
 import { getClientIP } from "@/lib/geolocation";
 
-export const login = async (values: z.infer<typeof LoginSchema>) => {
+export const login = async (
+    values: z.infer<typeof LoginSchema>,
+    callbackUrl?: string
+) => {
     const validatedFields = LoginSchema.safeParse(values);
 
     if (!validatedFields.success) {
@@ -36,7 +39,7 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
         await signIn("credentials", {
             email,
             password,
-            redirectTo: DEFAULT_LOGIN_REDIRECT,
+            redirectTo: callbackUrl || DEFAULT_LOGIN_REDIRECT,
         });
     } catch (error) {
         if (error instanceof AuthError) {
@@ -50,6 +53,7 @@ export const login = async (values: z.infer<typeof LoginSchema>) => {
         throw error;
     }
 };
+
 
 export const register = async (
     values: z.infer<typeof RegisterSchema>,

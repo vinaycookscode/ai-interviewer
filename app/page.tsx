@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   Play
 } from "lucide-react";
+import { HomePricingSection } from "@/components/home/pricing-section";
 
 import { Metadata } from "next";
 
@@ -102,7 +103,13 @@ export default function HomePage() {
               Get Back To U
             </h1>
           </div>
+          <div className="hidden md:flex items-center gap-8 text-sm font-medium">
+            <Link href="#features" className="text-muted-foreground hover:text-foreground transition-colors">Features</Link>
+            <Link href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">Pricing</Link>
+            <Link href="#contact" className="text-muted-foreground hover:text-foreground transition-colors">Contact</Link>
+          </div>
           <div className="flex items-center gap-4">
+
             <Link href="/auth/login">
               <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
                 Login
@@ -116,12 +123,12 @@ export default function HomePage() {
             </Link>
           </div>
         </div>
-      </nav>
+      </nav >
 
       {/* Hero Section */}
-      <section className="relative py-24 md:py-32 lg:py-40">
+      < section className="relative py-24 md:py-32 lg:py-40" >
         {/* Animated Gradient Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-teal-500/10 to-emerald-500/20" />
+        < div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-teal-500/10 to-emerald-500/20" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(34,211,238,0.3),transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(16,185,129,0.3),transparent_50%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(45,212,191,0.15),transparent_70%)]" />
@@ -189,7 +196,7 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-      </section>
+      </section >
 
       <section className="py-16 relative">
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-teal-500/5 to-emerald-500/5" />
@@ -217,7 +224,8 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-24 relative">
+      <section id="features" className="py-24 relative">
+
         <div className="container mx-auto px-4">
           {/* Section Header */}
           <div className="text-center mb-16 space-y-4">
@@ -276,6 +284,9 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Pricing Section */}
+      <HomePricingSection />
+
       {/* CTA Section */}
       <section className="py-24 relative overflow-hidden">
         {/* Gradient Background */}
@@ -310,6 +321,7 @@ export default function HomePage() {
         </div>
       </section>
 
+
       {/* Privacy, Terms, Contact Section */}
       <section id="legal" className="py-16 bg-muted/20">
         <div className="container mx-auto px-4 max-w-5xl">
@@ -342,7 +354,12 @@ export default function HomePage() {
                 Contact Us
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Questions? Call us at{" "}
+                Email us at{" "}
+                <a href="mailto:hello@getbacktou.com" className="text-cyan-400 hover:underline">
+                  hello@getbacktou.com
+                </a>
+                <br />
+                Call us at{" "}
                 <a href="tel:+918600137191" className="text-cyan-400 hover:underline">
                   +91 8600137191
                 </a>
@@ -375,6 +392,6 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
-    </div>
+    </div >
   );
 }

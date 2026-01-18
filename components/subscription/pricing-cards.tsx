@@ -1,6 +1,4 @@
-"use client";
-
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Check, X, Loader2, Sparkles, Crown, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +9,8 @@ import { cn } from "@/lib/utils";
 import { BillingPeriod, PlanTier } from "@prisma/client";
 import { createSubscriptionOrder, verifyAndActivateSubscription } from "@/actions/subscription";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { decryptData } from "@/lib/encryption";
 
 declare global {
     interface Window {
@@ -61,12 +60,44 @@ function formatLimit(limit: number): string {
     return limit.toString();
 }
 
+
 export function PricingCards({ plans, currentPlanTier, razorpayKeyId }: PricingCardsProps) {
     const [isYearly, setIsYearly] = useState(false);
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const hasTriggeredRef = useRef(false);
 
-    const handleSubscribe = async (plan: Plan) => {
+    useEffect(() => {
+        // Handle encrypted state
+        const s = searchParams.get("s");
+        const decrypted = s ? decryptData(s) : null;
+
+        const selectedPlanTier = decrypted?.plan || searchParams.get("selected");
+        const selectedPeriod = decrypted?.period || searchParams.get("period");
+
+        // Sync period from URL if present
+        if (selectedPeriod === "YEARLY") {
+            setIsYearly(true);
+        } else if (selectedPeriod === "MONTHLY") {
+            setIsYearly(false);
+        }
+
+        if (selectedPlanTier && !hasTriggeredRef.current && plans.length > 0) {
+            const planToSelect = plans.find(p => p.tier === selectedPlanTier);
+            if (planToSelect && planToSelect.tier !== currentPlanTier) {
+                hasTriggeredRef.current = true;
+                // Add a small delay for scripts to load and UI to settle
+                const timer = setTimeout(() => {
+                    handleSubscribe(planToSelect, selectedPeriod === "YEARLY" || (selectedPeriod === null && isYearly));
+                }, 500);
+                return () => clearTimeout(timer);
+            }
+        }
+    }, [searchParams, plans, currentPlanTier]);
+
+
+    const handleSubscribe = async (plan: Plan, overrideYearly?: boolean) => {
         if (plan.tier === PlanTier.FREE) {
             toast.info("You're already on the Free plan!");
             return;
@@ -80,8 +111,10 @@ export function PricingCards({ plans, currentPlanTier, razorpayKeyId }: PricingC
         setLoadingPlan(plan.id);
 
         try {
-            const billingPeriod = isYearly ? BillingPeriod.YEARLY : BillingPeriod.MONTHLY;
+            const isYearlyBilling = overrideYearly !== undefined ? overrideYearly : isYearly;
+            const billingPeriod = isYearlyBilling ? BillingPeriod.YEARLY : BillingPeriod.MONTHLY;
             const result = await createSubscriptionOrder(plan.tier, billingPeriod);
+
 
             if (!result.success) {
                 toast.error(result.error || "Failed to create order");
