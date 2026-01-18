@@ -41,6 +41,22 @@ export async function createMockInterview(role: string, difficulty: string) {
         return { error: "Unauthorized" };
     }
 
+    // Check usage limit
+    const { checkUsageLimit, incrementUsage } = await import("@/lib/usage");
+    const usageCheck = await checkUsageLimit("mock_interview");
+
+    if (!usageCheck.allowed) {
+        return {
+            error: usageCheck.message,
+            upgradeRequired: true,
+            usage: {
+                current: usageCheck.currentUsage,
+                limit: usageCheck.limit,
+                remaining: usageCheck.remaining,
+            }
+        };
+    }
+
     try {
         const mockInterview = await db.mockInterview.create({
             data: {
@@ -50,12 +66,16 @@ export async function createMockInterview(role: string, difficulty: string) {
             },
         });
 
+        // Increment usage after successful creation
+        await incrementUsage("mock_interview");
+
         return { success: "Mock interview created", mockInterviewId: mockInterview.id };
     } catch (error) {
         console.error("Error creating mock interview:", error);
         return { error: "Failed to create mock interview" };
     }
 }
+
 
 export async function generateMockQuestions(role: string, difficulty: string): Promise<{
     questions?: string[];

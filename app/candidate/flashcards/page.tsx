@@ -3,6 +3,9 @@ import { DeckCard } from "@/components/flashcards/deck-card";
 import { Layers, Brain, Target, BookOpen } from "lucide-react";
 import { auth } from "@/auth";
 import { CreateDeckDialog } from "./create-deck-dialog";
+import { getCurrentSubscription } from "@/actions/subscription";
+import { PlanTier } from "@prisma/client";
+import { UpgradePrompt } from "@/components/subscription/upgrade-prompt";
 
 export const metadata = {
     title: "Flashcards | Get Back To U",
@@ -14,7 +17,17 @@ export const dynamic = 'force-dynamic';
 
 export default async function FlashcardsPage() {
     const session = await auth();
+
+    // Check subscription - block free users
+    const subscription = await getCurrentSubscription();
+    const isFreeUser = !subscription || subscription.isFree || subscription.plan?.tier === PlanTier.FREE;
+
+    if (isFreeUser) {
+        return <UpgradePrompt feature="Flashcards" description="Master interview concepts with AI-powered spaced repetition flashcards." />;
+    }
+
     const decks = await getDecks();
+
 
     const systemDecks = decks.filter((d) => !d.userId);
     const userDecks = decks.filter((d) => d.userId === session?.user?.id);

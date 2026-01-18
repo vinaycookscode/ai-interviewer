@@ -29,6 +29,22 @@ export async function analyzeResume(formData: FormData) {
         return { error: "Unauthorized" };
     }
 
+    // Check usage limit
+    const { checkUsageLimit, incrementUsage } = await import("@/lib/usage");
+    const usageCheck = await checkUsageLimit("resume_analysis");
+
+    if (!usageCheck.allowed) {
+        return {
+            error: usageCheck.message,
+            upgradeRequired: true,
+            usage: {
+                current: usageCheck.currentUsage,
+                limit: usageCheck.limit,
+                remaining: usageCheck.remaining,
+            }
+        };
+    }
+
     let file = formData.get("file") as File | null;
     const resumeUrlFromProfile = formData.get("resumeUrl") as string | null;
 
@@ -150,6 +166,9 @@ export async function analyzeResume(formData: FormData) {
         analysis.resumeText = resumeText;
         analysis.jobDescription = jobDescription; // Pass back for cover letter generation
 
+        // Increment usage after successful analysis
+        await incrementUsage("resume_analysis");
+
         return { success: true, analysis };
 
     } catch (error: any) {
@@ -172,6 +191,22 @@ export async function generateCoverLetter(resumeText: string, jobDescription: st
 
     if (!session || !session.user) {
         return { error: "Unauthorized" };
+    }
+
+    // Check usage limit
+    const { checkUsageLimit, incrementUsage } = await import("@/lib/usage");
+    const usageCheck = await checkUsageLimit("cover_letter");
+
+    if (!usageCheck.allowed) {
+        return {
+            error: usageCheck.message,
+            upgradeRequired: true,
+            usage: {
+                current: usageCheck.currentUsage,
+                limit: usageCheck.limit,
+                remaining: usageCheck.remaining,
+            }
+        };
     }
 
     try {
@@ -201,6 +236,9 @@ export async function generateCoverLetter(resumeText: string, jobDescription: st
         const response = await result.response;
         const coverLetter = response.text();
 
+        // Increment usage after successful generation
+        await incrementUsage("cover_letter");
+
         return { success: true, coverLetter };
 
     } catch (error: any) {
@@ -217,6 +255,22 @@ export async function rewriteResume(currentText: string, analysis: any, customIn
 
     if (!session || !session.user) {
         return { error: "Unauthorized" };
+    }
+
+    // Check usage limit
+    const { checkUsageLimit, incrementUsage } = await import("@/lib/usage");
+    const usageCheck = await checkUsageLimit("resume_rewrite");
+
+    if (!usageCheck.allowed) {
+        return {
+            error: usageCheck.message,
+            upgradeRequired: true,
+            usage: {
+                current: usageCheck.currentUsage,
+                limit: usageCheck.limit,
+                remaining: usageCheck.remaining,
+            }
+        };
     }
 
     try {
@@ -287,6 +341,9 @@ export async function rewriteResume(currentText: string, analysis: any, customIn
                 throw new Error("Failed to parse rewrite results. The AI response was malformed.");
             }
         }
+
+        // Increment usage after successful rewrite
+        await incrementUsage("resume_rewrite");
 
         return { success: true, ...rewriteResult };
 

@@ -12,6 +12,7 @@ import {
     UserCheck,
     BriefcaseBusiness,
     Layers,
+    Crown,
 } from "lucide-react";
 import { AppSidebar, NavItem } from "@/components/layout/app-sidebar";
 import { FEATURES } from "@/lib/features";
@@ -49,6 +50,7 @@ const CANDIDATE_NAV_ITEMS: NavItem[] = [
         href: "/candidate/practice",
         featureKey: FEATURES.PRACTICE_INTERVIEWS,
         colorClass: "text-purple-500",
+        isPro: true,
     },
     {
         icon: FileText,
@@ -56,12 +58,14 @@ const CANDIDATE_NAV_ITEMS: NavItem[] = [
         href: "/candidate/resume-screener",
         featureKey: FEATURES.RESUME_SCREENER,
         colorClass: "text-blue-500",
+        isPro: true,
     },
     {
         icon: Layers,
         labelKey: "flashcards",
         href: "/candidate/flashcards",
         colorClass: "text-teal-500",
+        isPro: true,
     },
     // Placement Platform Section
     {
@@ -74,6 +78,7 @@ const CANDIDATE_NAV_ITEMS: NavItem[] = [
         href: "/candidate/placement-program",
         featureKey: FEATURES.PLACEMENT_PROGRAM,
         colorClass: "text-orange-500",
+        isPro: true,
     },
     {
         icon: Building2,
@@ -81,6 +86,7 @@ const CANDIDATE_NAV_ITEMS: NavItem[] = [
         href: "/candidate/company-prep",
         featureKey: FEATURES.COMPANY_PREP,
         colorClass: "text-cyan-500",
+        isPro: true,
     },
     {
         icon: Users,
@@ -103,7 +109,20 @@ const CANDIDATE_NAV_ITEMS: NavItem[] = [
         featureKey: FEATURES.OFFER_COMPARATOR,
         colorClass: "text-emerald-500",
     },
+
+    // Subscription Section
+    {
+        isDivider: true,
+        labelKey: "subscription",
+    },
+    {
+        icon: Crown,
+        labelKey: "pricing",
+        href: "/candidate/pricing",
+        colorClass: "text-yellow-500",
+    },
 ];
+
 
 export function CandidateSidebar({ featureFlags }: SidebarProps) {
     const [completion, setCompletion] = useState(0);

@@ -18,6 +18,29 @@ enum InterviewStatus {
   COMPLETED
 }
 
+// ============================================
+// SUBSCRIPTION SYSTEM ENUMS
+// ============================================
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PAST_DUE
+  TRIALING
+}
+
+enum PlanTier {
+  FREE
+  PRO
+  PREMIUM
+}
+
+enum BillingPeriod {
+  MONTHLY
+  YEARLY
+}
+
 model User {
   id            String    @id @default(uuid())
   name          String?
@@ -64,6 +87,9 @@ model User {
   mentorships        Mentorship[]  @relation("MenteeRelation")
   jobOffers          JobOffer[]
   companySolutions   UserCompanySolution[]
+  
+  // Subscription
+  subscription       Subscription?
 }
 
 model Account {
@@ -730,3 +756,98 @@ model CandidateProfile {
   updatedAt       DateTime @updatedAt
 }
 
+// ============================================
+// SUBSCRIPTION SYSTEM
+// ============================================
+
+model SubscriptionPlan {
+  id              String        @id @default(cuid())
+  name            String        // "Free", "Pro", "Premium"
+  tier            PlanTier      @unique
+  
+  // Pricing in paise (₹249 = 24900 paise)
+  monthlyPrice    Int           @default(0)
+  yearlyPrice     Int           @default(0)
+  
+  // Feature limits (-1 = unlimited)
+  mockInterviewLimit      Int   @default(2)
+  resumeAnalysisLimit     Int   @default(1)
+  questionGenerationLimit Int   @default(5)
+  coverLetterLimit        Int   @default(0)
+  resumeRewriteLimit      Int   @default(0)
+  aiEvaluationEnabled     Boolean @default(false)
+  prioritySupport         Boolean @default(false)
+  
+  // Razorpay Plan IDs
+  razorpayMonthlyPlanId   String?
+  razorpayYearlyPlanId    String?
+  
+  subscriptions   Subscription[]
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model Subscription {
+  id                    String             @id @default(cuid())
+  userId                String             @unique
+  user                  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId                String
+  plan                  SubscriptionPlan   @relation(fields: [planId], references: [id])
+  
+  status                SubscriptionStatus @default(ACTIVE)
+  billingPeriod         BillingPeriod      @default(MONTHLY)
+  
+  // Razorpay subscription details
+  razorpaySubscriptionId String?           @unique
+  razorpayCustomerId     String?
+  
+  // Billing dates
+  currentPeriodStart    DateTime           @default(now())
+  currentPeriodEnd      DateTime
+  cancelledAt           DateTime?
+  
+  // Payment history
+  payments              Payment[]
+  
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  
+  @@index([planId])
+}
+
+model Payment {
+  id                    String       @id @default(cuid())
+  subscriptionId        String
+  subscription          Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  
+  amount                Int          // Amount in paise
+  currency              String       @default("INR")
+  status                String       // "captured", "failed", "refunded"
+  
+  razorpayPaymentId     String?      @unique
+  razorpayOrderId       String?
+  razorpaySignature     String?
+  
+  createdAt             DateTime     @default(now())
+  
+  @@index([subscriptionId])
+}
+
+model UsageRecord {
+  id              String   @id @default(cuid())
+  userId          String
+  
+  // Usage type
+  featureType     String   // "mock_interview", "resume_analysis", "question_generation", "cover_letter", "resume_rewrite"
+  
+  // Period tracking
+  periodStart     DateTime
+  periodEnd       DateTime
+  usageCount      Int      @default(1)
+  
+  createdAt       DateTime @default(now())
+  
+  @@unique([userId, featureType, periodStart])
+  @@index([userId, featureType])
+}

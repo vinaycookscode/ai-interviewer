@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu } from "lucide-react";
+import { Menu, Crown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -18,6 +18,7 @@ export type NavItem = {
     featureKey?: string;
     colorClass?: string;
     requiredRole?: string;
+    isPro?: boolean; // Show Pro badge for premium features
     isDivider?: false;
 } | {
     isDivider: true,
@@ -111,6 +112,9 @@ const NavLinks = ({
                             />
                         </div>
                         <span className="text-sm">{t(item.labelKey)}</span>
+                        {item.isPro && (
+                            <Crown className="h-3.5 w-3.5 text-yellow-500 ml-auto" />
+                        )}
                         {active && (
                             <motion.div
                                 layoutId="sidebar-active"

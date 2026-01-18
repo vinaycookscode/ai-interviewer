@@ -13,6 +13,23 @@ export async function generateQuestions(jobDescription: string, language?: strin
         return { success: false, error: "Unauthorized" };
     }
 
+    // Check usage limit
+    const { checkUsageLimit, incrementUsage } = await import("@/lib/usage");
+    const usageCheck = await checkUsageLimit("question_generation");
+
+    if (!usageCheck.allowed) {
+        return {
+            success: false,
+            error: usageCheck.message,
+            upgradeRequired: true,
+            usage: {
+                current: usageCheck.currentUsage,
+                limit: usageCheck.limit,
+                remaining: usageCheck.remaining,
+            }
+        };
+    }
+
     // Get user's API key
     const user = await db.user.findUnique({
         where: { id: session.user.id },
@@ -72,6 +89,9 @@ export async function generateQuestions(jobDescription: string, language?: strin
                 error: "Failed to parse questions from Gemini API. Please try again."
             };
         }
+
+        // Increment usage after successful generation
+        await incrementUsage("question_generation");
 
         return { success: true, questions };
     } catch (error: any) {

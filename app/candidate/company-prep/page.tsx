@@ -9,6 +9,9 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { getCurrentSubscription } from "@/actions/subscription";
+import { PlanTier } from "@prisma/client";
+import { UpgradePrompt } from "@/components/subscription/upgrade-prompt";
 
 const COMPANY_COLORS: Record<string, string> = {
     tcs: "bg-blue-500",
@@ -33,6 +36,15 @@ export default async function CompanyPrepPage() {
             </div>
         );
     }
+
+    // Check subscription - block free users
+    const subscription = await getCurrentSubscription();
+    const isFreeUser = !subscription || subscription.isFree || subscription.plan?.tier === PlanTier.FREE;
+
+    if (isFreeUser) {
+        return <UpgradePrompt feature="Company Prep" description="Get company-specific interview preparation with curated resources for top companies." />;
+    }
+
 
     const [companies, userProfile] = await Promise.all([
         getAllCompanyKits(),

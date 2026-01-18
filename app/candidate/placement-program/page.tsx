@@ -4,6 +4,9 @@ import { checkFeature } from "@/actions/feature-flags";
 import { FEATURES } from "@/lib/features";
 import { getActivePrograms, getUserEnrollments } from "@/actions/placement-program";
 import { PlacementProgramClient } from "./client";
+import { getCurrentSubscription } from "@/actions/subscription";
+import { PlanTier } from "@prisma/client";
+import { UpgradePrompt } from "@/components/subscription/upgrade-prompt";
 
 export default async function PlacementProgramPage() {
     const session = await auth();
@@ -17,6 +20,15 @@ export default async function PlacementProgramPage() {
             </div>
         );
     }
+
+    // Check subscription - block free users
+    const subscription = await getCurrentSubscription();
+    const isFreeUser = !subscription || subscription.isFree || subscription.plan?.tier === PlanTier.FREE;
+
+    if (isFreeUser) {
+        return <UpgradePrompt feature="90-Day Program" description="Get structured interview preparation with our comprehensive 90-day placement program." />;
+    }
+
 
     // Fetch data
     const [programs, enrollments] = await Promise.all([

@@ -3,6 +3,9 @@ import { FEATURES } from "@/lib/features";
 import { PracticeView } from "@/components/candidate/practice-view";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Lock } from "lucide-react";
+import { getCurrentSubscription } from "@/actions/subscription";
+import { PlanTier } from "@prisma/client";
+import { UpgradePrompt } from "@/components/subscription/upgrade-prompt";
 
 export default async function PracticePage() {
     const isEnabled = await checkFeature(FEATURES.PRACTICE_INTERVIEWS);
@@ -25,5 +28,14 @@ export default async function PracticePage() {
         );
     }
 
+    // Check subscription - block free users
+    const subscription = await getCurrentSubscription();
+    const isFreeUser = !subscription || subscription.isFree || subscription.plan?.tier === PlanTier.FREE;
+
+    if (isFreeUser) {
+        return <UpgradePrompt feature="AI Practice" />;
+    }
+
     return <PracticeView />;
 }
+

@@ -5,6 +5,9 @@ import { redirect, notFound } from "next/navigation";
 import { getUserProfile } from "@/actions/profile";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Lock } from "lucide-react";
+import { getCurrentSubscription } from "@/actions/subscription";
+import { PlanTier } from "@prisma/client";
+import { UpgradePrompt } from "@/components/subscription/upgrade-prompt";
 
 export default async function ResumeScreenerPage() {
     const isEnabled = await checkFeature(FEATURES.RESUME_SCREENER);
@@ -27,9 +30,18 @@ export default async function ResumeScreenerPage() {
         );
     }
 
+    // Check subscription - block free users
+    const subscription = await getCurrentSubscription();
+    const isFreeUser = !subscription || subscription.isFree || subscription.plan?.tier === PlanTier.FREE;
+
+    if (isFreeUser) {
+        return <UpgradePrompt feature="Resume Screener" />;
+    }
+
     const user = await getUserProfile();
     const userProfile = user as any;
     const candidateProfile = userProfile?.candidateProfile;
 
     return <ResumeScreenerView profileResumeUrl={candidateProfile?.resumeUrl} profileResumeName={candidateProfile?.resumeName} />;
 }
+
