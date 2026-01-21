@@ -1,8 +1,9 @@
 "use server";
 
 import { auth } from "@/auth";
-import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { userRepository } from "@/lib/repositories/user.repository";
+import { handleError } from "@/lib/error-handler";
 
 export async function updateProfile(data: {
     name?: string;
@@ -15,28 +16,25 @@ export async function updateProfile(data: {
 }) {
     const session = await auth();
 
-    if (!session || !session.user || !session.user.id) {
+    if (!session?.user?.id) {
         return { error: "Unauthorized" };
     }
 
     try {
-        await db.user.update({
-            where: { id: session.user.id },
-            data: {
-                name: data.name,
-                resumeUrl: data.resumeUrl,
-                resumeName: data.resumeName,
-                panUrl: data.panUrl,
-                panName: data.panName,
-                aadhaarUrl: data.aadhaarUrl,
-                aadhaarName: data.aadhaarName,
-            },
+        await userRepository.update(session.user.id, {
+            name: data.name,
+            resumeUrl: data.resumeUrl,
+            resumeName: data.resumeName,
+            panUrl: data.panUrl,
+            panName: data.panName,
+            aadhaarUrl: data.aadhaarUrl,
+            aadhaarName: data.aadhaarName,
         });
 
         revalidatePath("/candidate/profile");
         return { success: "Profile updated successfully" };
     } catch (error) {
-        console.error("Error updating profile:", error);
+        handleError(error, "updateProfile");
         return { error: "Failed to update profile" };
     }
 }
@@ -51,27 +49,18 @@ export async function updateCandidateProfile(data: {
 }) {
     const session = await auth();
 
-    if (!session || !session.user || !session.user.id) {
+    if (!session?.user?.id) {
         return { error: "Unauthorized" };
     }
 
     try {
-        await db.candidateProfile.upsert({
-            where: { userId: session.user.id },
-            create: {
-                userId: session.user.id,
-                ...data,
-            },
-            update: {
-                ...data,
-            },
-        });
+        await userRepository.upsertCandidateProfile(session.user.id, data);
 
         revalidatePath("/candidate/profile");
         revalidatePath("/candidate/dashboard");
         return { success: "Career profile updated" };
     } catch (error) {
-        console.error("Error updating career profile:", error);
+        handleError(error, "updateCandidateProfile");
         return { error: "Failed to update career profile" };
     }
 }
@@ -79,26 +68,14 @@ export async function updateCandidateProfile(data: {
 export async function getUserProfile() {
     const session = await auth();
 
-    if (!session || !session.user || !session.user.id) {
+    if (!session?.user?.id) {
         return null;
     }
 
-    const user = await db.user.findUnique({
-        where: { id: session.user.id },
-        select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-            resumeUrl: true,
-            resumeName: true,
-            panUrl: true,
-            panName: true,
-            aadhaarUrl: true,
-            aadhaarName: true,
-            candidateProfile: true,
-        },
-    });
-
-    return user;
+    try {
+        return await userRepository.findById(session.user.id);
+    } catch (error) {
+        handleError(error, "getUserProfile");
+        return null;
+    }
 }
