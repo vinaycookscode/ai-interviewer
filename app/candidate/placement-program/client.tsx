@@ -83,10 +83,10 @@ export function PlacementProgramClient({
         <div className="space-y-8">
             {/* Active Enrollment Hero */}
             {activeEnrollment && (
-                <div className="bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-yellow-500/10 rounded-2xl p-6 border border-orange-500/20">
+                <div className="bg-gradient-to-br from-violet-500/10 via-indigo-500/10 to-blue-500/10 rounded-2xl p-6 border border-violet-500/20 backdrop-blur-sm">
                     <div className="flex flex-col md:flex-row md:items-center gap-6">
                         <div className="flex-1">
-                            <div className="flex items-center gap-2 text-orange-500 mb-2">
+                            <div className="flex items-center gap-2 text-violet-400 mb-2">
                                 <Rocket className="h-4 w-4" />
                                 <span className="text-sm font-medium">Your Active Program</span>
                             </div>
@@ -97,9 +97,9 @@ export function PlacementProgramClient({
 
                             {/* Progress Bar */}
                             <div className="mb-4">
-                                <div className="h-3 bg-muted rounded-full overflow-hidden">
+                                <div className="h-3 bg-muted/50 rounded-full overflow-hidden">
                                     <div
-                                        className="h-full bg-gradient-to-r from-orange-500 to-amber-500 rounded-full transition-all"
+                                        className="h-full bg-gradient-to-r from-violet-500 via-indigo-500 to-blue-500 rounded-full transition-all"
                                         style={{ width: `${(activeEnrollment.currentDay / activeEnrollment.program.durationDays) * 100}%` }}
                                     />
                                 </div>
@@ -107,7 +107,7 @@ export function PlacementProgramClient({
 
                             <Link
                                 href={`/candidate/placement-program/${activeEnrollment.program.slug}`}
-                                className="inline-flex items-center gap-2 px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
+                                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-lg hover:from-violet-700 hover:to-indigo-700 transition-all font-medium shadow-lg shadow-violet-500/25"
                             >
                                 Continue Day {activeEnrollment.currentDay}
                                 <ArrowRight className="h-4 w-4" />
@@ -138,8 +138,8 @@ export function PlacementProgramClient({
             {!activeEnrollment && (
                 <div className="grid md:grid-cols-4 gap-4">
                     <div className="bg-card border rounded-xl p-4 flex items-start gap-3">
-                        <div className="p-2 bg-orange-500/10 rounded-lg">
-                            <Calendar className="h-5 w-5 text-orange-500" />
+                        <div className="p-2 bg-violet-500/10 rounded-lg">
+                            <Calendar className="h-5 w-5 text-violet-500" />
                         </div>
                         <div>
                             <p className="font-medium">Daily Tasks</p>
@@ -147,8 +147,8 @@ export function PlacementProgramClient({
                         </div>
                     </div>
                     <div className="bg-card border rounded-xl p-4 flex items-start gap-3">
-                        <div className="p-2 bg-orange-500/10 rounded-lg">
-                            <Flame className="h-5 w-5 text-orange-500" />
+                        <div className="p-2 bg-amber-500/10 rounded-lg">
+                            <Flame className="h-5 w-5 text-amber-500" />
                         </div>
                         <div>
                             <p className="font-medium">Streak System</p>
@@ -156,8 +156,8 @@ export function PlacementProgramClient({
                         </div>
                     </div>
                     <div className="bg-card border rounded-xl p-4 flex items-start gap-3">
-                        <div className="p-2 bg-orange-500/10 rounded-lg">
-                            <BookOpen className="h-5 w-5 text-orange-500" />
+                        <div className="p-2 bg-blue-500/10 rounded-lg">
+                            <BookOpen className="h-5 w-5 text-blue-500" />
                         </div>
                         <div>
                             <p className="font-medium">Complete Coverage</p>
@@ -165,8 +165,8 @@ export function PlacementProgramClient({
                         </div>
                     </div>
                     <div className="bg-card border rounded-xl p-4 flex items-start gap-3">
-                        <div className="p-2 bg-orange-500/10 rounded-lg">
-                            <Target className="h-5 w-5 text-orange-500" />
+                        <div className="p-2 bg-emerald-500/10 rounded-lg">
+                            <Target className="h-5 w-5 text-emerald-500" />
                         </div>
                         <div>
                             <p className="font-medium">Progress Tracking</p>
@@ -184,8 +184,8 @@ export function PlacementProgramClient({
 
                 {programs.length === 0 ? (
                     <div className="bg-card border rounded-xl p-12 text-center">
-                        <div className="mx-auto w-16 h-16 bg-orange-500/10 rounded-full flex items-center justify-center mb-4">
-                            <GraduationCap className="h-8 w-8 text-orange-500" />
+                        <div className="mx-auto w-16 h-16 bg-violet-500/10 rounded-full flex items-center justify-center mb-4">
+                            <GraduationCap className="h-8 w-8 text-violet-500" />
                         </div>
                         <h3 className="text-xl font-semibold mb-2">No Programs Available</h3>
                         <p className="text-muted-foreground">

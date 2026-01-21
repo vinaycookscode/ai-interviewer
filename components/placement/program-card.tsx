@@ -37,17 +37,17 @@ export function ProgramCard({
     return (
         <div className={cn(
             "bg-card border rounded-2xl p-6 transition-all hover:shadow-lg",
-            isEnrolled && "border-orange-500/50 bg-orange-500/5"
+            isEnrolled && "border-violet-500/50 bg-violet-500/5"
         )}>
             {/* Header */}
             <div className="flex items-start gap-4 mb-4">
                 <div className={cn(
                     "p-3 rounded-xl",
-                    isEnrolled ? "bg-orange-500" : "bg-orange-500/10"
+                    isEnrolled ? "bg-gradient-to-br from-violet-600 to-indigo-600" : "bg-violet-500/10"
                 )}>
                     <GraduationCap className={cn(
                         "h-6 w-6",
-                        isEnrolled ? "text-white" : "text-orange-500"
+                        isEnrolled ? "text-white" : "text-violet-500"
                     )} />
                 </div>
                 <div className="flex-1">
@@ -64,9 +64,9 @@ export function ProgramCard({
                     </div>
                 </div>
                 {isEnrolled && streak !== undefined && streak > 0 && (
-                    <div className="flex items-center gap-1 px-3 py-1.5 bg-orange-500/10 rounded-full">
-                        <Flame className="h-4 w-4 text-orange-500" />
-                        <span className="text-sm font-semibold text-orange-500">{streak}</span>
+                    <div className="flex items-center gap-1 px-3 py-1.5 bg-amber-500/10 rounded-full">
+                        <Flame className="h-4 w-4 text-amber-500" />
+                        <span className="text-sm font-semibold text-amber-500">{streak}</span>
                     </div>
                 )}
             </div>
@@ -85,7 +85,7 @@ export function ProgramCard({
                     </div>
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
                         <div
-                            className="h-full bg-gradient-to-r from-orange-500 to-amber-500 rounded-full transition-all"
+                            className="h-full bg-gradient-to-r from-violet-500 via-indigo-500 to-blue-500 rounded-full transition-all"
                             style={{ width: `${progressPercent}%` }}
                         />
                     </div>
@@ -96,7 +96,7 @@ export function ProgramCard({
             {isEnrolled ? (
                 <button
                     onClick={onContinue}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-lg hover:from-violet-700 hover:to-indigo-700 transition-all font-medium shadow-lg shadow-violet-500/25"
                 >
                     Continue Day {currentDay}
                     <ArrowRight className="h-4 w-4" />
@@ -104,7 +104,7 @@ export function ProgramCard({
             ) : (
                 <button
                     onClick={onEnroll}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-card border-2 border-orange-500 text-orange-500 rounded-lg hover:bg-orange-500 hover:text-white transition-colors font-medium"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-card border-2 border-violet-500 text-violet-500 rounded-lg hover:bg-gradient-to-r hover:from-violet-600 hover:to-indigo-600 hover:text-white hover:border-transparent transition-all font-medium"
                 >
                     Start Program
                     <ArrowRight className="h-4 w-4" />
@@ -133,10 +133,10 @@ export function ProgramCardCompact({
     return (
         <button
             onClick={onClick}
-            className="w-full flex items-center gap-4 p-4 bg-card border rounded-xl hover:border-orange-500/50 transition-all text-left"
+            className="w-full flex items-center gap-4 p-4 bg-card border rounded-xl hover:border-violet-500/50 transition-all text-left"
         >
-            <div className="p-2 bg-orange-500/10 rounded-lg">
-                <GraduationCap className="h-5 w-5 text-orange-500" />
+            <div className="p-2 bg-violet-500/10 rounded-lg">
+                <GraduationCap className="h-5 w-5 text-violet-500" />
             </div>
             <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{name}</p>
@@ -145,13 +145,13 @@ export function ProgramCardCompact({
             <div className="flex items-center gap-3">
                 {streak > 0 && (
                     <div className="flex items-center gap-1">
-                        <Flame className="h-4 w-4 text-orange-500" />
+                        <Flame className="h-4 w-4 text-amber-500" />
                         <span className="text-sm font-medium">{streak}</span>
                     </div>
                 )}
                 <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
                     <div
-                        className="h-full bg-orange-500 rounded-full"
+                        className="h-full bg-gradient-to-r from-violet-500 to-indigo-500 rounded-full"
                         style={{ width: `${progressPercent}%` }}
                     />
                 </div>
