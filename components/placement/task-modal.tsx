@@ -10,6 +10,7 @@ import { QuizTask } from "./task-content/quiz-task";
 import { ReadingTask } from "./task-content/reading-task";
 import { HRPrepTask } from "./task-content/hr-prep-task";
 
+// TODO: Phase 2 - Replace any with proper types from @/types after updating child components
 interface TaskModalProps {
     task: {
         id: string;
