@@ -290,8 +290,8 @@
         "pastTitle": "Past Interviews",
         "noPast": "No past interviews.",
         "interviewCard": {
-            "invitedOn": "Invited {date}",
-            "expiresOn": "Expires: {date}",
+            "invitedOn": "Invited",
+            "expiresOn": "Expires",
             "scoreLabel": "Score",
             "uploadDocs": "Upload Docs"
         }

@@ -155,7 +155,7 @@ function InterviewCard({ interview, translations }: { interview: any; translatio
                     </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                    {translations.invitedOn.replace("{date}", new Date(interview.createdAt).toLocaleDateString())}
+                    {translations.invitedOn} {new Date(interview.createdAt).toLocaleDateString()}
                 </p>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col gap-4">
@@ -179,7 +179,7 @@ function InterviewCard({ interview, translations }: { interview: any; translatio
                         <div className="flex items-center gap-2 text-xs mb-2 text-muted-foreground">
                             <Clock className="h-3 w-3 shrink-0" />
                             <span>
-                                {translations.expiresOn.replace("{date}", new Date(interview.expiresAt).toLocaleDateString())}
+                                {translations.expiresOn}: {new Date(interview.expiresAt).toLocaleDateString()}
                             </span>
                         </div>
                     )}

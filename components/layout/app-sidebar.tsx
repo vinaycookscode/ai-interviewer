@@ -68,7 +68,7 @@ const NavLinks = ({
                 // Handle divider
                 if (item.isDivider) {
                     return (
-                        <div key={`divider-${index}`} className="mt-8 mb-4 px-4">
+                        <div key={`divider-${index}`} className={`mb-4 px-4 ${index === 0 ? 'mt-0' : 'mt-8'}`}>
                             {item.labelKey ? (
                                 <div className="flex items-center gap-3">
                                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/30 whitespace-nowrap">
@@ -144,7 +144,7 @@ export function AppSidebar({ items, featureFlags = {}, userRole, translationName
                         <Menu className="h-6 w-6" />
                     </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-72 bg-background/60 backdrop-blur-3xl border-r border-white/5 p-0">
+                <SheetContent side="left" className="w-72 liquid-glass liquid-shimmer border-r border-white/5 p-0">
                     <div className="flex flex-col h-full pt-8 pb-2">
                         <div className="px-6 mb-8">
                             <h2 className="text-2xl font-black tracking-tighter uppercase italic">{t('navigation')}</h2>
@@ -169,12 +169,12 @@ export function AppSidebar({ items, featureFlags = {}, userRole, translationName
             </Sheet>
 
             {/* Desktop Sidebar */}
-            <aside className="w-64 bg-black/40 backdrop-blur-4xl border-r border-white/5 hidden md:block h-[calc(100vh-4rem)] sticky top-16 overflow-hidden flex flex-col no-scrollbar relative">
+            <aside className="w-64 liquid-glass liquid-shimmer border-r border-white/5 hidden md:flex h-[calc(100vh-4rem)] sticky top-16 flex-col no-scrollbar overflow-hidden relative">
                 {/* Visual Ambient Glows */}
                 <div className="absolute top-0 left-0 w-full h-32 bg-primary/5 blur-[80px] pointer-events-none" />
                 <div className="absolute bottom-0 left-0 w-full h-32 bg-primary/5 blur-[80px] pointer-events-none" />
 
-                <nav className="relative z-10 px-4 pt-8 pb-32 space-y-2 flex-1 overflow-y-auto no-scrollbar">
+                <nav className="relative z-10 px-4 pt-4 pb-32 space-y-2 flex-1 overflow-y-auto no-scrollbar">
                     <NavLinks
                         items={items}
                         featureFlags={featureFlags}

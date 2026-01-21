@@ -21,7 +21,7 @@ export async function DashboardHeader({ user, userRole }: DashboardHeaderProps) 
     ]);
 
     return (
-        <header className="h-16 bg-background/40 backdrop-blur-3xl border-b border-white/5 flex items-center justify-between px-4 md:px-8 sticky top-0 z-50 overflow-hidden no-scrollbar">
+        <header className="h-16 liquid-glass liquid-shimmer liquid-specular border-b border-white/5 flex items-center justify-between px-4 md:px-8 sticky top-0 z-50 overflow-hidden no-scrollbar">
             {/* Minimal Header Glow */}
             <div className="absolute top-0 right-1/4 w-32 h-full bg-primary/5 blur-3xl pointer-events-none" />
 

@@ -90,7 +90,7 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen bg-background overflow-hidden">
       {/* Navigation */}
-      <nav className="border-b backdrop-blur-xl bg-background/70 sticky top-0 z-50">
+      <nav className="liquid-glass liquid-shimmer liquid-specular border-b border-white/5 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Image src="/logo.png" alt="Get Back To U Logo" width={40} height={40} className="h-10 w-10 object-contain" />

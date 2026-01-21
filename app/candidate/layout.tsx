@@ -29,8 +29,10 @@ export default async function CandidateLayout({
 
     return (
         <div className="min-h-screen bg-background flex flex-col">
+            {/* Full-width Header at top */}
             <DashboardHeader user={session.user} userRole={session.user.role} />
 
+            {/* Sidebar + Content below header */}
             <div className="flex flex-1">
                 <CandidateSidebar featureFlags={flagMap} />
 
