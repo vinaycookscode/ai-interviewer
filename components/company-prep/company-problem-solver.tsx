@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { saveUserSolution, getUserSolution } from "@/actions/company-prep";
 import { toast } from "sonner";
+import { CodeEditor } from "@/components/ui/code-editor";
 
 interface CompanyQuestion {
     id: string;
@@ -137,14 +138,14 @@ function solution(input) {
     };
 
     const [code, setCode] = useState(defaultStarterCode);
-    const [activeTab, setActiveTab] = useState<"problem" | "learn" | "solution">("problem");
+    const [activeTab, setActiveTab] = useState<"problem" | "learn">("problem");
     const [showHints, setShowHints] = useState<number[]>([]);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysis, setAnalysis] = useState<CodeAnalysis | null>(null);
     const [testResults, setTestResults] = useState<any[] | null>(null);
     const [selectedLanguage, setSelectedLanguage] = useState<string>("javascript");
     const [hasSavedSolution, setHasSavedSolution] = useState(false);
-    const [solutionInfo, setSolutionInfo] = useState<{passedTests: number; totalTests: number} | null>(null);
+    const [solutionInfo, setSolutionInfo] = useState<{ passedTests: number; totalTests: number } | null>(null);
 
     // Supported programming languages
     const SUPPORTED_LANGUAGES = [
@@ -157,19 +158,21 @@ function solution(input) {
     ];
 
     // Get starter code for selected language
-    const getStarterCodeForLanguage = (lang: string): string => {
-        const qTitle = question.question;
-        switch (lang) {
-            case "python":
-                return `# ${qTitle}
+    const starterCodes: Record<string, string> = {
+        javascript: `// ${question.question}
+// Difficulty: ${question.difficulty}
+
+function solution(input) {
+    // Your code here
+    
+}`,
+        python: `# ${question.question}
 # Difficulty: ${question.difficulty}
 
 def solution(input):
     # Your code here
-    pass
-`;
-            case "java":
-                return `// ${qTitle}
+    pass`,
+        java: `// ${question.question}
 // Difficulty: ${question.difficulty}
 
 class Solution {
@@ -177,10 +180,8 @@ class Solution {
         // Your code here
         return null;
     }
-}
-`;
-            case "csharp":
-                return `// ${qTitle}
+}`,
+        csharp: `// ${question.question}
 // Difficulty: ${question.difficulty}
 
 public class Solution {
@@ -188,19 +189,15 @@ public class Solution {
         // Your code here
         return null;
     }
-}
-`;
-            case "typescript":
-                return `// ${qTitle}
+}`,
+        typescript: `// ${question.question}
 // Difficulty: ${question.difficulty}
 
 function solution(input: any): any {
     // Your code here
     
-}
-`;
-            case "cpp":
-                return `// ${qTitle}
+}`,
+        cpp: `// ${question.question}
 // Difficulty: ${question.difficulty}
 
 #include <iostream>
@@ -211,18 +208,7 @@ class Solution {
 public:
     // Your code here
     
-};
-`;
-            default: // javascript
-                return `// ${qTitle}
-// Difficulty: ${question.difficulty}
-
-function solution(input) {
-    // Your code here
-    
-}
-`;
-        }
+};`
     };
 
     // Get localStorage key with language
@@ -231,7 +217,7 @@ function solution(input) {
     useEffect(() => {
         const loadSolution = async () => {
             if (typeof window === 'undefined') return;
-            
+
             try {
                 const result = await getUserSolution(question.id, selectedLanguage);
                 if (result.success && result.solution) {
@@ -255,13 +241,11 @@ function solution(input) {
                     return;
                 }
             }
-            
+
             // Use starter code
-            setCode(featureFlags.languageSelector
-                ? getStarterCodeForLanguage(selectedLanguage)
-                : defaultStarterCode);
+            setCode(starterCodes[selectedLanguage] || defaultStarterCode);
         };
-        
+
         loadSolution();
     }, [question.id, selectedLanguage]);
 
@@ -270,7 +254,7 @@ function solution(input) {
     useEffect(() => {
         if (!featureFlags.codePersistence) return;
         if (typeof window === 'undefined') return;
-        const starterCode = getStarterCodeForLanguage(selectedLanguage);
+        const starterCode = starterCodes[selectedLanguage];
         if (code && code !== starterCode) {
             localStorage.setItem(getCodeStorageKeyWithLang(selectedLanguage), code);
         }
@@ -629,15 +613,6 @@ function solution(input) {
                         >
                             Learn
                         </button>
-                        <button
-                            onClick={() => setActiveTab("solution")}
-                            className={cn(
-                                "px-3 py-1.5 rounded text-sm font-medium transition-colors",
-                                activeTab === "solution" ? "bg-background shadow" : "hover:bg-background/50"
-                            )}
-                        >
-                            Solution
-                        </button>
                     </div>
                     <button
                         onClick={onClose}
@@ -787,40 +762,16 @@ function solution(input) {
                         {/* Right: Code Editor + Results */}
                         <div className="flex flex-col min-h-0 overflow-hidden">
                             {/* Code Editor */}
-                            <div className="shrink-0">
-                                <div className="flex items-center justify-between mb-2">
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-sm font-medium">Your Solution</label>
-                                        {hasSavedSolution && solutionInfo && (
-                                            <span className="text-xs px-2 py-1 rounded bg-green-500/20 text-green-400">
-                                                ✓ Solved ({solutionInfo.passedTests}/{solutionInfo.totalTests})
-                                            </span>
-                                        )}
-                                    </div>                                    {/* Language Selector - conditionally rendered */}
-                                    {featureFlags.languageSelector && (
-                                        <div className="flex items-center gap-2">
-                                            <Code className="h-4 w-4 text-muted-foreground" />
-                                            <select
-                                                value={selectedLanguage}
-                                                onChange={(e) => handleLanguageChange(e.target.value)}
-                                                className="px-3 py-1.5 bg-[#1e1e1e] text-[#d4d4d4] border border-[#3e3e3e] rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-green-500 cursor-pointer hover:border-green-500 transition-colors"
-                                            >
-                                                {SUPPORTED_LANGUAGES.map((lang) => (
-                                                    <option key={lang.id} value={lang.id}>
-                                                        {lang.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    )}
-                                </div>
-                                <textarea
-                                    value={code}
-                                    onChange={(e) => setCode(e.target.value)}
-                                    className="h-[300px] w-full px-4 py-3 bg-[#1e1e1e] text-[#d4d4d4] font-mono text-sm rounded-lg border border-[#3e3e3e] focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
-                                    spellCheck={false}
-                                />
-                            </div>
+                            <CodeEditor
+                                value={code}
+                                onChange={(val) => setCode(val || "")}
+                                language={selectedLanguage}
+                                height="400px"
+                                showLanguageSelector={featureFlags.languageSelector}
+                                starterCodes={starterCodes}
+                                solutions={question.solutionCode ? { [selectedLanguage]: question.solutionCode } : undefined}
+                                onLanguageChange={handleLanguageChange}
+                            />
 
                             {/* Action Buttons */}
                             <div className="flex gap-3 mt-4 shrink-0">
@@ -1083,31 +1034,6 @@ function solution(input) {
                     </div>
                 )}
 
-                {activeTab === "solution" && (
-                    <div className="h-full overflow-y-auto p-6 space-y-4">
-                        <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                            <p className="text-sm text-amber-500 flex items-center gap-2">
-                                <Lightbulb className="h-4 w-4" />
-                                Try solving the problem yourself before viewing the solution!
-                            </p>
-                        </div>
-
-                        {question.solutionCode ? (
-                            <pre className="bg-[#1e1e1e] text-[#d4d4d4] p-4 rounded-lg font-mono text-sm overflow-x-auto">
-                                {question.solutionCode}
-                            </pre>
-                        ) : question.answer ? (
-                            <div className="bg-card border rounded-lg p-6">
-                                <h4 className="font-semibold mb-4 text-green-500">Approach & Solution</h4>
-                                <p className="text-muted-foreground whitespace-pre-wrap">{question.answer}</p>
-                            </div>
-                        ) : (
-                            <div className="bg-muted/50 rounded-lg p-8 text-center">
-                                <p className="text-muted-foreground">Solution not available yet. Check the answer section for guidance.</p>
-                            </div>
-                        )}
-                    </div>
-                )}
             </div>
         </div>
     );

@@ -7,6 +7,7 @@ import {
     ChevronDown, ChevronUp, Target, BookOpen, Briefcase, GraduationCap
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CodeEditor } from "@/components/ui/code-editor";
 
 interface ProblemTaskProps {
     content: {
@@ -233,8 +234,9 @@ export function ProblemTask({ content, onComplete, isPending, initialCode }: Pro
         difficulty: content.difficulty || "MEDIUM"
     };
 
+    const [selectedLanguage, setSelectedLanguage] = useState("javascript");
     const [code, setCode] = useState(initialCode || problem.starterCode || SAMPLE_PROBLEMS.default.starterCode);
-    const [activeTab, setActiveTab] = useState<"problem" | "learn" | "solution">("problem");
+    const [activeTab, setActiveTab] = useState<"problem" | "learn">("problem");
     const [showHints, setShowHints] = useState<number[]>([]);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysis, setAnalysis] = useState<CodeAnalysis | null>(null);
@@ -377,15 +379,6 @@ export function ProblemTask({ content, onComplete, isPending, initialCode }: Pro
                     >
                         Learn
                     </button>
-                    <button
-                        onClick={() => setActiveTab("solution")}
-                        className={cn(
-                            "px-3 py-1.5 rounded text-sm font-medium transition-colors",
-                            activeTab === "solution" ? "bg-background shadow" : "hover:bg-background/50"
-                        )}
-                    >
-                        Solution
-                    </button>
                 </div>
             </div>
 
@@ -492,210 +485,213 @@ export function ProblemTask({ content, onComplete, isPending, initialCode }: Pro
                         </div>
                     </div>
 
-                    {/* Right: Code Editor + Analysis - Scrollable */}
-                    <div className="flex flex-col min-h-0 overflow-hidden">
-                        {/* Code Editor */}
-                        <div className="shrink-0">
-                            <label className="text-sm font-medium mb-2 block">Your Solution</label>
-                            <textarea
-                                value={code}
-                                onChange={(e) => setCode(e.target.value)}
-                                className="h-[300px] w-full px-4 py-3 bg-[#1e1e1e] text-[#d4d4d4] font-mono text-sm rounded-lg border border-[#3e3e3e] focus:outline-none focus:ring-2 focus:ring-green-500 resize-none"
-                                spellCheck={false}
-                            />
-                        </div>
+                    <div className="flex-1 min-h-0 flex flex-col">
+                        <label className="text-sm font-medium mb-2 block">Your Solution</label>
+                        <CodeEditor
+                            value={code}
+                            onChange={(val) => setCode(val || "")}
+                            language={selectedLanguage}
+                            onLanguageChange={setSelectedLanguage}
+                            height="400px"
+                            starterCodes={{
+                                javascript: problem.starterCode || SAMPLE_PROBLEMS.default.starterCode,
+                            }}
+                            solutions={problem.solution ? { [selectedLanguage]: problem.solution } : undefined}
+                            showLanguageSelector={true}
+                            className="flex-1"
+                        />
+                    </div>
 
-                        {/* Action Buttons - Fixed Width */}
-                        <div className="grid grid-cols-2 gap-3 mt-4 shrink-0">
-                            <button
-                                onClick={handleRunCode}
-                                disabled={isAnalyzing}
-                                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 font-medium"
-                            >
-                                {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                                Run Tests
-                            </button>
-                            <button
-                                onClick={handleAnalyzeCode}
-                                disabled={isAnalyzing}
-                                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:opacity-50 font-medium"
-                            >
-                                {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
-                                Analyze Code
-                            </button>
-                        </div>
+                    {/* Action Buttons - Fixed Width */}
+                    <div className="grid grid-cols-2 gap-3 mt-4 shrink-0">
+                        <button
+                            onClick={handleRunCode}
+                            disabled={isAnalyzing}
+                            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 font-medium"
+                        >
+                            {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                            Run Tests
+                        </button>
+                        <button
+                            onClick={handleAnalyzeCode}
+                            disabled={isAnalyzing}
+                            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:opacity-50 font-medium"
+                        >
+                            {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
+                            Analyze Code
+                        </button>
+                    </div>
 
-                        {/* Scrollable Results Area */}
-                        <div className="flex-1 overflow-y-auto mt-4 space-y-4 min-h-0">
+                    {/* Scrollable Results Area */}
+                    <div className="flex-1 overflow-y-auto mt-4 space-y-4 min-h-0">
 
-                            {/* Test Results */}
-                            {testResults && (
-                                <div className="bg-[#1e1e1e] rounded-lg p-4">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <h4 className="text-sm font-medium text-white">Test Results</h4>
-                                        <span className={cn(
-                                            "text-xs px-2 py-1 rounded",
-                                            testResults.every(r => r.passed)
-                                                ? "bg-green-500/20 text-green-400"
-                                                : "bg-red-500/20 text-red-400"
+                        {/* Test Results */}
+                        {testResults && (
+                            <div className="bg-[#1e1e1e] rounded-lg p-4">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h4 className="text-sm font-medium text-white">Test Results</h4>
+                                    <span className={cn(
+                                        "text-xs px-2 py-1 rounded",
+                                        testResults.every(r => r.passed)
+                                            ? "bg-green-500/20 text-green-400"
+                                            : "bg-red-500/20 text-red-400"
+                                    )}>
+                                        {testResults.filter(r => r.passed).length}/{testResults.length} Passed
+                                    </span>
+                                </div>
+                                <div className="space-y-3">
+                                    {testResults.map((result: any, i: number) => (
+                                        <div key={i} className={cn(
+                                            "p-3 rounded-lg border",
+                                            result.passed
+                                                ? "bg-green-500/5 border-green-500/30"
+                                                : "bg-red-500/5 border-red-500/30"
                                         )}>
-                                            {testResults.filter(r => r.passed).length}/{testResults.length} Passed
-                                        </span>
-                                    </div>
-                                    <div className="space-y-3">
-                                        {testResults.map((result: any, i: number) => (
-                                            <div key={i} className={cn(
-                                                "p-3 rounded-lg border",
-                                                result.passed
-                                                    ? "bg-green-500/5 border-green-500/30"
-                                                    : "bg-red-500/5 border-red-500/30"
-                                            )}>
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <span className="text-sm font-medium text-gray-200">Test Case {i + 1}</span>
-                                                    <span className={cn(
-                                                        "text-xs font-medium px-2 py-0.5 rounded",
-                                                        result.passed
-                                                            ? "bg-green-500/20 text-green-400"
-                                                            : "bg-red-500/20 text-red-400"
-                                                    )}>
-                                                        {result.passed ? "✓ Passed" : "✗ Failed"}
-                                                    </span>
-                                                </div>
-
-                                                {/* Input */}
-                                                {result.input && (
-                                                    <div className="text-xs mb-1">
-                                                        <span className="text-gray-500">Input: </span>
-                                                        <span className="text-blue-400 font-mono">{result.input}</span>
-                                                    </div>
-                                                )}
-
-                                                {/* Expected vs Got */}
-                                                <div className="text-xs space-y-1">
-                                                    <div>
-                                                        <span className="text-gray-500">Expected: </span>
-                                                        <span className="text-green-400 font-mono">{result.expected}</span>
-                                                    </div>
-                                                    <div>
-                                                        <span className="text-gray-500">Output: </span>
-                                                        <span className={cn(
-                                                            "font-mono",
-                                                            result.passed ? "text-green-400" : "text-red-400"
-                                                        )}>{result.output}</span>
-                                                    </div>
-                                                </div>
-
-                                                {/* Error message */}
-                                                {result.error && !result.passed && (
-                                                    <div className="mt-2 text-xs text-red-400 bg-red-500/10 p-2 rounded">
-                                                        ⚠️ {result.error}
-                                                    </div>
-                                                )}
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-sm font-medium text-gray-200">Test Case {i + 1}</span>
+                                                <span className={cn(
+                                                    "text-xs font-medium px-2 py-0.5 rounded",
+                                                    result.passed
+                                                        ? "bg-green-500/20 text-green-400"
+                                                        : "bg-red-500/20 text-red-400"
+                                                )}>
+                                                    {result.passed ? "✓ Passed" : "✗ Failed"}
+                                                </span>
                                             </div>
-                                        ))}
+
+                                            {/* Input */}
+                                            {result.input && (
+                                                <div className="text-xs mb-1">
+                                                    <span className="text-gray-500">Input: </span>
+                                                    <span className="text-blue-400 font-mono">{result.input}</span>
+                                                </div>
+                                            )}
+
+                                            {/* Expected vs Got */}
+                                            <div className="text-xs space-y-1">
+                                                <div>
+                                                    <span className="text-gray-500">Expected: </span>
+                                                    <span className="text-green-400 font-mono">{result.expected}</span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-500">Output: </span>
+                                                    <span className={cn(
+                                                        "font-mono",
+                                                        result.passed ? "text-green-400" : "text-red-400"
+                                                    )}>{result.output}</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Error message */}
+                                            {result.error && !result.passed && (
+                                                <div className="mt-2 text-xs text-red-400 bg-red-500/10 p-2 rounded">
+                                                    ⚠️ {result.error}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* AI Analysis */}
+                        {analysis && (
+                            <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-xl p-4 space-y-4">
+                                <div className="flex items-center gap-2">
+                                    <Zap className="h-5 w-5 text-purple-500" />
+                                    <h4 className="font-semibold">AI Code Analysis</h4>
+                                </div>
+
+                                {/* Complexity Metrics */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="bg-background/50 rounded-lg p-3">
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                                            <Clock className="h-4 w-4" />
+                                            Time Complexity
+                                        </div>
+                                        <p className="text-lg font-mono font-bold text-blue-500">{analysis.timeComplexity}</p>
+                                    </div>
+                                    <div className="bg-background/50 rounded-lg p-3">
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
+                                            <Cpu className="h-4 w-4" />
+                                            Space Complexity
+                                        </div>
+                                        <p className="text-lg font-mono font-bold text-green-500">{analysis.spaceComplexity}</p>
                                     </div>
                                 </div>
-                            )}
 
-                            {/* AI Analysis */}
-                            {analysis && (
-                                <div className="bg-gradient-to-br from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-xl p-4 space-y-4">
-                                    <div className="flex items-center gap-2">
-                                        <Zap className="h-5 w-5 text-purple-500" />
-                                        <h4 className="font-semibold">AI Code Analysis</h4>
-                                    </div>
-
-                                    {/* Complexity Metrics */}
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="bg-background/50 rounded-lg p-3">
-                                            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                                                <Clock className="h-4 w-4" />
-                                                Time Complexity
-                                            </div>
-                                            <p className="text-lg font-mono font-bold text-blue-500">{analysis.timeComplexity}</p>
+                                {/* Score Bars */}
+                                <div className="space-y-3">
+                                    <div>
+                                        <div className="flex justify-between text-sm mb-1">
+                                            <span className="text-muted-foreground">Correctness</span>
+                                            <span className="font-medium">{analysis.correctness}%</span>
                                         </div>
-                                        <div className="bg-background/50 rounded-lg p-3">
-                                            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-                                                <Cpu className="h-4 w-4" />
-                                                Space Complexity
-                                            </div>
-                                            <p className="text-lg font-mono font-bold text-green-500">{analysis.spaceComplexity}</p>
+                                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-green-500 rounded-full transition-all"
+                                                style={{ width: `${analysis.correctness}%` }}
+                                            />
                                         </div>
                                     </div>
-
-                                    {/* Score Bars */}
-                                    <div className="space-y-3">
-                                        <div>
-                                            <div className="flex justify-between text-sm mb-1">
-                                                <span className="text-muted-foreground">Correctness</span>
-                                                <span className="font-medium">{analysis.correctness}%</span>
-                                            </div>
-                                            <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                                <div
-                                                    className="h-full bg-green-500 rounded-full transition-all"
-                                                    style={{ width: `${analysis.correctness}%` }}
-                                                />
-                                            </div>
+                                    <div>
+                                        <div className="flex justify-between text-sm mb-1">
+                                            <span className="text-muted-foreground">Code Quality</span>
+                                            <span className="font-medium">{analysis.codeQuality}%</span>
                                         </div>
-                                        <div>
-                                            <div className="flex justify-between text-sm mb-1">
-                                                <span className="text-muted-foreground">Code Quality</span>
-                                                <span className="font-medium">{analysis.codeQuality}%</span>
-                                            </div>
-                                            <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                                <div
-                                                    className="h-full bg-purple-500 rounded-full transition-all"
-                                                    style={{ width: `${analysis.codeQuality}%` }}
-                                                />
-                                            </div>
+                                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-purple-500 rounded-full transition-all"
+                                                style={{ width: `${analysis.codeQuality}%` }}
+                                            />
                                         </div>
                                     </div>
+                                </div>
 
-                                    {/* Feedback */}
+                                {/* Feedback */}
+                                <div>
+                                    <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
+                                        <CheckCircle className="h-4 w-4 text-green-500" />
+                                        Feedback
+                                    </h5>
+                                    <ul className="space-y-1">
+                                        {analysis.feedback.map((f: string, i: number) => (
+                                            <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                                                <span className="text-green-500 mt-1">•</span>
+                                                {f}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+
+                                {/* Improvements */}
+                                {analysis.improvements.length > 0 && (
                                     <div>
                                         <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
-                                            <CheckCircle className="h-4 w-4 text-green-500" />
-                                            Feedback
+                                            <TrendingUp className="h-4 w-4 text-amber-500" />
+                                            How to Improve
                                         </h5>
                                         <ul className="space-y-1">
-                                            {analysis.feedback.map((f: string, i: number) => (
+                                            {analysis.improvements.map((imp: string, i: number) => (
                                                 <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                                                    <span className="text-green-500 mt-1">•</span>
-                                                    {f}
+                                                    <span className="text-amber-500 mt-1">→</span>
+                                                    {imp}
                                                 </li>
                                             ))}
                                         </ul>
                                     </div>
+                                )}
 
-                                    {/* Improvements */}
-                                    {analysis.improvements.length > 0 && (
-                                        <div>
-                                            <h5 className="text-sm font-medium mb-2 flex items-center gap-2">
-                                                <TrendingUp className="h-4 w-4 text-amber-500" />
-                                                How to Improve
-                                            </h5>
-                                            <ul className="space-y-1">
-                                                {analysis.improvements.map((imp: string, i: number) => (
-                                                    <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
-                                                        <span className="text-amber-500 mt-1">→</span>
-                                                        {imp}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    )}
-
-                                    {analysis.isOptimal && (
-                                        <div className="flex items-center gap-2 p-3 bg-green-500/10 rounded-lg border border-green-500/30">
-                                            <CheckCircle className="h-5 w-5 text-green-500" />
-                                            <span className="text-sm font-medium text-green-500">
-                                                Your solution has optimal time complexity!
-                                            </span>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                                {analysis.isOptimal && (
+                                    <div className="flex items-center gap-2 p-3 bg-green-500/10 rounded-lg border border-green-500/30">
+                                        <CheckCircle className="h-5 w-5 text-green-500" />
+                                        <span className="text-sm font-medium text-green-500">
+                                            Your solution has optimal time complexity!
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
@@ -774,22 +770,6 @@ export function ProblemTask({ content, onComplete, isPending, initialCode }: Pro
                             </ul>
                         </div>
                     </div>
-                </div>
-            )}
-
-            {activeTab === "solution" && (
-                /* Solution Tab */
-                <div className="flex-1 overflow-y-auto mt-4 space-y-4">
-                    <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
-                        <p className="text-sm text-amber-500 flex items-center gap-2">
-                            <Lightbulb className="h-4 w-4" />
-                            Try solving the problem yourself before viewing the solution!
-                        </p>
-                    </div>
-
-                    <pre className="bg-[#1e1e1e] text-[#d4d4d4] p-4 rounded-lg font-mono text-sm overflow-x-auto">
-                        {problem.solution || SAMPLE_PROBLEMS.default.solution}
-                    </pre>
                 </div>
             )}
 

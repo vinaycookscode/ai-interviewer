@@ -644,22 +644,14 @@ export function InterviewSession({
                                         value={codeAnswer}
                                         onChange={handleCodeChange}
                                         language={editorLanguage}
+                                        onLanguageChange={setEditorLanguage}
                                         height="100%"
                                         theme="vs-dark"
+                                        showLanguageSelector={true}
+                                        className="h-full border-0"
                                     />
-                                    {/* Editor Controls Overlay */}
+                                    {/* Editor Action Overlay */}
                                     <div className="absolute top-4 right-8 flex gap-2">
-                                        <Select value={editorLanguage} onValueChange={setEditorLanguage}>
-                                            <SelectTrigger className="w-[120px] h-8 bg-[#1e1e1e] border-white/20 text-xs">
-                                                <SelectValue placeholder="Language" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="javascript">JavaScript</SelectItem>
-                                                <SelectItem value="python">Python</SelectItem>
-                                                <SelectItem value="java">Java</SelectItem>
-                                                <SelectItem value="cpp">C++</SelectItem>
-                                            </SelectContent>
-                                        </Select>
 
                                         <Button
                                             size="sm"
