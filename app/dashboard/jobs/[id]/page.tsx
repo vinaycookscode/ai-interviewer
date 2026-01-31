@@ -7,6 +7,7 @@ import { ArrowLeft, Edit, Users } from "lucide-react";
 import Link from "next/link";
 import { DeleteJobButton } from "@/components/jobs/delete-job-button";
 import { InviteCandidateDialog } from "@/components/interviews/invite-candidate-dialog";
+import { BulkInviteDialog } from "@/components/interviews/bulk-invite-dialog";
 import { CandidateList } from "@/components/jobs/candidate-list";
 
 export default async function JobDetailsPage({
@@ -133,7 +134,10 @@ export default async function JobDetailsPage({
                                 {job._count.interviews} candidate(s) have been invited for this
                                 position.
                             </p>
-                            <InviteCandidateDialog jobId={job.id} />
+                            <div className="flex gap-2">
+                                <InviteCandidateDialog jobId={job.id} />
+                                <BulkInviteDialog jobId={job.id} />
+                            </div>
                         </div>
 
                         <CandidateList interviews={job.interviews as any} />
