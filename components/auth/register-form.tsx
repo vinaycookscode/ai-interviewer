@@ -220,6 +220,7 @@ export const RegisterForm = () => {
                                 </FormItem>
                             )}
                         />
+                        {/* EMPLOYER SIGNUP DISABLED - Uncomment to re-enable
                         {!isInterviewInvitation && (
                             <FormField
                                 control={form.control}
@@ -257,6 +258,7 @@ export const RegisterForm = () => {
                                 )}
                             />
                         )}
+                        */}
                     </div>
                     <FormError message={error} />
                     <FormSuccess message={success} />

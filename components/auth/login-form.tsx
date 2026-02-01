@@ -100,7 +100,13 @@ export const LoginForm = () => {
                     }
                     // Success is handled by redirect in server action
                 })
-                .catch(() => setError(t("errors.generic")));
+                .catch((error) => {
+                    // NextAuth throws NEXT_REDIRECT on successful login - don't show error
+                    if (error?.message?.includes("NEXT_REDIRECT") || error?.digest?.includes("NEXT_REDIRECT")) {
+                        return;
+                    }
+                    setError(t("errors.generic"));
+                });
         });
     };
 

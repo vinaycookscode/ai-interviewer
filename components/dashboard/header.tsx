@@ -31,12 +31,11 @@ export async function DashboardHeader({ user, userRole }: DashboardHeaderProps) 
                     <Image src="/logo.png" alt="Logo" width={32} height={32} className="relative z-10 h-8 w-8 object-contain" />
                 </div>
                 <div className="hidden md:block">
-                    <h1 className="text-xl font-black tracking-tighter uppercase leading-none italic mb-0.5">
-                        <span className="bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">Get</span>
-                        <span className="bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent">Back</span>
-                        <span className="bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">To U</span>
+                    <h1 className="text-xl font-black tracking-tighter uppercase leading-none italic">
+                        <span className="text-muted-foreground">Get</span>
+                        <span className="bg-gradient-to-r from-cyan-600 to-teal-600 bg-clip-text text-transparent">Back</span>
+                        <span className="text-muted-foreground">To U</span>
                     </h1>
-                    <p className="text-[10px] font-black tracking-[0.2em] text-muted-foreground/40 leading-none uppercase">{t("tagline")}</p>
                 </div>
             </Link>
 

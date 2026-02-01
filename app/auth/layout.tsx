@@ -22,6 +22,23 @@ const AuthLayout = ({ children }: { children: React.ReactNode }) => {
                 <div className="absolute inset-0 lg:hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-500/20 via-background to-background" />
 
                 <div className="w-full max-w-md relative z-10">
+                    {/* Logo Header */}
+                    <div className="flex flex-col items-center mb-8">
+                        <div className="flex items-center gap-3 mb-2">
+                            <img
+                                src="/logo.png"
+                                alt="Get Back To U Logo"
+                                className="h-12 w-12 object-contain"
+                            />
+                            <div className="flex flex-col">
+                                <h1 className="text-xl font-bold tracking-tight">
+                                    <span className="text-muted-foreground">Get </span>
+                                    <span className="bg-gradient-to-r from-cyan-600 to-teal-600 bg-clip-text text-transparent">Back</span>
+                                    <span className="text-muted-foreground"> To U</span>
+                                </h1>
+                            </div>
+                        </div>
+                    </div>
                     {children}
                 </div>
             </div>

@@ -65,7 +65,9 @@ export const register = async (
         return { error: "Invalid fields!" };
     }
 
-    const { email, password, name, role } = validatedFields.data;
+    const { email, password, name } = validatedFields.data;
+    // EMPLOYER SIGNUP DISABLED - Force all signups to be CANDIDATE
+    const role = "CANDIDATE";
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const existingUser = await db.user.findUnique({
