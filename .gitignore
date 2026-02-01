@@ -91,3 +91,4 @@ lerna-debug.log*
 # User uploads (keep structure but ignore files)
 public/uploads/**/*
 !public/uploads/**/.gitkeep
+!.env*.example
