@@ -23,6 +23,13 @@ export function getRazorpayKeyId(): string {
     return process.env.RAZORPAY_KEY_ID || "";
 }
 
+/** Constant-time comparison of two hex signatures. */
+function signaturesMatch(expected: string, received: string): boolean {
+    const a = Buffer.from(expected, "utf8");
+    const b = Buffer.from(received, "utf8");
+    return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 // Verify webhook signature
 export function verifyWebhookSignature(
     body: string,
@@ -39,7 +46,7 @@ export function verifyWebhookSignature(
         .update(body)
         .digest("hex");
 
-    return expectedSignature === signature;
+    return signaturesMatch(expectedSignature, signature);
 }
 
 // Verify payment signature (for checkout)
@@ -60,7 +67,7 @@ export function verifyPaymentSignature(
         .update(body)
         .digest("hex");
 
-    return expectedSignature === signature;
+    return signaturesMatch(expectedSignature, signature);
 }
 
 // Convert amount to paise (Razorpay uses smallest currency unit)

@@ -165,6 +165,26 @@ export async function verifyAndActivateSubscription(
             return { success: false, error: "Invalid payment signature" };
         }
 
+        // The signature only proves this payment belongs to this order. The order's
+        // server-set notes say who it was for and what was bought, so trust those,
+        // not the client's planId / billingPeriod.
+        const order = await getRazorpayInstance().orders.fetch(orderId);
+        if (
+            order.notes?.userId !== session.user.id ||
+            order.notes?.planId !== planId ||
+            order.notes?.billingPeriod !== billingPeriod
+        ) {
+            return { success: false, error: "Payment does not match this order" };
+        }
+
+        const alreadyUsed = await db.payment.findUnique({
+            where: { razorpayPaymentId: paymentId },
+            select: { id: true },
+        });
+        if (alreadyUsed) {
+            return { success: false, error: "This payment has already been used" };
+        }
+
         const plan = await db.subscriptionPlan.findUnique({
             where: { id: planId },
         });
@@ -182,42 +202,42 @@ export async function verifyAndActivateSubscription(
             periodEnd.setMonth(periodEnd.getMonth() + 1);
         }
 
-        // Create or update subscription
-        const subscription = await db.subscription.upsert({
-            where: { userId: session.user.id },
-            create: {
-                userId: session.user.id,
-                planId: planId,
-                status: SubscriptionStatus.ACTIVE,
-                billingPeriod: billingPeriod,
-                currentPeriodStart: now,
-                currentPeriodEnd: periodEnd,
-            },
-            update: {
-                planId: planId,
-                status: SubscriptionStatus.ACTIVE,
-                billingPeriod: billingPeriod,
-                currentPeriodStart: now,
-                currentPeriodEnd: periodEnd,
-                cancelledAt: null,
-            },
-        });
+        // One transaction: if the payment insert fails (razorpayPaymentId is
+        // unique, so a replayed payment does), the activation rolls back too.
+        const subscription = await db.$transaction(async (tx) => {
+            const sub = await tx.subscription.upsert({
+                where: { userId: session.user.id },
+                create: {
+                    userId: session.user.id,
+                    planId: planId,
+                    status: SubscriptionStatus.ACTIVE,
+                    billingPeriod: billingPeriod,
+                    currentPeriodStart: now,
+                    currentPeriodEnd: periodEnd,
+                },
+                update: {
+                    planId: planId,
+                    status: SubscriptionStatus.ACTIVE,
+                    billingPeriod: billingPeriod,
+                    currentPeriodStart: now,
+                    currentPeriodEnd: periodEnd,
+                    cancelledAt: null,
+                },
+            });
 
-        // Record payment
-        const amount = billingPeriod === BillingPeriod.YEARLY
-            ? plan.yearlyPrice
-            : plan.monthlyPrice;
+            await tx.payment.create({
+                data: {
+                    subscriptionId: sub.id,
+                    amount: Number(order.amount),
+                    currency: order.currency || "INR",
+                    status: "captured",
+                    razorpayPaymentId: paymentId,
+                    razorpayOrderId: orderId,
+                    razorpaySignature: signature,
+                },
+            });
 
-        await db.payment.create({
-            data: {
-                subscriptionId: subscription.id,
-                amount: amount,
-                currency: "INR",
-                status: "captured",
-                razorpayPaymentId: paymentId,
-                razorpayOrderId: orderId,
-                razorpaySignature: signature,
-            },
+            return sub;
         });
 
         revalidatePath("/settings/subscription");
