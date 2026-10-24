@@ -43,8 +43,8 @@ export default async function InterviewPage({
         notFound();
     }
 
-    // Verify token
-    if (interview.token && interview.token !== token) {
+    // Verify token. An interview without a token is never accessible.
+    if (!interview.token || interview.token !== token) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <div className="text-center space-y-4">
