@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -12,11 +12,17 @@ interface PermissionCheckProps {
     onPermissionsGranted: (stream: MediaStream) => void;
 }
 
+const noSubscription = () => () => {};
+const hasSpeechRecognition = () => "SpeechRecognition" in window || "webkitSpeechRecognition" in window;
+
 export function PermissionCheck({ onPermissionsGranted }: PermissionCheckProps) {
     const [hasCamera, setHasCamera] = useState(false);
     const [hasMic, setHasMic] = useState(false);
     const [stream, setStream] = useState<MediaStream | null>(null);
     const [error, setError] = useState<string | null>(null);
+    // Without speech recognition (e.g. Firefox) answers would silently transcribe
+    // as empty, so the interview can't start. null while server rendering.
+    const speechSupported = useSyncExternalStore(noSubscription, hasSpeechRecognition, () => null);
     const videoRef = useRef<HTMLVideoElement>(null);
 
     // Removed cleanup here as stream is passed to parent
@@ -85,6 +91,16 @@ export function PermissionCheck({ onPermissionsGranted }: PermissionCheckProps) 
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                    {speechSupported === false && (
+                        <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>Browser not supported</AlertTitle>
+                            <AlertDescription>
+                                This interview needs voice input, which your browser doesn&apos;t support. Please open this link in Google Chrome or Microsoft Edge.
+                            </AlertDescription>
+                        </Alert>
+                    )}
+
                     {error && (
                         <Alert variant="destructive">
                             <AlertCircle className="h-4 w-4" />
@@ -135,11 +151,11 @@ export function PermissionCheck({ onPermissionsGranted }: PermissionCheckProps) 
                             </div>
 
                             {!stream ? (
-                                <Button onClick={requestPermissions} className="w-full">
+                                <Button onClick={requestPermissions} className="w-full" disabled={speechSupported === false}>
                                     Check Devices
                                 </Button>
                             ) : (
-                                <Button onClick={handleContinue} className="w-full">
+                                <Button onClick={handleContinue} className="w-full" disabled={speechSupported === false}>
                                     Start Interview
                                 </Button>
                             )}
