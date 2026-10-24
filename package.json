@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "prisma generate && prisma db push --accept-data-loss && next build --webpack",
+    "build": "prisma generate && prisma migrate deploy && next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate && mkdir -p node_modules/get-nonce/dist/es5 && echo \"module.exports.getNonce = () => Math.random().toString(36).substring(2);\" > node_modules/get-nonce/dist/es5/index.js",

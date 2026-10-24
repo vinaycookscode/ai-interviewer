@@ -35,5 +35,3 @@ Thumbs.db
 *.db
 *.sqlite
 
-# Prisma
-prisma/migrations/migration_lock.toml
