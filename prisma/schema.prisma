@@ -48,7 +48,6 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
-  geminiApiKey  String?   // User provided API key
   role          Role      @default(CANDIDATE)
   
   // Location tracking
