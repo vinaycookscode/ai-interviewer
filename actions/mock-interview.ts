@@ -250,6 +250,15 @@ export async function completeMockInterview(mockInterviewId: string) {
         return { error: "Unauthorized" };
     }
 
+    const mockInterview = await db.mockInterview.findFirst({
+        where: { id: mockInterviewId, userId: session.user.id },
+        select: { id: true },
+    });
+
+    if (!mockInterview) {
+        return { error: "Mock interview not found" };
+    }
+
     try {
         // Calculate average score
         const answers = await db.mockAnswer.findMany({
