@@ -2,7 +2,7 @@
 
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { getGeminiModelInstance } from "@/lib/gemini";
+import { getGeminiModelInstance, MAX_RATE_LIMIT_RETRIES } from "@/lib/gemini";
 // import { GoogleGenerativeAI } from "@google/generative-ai"; // Removed
 import { getGeminiModel } from "@/actions/gemini-config";
 import { getAIStatus } from "@/actions/ai-status";
@@ -77,7 +77,7 @@ export async function createMockInterview(role: string, difficulty: string) {
 }
 
 
-export async function generateMockQuestions(role: string, difficulty: string): Promise<{
+interface MockQuestionsResult {
     questions?: string[];
     isFallback?: boolean;
     allModelsExhausted?: boolean;
@@ -88,7 +88,14 @@ export async function generateMockQuestions(role: string, difficulty: string): P
         from: string;
         to: string;
     };
-}> {
+}
+
+export async function generateMockQuestions(role: string, difficulty: string): Promise<MockQuestionsResult> {
+    return generateMockQuestionsWithRetry(role, difficulty, 0);
+}
+
+// Not exported: the retry counter must not be client-controllable.
+async function generateMockQuestionsWithRetry(role: string, difficulty: string, attempt: number): Promise<MockQuestionsResult> {
     const model = await getGeminiModelInstance();
 
 
@@ -115,9 +122,9 @@ export async function generateMockQuestions(role: string, difficulty: string): P
             const { handleRateLimit } = await import("@/lib/gemini");
             const result = await handleRateLimit(modelName);
 
-            if (result.switched) {
+            if (result.switched && attempt < MAX_RATE_LIMIT_RETRIES) {
                 // Retry with new model
-                const retryResult = await generateMockQuestions(role, difficulty);
+                const retryResult = await generateMockQuestionsWithRetry(role, difficulty, attempt + 1);
                 return {
                     ...retryResult,
                     _switchInfo: {

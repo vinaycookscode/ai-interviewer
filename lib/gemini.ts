@@ -37,6 +37,12 @@ export async function getGeminiModelInstance(apiKey?: string, modelId?: string) 
 }
 
 /**
+ * How many times a rate-limited call may switch models and retry. Switching
+ * relies on cookies, which can't always be set, so the retries must be bounded.
+ */
+export const MAX_RATE_LIMIT_RETRIES = 3;
+
+/**
  * Handle rate limit errors by marking model as limited and switching to next available
  */
 export async function handleRateLimit(currentModel: string): Promise<{
@@ -83,7 +89,7 @@ export class RateLimitError extends Error {
     }
 }
 
-export async function generateInterviewQuestions(jobDescription: string): Promise<string[]> {
+export async function generateInterviewQuestions(jobDescription: string, attempt = 0): Promise<string[]> {
     const model = await getGeminiModelInstance();
     let modelName = 'unknown';
     try { modelName = model.model.replace('models/', ''); } catch (e) { }
@@ -124,11 +130,11 @@ ${jobDescription}
 
         if (error.status === 429 || error.message?.includes('429') || error.message?.includes('Resource has been exhausted')) {
             const result = await handleRateLimit(modelName);
-            if (result.switched) {
+            if (result.switched && attempt < MAX_RATE_LIMIT_RETRIES) {
                 // Retry with new model
-                return generateInterviewQuestions(jobDescription);
+                return generateInterviewQuestions(jobDescription, attempt + 1);
             }
-            throw new Error(result.message);
+            throw new RateLimitError(result.switched ? "All AI models are busy. Please try again in a few minutes." : result.message);
         }
 
         throw new Error(`Failed to generate questions: ${error.message}`);
@@ -145,7 +151,7 @@ export interface EvaluationResult {
     };
 }
 
-export async function evaluateAnswer(question: string, answer: string, contextLanguage: string = "en"): Promise<EvaluationResult> {
+export async function evaluateAnswer(question: string, answer: string, contextLanguage: string = "en", attempt = 0): Promise<EvaluationResult> {
     const model = await getGeminiModelInstance();
     let modelName = 'unknown';
     try { modelName = model.model.replace('models/', ''); } catch (e) { }
@@ -218,13 +224,13 @@ export async function evaluateAnswer(question: string, answer: string, contextLa
 
         if (error.status === 429 || error.message?.includes('429') || error.message?.includes('Resource has been exhausted')) {
             const result = await handleRateLimit(modelName);
-            if (result.switched) {
+            if (result.switched && attempt < MAX_RATE_LIMIT_RETRIES) {
                 // Retry with new model
-                return evaluateAnswer(question, answer, contextLanguage);
+                return evaluateAnswer(question, answer, contextLanguage, attempt + 1);
             }
             return {
                 score: 0,
-                feedback: result.message,
+                feedback: result.switched ? "All AI models are busy. Please try again in a few minutes." : result.message,
                 criteria: { accuracy: 0, communication: 0, relevance: 0 }
             };
         }
