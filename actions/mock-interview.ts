@@ -175,6 +175,15 @@ export async function saveMockAnswer(
         return { error: "Unauthorized" };
     }
 
+    const mockInterview = await db.mockInterview.findFirst({
+        where: { id: mockInterviewId, userId: session.user.id },
+        select: { role: true },
+    });
+
+    if (!mockInterview) {
+        return { error: "Mock interview not found" };
+    }
+
     let evaluation = { score: 0, feedback: "" };
 
     try {
@@ -184,8 +193,8 @@ export async function saveMockAnswer(
         const prompt = `
       Question: ${question}
       Candidate Answer: ${transcript}
-      
-      Evaluate this answer for a ${question} role.
+
+      Evaluate this answer for a ${mockInterview.role} role.
       Provide a JSON response with:
       - score (1-10 number)
       - feedback (concise string, max 2 sentences)
