@@ -14,6 +14,32 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { headers } from "next/headers";
 import { getClientIP } from "@/lib/geolocation";
 
+/**
+ * True if callbackUrl is an interview invitation link (/interview/<id>?token=…)
+ * whose token belongs to an interview for this email. The token is only sent
+ * in the invitation email, so it proves the person registering received it.
+ */
+async function hasInvitationFor(email: string, callbackUrl?: string) {
+    if (!callbackUrl) return false;
+
+    let url: URL;
+    try {
+        url = new URL(callbackUrl, "http://invite.local");
+    } catch {
+        return false;
+    }
+
+    const interviewId = url.pathname.match(/^\/interview\/([^/]+)$/)?.[1];
+    const token = url.searchParams.get("token");
+    if (!interviewId || !token) return false;
+
+    const interview = await db.interview.findFirst({
+        where: { id: interviewId, token },
+        select: { candidate: { select: { email: true } } },
+    });
+    return interview?.candidate.email.toLowerCase() === email.toLowerCase();
+}
+
 export const login = async (
     values: z.infer<typeof LoginSchema>,
     callbackUrl?: string
@@ -77,14 +103,19 @@ export const register = async (
     });
 
     if (existingUser) {
-        // If user was invited (NULL password), allow them to claim the account
+        // An invited user (NULL password) can claim the account, but only through
+        // their invitation link: otherwise anyone who knows the email could.
         if (existingUser.password === null) {
+            if (!(await hasInvitationFor(email, callbackUrl))) {
+                return { error: "This email has a pending invitation. Please use the link in your invitation email to create your account." };
+            }
+
+            // Keep the existing role: claiming must not change it.
             await db.user.update({
                 where: { email },
                 data: {
                     name,
                     password: hashedPassword,
-                    role,
                 },
             });
 
