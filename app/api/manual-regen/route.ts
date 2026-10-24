@@ -2,8 +2,17 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { evaluateAnswer } from "@/lib/gemini";
+import { requireAdmin } from "@/lib/api-auth";
 
+// One-off debugging tool: never available in production.
 export async function GET() {
+    if (process.env.NODE_ENV === "production") {
+        return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    const denied = await requireAdmin();
+    if (denied) return denied;
+
     try {
         // 1. Find the user
         const user = await db.user.findUnique({

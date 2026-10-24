@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { seedPlacementProgram } from "@/actions/seed-program";
 import { seedCompanyPrepKits } from "@/actions/seed-companies";
 import { seedPlacementFeatureFlags } from "@/actions/seed-placement-flags";
+import { requireAdmin } from "@/lib/api-auth";
 
 async function runSeed() {
     // Seed feature flags
@@ -39,12 +39,8 @@ export async function GET() {
 
 // POST - Requires admin auth
 export async function POST() {
-    const session = await auth();
-
-    // Only allow admins to seed
-    if (!session?.user || (session.user as any).role !== "ADMIN") {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const denied = await requireAdmin();
+    if (denied) return denied;
 
     try {
         const results = await runSeed();

@@ -13,6 +13,7 @@ import { HEAPS_HASH_CARDS } from "@/lib/flashcard-data/heaps-hash";
 import { SYSTEM_DESIGN_CARDS } from "@/lib/flashcard-data/system-design";
 import { SQL_CARDS } from "@/lib/flashcard-data/sql";
 import { BEHAVIORAL_CARDS } from "@/lib/flashcard-data/behavioral";
+import { requireAdmin } from "@/lib/api-auth";
 
 // Deck definitions
 const DECKS = [
@@ -30,6 +31,9 @@ const DECKS = [
 ];
 
 export async function GET() {
+    const denied = await requireAdmin();
+    if (denied) return denied;
+
     try {
         console.time("Total seed time");
         let decksCreated = 0;
