@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --webpack",
-    "build": "prisma generate && node scripts/require-database-url.mjs && prisma migrate deploy && next build --webpack",
+    "dev": "node scripts/guard-production-db.mjs dev && next dev --webpack",
+    "build": "prisma generate && node scripts/require-database-url.mjs && node scripts/guard-production-db.mjs build && prisma migrate deploy && next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "postinstall": "prisma generate && mkdir -p node_modules/get-nonce/dist/es5 && echo \"module.exports.getNonce = () => Math.random().toString(36).substring(2);\" > node_modules/get-nonce/dist/es5/index.js",
