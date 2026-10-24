@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { uploadToR2 } from "@/lib/r2";
+import { validateUpload } from "@/lib/upload-validation";
+
+const PROFILE_DOCUMENT_TYPES = ["resume", "pan", "aadhaar"] as const;
 
 export async function POST(req: NextRequest) {
     try {
@@ -21,12 +24,23 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "No file provided" }, { status: 400 });
         }
 
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-        const fileName = `${type || 'doc'}_${Date.now()}_${safeName}`;
+        const docType = PROFILE_DOCUMENT_TYPES.find((t) => t === type);
+        if (!docType) {
+            return NextResponse.json({ error: "Invalid document type" }, { status: 400 });
+        }
+
+        const upload = await validateUpload(
+            file,
+            // Profile resumes feed the resume screener, which only parses PDF.
+            docType === "resume" ? "resumePdf" : "idDocument",
+            docType,
+        );
+        if (!upload.ok) {
+            return NextResponse.json({ error: upload.error }, { status: 400 });
+        }
 
         // Upload to R2: profiles/[userId]/[fileName]
-        const fileUrl = await uploadToR2(buffer, fileName, `profiles/${userId}`, file.type);
+        const fileUrl = await uploadToR2(upload.buffer, upload.fileName, `profiles/${userId}`, upload.contentType);
 
         return NextResponse.json({
             success: true,
@@ -36,7 +50,7 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
         console.error("Profile upload error:", error);
         return NextResponse.json(
-            { error: error.message || "Failed to upload file" },
+            { error: "Failed to upload file" },
             { status: 500 }
         );
     }

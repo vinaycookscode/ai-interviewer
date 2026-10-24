@@ -1,6 +1,8 @@
 "use server";
 
 import { auth } from "@/auth";
+import { db } from "@/lib/db";
+import { validateUpload, MAX_UPLOAD_BYTES } from "@/lib/upload-validation";
 import { resumeScreenerService } from "@/lib/services/ai/resume-screener.service";
 import { handleError } from "@/lib/error-handler";
 import { getGeminiModelInstance } from "@/lib/gemini";
@@ -45,22 +47,34 @@ export async function analyzeResume(formData: FormData) {
     }
 
     let file = formData.get("file") as File | null;
-    const resumeUrlFromProfile = formData.get("resumeUrl") as string | null;
 
-    if (!file && !resumeUrlFromProfile) {
+    // Never fetch a URL the client sends (SSRF). Use the resume stored on the
+    // user's own profile, and only if it lives in our own bucket.
+    const profile = await db.user.findUnique({
+        where: { id: session.user.id },
+        select: { resumeUrl: true },
+    });
+    const bucketUrl = process.env.R2_PUBLIC_URL;
+    const profileResumeUrl =
+        bucketUrl && profile?.resumeUrl?.startsWith(`${bucketUrl}/`) ? profile.resumeUrl : null;
+
+    if (!(file && file.size > 0) && !profileResumeUrl) {
         return { error: "No resume provided. Please upload a resume or complete your profile." };
     }
 
     try {
         let buffer: Buffer;
         if (file && file.size > 0) {
-            const arrayBuffer = await file.arrayBuffer();
-            buffer = Buffer.from(arrayBuffer);
-        } else if (resumeUrlFromProfile) {
-            const response = await fetch(resumeUrlFromProfile);
+            const upload = await validateUpload(file, "resumePdf", "resume");
+            if (!upload.ok) return { error: upload.error };
+            buffer = upload.buffer;
+        } else if (profileResumeUrl) {
+            const response = await fetch(profileResumeUrl, { redirect: "error" });
             if (!response.ok) throw new Error("Failed to fetch resume from profile URL");
-            const arrayBuffer = await response.arrayBuffer();
-            buffer = Buffer.from(arrayBuffer);
+            if (Number(response.headers.get("content-length") ?? 0) > MAX_UPLOAD_BYTES) {
+                return { error: "Your profile resume is too large to analyze." };
+            }
+            buffer = Buffer.from(await response.arrayBuffer());
         } else {
             return { error: "No valid resume source found." };
         }

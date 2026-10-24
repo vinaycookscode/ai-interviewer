@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { uploadToR2 } from "@/lib/r2";
+import { validateUpload, type UploadRule } from "@/lib/upload-validation";
 
 export async function POST(req: NextRequest) {
     try {
@@ -33,8 +34,25 @@ export async function POST(req: NextRequest) {
             include: { candidate: true },
         });
 
-        if (!interview) {
+        if (!interview || interview.candidateId !== userId) {
             return NextResponse.json({ error: "Interview not found" }, { status: 404 });
+        }
+
+        // Validate every file before uploading any, so a bad file can't leave a partial upload.
+        const documents: { file: File | null; rule: UploadRule; prefix: string; field: "resumeUrl" | "aadhaarUrl" | "panUrl" }[] = [
+            { file: resumeFile, rule: "resume", prefix: "resume", field: "resumeUrl" },
+            { file: aadharFile, rule: "idDocument", prefix: "aadhaar", field: "aadhaarUrl" },
+            { file: panFile, rule: "idDocument", prefix: "pan", field: "panUrl" },
+        ];
+
+        const validated = [];
+        for (const doc of documents) {
+            if (!doc.file) continue;
+            const result = await validateUpload(doc.file, doc.rule, doc.prefix);
+            if (!result.ok) {
+                return NextResponse.json({ error: `${doc.prefix}: ${result.error}` }, { status: 400 });
+            }
+            validated.push({ ...result, field: doc.field });
         }
 
         const updateData: {
@@ -44,25 +62,8 @@ export async function POST(req: NextRequest) {
             documentsVerified?: boolean;
         } = {};
 
-        // Handle resume upload
-        if (resumeFile) {
-            const buffer = Buffer.from(await resumeFile.arrayBuffer());
-            const fileName = `resume_${Date.now()}_${resumeFile.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-            updateData.resumeUrl = await uploadToR2(buffer, fileName, `documents/${interviewId}`, resumeFile.type);
-        }
-
-        // Handle Aadhaar upload
-        if (aadharFile) {
-            const buffer = Buffer.from(await aadharFile.arrayBuffer());
-            const fileName = `aadhaar_${Date.now()}_${aadharFile.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-            updateData.aadhaarUrl = await uploadToR2(buffer, fileName, `documents/${interviewId}`, aadharFile.type);
-        }
-
-        // Handle PAN upload
-        if (panFile) {
-            const buffer = Buffer.from(await panFile.arrayBuffer());
-            const fileName = `pan_${Date.now()}_${panFile.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-            updateData.panUrl = await uploadToR2(buffer, fileName, `documents/${interviewId}`, panFile.type);
+        for (const doc of validated) {
+            updateData[doc.field] = await uploadToR2(doc.buffer, doc.fileName, `documents/${interviewId}`, doc.contentType);
         }
 
         // Update interview with document URLs
@@ -93,7 +94,7 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
         console.error("Document upload error:", error);
         return NextResponse.json(
-            { error: error.message || "Failed to upload documents" },
+            { error: "Failed to upload documents" },
             { status: 500 }
         );
     }
