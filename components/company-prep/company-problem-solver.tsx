@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { saveUserSolution, getUserSolution } from "@/actions/company-prep";
+import { saveUserSolution, getUserSolution, analyzeSolution, type CodeAnalysis } from "@/actions/company-prep";
 import { toast } from "sonner";
 import { CodeEditor } from "@/components/ui/code-editor";
 
@@ -55,62 +55,6 @@ const DIFFICULTY_ICONS: Record<string, string> = {
     MEDIUM: "🟡",
     HARD: "🔴"
 };
-
-// AI Code Analysis Types
-interface CodeAnalysis {
-    timeComplexity: string;
-    spaceComplexity: string;
-    correctness: number;
-    codeQuality: number;
-    feedback: string[];
-    improvements: string[];
-    isOptimal: boolean;
-}
-
-// Simulated AI Analysis
-function analyzeCode(code: string, difficulty: string): CodeAnalysis {
-    const codeLength = code.length;
-    const hasLoop = code.includes("for") || code.includes("while");
-    const hasMap = code.includes("Map") || code.includes("{}") || code.includes("Object");
-
-    // Simulated analysis based on code patterns
-    const isOptimal = hasMap && hasLoop;
-    const timeComplexity = isOptimal ? "O(n)" : hasLoop ? "O(n²)" : "O(1)";
-    const spaceComplexity = hasMap ? "O(n)" : "O(1)";
-
-    const baseScore = difficulty === "EASY" ? 85 : difficulty === "MEDIUM" ? 75 : 65;
-    const correctness = Math.min(100, baseScore + (isOptimal ? 15 : 0));
-    const codeQuality = Math.min(100, 70 + (codeLength > 100 ? 0 : 20) + (code.includes("//") ? 10 : 0));
-
-    const feedback: string[] = [];
-    const improvements: string[] = [];
-
-    if (hasMap) {
-        feedback.push("Good use of HashMap for O(1) lookups");
-    } else {
-        improvements.push("Consider using a HashMap to optimize lookup time");
-    }
-
-    if (code.includes("//")) {
-        feedback.push("Good practice: Code includes comments");
-    } else {
-        improvements.push("Add comments to explain your approach");
-    }
-
-    if (isOptimal) {
-        feedback.push("Your solution achieves optimal time complexity!");
-    }
-
-    return {
-        timeComplexity,
-        spaceComplexity,
-        correctness,
-        codeQuality,
-        feedback,
-        improvements,
-        isOptimal
-    };
-}
 
 // localStorage key for user code
 const getCodeStorageKey = (questionId: string) => `company-prep-code-${questionId}`;
@@ -524,11 +468,19 @@ public:
     };
 
     const handleAnalyzeCode = async () => {
-        setIsAnalyzing(true);
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        if (!code.trim()) {
+            toast.error("Please write some code before analyzing");
+            return;
+        }
 
-        const result = analyzeCode(code, question.difficulty);
-        setAnalysis(result);
+        setIsAnalyzing(true);
+        setAnalysis(null);
+        const result = await analyzeSolution(question.id, code, selectedLanguage);
+        if (result.success) {
+            setAnalysis(result.analysis);
+        } else {
+            toast.error(result.error);
+        }
         setIsAnalyzing(false);
     };
 
