@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { Resend } from "resend";
 import { randomBytes } from "crypto";
+import { escapeHtml } from "@/lib/utils";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -182,13 +183,13 @@ export async function bulkInviteCandidates(data: {
                         to: email,
                         subject: `Interview Invitation: ${job.title}`,
                         html: `
-                            <h2>Hello ${name},</h2>
-                            <p>You have been invited to complete an AI-powered interview for the position of <strong>${job.title}</strong>.</p>
-                            <p><strong>Scheduled Time:</strong> ${formattedDate}</p>
+                            <h2>Hello ${escapeHtml(name)},</h2>
+                            <p>You have been invited to complete an AI-powered interview for the position of <strong>${escapeHtml(job.title)}</strong>.</p>
+                            <p><strong>Scheduled Time:</strong> ${escapeHtml(formattedDate)}</p>
                             <p>The interview consists of ${job.questions.length} questions and should take approximately ${Math.ceil(job.questions.length * 2)} minutes to complete.</p>
                             <p>The interview will be available starting from the scheduled time. Click the link below when ready:</p>
-                            <p><a href="${interviewLink}" style="display: inline-block; padding: 12px 24px; background-color: #000; color: #fff; text-decoration: none; border-radius: 6px; margin: 20px 0;">Start Interview</a></p>
-                            <p>Or copy this link: ${interviewLink}</p>
+                            <p><a href="${escapeHtml(interviewLink)}" style="display: inline-block; padding: 12px 24px; background-color: #000; color: #fff; text-decoration: none; border-radius: 6px; margin: 20px 0;">Start Interview</a></p>
+                            <p>Or copy this link: ${escapeHtml(interviewLink)}</p>
                             <p>Good luck!</p>
                         `,
                     });

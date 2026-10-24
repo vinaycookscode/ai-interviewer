@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 import { env } from '@/env';
+import { escapeHtml } from '@/lib/utils';
 
 const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
 
@@ -66,7 +67,7 @@ export async function sendPasswordResetEmail(email: string, token: string) {
                         </p>
                         
                         <div style="text-align: center; margin: 32px 0;">
-                            <a href="${resetLink}" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                            <a href="${escapeHtml(resetLink)}" style="display: inline-block; background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px;">
                                 Reset Password
                             </a>
                         </div>

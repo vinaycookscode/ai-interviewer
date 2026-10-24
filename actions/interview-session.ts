@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { InterviewStatus } from "@prisma/client";
 import { generateFollowUp } from "@/lib/ai-context";
 import { generatePersonalityProfile } from "@/lib/ai/personality";
+import { escapeHtml } from "@/lib/utils";
 
 export async function startInterview(interviewId: string) {
     try {
@@ -131,7 +132,7 @@ export async function completeInterview(interviewId: string) {
                     subject: `Interview Completed: ${interview.candidate.email} - ${interview.job.title}`,
                     html: `
                         <h1>Interview Completed</h1>
-                        <p>Candidate <strong>${interview.candidate.email}</strong> has completed the interview for <strong>${interview.job.title}</strong>.</p>
+                        <p>Candidate <strong>${escapeHtml(interview.candidate.email)}</strong> has completed the interview for <strong>${escapeHtml(interview.job.title)}</strong>.</p>
                         <p><strong>Score:</strong> ${avgScore !== null ? avgScore.toFixed(1) + "/10" : "Pending Evaluation"}</p>
                         <p><a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/candidates">View Results</a></p>
                     `,
