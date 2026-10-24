@@ -90,15 +90,6 @@ export function InterviewSession({
     const currentQuestion = questionsState[currentIndex] || questionsState[questionsState.length - 1];
     const isCodingQuestion = currentQuestion?.type === "CODE";
 
-    // Safety guard for empty questions
-    if (!currentQuestion) {
-        return (
-            <div className="flex items-center justify-center min-h-screen text-red-500">
-                <p>Error: No questions available for this interview.</p>
-            </div>
-        );
-    }
-
     // Normalize language for Select component
     const normalizedLanguageCode = Object.values(LANGUAGE_CODES).includes(language)
         ? language
@@ -444,6 +435,14 @@ export function InterviewSession({
         }
     }, [terminationReason, isCompleted]);
 
+    // Safety guard for empty questions. Must stay below every hook (Rules of Hooks).
+    if (!currentQuestion) {
+        return (
+            <div className="flex items-center justify-center min-h-screen text-red-500">
+                <p>Error: No questions available for this interview.</p>
+            </div>
+        );
+    }
 
     if (isCompleted) {
         if (terminationReason) {
