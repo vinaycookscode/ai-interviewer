@@ -269,6 +269,15 @@ export const RegisterForm = () => {
                             t("submit")
                         )}
                     </Button>
+                    {/* Employer sign-up is invite-only; don't let employers silently become candidates */}
+                    {!isInterviewInvitation && (
+                        <p className="text-center text-sm text-muted-foreground">
+                            {t("employerQuestion")}{" "}
+                            <a href="mailto:hello@getbacktou.com" className="font-medium text-primary hover:underline">
+                                {t("employerContact")}
+                            </a>
+                        </p>
+                    )}
                 </form>
             </Form>
         </CardWrapper>
