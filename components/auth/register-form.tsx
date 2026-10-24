@@ -26,7 +26,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2, Crown, Zap, Sparkles } from "lucide-react";
 import Link from "next/link";
 
-import { decryptData, encryptData } from "@/lib/encryption";
+import { planSelectionQuery, readPlanSelection } from "@/lib/plan-selection";
 
 import { useTranslations } from "next-intl";
 
@@ -41,12 +41,10 @@ export const RegisterForm = () => {
     const pathname = usePathname();
     const searchParams = useSearchParams();
 
-    // Decode encrypted state if present
-    const s = searchParams.get("s");
-    const decrypted = s ? decryptData(s) : null;
-
-    const selectedPlan = decrypted?.plan || searchParams.get("plan") || "FREE";
-    const selectedPeriod = decrypted?.period || searchParams.get("period") || "MONTHLY";
+    // Plan picked on the pricing page, if any
+    const selection = readPlanSelection(searchParams);
+    const selectedPlan = selection.plan ?? "FREE";
+    const selectedPeriod = selection.period ?? "MONTHLY";
     const isYearly = selectedPeriod === "YEARLY";
 
     // Check if user is coming from interview invitation
@@ -73,8 +71,7 @@ export const RegisterForm = () => {
         // If plan was selected or present in URL, redirect to pricing after auth
         let callbackUrl = existingCallbackUrl;
         if (!callbackUrl && selectedPlan && selectedPlan !== "FREE") {
-            const encrypted = encryptData({ plan: selectedPlan, period: selectedPeriod });
-            callbackUrl = `/candidate/pricing?s=${encrypted}`;
+            callbackUrl = `/candidate/pricing?${planSelectionQuery(selectedPlan, selectedPeriod)}`;
         }
 
         startTransition(() => {
@@ -88,21 +85,17 @@ export const RegisterForm = () => {
 
     const setPlan = (plan: string) => {
         const params = new URLSearchParams(searchParams.toString());
-        const encrypted = encryptData({ plan, period: selectedPeriod });
-        params.set("s", encrypted);
-        // Remove legacy params if any
-        params.delete("plan");
-        params.delete("period");
+        params.set("plan", plan);
+        params.set("period", selectedPeriod);
+        params.delete("s");
         router.push(`${pathname}?${params.toString()}`, { scroll: false });
     };
 
     const setPeriod = (period: string) => {
         const params = new URLSearchParams(searchParams.toString());
-        const encrypted = encryptData({ plan: selectedPlan, period });
-        params.set("s", encrypted);
-        // Remove legacy params if any
-        params.delete("plan");
-        params.delete("period");
+        params.set("plan", selectedPlan);
+        params.set("period", period);
+        params.delete("s");
         router.push(`${pathname}?${params.toString()}`, { scroll: false });
     };
 

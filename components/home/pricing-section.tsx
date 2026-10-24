@@ -7,24 +7,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, ArrowRight, DollarSign } from "lucide-react";
-import { encryptData } from "@/lib/encryption";
-import { useEffect } from "react";
+import { planSelectionQuery } from "@/lib/plan-selection";
 import { useTranslations } from "next-intl";
 
 export function HomePricingSection() {
     const t = useTranslations("Pricing");
     const [isYearly, setIsYearly] = useState(false);
-    const [isMounted, setIsMounted] = useState(false);
 
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
-
-    const getSelectionUrl = (plan: string) => {
-        if (!isMounted) return `/auth/register?plan=${plan}&period=${isYearly ? "YEARLY" : "MONTHLY"}`;
-        const encrypted = encryptData({ plan, period: isYearly ? "YEARLY" : "MONTHLY" });
-        return `/auth/register?s=${encrypted}`;
-    };
+    const getSelectionUrl = (plan: string) =>
+        `/auth/register?${planSelectionQuery(plan, isYearly ? "YEARLY" : "MONTHLY")}`;
 
     return (
         <section id="pricing" className="pb-24 pt-8 relative">

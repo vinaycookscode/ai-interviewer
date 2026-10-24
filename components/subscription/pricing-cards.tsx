@@ -12,7 +12,7 @@ import { BillingPeriod, PlanTier } from "@prisma/client";
 import { createSubscriptionOrder, verifyAndActivateSubscription } from "@/actions/subscription";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
-import { decryptData } from "@/lib/encryption";
+import { readPlanSelection } from "@/lib/plan-selection";
 import { useTranslations } from "next-intl";
 
 declare global {
@@ -172,11 +172,7 @@ export function PricingCards({ plans, currentPlanTier, razorpayKeyId }: PricingC
     };
 
     const handleParamsSync = (params: URLSearchParams) => {
-        const s = params.get("s");
-        const decrypted = s ? decryptData(s) : null;
-
-        const selectedPlanTier = decrypted?.plan || params.get("selected");
-        const selectedPeriod = decrypted?.period || params.get("period");
+        const { plan: selectedPlanTier, period: selectedPeriod } = readPlanSelection(params);
 
         if (selectedPeriod === "YEARLY") {
             setIsYearly(true);
