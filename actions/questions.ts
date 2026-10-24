@@ -3,7 +3,6 @@
 import { getGeminiModel } from "@/actions/gemini-config";
 import { getGeminiModelInstance } from "@/lib/gemini";
 import { auth } from "@/auth"; // Assuming auth is from next-auth or similar
-import { db } from "@/lib/db"; // Assuming db is your Prisma client or ORM instance
 // import { GoogleGenerativeAI } from "@google/generative-ai"; // No longer needed directly
 
 export async function generateQuestions(jobDescription: string, language?: string) {
@@ -30,23 +29,15 @@ export async function generateQuestions(jobDescription: string, language?: strin
         };
     }
 
-    // Get user's API key
-    const user = await db.user.findUnique({
-        where: { id: session.user.id },
-        select: { geminiApiKey: true }
-    });
-
-    const apiKey = user?.geminiApiKey || process.env.GEMINI_API_KEY;
-
-    if (!apiKey) {
+    if (!process.env.GEMINI_API_KEY) {
         return {
             success: false,
-            error: "Gemini API key not found. Please add your API key in Settings."
+            error: "AI question generation is not configured."
         };
     }
 
     try {
-        const model = await getGeminiModelInstance(apiKey);
+        const model = await getGeminiModelInstance();
 
         const languageInstruction = language
             ? `Questions MUST be in ${language}.`
