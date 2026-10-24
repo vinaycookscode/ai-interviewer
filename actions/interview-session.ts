@@ -1,12 +1,28 @@
 "use server";
 
+import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { InterviewStatus } from "@prisma/client";
 import { generateFollowUp } from "@/lib/ai-context";
 import { generatePersonalityProfile } from "@/lib/ai/personality";
 import { escapeHtml } from "@/lib/utils";
 
+/** The caller's own interview, or null. Every action here acts only on it. */
+async function findOwnInterview(interviewId: string) {
+    const session = await auth();
+    if (!session?.user?.id) return null;
+    return db.interview.findFirst({
+        where: { id: interviewId, candidateId: session.user.id },
+        select: { id: true, jobId: true, status: true },
+    });
+}
+
 export async function startInterview(interviewId: string) {
+    const interview = await findOwnInterview(interviewId);
+    if (!interview || interview.status === "COMPLETED") {
+        return { success: false, error: "Interview not found" };
+    }
+
     try {
         await db.interview.update({
             where: { id: interviewId },
@@ -26,6 +42,19 @@ export async function submitAnswer(data: {
     audioUrl?: string;
     videoUrl?: string;
 }) {
+    const interview = await findOwnInterview(data.interviewId);
+    if (!interview || interview.status === "COMPLETED") {
+        return { success: false, error: "Interview not found" };
+    }
+
+    const question = await db.question.findFirst({
+        where: { id: data.questionId, jobId: interview.jobId },
+        select: { id: true },
+    });
+    if (!question) {
+        return { success: false, error: "Question not found" };
+    }
+
     try {
         const answer = await db.answer.create({
             data: {
@@ -85,6 +114,11 @@ export async function submitAnswer(data: {
 }
 
 export async function completeInterview(interviewId: string) {
+    const own = await findOwnInterview(interviewId);
+    if (!own || own.status === "COMPLETED") {
+        return { success: false, error: "Interview not found" };
+    }
+
     try {
         // Compute average score from answers
         const answers = await db.answer.findMany({
