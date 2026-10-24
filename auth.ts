@@ -6,6 +6,8 @@ import Credentials from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
 
+const ROLE_RECHECK_MS = 5 * 60 * 1000
+
 export const { auth, handlers, signIn, signOut } = NextAuth({
     adapter: PrismaAdapter(db),
     session: { strategy: "jwt" },
@@ -42,12 +44,26 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             }
             return session;
         },
-        async jwt({ token }) {
+        // Runs on every auth() call. Keep the role in the token instead of querying
+        // the user each time, but re-check it every few minutes so a role change
+        // (e.g. removing an admin) takes effect without waiting for the JWT to expire.
+        async jwt({ token, user, trigger }) {
             if (!token.sub) return token;
-            const existingUser = await db.user.findUnique({ where: { id: token.sub } });
+
+            const now = Date.now();
+            if (user && "role" in user) {
+                token.role = user.role;
+                token.roleCheckedAt = now;
+                return token;
+            }
+
+            const stale = typeof token.roleCheckedAt !== "number" || now - token.roleCheckedAt > ROLE_RECHECK_MS;
+            if (trigger !== "update" && token.role && !stale) return token;
+
+            const existingUser = await db.user.findUnique({ where: { id: token.sub }, select: { role: true } });
             if (!existingUser) return token;
-            // @ts-ignore
             token.role = existingUser.role;
+            token.roleCheckedAt = now;
             return token;
         }
     }
