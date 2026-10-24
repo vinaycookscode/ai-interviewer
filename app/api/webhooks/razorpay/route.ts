@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { verifyWebhookSignature } from "@/lib/razorpay";
-import { SubscriptionStatus, PlanTier } from "@prisma/client";
+import { Prisma, SubscriptionStatus } from "@prisma/client";
 
 export async function POST(request: NextRequest) {
     try {
@@ -72,6 +72,18 @@ export async function POST(request: NextRequest) {
     }
 }
 
+// Handlers let database errors propagate: the route then answers 500 and Razorpay
+// retries the event. Conditions a retry can't fix are logged and acknowledged.
+
+/** Update the user's subscription; logs and skips when there is no row to update. */
+async function updateSubscription(userId: string, data: Prisma.SubscriptionUpdateManyMutationInput, event: string) {
+    const { count } = await db.subscription.updateMany({ where: { userId }, data });
+    if (count === 0) {
+        console.error(`${event}: no subscription row for user ${userId}`);
+    }
+    return count > 0;
+}
+
 async function handleSubscriptionActivated(subscriptionEntity: any) {
     const { id, customer_id, notes } = subscriptionEntity;
     const userId = notes?.userId;
@@ -81,18 +93,12 @@ async function handleSubscriptionActivated(subscriptionEntity: any) {
         return;
     }
 
-    try {
-        await db.subscription.update({
-            where: { userId },
-            data: {
-                razorpaySubscriptionId: id,
-                razorpayCustomerId: customer_id,
-                status: SubscriptionStatus.ACTIVE,
-            },
-        });
+    if (await updateSubscription(userId, {
+        razorpaySubscriptionId: id,
+        razorpayCustomerId: customer_id,
+        status: SubscriptionStatus.ACTIVE,
+    }, "subscription.activated")) {
         console.log("Subscription activated for user:", userId);
-    } catch (error) {
-        console.error("Failed to activate subscription:", error);
     }
 }
 
@@ -105,93 +111,61 @@ async function handleSubscriptionCharged(subscriptionEntity: any, paymentEntity:
         return;
     }
 
-    try {
-        // Update subscription period
-        const subscription = await db.subscription.update({
-            where: { userId },
-            data: {
-                razorpaySubscriptionId: id,
-                razorpayCustomerId: customer_id,
-                status: SubscriptionStatus.ACTIVE,
-                currentPeriodStart: new Date(current_start * 1000),
-                currentPeriodEnd: new Date(current_end * 1000),
-            },
-        });
+    const updated = await updateSubscription(userId, {
+        razorpaySubscriptionId: id,
+        razorpayCustomerId: customer_id,
+        status: SubscriptionStatus.ACTIVE,
+        currentPeriodStart: new Date(current_start * 1000),
+        currentPeriodEnd: new Date(current_end * 1000),
+    }, "subscription.charged");
 
-        // Record payment
-        if (paymentEntity) {
-            await db.payment.create({
-                data: {
-                    subscriptionId: subscription.id,
-                    amount: paymentEntity.amount,
-                    currency: paymentEntity.currency || "INR",
-                    status: "captured",
-                    razorpayPaymentId: paymentEntity.id,
-                    razorpayOrderId: paymentEntity.order_id,
-                },
-            });
-        }
+    if (!updated || !paymentEntity) return;
 
-        console.log("Subscription charged for user:", userId);
-    } catch (error) {
-        console.error("Failed to handle subscription charge:", error);
-    }
+    const subscription = await db.subscription.findUniqueOrThrow({ where: { userId }, select: { id: true } });
+
+    // Razorpay redelivers events; record each payment once.
+    await db.payment.upsert({
+        where: { razorpayPaymentId: paymentEntity.id },
+        update: {},
+        create: {
+            subscriptionId: subscription.id,
+            amount: paymentEntity.amount,
+            currency: paymentEntity.currency || "INR",
+            status: "captured",
+            razorpayPaymentId: paymentEntity.id,
+            razorpayOrderId: paymentEntity.order_id,
+        },
+    });
+
+    console.log("Subscription charged for user:", userId);
 }
 
 async function handleSubscriptionCancelled(subscriptionEntity: any) {
-    const { notes, ended_at } = subscriptionEntity;
-    const userId = notes?.userId;
+    const userId = subscriptionEntity.notes?.userId;
 
     if (!userId) {
         console.error("No userId in subscription notes");
         return;
     }
 
-    try {
-        // Get free plan
-        const freePlan = await db.subscriptionPlan.findUnique({
-            where: { tier: PlanTier.FREE },
-        });
-
-        if (!freePlan) {
-            console.error("Free plan not found");
-            return;
-        }
-
-        await db.subscription.update({
-            where: { userId },
-            data: {
-                status: SubscriptionStatus.CANCELLED,
-                cancelledAt: new Date(),
-                // Don't downgrade immediately - wait until period ends
-            },
-        });
-
+    // Don't downgrade immediately - access lasts until the period ends
+    if (await updateSubscription(userId, {
+        status: SubscriptionStatus.CANCELLED,
+        cancelledAt: new Date(),
+    }, "subscription.cancelled")) {
         console.log("Subscription cancelled for user:", userId);
-    } catch (error) {
-        console.error("Failed to handle subscription cancellation:", error);
     }
 }
 
 async function handleSubscriptionHalted(subscriptionEntity: any) {
-    const { notes } = subscriptionEntity;
-    const userId = notes?.userId;
+    const userId = subscriptionEntity.notes?.userId;
 
     if (!userId) {
         console.error("No userId in subscription notes");
         return;
     }
 
-    try {
-        await db.subscription.update({
-            where: { userId },
-            data: {
-                status: SubscriptionStatus.PAST_DUE,
-            },
-        });
-
+    if (await updateSubscription(userId, { status: SubscriptionStatus.PAST_DUE }, "subscription.halted")) {
         console.log("Subscription halted for user:", userId);
-    } catch (error) {
-        console.error("Failed to handle subscription halt:", error);
     }
 }
