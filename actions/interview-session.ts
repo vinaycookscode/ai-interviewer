@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { gradeAnswerById } from "@/lib/grading";
 import { InterviewStatus } from "@prisma/client";
 import { generateFollowUp } from "@/lib/ai-context";
 import { generatePersonalityProfile } from "@/lib/ai/personality";
@@ -115,11 +116,23 @@ export async function submitAnswer(data: {
 
 export async function completeInterview(interviewId: string) {
     const own = await findOwnInterview(interviewId);
-    if (!own || own.status === "COMPLETED") {
+    if (!own) {
         return { success: false, error: "Interview not found" };
+    }
+    // Already completed: don't re-score or re-notify the employer.
+    if (own.status === "COMPLETED") {
+        return { success: true };
     }
 
     try {
+        // Grade anything still ungraded first (e.g. the last answer when the
+        // interview is terminated mid-grade), so the average includes it.
+        const ungraded = await db.answer.findMany({
+            where: { interviewId, score: null },
+            select: { id: true },
+        });
+        await Promise.all(ungraded.map((a) => gradeAnswerById(a.id)));
+
         // Compute average score from answers
         const answers = await db.answer.findMany({
             where: { interviewId },
