@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Camera, Mic, AlertCircle, CheckCircle2 } from "lucide-react";
@@ -66,8 +67,8 @@ export function PermissionCheck({ onPermissionsGranted }: PermissionCheckProps) 
         <div className="max-w-2xl mx-auto space-y-6">
             <div className="text-center space-y-2">
                 <div className="flex justify-start mb-4">
-                    <Button variant="ghost" onClick={() => window.location.href = "/dashboard"}>
-                        ← Back to Dashboard
+                    <Button variant="ghost" asChild>
+                        <Link href="/candidate/dashboard">← Back to Dashboard</Link>
                     </Button>
                 </div>
                 <h1 className="text-3xl font-bold">System Check</h1>
