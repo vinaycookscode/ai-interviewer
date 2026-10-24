@@ -13,9 +13,17 @@ Identified in the 2026-10-24 product audit as the highest-severity infrastructur
 
 Switch to Prisma's migration system:
 
-1. Run `npx prisma migrate dev --name init` locally to generate the initial migration from current schema state
-2. Commit the `prisma/migrations/` directory to the repo
-3. Change the build script from:
+1. Generate the initial migration from the schema without touching any database (do **not** use `migrate dev` here: on a database that already has data it detects drift and offers to reset it):
+   ```
+   npx prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script -o prisma/migrations/0_init/migration.sql
+   ```
+2. Commit the `prisma/migrations/` directory to the repo (including `migration_lock.toml`)
+3. Baseline every existing database once, so `migrate deploy` treats `0_init` as already applied:
+   ```
+   DATABASE_URL="<database url>" npx prisma migrate resolve --applied 0_init
+   ```
+   Done for production (`ep-delicate-firefly`) on 2026-10-24. Development (`ep-flat-paper`) still needs it before its next deploy.
+4. Change the build script from:
    ```
    prisma generate && prisma db push --accept-data-loss && next build
    ```
@@ -23,7 +31,7 @@ Switch to Prisma's migration system:
    ```
    prisma generate && prisma migrate deploy && next build
    ```
-4. All future schema changes go through `prisma migrate dev` locally, with the generated migration file committed before deploying
+5. All future schema changes go through `prisma migrate dev` locally, with the generated migration file committed before deploying
 
 ## Consequences
 
