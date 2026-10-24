@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     } catch (error: any) {
         console.error("Webhook error:", error);
         return NextResponse.json(
-            { error: error.message || "Webhook processing failed" },
+            { error: "Webhook processing failed" },
             { status: 500 }
         );
     }
@@ -194,9 +194,4 @@ async function handleSubscriptionHalted(subscriptionEntity: any) {
     } catch (error) {
         console.error("Failed to handle subscription halt:", error);
     }
-}
-
-// Handle GET for testing
-export async function GET() {
-    return NextResponse.json({ message: "Razorpay webhook endpoint is active" });
 }
