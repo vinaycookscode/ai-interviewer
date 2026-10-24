@@ -1,6 +1,7 @@
 'use server';
 
 import { cookies } from 'next/headers';
+import { DEFAULT_GEMINI_MODEL } from '@/lib/gemini-models';
 
 export async function setGeminiModel(model: string) {
     const cookieStore = await cookies();
@@ -9,7 +10,13 @@ export async function setGeminiModel(model: string) {
 
 export async function getGeminiModel() {
     const cookieStore = await cookies();
-    return cookieStore.get('gemini_model')?.value || 'gemini-1.5-pro';
+    return cookieStore.get('gemini_model')?.value || DEFAULT_GEMINI_MODEL;
+}
+
+/** Forget the user's model choice so the default is used again. */
+export async function clearGeminiModel() {
+    const cookieStore = await cookies();
+    cookieStore.delete('gemini_model');
 }
 
 export async function markModelRateLimited(model: string) {

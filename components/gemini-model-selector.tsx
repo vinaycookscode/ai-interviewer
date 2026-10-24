@@ -16,13 +16,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { useVisibilityPolling } from "@/lib/use-visibility-polling";
 import { POLLING_INTERVALS } from "@/lib/polling-config";
+import { FALLBACK_GEMINI_MODELS } from "@/lib/gemini-models";
 
-// Default fallback models
-const DEFAULT_MODELS = [
-    { value: "gemini-2.0-flash-exp", label: "Gemini 2.0 Flash (Experimental)" },
-    { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro (Best Quality)" },
-    { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash (Fast & Versatile)" },
-];
 
 interface GeminiModelSelectorProps {
     currentModel: string;
@@ -30,7 +25,7 @@ interface GeminiModelSelectorProps {
 
 export function GeminiModelSelector({ currentModel }: GeminiModelSelectorProps) {
     const [model, setModel] = React.useState(currentModel);
-    const [models, setModels] = React.useState<{ value: string; label: string; disabled?: boolean; availableAt?: number }[]>(DEFAULT_MODELS);
+    const [models, setModels] = React.useState<{ value: string; label: string; disabled?: boolean; availableAt?: number }[]>(FALLBACK_GEMINI_MODELS);
     const [isLoading, setIsLoading] = React.useState(false);
 
     const fetchModels = React.useCallback(async () => {

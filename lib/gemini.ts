@@ -1,5 +1,12 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { getGeminiModel } from "@/actions/gemini-config";
+import { getGeminiModel, clearGeminiModel } from "@/actions/gemini-config";
+import { DEFAULT_GEMINI_MODEL } from "@/lib/gemini-models";
+
+/** Google returns 404 when a model has been retired or never existed. */
+function isModelNotFound(error: unknown) {
+    const { status, message } = (error ?? {}) as { status?: number; message?: string };
+    return status === 404 || /\[404 Not Found\]/.test(message ?? "");
+}
 
 export async function getGeminiModelInstance(apiKey?: string, modelId?: string) {
     const key = apiKey || process.env.GEMINI_API_KEY;
@@ -7,8 +14,26 @@ export async function getGeminiModelInstance(apiKey?: string, modelId?: string) 
 
     const client = new GoogleGenerativeAI(key);
     const modelName = modelId || await getGeminiModel();
+    const model = client.getGenerativeModel({ model: modelName });
 
-    return client.getGenerativeModel({ model: modelName });
+    if (modelName === DEFAULT_GEMINI_MODEL) return model;
+
+    // A saved or requested model may since have been retired. Retry once on the
+    // default instead of failing, and forget the stale choice.
+    const generateContent = model.generateContent.bind(model);
+    model.generateContent = async (...args) => {
+        try {
+            return await generateContent(...args);
+        } catch (error) {
+            if (!isModelNotFound(error)) throw error;
+            console.warn(`Gemini model "${modelName}" not found, falling back to ${DEFAULT_GEMINI_MODEL}`);
+            // Cookies can only be changed from server actions and route handlers.
+            await clearGeminiModel().catch(() => {});
+            return client.getGenerativeModel({ model: DEFAULT_GEMINI_MODEL }).generateContent(...args);
+        }
+    };
+
+    return model;
 }
 
 /**
