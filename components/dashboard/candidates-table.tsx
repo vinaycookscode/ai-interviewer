@@ -20,6 +20,7 @@ import {
 import { ArrowUpDown, ArrowUp, ArrowDown, FileText } from "lucide-react";
 import Link from "next/link";
 import { DeleteCandidateButton } from "@/components/dashboard/delete-candidate-button";
+import { documentHref } from "@/lib/document-url";
 
 type Interview = {
     id: string;
@@ -206,7 +207,7 @@ export function CandidatesTable({ interviews }: CandidatesTableProps) {
                             <div className="flex gap-1 flex-wrap">
                                 {interview.resumeUrl && (
                                     <a
-                                        href={interview.resumeUrl}
+                                        href={documentHref(interview.resumeUrl)}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-xs px-2 py-1 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors border border-blue-200"
@@ -216,7 +217,7 @@ export function CandidatesTable({ interviews }: CandidatesTableProps) {
                                 )}
                                 {interview.aadhaarUrl && (
                                     <a
-                                        href={interview.aadhaarUrl}
+                                        href={documentHref(interview.aadhaarUrl)}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-xs px-2 py-1 rounded bg-green-50 text-green-600 hover:bg-green-100 transition-colors border border-green-200"
@@ -226,7 +227,7 @@ export function CandidatesTable({ interviews }: CandidatesTableProps) {
                                 )}
                                 {interview.panUrl && (
                                     <a
-                                        href={interview.panUrl}
+                                        href={documentHref(interview.panUrl)}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-xs px-2 py-1 rounded bg-purple-50 text-purple-600 hover:bg-purple-100 transition-colors border border-purple-200"

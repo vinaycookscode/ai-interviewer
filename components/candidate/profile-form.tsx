@@ -9,6 +9,7 @@ import { updateProfile } from "@/actions/profile";
 import { toast } from "sonner";
 import { Loader2, FileText, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { documentHref } from "@/lib/document-url";
 
 interface ProfileFormProps {
     user: {
@@ -142,7 +143,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-xs font-semibold truncate uppercase">{currentPan.name}</p>
-                                            <a href={currentPan.url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline font-bold">VIEW DOCUMENT</a>
+                                            <a href={documentHref(currentPan.url)} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline font-bold">VIEW DOCUMENT</a>
                                         </div>
                                     </div>
                                 ) : null}
@@ -191,7 +192,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-xs font-semibold truncate uppercase">{currentAadhaar.name}</p>
-                                            <a href={currentAadhaar.url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline font-bold">VIEW DOCUMENT</a>
+                                            <a href={documentHref(currentAadhaar.url)} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline font-bold">VIEW DOCUMENT</a>
                                         </div>
                                     </div>
                                 ) : null}

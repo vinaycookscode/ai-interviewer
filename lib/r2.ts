@@ -1,4 +1,4 @@
-import { S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 
 // Initialize S3 Client for Cloudflare R2
@@ -40,5 +40,28 @@ export async function uploadToR2(file: File | Buffer, fileName: string, folder: 
         console.error("Error uploading to R2:", error);
         // @ts-ignore
         throw new Error(`Failed to upload file to storage: ${error.message}`);
+    }
+}
+
+/**
+ * Read an object from R2. Returns null when it doesn't exist.
+ * Used to serve private documents through an authorized route.
+ */
+export async function getFromR2(key: string): Promise<{ body: Uint8Array; contentType: string } | null> {
+    const bucketName = process.env.R2_BUCKET_NAME;
+    if (!bucketName) {
+        throw new Error("R2 configuration missing (R2_BUCKET_NAME)");
+    }
+
+    try {
+        const object = await R2.send(new GetObjectCommand({ Bucket: bucketName, Key: key }));
+        if (!object.Body) return null;
+        return {
+            body: await object.Body.transformToByteArray(),
+            contentType: object.ContentType || "application/octet-stream",
+        };
+    } catch (error) {
+        if ((error as { name?: string }).name === "NoSuchKey") return null;
+        throw error;
     }
 }

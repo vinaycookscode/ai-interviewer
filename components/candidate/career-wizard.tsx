@@ -25,6 +25,7 @@ import {
 import { updateProfile, updateCandidateProfile } from "@/actions/profile";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { documentHref } from "@/lib/document-url";
 
 const ROLES = [
     { id: "sde", name: "Software Development Engineer", icon: Code, desc: "Build applications and scalable systems" },
@@ -337,7 +338,7 @@ export function CareerWizard({ initialData }: CareerWizardProps) {
 
                                             {docs.resume.url && (
                                                 <Button variant="ghost" asChild className="h-12 rounded-xl text-muted-foreground hover:text-white font-bold tracking-tight">
-                                                    <a href={docs.resume.url} target="_blank" rel="noopener noreferrer">View Current Blueprint</a>
+                                                    <a href={documentHref(docs.resume.url)} target="_blank" rel="noopener noreferrer">View Current Blueprint</a>
                                                 </Button>
                                             )}
                                         </div>

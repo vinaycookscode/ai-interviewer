@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/hover-card";
 import { useLimit } from "@/components/providers/limit-provider";
 import { Label } from "@/components/ui/label";
+import { documentHref } from "@/lib/document-url";
 
 // Define strict types for questions
 interface Question {
@@ -729,13 +730,13 @@ export function InterviewSession({
                                                 <Label className="text-[10px] text-white/40 uppercase font-bold tracking-widest">Resume</Label>
                                                 <div className="relative aspect-[3/4] bg-white rounded-lg overflow-hidden border border-white/10 shadow-lg group-hover:border-blue-500/50 transition-all">
                                                     <iframe
-                                                        src={userDocuments.resumeUrl}
+                                                        src={documentHref(userDocuments.resumeUrl)}
                                                         className="w-full h-full pointer-events-none"
                                                         title="Resume Preview"
                                                     />
                                                     <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
                                                     <a
-                                                        href={userDocuments.resumeUrl}
+                                                        href={documentHref(userDocuments.resumeUrl)}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/60 transition-opacity"
@@ -752,9 +753,9 @@ export function InterviewSession({
                                                 <div className="grid grid-cols-2 gap-2">
                                                     {userDocuments?.panUrl && (
                                                         <div className="group relative aspect-video bg-muted rounded-md overflow-hidden border border-white/10">
-                                                            <img src={userDocuments.panUrl} alt="PAN Card" className="w-full h-full object-cover" />
+                                                            <img src={documentHref(userDocuments.panUrl)} alt="PAN Card" className="w-full h-full object-cover" />
                                                             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/60 transition-opacity">
-                                                                <a href={userDocuments.panUrl} target="_blank" rel="noopener noreferrer">
+                                                                <a href={documentHref(userDocuments.panUrl)} target="_blank" rel="noopener noreferrer">
                                                                     <Maximize2 className="w-4 h-4 text-white" />
                                                                 </a>
                                                             </div>
@@ -762,9 +763,9 @@ export function InterviewSession({
                                                     )}
                                                     {userDocuments?.aadhaarUrl && (
                                                         <div className="group relative aspect-video bg-muted rounded-md overflow-hidden border border-white/10">
-                                                            <img src={userDocuments.aadhaarUrl} alt="Aadhaar Card" className="w-full h-full object-cover" />
+                                                            <img src={documentHref(userDocuments.aadhaarUrl)} alt="Aadhaar Card" className="w-full h-full object-cover" />
                                                             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/60 transition-opacity">
-                                                                <a href={userDocuments.aadhaarUrl} target="_blank" rel="noopener noreferrer">
+                                                                <a href={documentHref(userDocuments.aadhaarUrl)} target="_blank" rel="noopener noreferrer">
                                                                     <Maximize2 className="w-4 h-4 text-white" />
                                                                 </a>
                                                             </div>
