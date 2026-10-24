@@ -148,19 +148,37 @@ export async function resumeEnrollment(enrollmentId: string) {
 // TASK COMPLETION
 // ============================================
 
+/**
+ * True if the user owns the enrollment and the task belongs to its program
+ * on a day the user has already unlocked.
+ */
+async function canAccessTask(userId: string, enrollmentId: string, taskId: string) {
+    const enrollment = await db.programEnrollment.findFirst({
+        where: { id: enrollmentId, userId },
+        select: { programId: true, currentDay: true }
+    });
+
+    if (!enrollment) return false;
+
+    const task = await db.dailyTask.findFirst({
+        where: {
+            id: taskId,
+            module: { programId: enrollment.programId, dayNumber: { lte: enrollment.currentDay } }
+        },
+        select: { id: true }
+    });
+
+    return task !== null;
+}
+
 export async function startTask(enrollmentId: string, taskId: string) {
     const session = await auth();
     if (!session?.user?.id) {
         return { error: "Not authenticated" };
     }
 
-    // Verify ownership
-    const enrollment = await db.programEnrollment.findFirst({
-        where: { id: enrollmentId, userId: session.user.id }
-    });
-
-    if (!enrollment) {
-        return { error: "Enrollment not found" };
+    if (!(await canAccessTask(session.user.id, enrollmentId, taskId))) {
+        return { error: "Task not found" };
     }
 
     // Check if already started
@@ -196,13 +214,8 @@ export async function completeTask(enrollmentId: string, taskId: string, score?:
         return { error: "Not authenticated" };
     }
 
-    // Verify ownership
-    const enrollment = await db.programEnrollment.findFirst({
-        where: { id: enrollmentId, userId: session.user.id }
-    });
-
-    if (!enrollment) {
-        return { error: "Enrollment not found" };
+    if (!(await canAccessTask(session.user.id, enrollmentId, taskId))) {
+        return { error: "Task not found" };
     }
 
     // Check if already completed
