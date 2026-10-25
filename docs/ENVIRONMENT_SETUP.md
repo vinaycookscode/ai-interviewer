@@ -14,6 +14,8 @@ This project uses separate environments for development and production.
 - **Production**: `ep-delicate-firefly-adjnzpid.c-2.us-east-1.aws.neon.tech`
 - **Development**: `ep-flat-paper-adc7d7ci.c-2.us-east-1.aws.neon.tech`
 
+Both branches use Prisma migrations and were baselined on 2026-10-24 (see the [migrations ADR](architecture/2026-10-24-switch-to-prisma-migrations.md)). Every build runs `prisma migrate deploy` against the environment's own database.
+
 ## Vercel Environment Variables Setup
 
 ### Step 1: Go to Vercel Dashboard
@@ -22,7 +24,7 @@ This project uses separate environments for development and production.
 
 ### Step 2: Configure DATABASE_URL
 
-Add `DATABASE_URL` **twice** with different scopes:
+Add `DATABASE_URL` **twice** with different scopes. **Both are required.** The build checks for `DATABASE_URL` right after `prisma generate` and stops with an explanation if it's missing (AIIN-115).
 
 **For Production:**
 - Variable: `DATABASE_URL`
@@ -34,6 +36,8 @@ Add `DATABASE_URL` **twice** with different scopes:
 - Value: `postgresql://neondb_owner:YOUR_PASSWORD@ep-flat-paper-adc7d7ci.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require`
 - Check: ✅ Preview only
 
+The build refuses to run migrations against the production endpoint unless Vercel says it is the production deploy (`VERCEL_ENV=production`). A Preview scoped to the production URL by mistake fails instead of migrating production.
+
 ### Step 3: Configure Branch Deployments
 1. Go to **Settings** → **Git**
 2. Set **Production Branch** to `main`
@@ -41,18 +45,29 @@ Add `DATABASE_URL` **twice** with different scopes:
 
 ### Other Environment Variables
 
-Set these for BOTH Production and Preview:
-- `AUTH_SECRET`
-- `GOOGLE_CLIENT_ID`
-- `GOOGLE_CLIENT_SECRET`
-- `GOOGLE_GENERATIVE_AI_API_KEY`
-- `RESEND_API_KEY`
-- `RESEND_FROM_EMAIL`
-- `R2_*` variables
+| Variable | Production | Preview | Used for |
+|---|---|---|---|
+| `AUTH_SECRET` | ✅ | ✅ | NextAuth session signing |
+| `NEXTAUTH_URL` | `https://getbacktou.com` | the preview URL | NextAuth callbacks |
+| `NEXT_PUBLIC_APP_URL` | `https://getbacktou.com` | the preview URL | Links in emails and the app |
+| `APP_URL` | `https://getbacktou.com` | optional | Canonical URL for metadata, `robots.txt` and the sitemap (defaults to getbacktou.com) |
+| `GEMINI_API_KEY` | ✅ | ✅ | Every AI feature (one server key; see the [Gemini ADR](architecture/2026-10-24-gemini-models-and-keys.md)) |
+| `RESEND_API_KEY`, `RESEND_FROM_EMAIL` | ✅ | ✅ | Invitation and notification emails |
+| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL` | ✅ | ✅ | File storage (resumes, documents, offer letters) |
+| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` | live keys | **test-mode** keys (`rzp_test_…`) | Checkout and the payment webhook |
+| `DAY_TOKEN_SECRET` | optional | optional | Signs placement-programme day links; falls back to `AUTH_SECRET` |
 
-Set these with DIFFERENT values per environment:
-- `NEXTAUTH_URL` - Production: `https://getbacktou.com`, Preview: `https://your-preview.vercel.app`
-- `NEXT_PUBLIC_APP_URL` - Same as NEXTAUTH_URL
+Sign-in is email and password only. No OAuth provider is configured, so `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` aren't needed until Google sign-in is added (AIIN-54).
+
+### Variables you should not set
+
+- `ALLOW_PRODUCTION_DB=1` overrides the production-database guard for a single deliberate run. Never set it in Vercel or in a `.env` file.
+
+## Storage: keep the R2 bucket private
+
+Candidate documents (resumes, Aadhaar, PAN) are served through `GET /api/files/[...key]`, which checks who is asking (see the [authorization ADR](architecture/2026-10-24-authorize-every-data-access-on-the-server.md)).
+
+After that change is deployed, **switch off public access on the R2 bucket** in the Cloudflare dashboard (AIIN-113). `R2_PUBLIC_URL` is still needed: stored file URLs use it as a prefix, and the files route derives the object key from them.
 
 ## Resetting Development Database
 
@@ -64,8 +79,8 @@ neonctl branches reset br-aged-feather-adtfd3nk --project-id silent-voice-809184
 
 ## Local Development
 
-Copy `.env.example` to `.env.local` and fill in your values:
+See [`LOCAL_DEVELOPMENT.md`](LOCAL_DEVELOPMENT.md). In short:
 
-```bash
-cp .env.example .env.local
-```
+- Put a non-production `DATABASE_URL` in `.env.local`, or use a throwaway local Postgres.
+- The example files `.env.development.example` and `.env.production.example` list every variable.
+- `npm run dev` refuses to start against the production database.

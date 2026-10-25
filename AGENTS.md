@@ -143,8 +143,8 @@ AI-powered interview preparation platform built with Next.js 16, Prisma, and Tai
 - **Framework**: Next.js 16 (App Router)
 - **Database**: PostgreSQL with Prisma ORM
 - **Styling**: Tailwind CSS v4 + shadcn/ui (New York style)
-- **Auth**: NextAuth.js with JWT sessions
-- **AI**: Google Gemini + Anthropic Claude
+- **Auth**: NextAuth.js with JWT sessions (email and password; the role is cached in the JWT and rechecked every 5 minutes)
+- **AI**: Google Gemini via the server's `GEMINI_API_KEY` (`@anthropic-ai/sdk` is installed but not used)
 - **Payments**: Razorpay
 
 ## Code Conventions
@@ -162,14 +162,22 @@ AI-powered interview preparation platform built with Next.js 16, Prisma, and Tai
 
 ### Styling
 - Use Tailwind CSS utilities
-- Use CSS variables defined in `globals.css` for theming
-- Use `liquid-glass` utility class for glassmorphism effects
-- Always support both light and dark modes
+- **New and redesigned screens use Soft Glass**: `components/soft-glass/*`, the `sg-*` tokens and utilities in `app/design-system.css`, and the shared class strings in `components/soft-glass/classes.ts`. Follow `docs/design/soft-glass.md`. Don't add new `liquid-glass` or hardcoded emerald/cyan/teal styling: those are being retired (epic AIIN-123).
+- Screens not yet on Soft Glass use the named size scale (`text-page-title`, `gap-section`, `h-control`, `rounded-card`, …) and `bg-brand`/`text-brand` from `app/design-system.css`, plus `PageHeader`/`Section` from `components/layout/`.
+- Always support both light and dark modes, and widths from 320px up: nothing may overflow the page **or its own container**
 
 ### Database
 - Schema defined in `prisma/schema.prisma`
 - Use server actions in `actions/` for data mutations
+- **Every action and route that touches user data loads it scoped to the session user** (or checks the role) before doing anything. Server Actions are public endpoints. See `docs/architecture/2026-10-24-authorize-every-data-access-on-the-server.md`.
+- Schema changes: `npx prisma migrate dev --name <change>` and commit the migration. **Never `prisma db push`.**
 - Always run `npx prisma generate` after schema changes
+- Never run against the production database locally. `npm run dev` and the build's migrate step refuse to; don't bypass that with `ALLOW_PRODUCTION_DB=1`. Test on a throwaway database: `docs/LOCAL_DEVELOPMENT.md`.
+
+## Work Tracking and Docs
+- Tasks live in **Kaam**, project **AIIN**. Name the ticket in every commit subject, e.g. `fix: … (AIIN-116)`, and update the ticket with what changed and how it was checked.
+- Record significant decisions as an ADR in `docs/architecture/` and add it to the index in `docs/architecture/README.md`
+- Note user-facing and infrastructure changes in `CHANGELOG.md`
 
 ## Branching Strategy
 - `main` - Production branch
@@ -177,9 +185,9 @@ AI-powered interview preparation platform built with Next.js 16, Prisma, and Tai
 - `feature/*` - Feature branches (merge to develop)
 
 ## Before Committing
-1. Run `npm run build` to verify no build errors
-2. Use conventional commit messages (feat:, fix:, chore:, etc.)
-3. Test in both light and dark modes
+1. Run `npm run build` to verify no build errors (against a development or throwaway database)
+2. Use conventional commit messages (feat:, fix:, chore:, etc.) that name the Kaam ticket
+3. Test in both light and dark modes, at 320–1280px, and with the keyboard
 
 ## Key Directories
 - `app/` - Next.js App Router pages
@@ -188,3 +196,6 @@ AI-powered interview preparation platform built with Next.js 16, Prisma, and Tai
 - `prisma/` - Database schema
 - `messages/` - i18n translation files
 - `lib/` - Utility functions
+- `components/soft-glass/` - Soft Glass components and shared class strings
+- `scripts/` - Build guards and seed scripts
+- `docs/` - ADRs (`architecture/`), design guide (`design/`), audits, environment and local-development guides

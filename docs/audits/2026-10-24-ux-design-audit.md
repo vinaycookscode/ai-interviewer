@@ -2,6 +2,12 @@
 **Date:** 2026-10-24  
 **Score:** 38 / 100 — Does not yet feel like a product
 
+> **Update 2026-10-25:** the response to this audit is **Soft Glass**, a new design language for every screen. Why: `docs/architecture/2026-10-25-soft-glass-design-language.md`. How to build with it: `docs/design/soft-glass.md`. Tracked in Kaam epic AIIN-123.
+>
+> - **Shipped:** the landing page (Issues 2 and 3); auth screens built.
+> - **Next:** the app shell (Issues 4, 5 and 7).
+> - **Already in:** the size scale from Issue 1 (`docs/architecture/2026-10-25-design-system-size-scale.md`).
+
 ---
 
 ## The Core Problem

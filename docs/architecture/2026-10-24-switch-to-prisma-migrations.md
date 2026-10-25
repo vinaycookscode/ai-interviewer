@@ -1,6 +1,6 @@
 # Switch from db push to prisma migrate
 **Date:** 2026-10-24  
-**Status:** Accepted  
+**Status:** Accepted — implemented 2026-10-24 (AIIN-15, AIIN-92, commit `c7067e6`); both databases baselined  
 **Deciders:** Engineering
 
 ## Context
@@ -22,7 +22,7 @@ Switch to Prisma's migration system:
    ```
    DATABASE_URL="<database url>" npx prisma migrate resolve --applied 0_init
    ```
-   Done for production (`ep-delicate-firefly`) on 2026-10-24. Development (`ep-flat-paper`) still needs it before its next deploy.
+   Done for production (`ep-delicate-firefly`) and development (`ep-flat-paper`) on 2026-10-24.
 4. Change the build script from:
    ```
    prisma generate && prisma db push --accept-data-loss && next build
@@ -30,6 +30,10 @@ Switch to Prisma's migration system:
    to:
    ```
    prisma generate && prisma migrate deploy && next build
+   ```
+   The build has since gained two checks before `migrate deploy` (see [Keep local development off the production database](2026-10-24-keep-local-development-off-production.md)):
+   ```
+   prisma generate && node scripts/require-database-url.mjs && node scripts/guard-production-db.mjs build && prisma migrate deploy && next build --webpack
    ```
 5. All future schema changes go through `prisma migrate dev` locally, with the generated migration file committed before deploying
 

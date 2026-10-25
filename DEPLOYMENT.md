@@ -52,26 +52,31 @@ vercel link
 ```
 
 ### 4. Set Environment Variables
-Go to your Vercel dashboard and add these environment variables:
+Set them in the Vercel dashboard, scoped per environment. The full table, with production and preview values, is in [`docs/ENVIRONMENT_SETUP.md`](docs/ENVIRONMENT_SETUP.md):
 
-**Required:**
-- `DATABASE_URL` - PostgreSQL connection string (use Vercel Postgres or external provider)
+| Area | Variables |
+|---|---|
+| Database | `DATABASE_URL` (Production and Preview each get their own Neon branch) |
+| Auth | `AUTH_SECRET`, `NEXTAUTH_URL` |
+| AI | `GEMINI_API_KEY` |
+| Email | `RESEND_API_KEY`, `RESEND_FROM_EMAIL` |
+| Storage | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL` |
+| Payments | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` (test-mode keys on Preview) |
+| URLs | `NEXT_PUBLIC_APP_URL`, `APP_URL` (optional) |
 
-- `GEMINI_API_KEY` - Google Gemini API key
-- `RESEND_API_KEY` - Resend API key for emails
-- `RESEND_FROM_EMAIL` - Email address for sending (e.g., `noreply@yourdomain.com`)
-- `NEXT_PUBLIC_APP_URL` - Your production URL (e.g., `https://your-app.vercel.app`)
+## Database
 
-## Database Setup for Production
+The project uses **Neon**, with one branch per environment (production: `ep-delicate-firefly`, development: `ep-flat-paper`).
 
-### Option 1: Vercel Postgres (Recommended)
-1. Go to your Vercel project dashboard
-2. Navigate to Storage → Create Database → Postgres
-3. Copy the `DATABASE_URL` to your environment variables
-4. The database will be automatically provisioned
+**Schema changes**
+- Make them with `npx prisma migrate dev --name <change>` and commit the migration.
+- Every build applies pending migrations with `prisma migrate deploy`.
+- Never use `prisma db push`: it can drop data (see the [migrations ADR](docs/architecture/2026-10-24-switch-to-prisma-migrations.md)).
 
-### Option 2: External PostgreSQL
-Use any PostgreSQL provider (Supabase, Railway, Neon, etc.) and add the connection string to `DATABASE_URL`.
+**Checks before `migrate deploy`**
+- The build stops if `DATABASE_URL` is missing.
+- It stops if a non-production build points at the production database.
+- On a laptop, this means `npm run build` refuses the production URL in `.env`. That's on purpose; see [`docs/LOCAL_DEVELOPMENT.md`](docs/LOCAL_DEVELOPMENT.md).
 
 ## Deployment Workflow
 
@@ -82,9 +87,9 @@ Use any PostgreSQL provider (Supabase, Railway, Neon, etc.) and add the connecti
    npm run dev
    ```
 
-2. **Test locally**
+2. **Test locally** (on a development or throwaway database, never production: see [`docs/LOCAL_DEVELOPMENT.md`](docs/LOCAL_DEVELOPMENT.md))
    - Verify all features work
-   - Check dark theme
+   - Check light **and** dark, from 320px phones to desktop
    - Test authentication
 
 3. **Deploy preview**
@@ -109,10 +114,16 @@ Use any PostgreSQL provider (Supabase, Railway, Neon, etc.) and add the connecti
 - Ensure all environment variables are set
 - Run `npm run build` locally to catch errors early
 
+### "DATABASE_URL is not set"
+The build checks this before migrating. Add `DATABASE_URL` for that environment in Vercel (Production and Preview are scoped separately).
+
+### "Refusing to run `prisma migrate deploy` against the PRODUCTION database"
+A non-production build (Preview, or a local `npm run build`) is pointing at the production Neon branch. Point it at the development branch. Override with `ALLOW_PRODUCTION_DB=1` only for a deliberate one-off.
+
 ### Database Connection Issues
 - Verify `DATABASE_URL` is correct
 - Check if database allows connections from Vercel IPs
-- Ensure Prisma migrations are applied
+- Check that migrations applied: `prisma migrate deploy` prints each one in the build log
 
 ### Environment Variables Not Working
 - Make sure variables are set in Vercel dashboard
@@ -145,10 +156,14 @@ If you've connected your GitHub repository to Vercel:
 ## Post-Deployment Checklist
 
 - [ ] Verify all environment variables are set
-- [ ] Test authentication (Custom Auth.js)
+- [ ] Migrations applied (build log shows `prisma migrate deploy` succeeded)
+- [ ] Test authentication: sign up, sign in, password reset
 - [ ] Test AI interview flow (Gemini)
 - [ ] Test email notifications (Resend)
-- [ ] Check dark theme works correctly
+- [ ] Preview only: a Razorpay **test-mode** payment activates the plan that was paid for
+- [ ] Candidate documents open through `/api/files/…` for the right people, and are refused for others
+- [ ] R2 bucket public access is off (AIIN-113)
+- [ ] Light and dark both work, on a phone and on desktop
 - [ ] Test PDF export functionality
 - [ ] Verify database connections
 - [ ] Check analytics dashboard

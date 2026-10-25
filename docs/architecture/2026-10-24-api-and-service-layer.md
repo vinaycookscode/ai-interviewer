@@ -99,6 +99,14 @@ app/api/v1/
 
 **Harder:** More files and indirection. Server Actions currently work fine for the web UI — adding a service layer adds a step without immediate UI benefit. This is infrastructure work, not feature work.
 
+## Progress
+
+**2026-10-25:** Not started as a layer. Two pieces of business logic have moved out of actions as part of the security fixes and should become services when this work begins:
+- `lib/grading.ts`: answer grading; the authorized `gradeAnswer` action is its only public entry point (AIIN-116).
+- `lib/upload-validation.ts`: upload size and type checks (AIIN-28).
+
+The ownership checks added under [Authorize every data access on the server](2026-10-24-authorize-every-data-access-on-the-server.md) are written per action today; the service layer is where they should end up.
+
 ## Alternatives considered
 
 - **Keep Server Actions only** — works for the current web-only product, but blocks any external integration and keeps logic scattered

@@ -1,41 +1,36 @@
 ---
-description: Sync Prisma schema with database
+description: Change the Prisma schema with a migration
 ---
 
 # Database Sync
 
-Update database after schema changes in prisma/schema.prisma.
+Update the database after schema changes in `prisma/schema.prisma`. The project uses migrations; **never run `prisma db push`**, which can drop data (see `docs/architecture/2026-10-24-switch-to-prisma-migrations.md`).
+
+Work against a development or throwaway database, never production (`docs/LOCAL_DEVELOPMENT.md`).
 
 ## Steps
 
-// turbo
-1. Generate Prisma client:
+1. Create and apply a migration locally (this also regenerates the Prisma client):
    ```bash
-   npx prisma generate
+   npx prisma migrate dev --name describe_the_change
    ```
 
-// turbo
-2. Push schema changes to database:
+2. Commit the new folder in `prisma/migrations/` together with the schema change.
+
+3. Deploys apply it automatically: `npm run build` runs `prisma migrate deploy` against that environment's database.
+
+4. (Optional) Seed plans and feature flags on a fresh database:
    ```bash
-   npx prisma db push
+   npx tsx scripts/seed-subscription-plans.ts
+   node scripts/seed-features.js
    ```
 
-3. (Optional) Seed database:
-   ```bash
-   npx prisma db seed
-   ```
+## Only regenerate the client
 
-## For Migrations (Production)
-
-1. Create migration:
-   ```bash
-   npx prisma migrate dev --name migration_name
-   ```
-
-2. Apply migration:
-   ```bash
-   npx prisma migrate deploy
-   ```
+After pulling someone else's schema change:
+```bash
+npx prisma generate
+```
 
 ## View Database
 

@@ -3,6 +3,73 @@
 **Scope:** All 12 features + infrastructure  
 **Purpose:** Single reference for all decisions made in the 2026-10-24 analysis session
 
+> **Status as of 2026-10-25.** The audit text below is kept as written on 2026-10-24. This section tracks what happened to each finding. Tickets live in Kaam, project AIIN.
+>
+> - **Done:** shipped and verified.
+> - **In Review:** shipped, still needing a manual or test-key check.
+> - **To Do:** not started.
+
+## Status — 2026-10-25
+
+**P0**
+
+| Finding | Ticket | Status |
+|---|---|---|
+| `prisma db push --accept-data-loss` in the build | AIIN-15, AIIN-92 | Done |
+| React hooks called after a conditional return | AIIN-16 | In Review |
+| Mock evaluation prompt uses the question as the role | AIIN-17 | Done |
+| Fake AI code analysis in Company Prep | AIIN-18 | Done (real Gemini call) |
+
+**P1 — Security**
+
+| Finding | Ticket | Status |
+|---|---|---|
+| Null-token interviews publicly accessible | AIIN-20 | Done |
+| Raw HTML interpolation in emails | AIIN-21 | In Review |
+| Day-token secret fallback in source | AIIN-22 | Done |
+| `startTask`/`completeTask` ownership | AIIN-23 | Done |
+| Webhook `GET` handler | AIIN-24 | Done |
+| Webhook signature and payment activation | AIIN-25 | In Review (needs Razorpay test mode) |
+| Seed routes reachable in production | AIIN-26 | Done (admin only) |
+| Gemini keys stored in plaintext | AIIN-27, AIIN-111 | Done / In Review (feature removed, column dropped) |
+| Upload size and type validation | AIIN-28 | Done |
+
+**P1 — Performance, correctness and UX**
+
+| Finding | Ticket | Status |
+|---|---|---|
+| JWT callback hits the database on every request | AIIN-30 | In Review |
+| Rate limiting in Postgres | AIIN-31 | To Do |
+| Dashboard query without pagination | AIIN-32 | To Do (deferred) |
+| Resume re-fetched from R2 on every analysis | AIIN-33 | To Do |
+| N+1 in `getDecks()` | AIIN-34 | To Do |
+| `completeInterview` race | AIIN-36 | In Review |
+| Unbounded Gemini retries | AIIN-37 | In Review |
+| Grading blocks the UI between questions | AIIN-38 | To Do |
+| Fixed 450px + 350px interview grid | AIIN-39 | To Do (now part of AIIN-128) |
+| No SpeechRecognition check | AIIN-40 | In Review |
+| Questions lost on refresh in mock interviews | AIIN-47 | To Do |
+| `checkApiStatus` always "available" | AIIN-48 | To Do |
+| Onboarding wizard never triggered | AIIN-52 | To Do |
+| Employer sign-up silently creates a candidate | AIIN-53 | In Review (invite-only note) |
+| No Google OAuth | AIIN-54 | To Do |
+
+**Found while fixing the above**
+
+| Finding | Ticket | Status |
+|---|---|---|
+| Any user could complete another user's mock interview | AIIN-108 | Done |
+| Default Gemini model retired (404) | AIIN-109 | Done |
+| Webhook swallowed errors and returned 200 | AIIN-110 | In Review |
+| "Encrypted" plan parameter used a public key | AIIN-112 | In Review |
+| Aadhaar, PAN and resumes in a public R2 bucket | AIIN-113 | In Review (switch off public access after deploy) |
+| Local `.env` pointed at the production database | AIIN-114 | In Review |
+| Preview builds had no `DATABASE_URL` | AIIN-115 | In Progress (set it in Vercel) |
+| Interview actions had no auth | AIIN-116 | In Review |
+| Invited accounts claimable by email alone | AIIN-117 | In Review |
+
+**Quick wins:** 1 (AIIN-15), 2 (AIIN-17), 3 (AIIN-18), 4 (AIIN-24), 5 (AIIN-22), 6 (AIIN-45), 8 (AIIN-40), 9 (AIIN-30) and 10 (AIIN-28) are shipped. 7 (pagination, AIIN-32) is deferred.
+
 ---
 
 ## Documents in This Analysis
@@ -30,6 +97,17 @@ ADRs (in `docs/architecture/`):
 |-----|----------|
 | `2026-10-24-switch-to-prisma-migrations.md` | Replace `db push` with `migrate deploy` |
 | `2026-10-24-api-and-service-layer.md` | Three-layer architecture: actions → services → repositories |
+
+ADRs added on 2026-10-24 and 2026-10-25, while fixing the findings, are listed in the index at `docs/architecture/README.md`. They cover:
+- local development and the production database
+- server-side authorization
+- plans and payments
+- the role in the JWT
+- Gemini models and keys
+- work tracking in Kaam
+- the size scale
+- Soft Glass
+- invite-only employer accounts
 
 ---
 
@@ -182,11 +260,20 @@ ADRs (in `docs/architecture/`):
 7. **P3** — Reduce sidebar from 12 equal-weight items to 6-7 with clear hierarchy
 8. **P4** — Align landing page and app interior visual register (currently feel like two products)
 
+**Update 2026-10-25:** the visual direction is now **Soft Glass** (ADR `docs/architecture/2026-10-25-soft-glass-design-language.md`). Every screen moves to it under epic AIIN-123. Where each decision above went:
+
+- **1 → AIIN-84:** brand tokens added; the teal is retired once screens move to Soft Glass.
+- **2, 5, 7 → AIIN-125, the new app shell:** they cover AIIN-85, AIIN-86 and AIIN-89.
+- **3 → AIIN-87 and AIIN-122:** the landing page is rebuilt in Soft Glass.
+- **4 → AIIN-52:** still To Do.
+- **6 → AIIN-137:** system and empty states; covers AIIN-88.
+- **8 → AIIN-90:** closed, superseded by AIIN-123.
+
 ---
 
 ## Architecture Decisions (ADRs)
 
-1. Switch from `prisma db push` to `prisma migrate deploy` — **accepted**, implementation pending
+1. Switch from `prisma db push` to `prisma migrate deploy` — **accepted, implemented 2026-10-24** (AIIN-15, AIIN-92); both databases baselined
 2. Add service layer (`lib/services/`) and versioned API (`app/api/v1/`) — **accepted**, implementation pending
 3. Move rate limiting from PostgreSQL to Upstash Redis — **proposed**, not yet an ADR
 4. Choose STT/TTS services (Deepgram / Google TTS Neural2) — **proposed**, see speech audit

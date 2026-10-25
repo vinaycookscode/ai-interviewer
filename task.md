@@ -1,5 +1,7 @@
 # AI Interviewer - Project Tasks
 
+> **Historical.** Since 2026-10-24, work is tracked in Kaam (project AIIN), and this file is no longer updated (`docs/architecture/2026-10-24-track-work-in-kaam.md`). Open items and the roadmap below were carried into Kaam (for example AIIN-99 to AIIN-107 for the engagement features).
+
 ## Phase 1: Foundation & Architecture
 - [x] **Project Initialization**
     - [x] Initialize Next.js app with TypeScript, ESLint, Prettier, Tailwind CSS
