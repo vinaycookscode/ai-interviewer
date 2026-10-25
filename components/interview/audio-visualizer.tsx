@@ -1,8 +1,15 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
 
-export function AudioVisualizer({ stream }: { stream: MediaStream | null }) {
+const MAX_BARS = 48;
+
+/**
+ * Live microphone level as rounded bars. Bars take the element's text colour,
+ * so set it with a token class (e.g. `text-sg-lavender`).
+ */
+export function AudioVisualizer({ stream, className }: { stream: MediaStream | null; className?: string }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
@@ -14,13 +21,13 @@ export function AudioVisualizer({ stream }: { stream: MediaStream | null }) {
         source.connect(analyser);
 
         // Resume context if suspended (browser policy)
-        if (audioContext.state === 'suspended') {
-            audioContext.resume().catch(e => console.error("Audio resume failed", e));
+        if (audioContext.state === "suspended") {
+            audioContext.resume().catch((e) => console.error("Audio resume failed", e));
         }
 
         analyser.fftSize = 256;
-        const bufferLength = analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        const bars = Math.min(MAX_BARS, dataArray.length);
 
         const canvas = canvasRef.current;
         const canvasCtx = canvas.getContext("2d");
@@ -30,31 +37,20 @@ export function AudioVisualizer({ stream }: { stream: MediaStream | null }) {
 
         const draw = () => {
             animationId = requestAnimationFrame(draw);
-
             analyser.getByteFrequencyData(dataArray);
 
-            canvasCtx.clearRect(0, 0, canvas.width, canvas.height); // Transparent background
+            canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+            // Read each frame, so a theme switch recolours the bars.
+            canvasCtx.fillStyle = getComputedStyle(canvas).color;
 
-            const barWidth = (canvas.width / bufferLength) * 2.5;
-            let barHeight;
-            let x = 0;
+            const gap = 3;
+            const barWidth = (canvas.width - gap * (bars - 1)) / bars;
 
-            for (let i = 0; i < bufferLength; i++) {
-                barHeight = dataArray[i] / 2;
-
-                // Gradient color from cyan to purple for premium look
-                const gradient = canvasCtx.createLinearGradient(0, canvas.height, 0, 0);
-                gradient.addColorStop(0, "rgba(139, 92, 246, 0.8)"); // Violet
-                gradient.addColorStop(1, "rgba(56, 189, 248, 0.8)"); // Cyan
-
-                canvasCtx.fillStyle = gradient;
-
-                // Rounded bars
+            for (let i = 0; i < bars; i++) {
+                const barHeight = Math.max(3, (dataArray[i] / 255) * canvas.height);
                 canvasCtx.beginPath();
-                canvasCtx.roundRect(x, canvas.height - barHeight, barWidth, barHeight, 4);
+                canvasCtx.roundRect(i * (barWidth + gap), canvas.height - barHeight, barWidth, barHeight, 3);
                 canvasCtx.fill();
-
-                x += barWidth + 2; // More spacing
             }
         };
 
@@ -71,7 +67,8 @@ export function AudioVisualizer({ stream }: { stream: MediaStream | null }) {
             ref={canvasRef}
             width={300}
             height={100}
-            className="w-full h-24 bg-transparent"
+            aria-hidden="true"
+            className={cn("h-24 w-full bg-transparent text-sg-lavender", className)}
         />
     );
 }

@@ -1,13 +1,13 @@
-import Link from "next/link";
-import { LayoutDashboard, FileText, User } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
-import { ModeToggle } from "@/components/mode-toggle";
-import { DashboardHeader } from "@/components/dashboard/header";
-import { CandidateSidebar } from "@/components/candidate/sidebar";
+import { PlanTier } from "@prisma/client";
 import { getFeatureFlags } from "@/actions/feature-flags";
 import { FeedbackButton } from "@/components/feedback-button";
+import { softGlassFonts } from "@/lib/fonts";
+import { cn } from "@/lib/utils";
+import { AmbientLight } from "@/components/soft-glass/ambient-light";
+import { AppShell } from "@/components/soft-glass/app-shell";
 
 export default async function CandidateLayout({
     children,
@@ -24,23 +24,29 @@ export default async function CandidateLayout({
         redirect("/dashboard");
     }
 
-    const flags = await getFeatureFlags();
-    const flagMap = flags.reduce((acc: Record<string, boolean>, f: any) => ({ ...acc, [f.key]: f.enabled }), {});
+    const [flags, subscription] = await Promise.all([
+        getFeatureFlags(),
+        // Only the tier, to decide whether to show Go Pro. No subscription row means the free plan.
+        session.user.id
+            ? db.subscription.findUnique({ where: { userId: session.user.id }, select: { plan: { select: { tier: true } } } })
+            : null,
+    ]);
+    const flagMap = flags.reduce<Record<string, boolean>>((acc, f) => ({ ...acc, [f.key]: f.enabled }), {});
+    const isFree = !subscription || subscription.plan.tier === PlanTier.FREE;
 
     return (
-        <div className="min-h-screen bg-background flex flex-col">
-            {/* Full-width Header at top */}
-            <DashboardHeader user={session.user} userRole={session.user.role} />
-
-            {/* Sidebar + Content below header */}
-            <div className="flex flex-1">
-                <CandidateSidebar featureFlags={flagMap} />
-
-                {/* Main Content Area */}
-                <main className="flex-1 overflow-y-auto p-6 lg:p-8">
-                    {children}
-                </main>
-            </div>
+        // overflow-x-clip, not overflow-hidden: hidden makes a scroll container and breaks the sticky tab bar.
+        <div className={cn(softGlassFonts, "soft-glass relative flex min-h-screen flex-col overflow-x-clip text-base leading-6")}>
+            <AmbientLight />
+            <AppShell
+                role="candidate"
+                user={{ name: session.user.name, email: session.user.email }}
+                showGoPro={isFree}
+                isAdmin={session.user.role === "ADMIN"}
+                featureFlags={flagMap}
+            >
+                {children}
+            </AppShell>
 
             {/* Floating Feedback Button */}
             <FeedbackButton />

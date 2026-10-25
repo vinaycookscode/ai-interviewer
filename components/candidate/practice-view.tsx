@@ -1,73 +1,45 @@
 "use client";
-import { useState, useTransition, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { createMockInterview, checkApiStatus } from "@/actions/mock-interview";
-import {
-    Loader2,
-    Sparkles,
-    AlertCircle,
-    Target,
-    Brain,
-    TrendingUp,
-    Zap,
-    ChevronRight,
-    Code,
-    Users,
-    LineChart
-} from "lucide-react";
-import { toast } from "sonner";
-import { useTranslations } from "next-intl";
 
-export function PracticeView() {
+import { useState, useTransition, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { AlertCircle, Loader2, Mic } from "lucide-react";
+import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { createMockInterview, checkApiStatus } from "@/actions/mock-interview";
+import { CoachBubble } from "@/components/soft-glass/coach-bubble";
+import { coralButton, fieldInput, focusRing } from "@/components/soft-glass/classes";
+import { cn } from "@/lib/utils";
+
+export interface RecentPractice {
+    id: string;
+    role: string;
+    difficulty: string;
+    score: number | null;
+    /** Already formatted, e.g. "23 Oct". */
+    date: string;
+}
+
+interface PracticeViewProps {
+    /** Monthly practice allowance; null when unlimited. */
+    allowance: { remaining: number; limit: number } | null;
+    recent: RecentPractice[];
+    initialRole?: string;
+    initialLevel?: string;
+}
+
+const ROLE_KEYS = ["frontend", "software", "data", "pm", "hr"] as const;
+const LEVELS = ["Junior", "Mid", "Senior"] as const;
+
+export function PracticeView({ allowance, recent, initialRole = "", initialLevel = "Junior" }: PracticeViewProps) {
     const t = useTranslations("PracticeInterviews");
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
-    const [role, setRole] = useState("");
-    const [difficulty, setDifficulty] = useState("Junior");
+    const [role, setRole] = useState(initialRole);
+    const [difficulty, setDifficulty] = useState(initialLevel);
     const [apiStatus, setApiStatus] = useState<{ available: boolean; usingFallback?: boolean; reason?: string } | null>(null);
     const [isCheckingApi, setIsCheckingApi] = useState(true);
-
-    // Quick start presets for common roles
-    const QUICK_START_PRESETS = [
-        {
-            role: t("roles.frontend"),
-            difficulty: "Junior",
-            difficultyLabel: t("roles.junior"),
-            icon: Code,
-            gradient: "from-blue-500 to-cyan-500",
-            description: t("roles.frontendDesc")
-        },
-        {
-            role: t("roles.backend"),
-            difficulty: "Mid",
-            difficultyLabel: t("roles.mid"),
-            icon: Code,
-            gradient: "from-purple-500 to-pink-500",
-            description: t("roles.backendDesc")
-        },
-        {
-            role: t("roles.pm"),
-            difficulty: "Mid",
-            difficultyLabel: t("roles.mid"),
-            icon: Users,
-            gradient: "from-orange-500 to-red-500",
-            description: t("roles.pmDesc")
-        },
-        {
-            role: t("roles.data"),
-            difficulty: "Senior",
-            difficultyLabel: t("roles.senior"),
-            icon: LineChart,
-            gradient: "from-green-500 to-emerald-500",
-            description: t("roles.dataDesc")
-        }
-    ];
 
     // Check API status on mount
     useEffect(() => {
@@ -80,7 +52,7 @@ export function PracticeView() {
     }, []);
 
     const handleStart = () => {
-        if (!role) {
+        if (!role.trim()) {
             toast.error(t("toast.enterRole"));
             return;
         }
@@ -96,192 +68,198 @@ export function PracticeView() {
         });
     };
 
-    const handleQuickStart = (preset: typeof QUICK_START_PRESETS[0]) => {
-        setRole(preset.role);
-        setDifficulty(preset.difficulty);
-
-        // Auto-start after a brief moment to show the selection
-        setTimeout(() => {
-            startTransition(async () => {
-                const result = await createMockInterview(preset.role, preset.difficulty);
-                if (result.success && result.mockInterviewId) {
-                    toast.success(t("quickStart.starting", { role: preset.role }));
-                    router.push(`/candidate/practice/${result.mockInterviewId}`);
-                } else {
-                    toast.error(result.error || t("limitedAvailability.fallback"));
-                }
-            });
-        }, 300);
-    };
-
     const isDisabled = !apiStatus?.available || isPending;
+    const levelLabel = t(`setup.levels.${difficulty as (typeof LEVELS)[number]}`);
+    const cardHeading = "font-display sg-soft text-[22px] font-semibold leading-7";
 
     return (
-        <div className="container max-w-7xl mx-auto py-8 px-4 sm:py-12">
-            {/* Hero Section */}
-            <div className="mb-12 text-center">
-                <div className="mb-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                    <Sparkles className="h-4 w-4" />
-                    {t("badge")}
+        <div className="flex flex-col gap-6 sm:gap-9">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+                <div className="flex max-w-[640px] flex-col gap-2">
+                    <h1 className="font-display sg-soft text-[32px] font-semibold leading-[1.14] tracking-[-0.025em] text-balance sm:text-[44px]">
+                        {t("setup.title")}
+                    </h1>
+                    <p className="text-lg text-sg-muted">{t("setup.description")}</p>
                 </div>
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-4 bg-gradient-to-r from-primary via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    {t("mainTitle")}
-                </h1>
-                <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-                    {t("description")}
-                </p>
-
-                {/* Feature Highlights */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto mb-12">
-                    <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-card border">
-                        <Target className="h-6 w-6 text-primary" />
-                        <span className="text-sm font-medium">{t("features.realistic")}</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-card border">
-                        <Brain className="h-6 w-6 text-primary" />
-                        <span className="text-sm font-medium">{t("features.feedback")}</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-card border">
-                        <TrendingUp className="h-6 w-6 text-primary" />
-                        <span className="text-sm font-medium">{t("features.progress")}</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-2 p-4 rounded-lg bg-card border">
-                        <Zap className="h-6 w-6 text-primary" />
-                        <span className="text-sm font-medium">{t("features.results")}</span>
-                    </div>
-                </div>
+                {allowance && (
+                    <span className="sg-glass inline-flex min-h-9 items-center gap-2 rounded-full px-3.5 py-1.5 font-semibold">
+                        {allowance.limit <= 10 && (
+                            <span aria-hidden="true" className="inline-flex gap-[3px]">
+                                {Array.from({ length: allowance.limit }, (_, i) => (
+                                    <span
+                                        key={i}
+                                        className={cn(
+                                            "size-2.5 rounded-full",
+                                            i < allowance.remaining ? "bg-sg-coral" : "border-2 border-sg-muted"
+                                        )}
+                                    />
+                                ))}
+                            </span>
+                        )}
+                        {t("setup.allowance", { remaining: allowance.remaining, limit: allowance.limit })}
+                    </span>
+                )}
             </div>
 
-            {isCheckingApi ? (
-                <Card className="border-2 border-primary/10 shadow-lg">
-                    <CardContent className="flex flex-col items-center justify-center py-12 space-y-4">
-                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                        <p className="text-muted-foreground">{t("checking")}</p>
-                    </CardContent>
-                </Card>
-            ) : (
-                <>
+            <div className="flex flex-wrap items-start gap-6">
+                <section
+                    aria-label={t("setup.sectionLabel")}
+                    className="sg-glass sg-shadow-lg flex min-w-0 flex-[999_1_560px] flex-col gap-7 rounded-[24px] p-5 sm:rounded-[28px] sm:p-8"
+                >
                     {apiStatus?.usingFallback && (
-                        <Alert className="mb-6 border-yellow-500/50 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>{t("limitedAvailability.title")}</AlertTitle>
-                            <AlertDescription>
-                                {apiStatus?.reason || t("limitedAvailability.fallback")}
-                            </AlertDescription>
-                        </Alert>
-                    )}
-
-                    {/* Two Column Layout - Responsive */}
-                    <div className="grid lg:grid-cols-2 gap-8 items-start">
-                        {/* LEFT: Custom Setup */}
-                        <div className="order-2 lg:order-1 flex flex-col">
-                            <h2 className="text-2xl font-bold mb-4 text-center">{t("customSetup.title")}</h2>
-                            <p className="text-muted-foreground mb-6 text-center">{t("customSetup.subtitle")}</p>
-
-                            <Card className="border-2 border-primary/10 shadow-lg h-full flex-1">
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <Sparkles className="h-5 w-5 text-primary" />
-                                        {t("customSetup.config")}
-                                    </CardTitle>
-                                    <CardDescription>
-                                        {t("customSetup.configDesc")}
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-6">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="role">{t("customSetup.roleLabel")}</Label>
-                                        <Input
-                                            id="role"
-                                            placeholder={t("customSetup.rolePlaceholder")}
-                                            value={role}
-                                            onChange={(e) => setRole(e.target.value)}
-                                            disabled={isDisabled}
-                                            className="text-base"
-                                        />
-                                        <p className="text-xs text-muted-foreground">
-                                            {t("customSetup.roleHint")}
-                                        </p>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label>{t("customSetup.difficultyLabel")}</Label>
-                                        <Select value={difficulty} onValueChange={setDifficulty} disabled={isDisabled}>
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Junior">{t("customSetup.difficultyJunior")}</SelectItem>
-                                                <SelectItem value="Mid">{t("customSetup.difficultyMid")}</SelectItem>
-                                                <SelectItem value="Senior">{t("customSetup.difficultySenior")}</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <p className="text-xs text-muted-foreground">
-                                            {t("customSetup.difficultyHint")}
-                                        </p>
-                                    </div>
-
-                                    <Button
-                                        className="w-full"
-                                        size="lg"
-                                        onClick={handleStart}
-                                        disabled={isDisabled}
-                                    >
-                                        {isPending ? (
-                                            <>
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                {t("customSetup.submitting")}
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Sparkles className="mr-2 h-4 w-4" />
-                                                {t("customSetup.submit")}
-                                            </>
-                                        )}
-                                    </Button>
-                                </CardContent>
-                            </Card>
-                        </div>
-
-                        {/* RIGHT: Quick Start */}
-                        <div className="order-1 lg:order-2 flex flex-col">
-                            <h2 className="text-2xl font-bold mb-4 text-center">{t("quickStart.title")}</h2>
-                            <p className="text-muted-foreground mb-6 text-center">{t("quickStart.subtitle")}</p>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                {QUICK_START_PRESETS.map((preset) => {
-                                    const Icon = preset.icon;
-                                    return (
-                                        <Card
-                                            key={preset.role}
-                                            className="group cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50"
-                                            onClick={() => !isDisabled && handleQuickStart(preset)}
-                                        >
-                                            <CardContent className="p-6">
-                                                <div className="flex items-start gap-4">
-                                                    <div className={`flex-shrink-0 p-3 rounded-xl bg-gradient-to-br ${preset.gradient}`}>
-                                                        <Icon className="h-6 w-6 text-white" />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <h3 className="font-semibold mb-1">{preset.role}</h3>
-                                                        <p className="text-sm text-muted-foreground mb-2">{preset.description}</p>
-                                                        <div className="flex items-center justify-between">
-                                                            <span className="text-xs px-2 py-1 rounded-full bg-muted">
-                                                                {preset.difficultyLabel}
-                                                            </span>
-                                                            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    );
-                                })}
+                        <div role="status" className="flex items-start gap-3 rounded-[18px] bg-sg-row p-4">
+                            <AlertCircle className="mt-0.5 size-5 shrink-0 text-sg-lavender-ink" aria-hidden="true" />
+                            <div className="flex flex-col gap-1">
+                                <span className="font-bold">{t("limitedAvailability.title")}</span>
+                                <span className="text-sg-muted">{apiStatus.reason || t("limitedAvailability.fallback")}</span>
                             </div>
                         </div>
+                    )}
+
+                    <div className="flex flex-col gap-3">
+                        <label htmlFor="practice-role" className={cardHeading}>
+                            {t("setup.roleLabel")}
+                        </label>
+                        <Input
+                            id="practice-role"
+                            value={role}
+                            onChange={(e) => setRole(e.target.value)}
+                            placeholder={t("setup.rolePlaceholder")}
+                            disabled={isPending}
+                            className={fieldInput}
+                        />
+                        <div role="group" aria-label={t("setup.popularRoles")} className="flex flex-wrap gap-2">
+                            {ROLE_KEYS.map((key) => {
+                                const label = t(`setup.roles.${key}`);
+                                const pressed = role === label;
+                                return (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        aria-pressed={pressed}
+                                        onClick={() => setRole(label)}
+                                        disabled={isPending}
+                                        className={cn(
+                                            "h-10 rounded-full border-2 px-4 text-sm font-semibold transition-colors",
+                                            pressed
+                                                ? "border-sg-ink bg-sg-ink text-sg-ink-foreground"
+                                                : "border-sg-glass-border bg-sg-row text-sg-text hover:bg-sg-chip",
+                                            focusRing
+                                        )}
+                                    >
+                                        {label}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
-                </>
-            )}
+
+                    <div className="flex flex-col gap-3">
+                        <span id="practice-level-label" className={cardHeading}>
+                            {t("setup.levelLabel")}
+                        </span>
+                        <div
+                            role="radiogroup"
+                            aria-labelledby="practice-level-label"
+                            className="grid grid-cols-3 gap-1.5 rounded-[18px] bg-sg-chip p-1.5"
+                        >
+                            {LEVELS.map((level) => {
+                                const checked = difficulty === level;
+                                return (
+                                    <button
+                                        key={level}
+                                        type="button"
+                                        role="radio"
+                                        aria-checked={checked}
+                                        onClick={() => setDifficulty(level)}
+                                        disabled={isPending}
+                                        className={cn(
+                                            "min-h-16 min-w-0 rounded-[14px] px-3 py-2.5 text-left text-[15px] leading-[22px] transition-colors",
+                                            checked
+                                                ? "bg-[var(--sg-glass-strong)] text-sg-text shadow-[var(--sg-shadow)]"
+                                                : "text-sg-muted hover:text-sg-text",
+                                            focusRing
+                                        )}
+                                    >
+                                        <span className="block font-bold">{t(`setup.levels.${level}`)}</span>
+                                        <span className="block text-[13px] font-medium leading-[18px]">
+                                            {t(`setup.levels.${level}Note`)}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+                        <button
+                            type="button"
+                            onClick={handleStart}
+                            disabled={isDisabled}
+                            className={cn(coralButton, "h-14 w-full px-7 text-[17px] sm:w-auto")}
+                        >
+                            {isPending || isCheckingApi ? (
+                                <Loader2 className="size-5 animate-spin" aria-hidden="true" />
+                            ) : (
+                                <Mic className="size-5" aria-hidden="true" />
+                            )}
+                            {isPending ? t("setup.starting") : isCheckingApi ? t("setup.checking") : t("setup.start")}
+                        </button>
+                        <span className="text-sg-muted">
+                            {role.trim()
+                                ? t("setup.estimate", { role: role.trim(), level: levelLabel.toLowerCase() })
+                                : t("setup.estimateNoRole")}
+                        </span>
+                    </div>
+                </section>
+
+                <aside
+                    aria-label={t("setup.recentLabel")}
+                    className="flex min-w-[min(260px,100%)] max-w-full flex-[1_1_300px] flex-col gap-4 lg:max-w-[400px]"
+                >
+                    <CoachBubble>
+                        <span className="text-sg-muted">{t("setup.coach")}</span>
+                    </CoachBubble>
+                    <div className="sg-glass flex flex-col gap-3 rounded-[24px] p-5 sm:rounded-[28px] sm:p-7">
+                        <h2 className={cardHeading}>{t("setup.recentTitle")}</h2>
+                        {recent.length === 0 ? (
+                            <p className="text-sg-muted">{t("setup.recentEmpty")}</p>
+                        ) : (
+                            <ul className="flex flex-col gap-2">
+                                {recent.map((item) => (
+                                    <li key={item.id}>
+                                        <Link
+                                            // Same rule as the session page: a scored practice is finished.
+                                            href={item.score ? `/candidate/practice/${item.id}/result` : `/candidate/practice/${item.id}`}
+                                            className={cn(
+                                                "flex items-center gap-3 rounded-2xl bg-sg-row p-3 transition-colors hover:bg-sg-chip",
+                                                focusRing
+                                            )}
+                                        >
+                                            <span className="flex min-w-0 flex-1 flex-col">
+                                                <span className="truncate font-semibold">{item.role}</span>
+                                                <span className="text-[13px] font-medium leading-[18px] text-sg-muted">
+                                                    {item.date} · {item.difficulty}
+                                                </span>
+                                            </span>
+                                            {item.score ? (
+                                                <span className="inline-flex h-[30px] min-w-12 items-center justify-center rounded-full bg-sg-lavender-soft px-2.5 text-sm font-bold text-sg-lavender-ink">
+                                                    {item.score.toFixed(1)}
+                                                    <span className="sr-only"> {t("setup.outOfTen")}</span>
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex h-[30px] items-center rounded-full bg-sg-chip px-2.5 text-[13px] font-bold">
+                                                    {t("setup.inProgress")}
+                                                </span>
+                                            )}
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                </aside>
+            </div>
         </div>
     );
 }

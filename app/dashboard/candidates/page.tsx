@@ -1,152 +1,159 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+import { Lock } from "lucide-react";
+import type { Prisma } from "@prisma/client";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { Briefcase, Lock } from "lucide-react";
-import { CandidatesTable } from "@/components/dashboard/candidates-table";
+import { cn } from "@/lib/utils";
 import { checkFeature } from "@/actions/feature-flags";
 import { FEATURES } from "@/lib/features";
+import { CandidatesTable } from "@/components/dashboard/candidates-table";
+import { PageHeading, caption, outlineButton, panel } from "@/components/jobs/employer-ui";
+import { CandidateFilters } from "./candidate-filters";
+import { STATUS_FILTERS, type StatusFilter } from "./status-filters";
+
+const PAGE_SIZE = 10;
 
 export default async function CandidatesPage({
     searchParams,
 }: {
-    searchParams: Promise<{ page?: string }>;
+    searchParams: Promise<{ page?: string; q?: string; job?: string; status?: string }>;
 }) {
+    const t = await getTranslations("Employer.candidates");
     const isEnabled = await checkFeature(FEATURES.CANDIDATE_SEARCH);
 
     if (!isEnabled) {
         return (
-            <div className="flex h-full items-center justify-center p-6">
-                <Card className="max-w-md text-center">
-                    <CardHeader>
-                        <div className="mx-auto bg-muted p-3 rounded-full mb-4 w-fit">
-                            <Lock className="h-6 w-6 text-muted-foreground" />
-                        </div>
-                        <CardTitle>Feature Unavailable</CardTitle>
-                        <CardDescription>
-                            Candidate search is currently disabled by the administrator.
-                        </CardDescription>
-                    </CardHeader>
-                </Card>
+            <div className="flex flex-col gap-6 sm:gap-9">
+                <PageHeading title={t("title")} />
+                <section className={cn(panel, "max-w-[560px] items-center text-center")}>
+                    <span className="inline-flex size-12 items-center justify-center rounded-full bg-sg-chip">
+                        <Lock className="size-5" aria-hidden="true" />
+                    </span>
+                    <h2 className="font-display sg-soft text-[22px] leading-7 font-semibold">{t("lockedTitle")}</h2>
+                    <p className="text-sg-muted">{t("lockedBody")}</p>
+                </section>
             </div>
         );
     }
 
     const session = await auth();
     const userId = session?.user?.id;
+    if (!userId) redirect("/auth/login");
 
-    if (!userId) {
-        return <div>Unauthorized</div>;
-    }
+    const params = await searchParams;
+    const q = params.q?.trim() ?? "";
+    const jobId = params.job ?? "";
+    const status: StatusFilter = (STATUS_FILTERS as readonly string[]).includes(params.status ?? "") ? (params.status as StatusFilter) : "all";
+    const requestedPage = Math.max(1, Math.floor(Number(params.page)) || 1);
 
-    const { page: pageParam } = await searchParams;
-    const page = Number(pageParam) || 1;
-    const itemsPerPage = 10;
+    // Always scoped to the signed-in employer's jobs; the filters only narrow it.
+    const where: Prisma.InterviewWhereInput = {
+        job: { employerId: userId, ...(jobId ? { id: jobId } : {}) },
+        ...(status !== "all" ? { status } : {}),
+        ...(q
+            ? {
+                  candidate: {
+                      OR: [{ name: { contains: q, mode: "insensitive" } }, { email: { contains: q, mode: "insensitive" } }],
+                  },
+              }
+            : {}),
+    };
 
-    // Parallel data fetching - fetch employer and jobs separately
-    const [employer, jobs] = await Promise.all([
-        db.user.findUnique({
-            where: { id: userId },
-            select: { id: true, name: true, email: true }
-        }),
-        db.job.findMany({
-            where: { employerId: userId },
-            include: {
-                interviews: {
-                    include: { candidate: true },
-                    orderBy: { createdAt: "desc" }
-                }
-            }
-        })
+    const [jobs, total, totalAll] = await Promise.all([
+        db.job.findMany({ where: { employerId: userId }, orderBy: { createdAt: "desc" }, select: { id: true, title: true } }),
+        db.interview.count({ where }),
+        db.interview.count({ where: { job: { employerId: userId } } }),
     ]);
 
-    if (!employer) {
-        return <div>Error loading data</div>;
-    }
+    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    const page = Math.min(requestedPage, totalPages);
 
-    // Flatten all interviews from all jobs
-    const allInterviews = jobs.flatMap((job) =>
-        job.interviews.map((interview) => ({
-            ...interview,
-            jobTitle: job.title,
-        }))
-    );
+    const interviews = await db.interview.findMany({
+        where,
+        orderBy: [{ score: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
+        skip: (page - 1) * PAGE_SIZE,
+        take: PAGE_SIZE,
+        select: {
+            id: true,
+            status: true,
+            score: true,
+            token: true,
+            resumeUrl: true,
+            aadhaarUrl: true,
+            panUrl: true,
+            createdAt: true,
+            candidate: { select: { name: true, email: true } },
+            job: { select: { title: true, requireResume: true, requireAadhar: true, requirePAN: true } },
+        },
+    });
 
-    // Pagination
-    const totalItems = allInterviews.length;
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    const startIndex = (page - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const paginatedInterviews = allInterviews.slice(startIndex, endIndex);
+    const pageHref = (n: number) => {
+        const next = new URLSearchParams();
+        if (q) next.set("q", q);
+        if (jobId) next.set("job", jobId);
+        if (status !== "all") next.set("status", status);
+        if (n > 1) next.set("page", String(n));
+        const query = next.toString();
+        return query ? `/dashboard/candidates?${query}` : "/dashboard/candidates";
+    };
 
     return (
-        <div className="p-4 md:p-8 pb-24">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 pb-6 border-b gap-4">
-                <div>
-                    <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                        All Candidates
-                    </h1>
-                    <p className="text-muted-foreground mt-2 text-sm sm:text-base">
-                        View all candidates across all job postings
-                    </p>
-                </div>
-            </div>
+        <div className="flex flex-col gap-6 sm:gap-9">
+            <PageHeading title={t("title")} subtitle={t("subtitle")} />
 
-            {allInterviews.length === 0 ? (
-                <Card className="border-dashed border-2">
-                    <CardContent className="flex flex-col items-center justify-center py-16">
-                        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                            <Briefcase className="h-8 w-8 text-primary" />
-                        </div>
-                        <p className="text-lg font-semibold mb-2">No candidates yet</p>
-                        <p className="text-muted-foreground mb-6">
-                            Start by creating a job and inviting candidates
-                        </p>
-                        <Link href="/dashboard/jobs/new">
-                            <Button>Create Job</Button>
-                        </Link>
-                    </CardContent>
-                </Card>
+            {totalAll === 0 ? (
+                <section className={cn(panel, "items-center text-center")}>
+                    <h2 className="font-display sg-soft text-[22px] leading-7 font-semibold">{t("emptyTitle")}</h2>
+                    <p className="max-w-[460px] text-sg-muted">{t("emptyBody")}</p>
+                    <Link href="/dashboard/jobs" className={cn(outlineButton, "h-12 px-5 text-base")}>
+                        {t("emptyCta")}
+                    </Link>
+                </section>
             ) : (
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-lg sm:text-xl">Candidate Interviews ({allInterviews.length})</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-0 sm:p-6">
-                        <div className="overflow-x-auto">
-                            <CandidatesTable interviews={paginatedInterviews} />
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
+                <>
+                    <CandidateFilters jobs={jobs} q={q} jobId={jobId} status={status} />
 
-            {allInterviews.length > itemsPerPage && (
-                <div className="flex items-center justify-end space-x-2 mt-4">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={page <= 1}
-                        asChild
-                    >
-                        <Link href={`/dashboard/candidates?page=${page - 1}`}>
-                            Previous
-                        </Link>
-                    </Button>
-                    <div className="text-sm font-medium">
-                        Page {page} of {totalPages}
-                    </div>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={page >= totalPages}
-                        asChild
-                    >
-                        <Link href={`/dashboard/candidates?page=${page + 1}`}>
-                            Next
-                        </Link>
-                    </Button>
-                </div>
+                    <section aria-label={t("listLabel")} className={cn(panel, "gap-3.5 sm:p-6")}>
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                            <span className="font-semibold" role="status">
+                                {t("count", { count: total })}
+                            </span>
+                            <span className={caption}>{t("sorted")}</span>
+                        </div>
+
+                        {interviews.length === 0 ? (
+                            <p className="py-6 text-center text-sg-muted">{t("noMatch")}</p>
+                        ) : (
+                            <CandidatesTable interviews={interviews} />
+                        )}
+
+                        {totalPages > 1 && (
+                            <nav aria-label={t("pages")} className="flex items-center justify-between gap-2 pt-1">
+                                {page > 1 ? (
+                                    <Link href={pageHref(page - 1)} className={cn(outlineButton, "h-10 text-sm")}>
+                                        {t("previous")}
+                                    </Link>
+                                ) : (
+                                    <span aria-disabled="true" className={cn(outlineButton, "h-10 text-sm opacity-50")}>
+                                        {t("previous")}
+                                    </span>
+                                )}
+                                <span className="text-sm text-sg-muted">{t("pageOf", { page, total: totalPages })}</span>
+                                {page < totalPages ? (
+                                    <Link href={pageHref(page + 1)} className={cn(outlineButton, "h-10 text-sm")}>
+                                        {t("next")}
+                                    </Link>
+                                ) : (
+                                    <span aria-disabled="true" className={cn(outlineButton, "h-10 text-sm opacity-50")}>
+                                        {t("next")}
+                                    </span>
+                                )}
+                            </nav>
+                        )}
+                    </section>
+                </>
             )}
         </div>
     );

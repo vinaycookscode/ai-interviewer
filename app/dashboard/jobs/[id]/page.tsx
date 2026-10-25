@@ -1,148 +1,126 @@
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { notFound } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Edit, Users } from "lucide-react";
-import Link from "next/link";
+import { cn } from "@/lib/utils";
 import { DeleteJobButton } from "@/components/jobs/delete-job-button";
 import { InviteCandidateDialog } from "@/components/interviews/invite-candidate-dialog";
 import { BulkInviteDialog } from "@/components/interviews/bulk-invite-dialog";
 import { CandidateList } from "@/components/jobs/candidate-list";
+import { Chip, PageHeading, caption, formatShortDate, outlineButton, panel, panelTitle } from "@/components/jobs/employer-ui";
 
-export default async function JobDetailsPage({
-    params,
-}: {
-    params: Promise<{ id: string }>;
-}) {
+export default async function JobDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const session = await auth();
     const userId = session?.user?.id;
+    if (!userId) redirect("/auth/login");
 
-    if (!userId) {
-        return <div>Unauthorized</div>;
-    }
-
-    const job = await db.job.findUnique({
-        where: { id },
-        include: {
-            questions: {
-                where: { archived: false },
-                orderBy: { createdAt: 'asc' }
-            },
-            employer: true,
-            _count: {
-                select: { interviews: true },
-            },
+    // Loaded only if the signed-in employer owns it.
+    const job = await db.job.findFirst({
+        where: { id, employerId: userId },
+        select: {
+            id: true,
+            title: true,
+            description: true,
+            createdAt: true,
+            requireResume: true,
+            requireAadhar: true,
+            requirePAN: true,
+            questions: { where: { archived: false }, orderBy: { createdAt: "asc" }, select: { id: true, text: true } },
             interviews: {
-                include: {
-                    candidate: true,
-                },
-                orderBy: {
-                    createdAt: "desc",
+                orderBy: { createdAt: "desc" },
+                select: {
+                    id: true,
+                    status: true,
+                    score: true,
+                    token: true,
+                    resumeUrl: true,
+                    aadhaarUrl: true,
+                    panUrl: true,
+                    createdAt: true,
+                    candidate: { select: { name: true, email: true } },
                 },
             },
         },
     });
 
-    if (!job) {
-        notFound();
-    }
+    if (!job) notFound();
 
-    // Verify the user owns this job
-    if (job.employer.id !== userId) {
-        return <div>Unauthorized</div>;
-    }
+    const t = await getTranslations("Employer.job");
+    const requirements = { requireResume: job.requireResume, requireAadhar: job.requireAadhar, requirePAN: job.requirePAN };
+    const docs = [job.requireResume && t("docResume"), job.requirePAN && t("docPan"), job.requireAadhar && t("docAadhaar")].filter(Boolean) as string[];
+    const completed = job.interviews.filter((i) => i.status === "COMPLETED").length;
+    const rows = job.interviews.map((interview) => ({ ...interview, job: { title: job.title, ...requirements } }));
+    const invitedEmails = job.interviews.map((i) => i.candidate.email.toLowerCase());
 
     return (
-        <div className="max-w-4xl mx-auto">
-            <div className="mb-6">
-                <Link href="/dashboard">
-                    <Button variant="ghost" size="sm">
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back to Dashboard
-                    </Button>
-                </Link>
-            </div>
-
-            <div className="flex items-start justify-between mb-6">
-                <div>
-                    <h1 className="text-3xl font-bold mb-2">{job.title}</h1>
-                    <p className="text-gray-500">
-                        Created on {new Date(job.createdAt).toLocaleString("en-US", {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                            hour: "numeric",
-                            minute: "numeric",
-                        })}
-                    </p>
-                </div>
-                <div className="flex gap-2">
-                    <Link href={`/dashboard/jobs/${job.id}/edit`}>
-                        <Button variant="outline" size="sm">
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit
-                        </Button>
-                    </Link>
-                    <DeleteJobButton jobId={job.id} />
+        <div className="flex flex-col gap-6 sm:gap-9">
+            <div className="flex flex-col gap-3">
+                <PageHeading
+                    back={{ href: "/dashboard/jobs", label: t("back") }}
+                    title={job.title}
+                    actions={
+                        <>
+                            <Link href={`/dashboard/jobs/${job.id}/edit`} className={cn(outlineButton, "h-12 px-[18px] text-[15px]")}>
+                                {t("edit")}
+                            </Link>
+                            <BulkInviteDialog jobId={job.id} invitedEmails={invitedEmails} />
+                            <InviteCandidateDialog jobId={job.id} />
+                        </>
+                    }
+                />
+                <div className="flex flex-wrap gap-2">
+                    <Chip className="h-8 text-sm">{t("posted", { date: formatShortDate(job.createdAt) })}</Chip>
+                    <Chip className="h-8 text-sm">{t("length", { count: job.questions.length, minutes: job.questions.length * 2 })}</Chip>
+                    <Chip className="h-8 text-sm">
+                        {docs.length > 0 ? t("docsRequired", { docs: new Intl.ListFormat("en-GB").format(docs) }) : t("noDocs")}
+                    </Chip>
                 </div>
             </div>
 
-            <div className="grid gap-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Job Description</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="whitespace-pre-wrap">{job.description}</p>
-                    </CardContent>
-                </Card>
+            <div className="flex flex-wrap items-start gap-6">
+                <section aria-labelledby="candidates-title" className={cn(panel, "min-w-0 flex-[999_1_720px] gap-3.5 sm:p-6")}>
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <h2 id="candidates-title" className={panelTitle}>
+                            {t("candidates")}
+                        </h2>
+                        <span className={caption}>{t("invitedCompleted", { invited: job.interviews.length, completed })}</span>
+                    </div>
+                    {rows.length > 0 ? (
+                        <CandidateList interviews={rows} />
+                    ) : (
+                        <p className="rounded-[18px] border-2 border-dashed border-sg-field-border p-5 text-center text-sg-muted">{t("noCandidates")}</p>
+                    )}
+                </section>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Interview Questions ({job.questions.length})</CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                <aside className="flex max-w-full min-w-[min(260px,100%)] flex-[1_1_300px] flex-col gap-4 lg:max-w-[400px]">
+                    <section aria-labelledby="questions-title" className={panel}>
+                        <h2 id="questions-title" className={panelTitle}>
+                            {t("questions")}
+                        </h2>
                         {job.questions.length > 0 ? (
-                            <ol className="space-y-3">
-                                {job.questions.map((question, index) => (
-                                    <li key={question.id} className="flex gap-3">
-                                        <span className="font-semibold text-gray-500">
-                                            {index + 1}.
-                                        </span>
-                                        <span>{question.text}</span>
+                            <ol className="flex list-decimal flex-col gap-2 pl-5 text-[15px] leading-[23px]">
+                                {job.questions.map((question) => (
+                                    <li key={question.id} className="break-words">
+                                        {question.text}
                                     </li>
                                 ))}
                             </ol>
                         ) : (
-                            <p className="text-gray-500">No questions added yet.</p>
+                            <p className="text-sg-muted">{t("noQuestions")}</p>
                         )}
-                    </CardContent>
-                </Card>
+                    </section>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Users className="h-5 w-5" />
-                            Candidates
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex justify-between items-center mb-4">
-                            <p className="text-gray-500">
-                                {job._count.interviews} candidate(s) have been invited for this
-                                position.
-                            </p>
-                            <div className="flex gap-2">
-                                <InviteCandidateDialog jobId={job.id} />
-                                <BulkInviteDialog jobId={job.id} />
-                            </div>
-                        </div>
+                    <details className={cn(panel, "group gap-0")}>
+                        <summary className="cursor-pointer rounded-md font-display sg-soft text-[22px] leading-7 font-semibold focus-visible:ring-[3px] focus-visible:ring-sg-lavender/50 focus-visible:outline-none">
+                            {t("description")}
+                        </summary>
+                        <p className="mt-4 text-[15px] leading-[23px] break-words whitespace-pre-wrap text-sg-muted">{job.description}</p>
+                    </details>
 
-                        <CandidateList interviews={job.interviews as any} />
-                    </CardContent>
-                </Card>
+                    <DeleteJobButton jobId={job.id} />
+                </aside>
             </div>
         </div>
     );

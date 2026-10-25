@@ -2,22 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Trash2, Loader2 } from "lucide-react";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { useTranslations } from "next-intl";
+import { Loader2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { deleteJob } from "@/actions/job";
+import { dangerButton, outlineButton } from "@/components/jobs/employer-ui";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogPanel, AlertDialogTrigger } from "@/components/interviews/sg-dialog";
 
 export function DeleteJobButton({ jobId }: { jobId: string }) {
+    const t = useTranslations("Employer.deleteJob");
     const router = useRouter();
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -29,7 +23,7 @@ export function DeleteJobButton({ jobId }: { jobId: string }) {
             router.refresh();
         } catch (error) {
             console.error("Failed to delete job", error);
-            alert("Failed to delete job. Please try again.");
+            toast.error(t("failed"));
         } finally {
             setIsDeleting(false);
         }
@@ -37,31 +31,16 @@ export function DeleteJobButton({ jobId }: { jobId: string }) {
 
     return (
         <AlertDialog>
-            <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm" disabled={isDeleting}>
-                    {isDeleting ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                        <Trash2 className="mr-2 h-4 w-4" />
-                    )}
-                    Delete
-                </Button>
+            <AlertDialogTrigger disabled={isDeleting} className={cn(outlineButton, "h-10 self-start border-transparent text-sm text-sg-danger")}>
+                {isDeleting ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Trash2 className="size-4" aria-hidden="true" />}
+                {t("trigger")}
             </AlertDialogTrigger>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete this job
-                        posting and all associated interview data.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete}>
-                        Delete Job
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
+            <AlertDialogPanel title={t("title")} description={t("body")}>
+                <AlertDialogCancel className={cn(outlineButton, "h-12 px-5 text-base")}>{t("cancel")}</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} className={dangerButton}>
+                    {t("confirm")}
+                </AlertDialogAction>
+            </AlertDialogPanel>
         </AlertDialog>
     );
 }

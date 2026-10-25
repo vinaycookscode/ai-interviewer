@@ -16,11 +16,12 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { CardWrapper } from "@/components/auth/card-wrapper";
-import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/auth/form-error";
 import { FormSuccess } from "@/components/auth/form-success";
+import { coralButton, fieldError, fieldInput, fieldLabel } from "@/components/soft-glass/classes";
 import { forgotPassword } from "@/actions/auth";
-import { Loader2, Mail } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 
 const ForgotPasswordSchema = z.object({
     email: z.string().email("Please enter a valid email"),
@@ -60,54 +61,38 @@ export const ForgotPasswordForm = () => {
 
     return (
         <CardWrapper
-            headerLabel={t("forgotPassword.title")}
-            backButtonLabel={t("forgotPassword.backToLogin")}
-            backButtonHref="/auth/login"
+            title={t("forgotPassword.title")}
+            description={t("forgotPassword.description")}
+            footer={{ label: t("forgotPassword.backToLogin"), href: "/auth/login" }}
         >
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="space-y-4">
-                        <p className="text-sm text-muted-foreground text-center">
-                            {t("forgotPassword.description")}
-                        </p>
-                        <FormField
-                            control={form.control}
-                            name="email"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t("email")}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            disabled={isPending}
-                                            placeholder="john.doe@example.com"
-                                            type="email"
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </div>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
+                    <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className={fieldLabel}>{t("email")}</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        {...field}
+                                        disabled={isPending}
+                                        placeholder="you@example.com"
+                                        type="email"
+                                        autoComplete="email"
+                                        className={fieldInput}
+                                    />
+                                </FormControl>
+                                <FormMessage className={fieldError} />
+                            </FormItem>
+                        )}
+                    />
                     <FormError message={error} />
                     <FormSuccess message={success} />
-                    <Button
-                        disabled={isPending}
-                        type="submit"
-                        className="w-full"
-                    >
-                        {isPending ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                {t("forgotPassword.sending")}
-                            </>
-                        ) : (
-                            <>
-                                <Mail className="mr-2 h-4 w-4" />
-                                {t("forgotPassword.sendLink")}
-                            </>
-                        )}
-                    </Button>
+                    <button disabled={isPending} type="submit" className={cn(coralButton, "mt-1 h-12 w-full")}>
+                        {isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+                        {isPending ? t("forgotPassword.sending") : t("forgotPassword.sendLink")}
+                    </button>
                 </form>
             </Form>
         </CardWrapper>

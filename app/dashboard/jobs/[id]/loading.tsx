@@ -1,67 +1,27 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
 
+function Bone({ className }: { className?: string }) {
+    return <div className={cn("animate-pulse rounded-2xl bg-sg-chip motion-reduce:animate-none", className)} />;
+}
+
+/** Placeholder for a job while it loads. */
 export default function JobDetailsLoading() {
+    const t = useTranslations("Employer");
     return (
-        <div className="max-w-4xl mx-auto space-y-6">
-            <div className="mb-6">
-                <Button variant="ghost" size="sm" disabled>
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to Dashboard
-                </Button>
-            </div>
-
-            <div className="flex items-start justify-between mb-6">
-                <div>
-                    <Skeleton className="h-10 w-64 mb-2" />
-                    <Skeleton className="h-5 w-48" />
-                </div>
-                <div className="flex gap-2">
-                    <Skeleton className="h-9 w-20" />
-                    <Skeleton className="h-9 w-20" />
+        <div role="status" className="flex flex-col gap-6 sm:gap-9">
+            <span className="sr-only">{t("loading")}</span>
+            <div className="flex flex-col gap-3">
+                <Bone className="h-5 w-16" />
+                <Bone className="h-11 w-72 max-w-full" />
+                <div className="flex flex-wrap gap-2">
+                    <Bone className="h-8 w-28 rounded-full" />
+                    <Bone className="h-8 w-44 rounded-full" />
                 </div>
             </div>
-
-            <div className="grid gap-6">
-                {/* Description Skeleton */}
-                <Card>
-                    <CardHeader>
-                        <Skeleton className="h-6 w-32" />
-                    </CardHeader>
-                    <CardContent>
-                        <Skeleton className="h-4 w-full mb-2" />
-                        <Skeleton className="h-4 w-full mb-2" />
-                        <Skeleton className="h-4 w-2/3" />
-                    </CardContent>
-                </Card>
-
-                {/* Questions Skeleton */}
-                <Card>
-                    <CardHeader>
-                        <Skeleton className="h-6 w-40" />
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <Skeleton className="h-5 w-full" />
-                        <Skeleton className="h-5 w-full" />
-                        <Skeleton className="h-5 w-3/4" />
-                    </CardContent>
-                </Card>
-
-                {/* Candidates Skeleton */}
-                <Card>
-                    <CardHeader>
-                        <Skeleton className="h-6 w-32" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            <Skeleton className="h-12 w-full" />
-                            <Skeleton className="h-12 w-full" />
-                            <Skeleton className="h-12 w-full" />
-                        </div>
-                    </CardContent>
-                </Card>
+            <div className="flex flex-wrap items-start gap-6">
+                <Bone className="h-[360px] min-w-0 flex-[999_1_640px] rounded-[28px]" />
+                <Bone className="h-[260px] min-w-[min(260px,100%)] flex-[1_1_300px] rounded-[28px]" />
             </div>
         </div>
     );

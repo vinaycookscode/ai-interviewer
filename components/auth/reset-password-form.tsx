@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useTransition } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -17,11 +18,12 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { CardWrapper } from "@/components/auth/card-wrapper";
-import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/auth/form-error";
 import { FormSuccess } from "@/components/auth/form-success";
+import { coralButton, fieldError, fieldInput, fieldLabel } from "@/components/soft-glass/classes";
 import { resetPassword } from "@/actions/auth";
-import { Loader2, KeyRound } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 
 const ResetPasswordSchema = z.object({
     password: z.string().min(6, "Password must be at least 6 characters"),
@@ -49,16 +51,14 @@ export const ResetPasswordForm = () => {
         },
     });
 
+    const footer = { label: t("forgotPassword.backToLogin"), href: "/auth/login" };
+
     if (!token) {
         return (
-            <CardWrapper
-                headerLabel={t("resetPassword.title")}
-                backButtonLabel={t("forgotPassword.backToLogin")}
-                backButtonHref="/auth/login"
-            >
-                <div className="text-center text-destructive">
-                    {t("resetPassword.invalidLink")}
-                </div>
+            <CardWrapper title={t("resetPassword.invalidTitle")} description={t("resetPassword.invalidLink")} footer={footer}>
+                <Link href="/auth/forgot-password" className={cn(coralButton, "h-12 w-full")}>
+                    {t("resetPassword.requestNew")}
+                </Link>
             </CardWrapper>
         );
     }
@@ -87,70 +87,41 @@ export const ResetPasswordForm = () => {
     };
 
     return (
-        <CardWrapper
-            headerLabel={t("resetPassword.title")}
-            backButtonLabel={t("forgotPassword.backToLogin")}
-            backButtonHref="/auth/login"
-        >
+        <CardWrapper title={t("resetPassword.title")} footer={footer}>
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="password"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t("resetPassword.newPassword")}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            disabled={isPending}
-                                            placeholder="••••••"
-                                            type="password"
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="confirmPassword"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t("resetPassword.confirmPassword")}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            disabled={isPending}
-                                            placeholder="••••••"
-                                            type="password"
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </div>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
+                    <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className={fieldLabel}>{t("resetPassword.newPassword")}</FormLabel>
+                                <FormControl>
+                                    <Input {...field} disabled={isPending} type="password" autoComplete="new-password" className={fieldInput} />
+                                </FormControl>
+                                <FormMessage className={fieldError} />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="confirmPassword"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className={fieldLabel}>{t("resetPassword.confirmPassword")}</FormLabel>
+                                <FormControl>
+                                    <Input {...field} disabled={isPending} type="password" autoComplete="new-password" className={fieldInput} />
+                                </FormControl>
+                                <FormMessage className={fieldError} />
+                            </FormItem>
+                        )}
+                    />
                     <FormError message={error} />
                     <FormSuccess message={success} />
-                    <Button
-                        disabled={isPending}
-                        type="submit"
-                        className="w-full"
-                    >
-                        {isPending ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                {t("resetPassword.resetting")}
-                            </>
-                        ) : (
-                            <>
-                                <KeyRound className="mr-2 h-4 w-4" />
-                                {t("resetPassword.reset")}
-                            </>
-                        )}
-                    </Button>
+                    <button disabled={isPending} type="submit" className={cn(coralButton, "mt-1 h-12 w-full")}>
+                        {isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+                        {isPending ? t("resetPassword.resetting") : t("resetPassword.reset")}
+                    </button>
                 </form>
             </Form>
         </CardWrapper>

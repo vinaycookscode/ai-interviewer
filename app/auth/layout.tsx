@@ -1,49 +1,28 @@
-import { AuthFeatures } from "@/components/auth/auth-features";
+import Link from "next/link";
+import { softGlassFonts } from "@/lib/fonts";
+import { cn } from "@/lib/utils";
+import { AmbientLight } from "@/components/soft-glass/ambient-light";
+import { UMark } from "@/components/soft-glass/mascot";
+import { ThemeSwitch } from "@/components/soft-glass/theme-switch";
+import { focusRing } from "@/components/soft-glass/classes";
 
-const AuthLayout = ({ children }: { children: React.ReactNode }) => {
+/** Every auth screen: the landing's header pill above one centred glass card. */
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
     return (
-        <div className="min-h-screen w-full flex">
-            {/* Left Side - Hero Section */}
-            <div className="hidden lg:flex w-[55%] relative bg-[#0f172a] overflow-hidden">
-                {/* Aurora Background Effects */}
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-500/30 rounded-full blur-[100px] animate-pulse" />
-                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/30 rounded-full blur-[100px] animate-pulse" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-500/20 rounded-full blur-[120px]" />
+        <div className={cn(softGlassFonts, "soft-glass relative min-h-screen overflow-x-clip text-base leading-6")}>
+            <AmbientLight />
 
-                {/* Content */}
-                <div className="relative z-10 w-full h-full backdrop-blur-3xl">
-                    <AuthFeatures />
-                </div>
-            </div>
+            <div className="relative mx-auto flex min-h-screen max-w-[1160px] flex-col px-4 pb-10 pt-4 sm:px-8 sm:pt-6">
+                <header className="sg-bar flex items-center justify-between gap-3 rounded-full py-2 pl-3 pr-2 sm:pl-4">
+                    <Link href="/" className={cn("flex items-center gap-2 rounded-full sm:gap-2.5", focusRing)}>
+                        <UMark className="size-7 sm:size-8" />
+                        <span className="whitespace-nowrap font-display sg-soft text-base font-semibold sm:text-xl">Get Back To U</span>
+                    </Link>
+                    <ThemeSwitch />
+                </header>
 
-            {/* Right Side - Form Section */}
-            <div className="flex-1 flex flex-col items-center justify-center p-8 bg-background relative">
-                {/* Mobile Background Effect */}
-                <div className="absolute inset-0 lg:hidden bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-500/20 via-background to-background" />
-
-                <div className="w-full max-w-md relative z-10">
-                    {/* Logo Header */}
-                    <div className="flex flex-col items-center mb-8">
-                        <div className="flex items-center gap-3 mb-2">
-                            <img
-                                src="/logo.png"
-                                alt="Get Back To U Logo"
-                                className="h-12 w-12 object-contain"
-                            />
-                            <div className="flex flex-col">
-                                <h1 className="text-xl font-bold tracking-tight">
-                                    <span className="text-muted-foreground">Get </span>
-                                    <span className="bg-gradient-to-r from-cyan-600 to-teal-600 bg-clip-text text-transparent">Back</span>
-                                    <span className="text-muted-foreground"> To U</span>
-                                </h1>
-                            </div>
-                        </div>
-                    </div>
-                    {children}
-                </div>
+                <main className="flex flex-1 items-center justify-center py-10 sm:py-14">{children}</main>
             </div>
         </div>
     );
-};
-
-export default AuthLayout;
+}

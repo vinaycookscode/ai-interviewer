@@ -2,6 +2,8 @@ import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
 import { InterviewClientPage } from "./client-page";
 import { auth } from "@/auth";
+import { StatusScreen } from "@/components/layout/status-screen";
+import { CalendarClock, CheckCircle2, FileText, LinkIcon, LockKeyhole, TimerOff } from "lucide-react";
 
 export default async function InterviewPage({
     params,
@@ -15,12 +17,9 @@ export default async function InterviewPage({
 
     if (!token) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="text-center space-y-4">
-                    <h1 className="text-2xl font-bold text-red-600">Invalid Link</h1>
-                    <p className="text-muted-foreground">This interview link is missing a valid token.</p>
-                </div>
-            </div>
+            <StatusScreen icon={LinkIcon} tone="error" title="Invalid link">
+                <p>This interview link is missing its access token. Please use the link from your invitation email.</p>
+            </StatusScreen>
         );
     }
 
@@ -46,12 +45,9 @@ export default async function InterviewPage({
     // Verify token. An interview without a token is never accessible.
     if (!interview.token || interview.token !== token) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="text-center space-y-4">
-                    <h1 className="text-2xl font-bold text-red-600">Unauthorized</h1>
-                    <p className="text-muted-foreground">You do not have permission to access this interview.</p>
-                </div>
-            </div>
+            <StatusScreen icon={LockKeyhole} tone="error" title="No access">
+                <p>You don&apos;t have permission to open this interview.</p>
+            </StatusScreen>
         );
     }
 
@@ -66,50 +62,29 @@ export default async function InterviewPage({
             where: { email: candidateEmail },
         });
 
-        const redirectPath = `/interview/${id}?token=${token}`;
+        // Relative links, so they never depend on NEXT_PUBLIC_APP_URL being set.
+        const callback = new URLSearchParams({ callbackUrl: `/interview/${id}?token=${token}` }).toString();
 
         if (existingUser && existingUser.password !== null) {
-            // User exists with password - redirect to sign-in
-            const signInUrl = new URL("/auth/login", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000");
-            signInUrl.searchParams.set("callbackUrl", redirectPath); // NextAuth uses callbackUrl
-
+            // User exists with password - sign in
             return (
-                <div className="flex items-center justify-center min-h-screen bg-background">
-                    <div className="text-center space-y-6 max-w-md p-8">
-                        <h1 className="text-3xl font-bold">Welcome Back!</h1>
-                        <p className="text-muted-foreground">
-                            Please sign in to continue with your interview for <strong>{interview.job.title}</strong>
-                        </p>
-                        <a
-                            href={signInUrl.toString()}
-                            className="inline-block px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-                        >
-                            Sign In to Continue
-                        </a>
-                    </div>
-                </div>
+                <StatusScreen title="Welcome back" action={{ label: "Sign in to continue", href: `/auth/login?${callback}` }}>
+                    <p>
+                        Sign in to continue your interview for{" "}
+                        <strong className="font-medium text-foreground">{interview.job.title}</strong>.
+                    </p>
+                </StatusScreen>
             );
         } else {
-            // New user OR invited user (NULL password) - redirect to sign-up
-            const signUpUrl = new URL("/auth/register", process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000");
-            signUpUrl.searchParams.set("callbackUrl", redirectPath);
-
+            // New user OR invited user (NULL password) - sign up
             return (
-                <div className="flex items-center justify-center min-h-screen bg-background">
-                    <div className="text-center space-y-6 max-w-md p-8">
-                        <h1 className="text-3xl font-bold">Welcome!</h1>
-                        <p className="text-muted-foreground">
-                            You've been invited to interview for <strong>{interview.job.title}</strong>.
-                            Please create an account to get started.
-                        </p>
-                        <a
-                            href={signUpUrl.toString()}
-                            className="inline-block px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-                        >
-                            Create Account & Start Interview
-                        </a>
-                    </div>
-                </div>
+                <StatusScreen title="You're invited" action={{ label: "Create account and start", href: `/auth/register?${callback}` }}>
+                    <p>
+                        You&apos;ve been invited to interview for{" "}
+                        <strong className="font-medium text-foreground">{interview.job.title}</strong>. Create an
+                        account to get started.
+                    </p>
+                </StatusScreen>
             );
         }
     }
@@ -117,14 +92,9 @@ export default async function InterviewPage({
     // User is authenticated    // Check if user is logged in and matches candidate
     if (!user || user.id !== interview.candidate.id) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-background">
-                <div className="text-center space-y-4">
-                    <h1 className="text-2xl font-bold text-red-600">Unauthorized</h1>
-                    <p className="text-muted-foreground">
-                        You must be logged in as the invited candidate to access this interview.
-                    </p>
-                </div>
-            </div>
+            <StatusScreen icon={LockKeyhole} tone="error" title="Wrong account">
+                <p>Sign in as the candidate this interview was sent to.</p>
+            </StatusScreen>
         );
     }
 
@@ -135,17 +105,10 @@ export default async function InterviewPage({
     // Check if interview has expired
     if (interview.expiresAt && now > interview.expiresAt) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-background">
-                <div className="text-center space-y-4 max-w-md p-8">
-                    <h1 className="text-2xl font-bold text-red-600">Interview Expired</h1>
-                    <p className="text-muted-foreground">
-                        This interview link expired on {interview.expiresAt.toLocaleString()}.
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                        Please contact the hiring manager if you believe this is an error.
-                    </p>
-                </div>
-            </div>
+            <StatusScreen icon={TimerOff} tone="error" title="Interview expired">
+                <p>This interview link expired on {interview.expiresAt.toLocaleString()}.</p>
+                <p>If you think this is a mistake, contact the hiring manager.</p>
+            </StatusScreen>
         );
     }
 
@@ -165,39 +128,30 @@ export default async function InterviewPage({
         });
 
         return (
-            <div className="flex items-center justify-center min-h-screen bg-background">
-                <div className="text-center space-y-6 max-w-md p-8">
-                    <h1 className="text-3xl font-bold">Interview Not Yet Available</h1>
-                    <p className="text-muted-foreground">
-                        Your interview for <strong>{interview.job.title}</strong> is scheduled for:
-                    </p>
-                    <p className="text-lg font-semibold">{formattedDate}</p>
-                    <p className="text-muted-foreground">
-                        Time remaining: <strong>{hours}h {minutes}m</strong>
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                        Please return after the scheduled time to start your interview.
-                    </p>
-                </div>
-            </div>
+            <StatusScreen icon={CalendarClock} title="Not open yet">
+                <p>
+                    Your interview for <strong className="font-medium text-foreground">{interview.job.title}</strong> is
+                    scheduled for
+                </p>
+                <p className="text-card-title text-foreground">{formattedDate}</p>
+                <p>
+                    Opens in {hours}h {minutes}m. Come back then to start.
+                </p>
+            </StatusScreen>
         );
     }
 
     // Check if interview is already completed
     if (interview.status === "COMPLETED") {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-background">
-                <div className="text-center space-y-4 max-w-md p-8">
-                    <h1 className="text-2xl font-bold text-green-600">Interview Completed</h1>
-                    <p className="text-muted-foreground">You have already completed this interview.</p>
-                    <a
-                        href={`/interview/${id}/feedback`}
-                        className="inline-block px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-                    >
-                        View Feedback
-                    </a>
-                </div>
-            </div>
+            <StatusScreen
+                icon={CheckCircle2}
+                tone="success"
+                title="Interview completed"
+                action={{ label: "View feedback", href: `/interview/${id}/feedback` }}
+            >
+                <p>You&apos;ve already completed this interview.</p>
+            </StatusScreen>
         );
     }
 
@@ -222,20 +176,13 @@ export default async function InterviewPage({
     if (missingDocs) {
         // Redirect to document upload page
         return (
-            <div className="flex items-center justify-center min-h-screen bg-background">
-                <div className="text-center space-y-6 max-w-md p-8">
-                    <h1 className="text-3xl font-bold">Documents Required</h1>
-                    <p className="text-muted-foreground">
-                        This interview requires you to upload certain documents before proceeding.
-                    </p>
-                    <a
-                        href={`/candidate/interview/${id}/documents`}
-                        className="inline-block px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
-                    >
-                        Upload Documents
-                    </a>
-                </div>
-            </div>
+            <StatusScreen
+                icon={FileText}
+                title="Documents needed"
+                action={{ label: "Upload documents", href: `/candidate/interview/${id}/documents` }}
+            >
+                <p>This interview asks for a few documents before you can start.</p>
+            </StatusScreen>
         );
     }
 

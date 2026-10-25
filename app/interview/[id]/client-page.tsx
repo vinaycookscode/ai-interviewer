@@ -6,8 +6,8 @@ import { InterviewSession } from "@/components/interview/interview-session";
 import { LanguageSelector } from "@/components/interview/language-selector";
 
 interface InterviewClientPageProps {
-    interview: any;
-    questions: any[];
+    interview: { id: string; language: string | null; job: { title: string } };
+    questions: { id: string; text: string; type?: "TEXT" | "CODE" }[];
     userDocuments: {
         resumeUrl?: string | null;
         panUrl?: string | null;
@@ -16,7 +16,7 @@ interface InterviewClientPageProps {
 }
 
 export function InterviewClientPage({ interview, questions, userDocuments }: InterviewClientPageProps) {
-    const [language, setLanguage] = useState(interview.language || null);
+    const [language, setLanguage] = useState<string | null>(interview.language || null);
     const [hasPermissions, setHasPermissions] = useState(false);
     const [stream, setStream] = useState<MediaStream | null>(null);
 
@@ -52,6 +52,7 @@ export function InterviewClientPage({ interview, questions, userDocuments }: Int
             stream={stream}
             language={language}
             onLanguageChange={setLanguage}
+            jobTitle={interview.job.title}
             userDocuments={userDocuments}
         />
     );

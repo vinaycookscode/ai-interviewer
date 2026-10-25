@@ -1,7 +1,9 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
+import { glassButton } from "@/components/jobs/employer-ui";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { toast } from "sonner";
@@ -13,12 +15,13 @@ interface PdfDownloadButtonProps {
 }
 
 export function PdfDownloadButton({ targetId, fileName }: PdfDownloadButtonProps) {
+    const t = useTranslations("FeedbackReport.pdf");
     const [isGenerating, setIsGenerating] = useState(false);
 
     const handleDownload = async () => {
         const element = document.getElementById(targetId);
         if (!element) {
-            toast.error("Content not found");
+            toast.error(t("missing"));
             return;
         }
 
@@ -35,6 +38,10 @@ export function PdfDownloadButton({ targetId, fileName }: PdfDownloadButtonProps
             clone.style.height = "auto";
             clone.style.overflow = "visible";
             clone.style.zIndex = "-1";
+
+            // The PDF holds the whole report: open every collapsed answer and drop on-screen-only controls.
+            clone.querySelectorAll<HTMLElement>("[data-pdf-reveal]").forEach((el) => el.removeAttribute("hidden"));
+            clone.querySelectorAll<HTMLElement>("[data-pdf-hide]").forEach((el) => el.remove());
 
             // Helper to recursively sanitize colors
             const sanitizeColors = (el: HTMLElement) => {
@@ -81,7 +88,7 @@ export function PdfDownloadButton({ targetId, fileName }: PdfDownloadButtonProps
                 scale: 2,
                 useCORS: true,
                 logging: false,
-                backgroundColor: "#000000",
+                backgroundColor: pageBackground(element),
                 windowWidth: element.scrollWidth,
                 windowHeight: element.scrollHeight
             });
@@ -98,24 +105,36 @@ export function PdfDownloadButton({ targetId, fileName }: PdfDownloadButtonProps
 
             pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
             pdf.save(`${fileName}.pdf`);
-            toast.success("PDF downloaded successfully");
+            toast.success(t("done"));
         } catch (error) {
             console.error("PDF generation failed:", error);
-            toast.error("Failed to generate PDF");
+            toast.error(t("failed"));
         } finally {
             setIsGenerating(false);
         }
     };
 
     return (
-        <Button
-            variant="outline"
-            size="sm"
+        <button
+            type="button"
             onClick={handleDownload}
             disabled={isGenerating}
+            aria-busy={isGenerating}
+            className={cn(glassButton, "h-11 px-[18px] text-sm font-semibold")}
         >
-            <Download className="mr-2 h-4 w-4" />
-            {isGenerating ? "Generating..." : "Download PDF"}
-        </Button>
+            {isGenerating ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+            ) : (
+                <Download className="size-4" aria-hidden="true" />
+            )}
+            {isGenerating ? t("generating") : t("download")}
+        </button>
     );
+}
+
+/** The report's own background (Soft Glass uses plain sRGB colours), or black as before. */
+function pageBackground(element: HTMLElement): string {
+    const color = window.getComputedStyle(element).backgroundColor;
+    const transparent = color === "transparent" || color === "rgba(0, 0, 0, 0)";
+    return transparent || /oklch|oklab|lab\(|color\(/.test(color) ? "#000000" : color;
 }

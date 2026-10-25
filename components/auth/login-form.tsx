@@ -4,7 +4,7 @@ import * as z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState, useTransition } from "react";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 import { LoginSchema } from "@/schemas";
 import { Input } from "@/components/ui/input";
@@ -16,23 +16,26 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form";
-import { Switch } from "@/components/ui/switch";
 import { CardWrapper } from "@/components/auth/card-wrapper";
-import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/auth/form-error";
 import { FormSuccess } from "@/components/auth/form-success";
+import { coralButton, fieldError, fieldInput, fieldLabel, focusRing } from "@/components/soft-glass/classes";
 import { login } from "@/actions/auth";
-import { Loader2, Crown, Zap, Sparkles } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 
 import { planSelectionQuery, readPlanSelection } from "@/lib/plan-selection";
 
 import { useTranslations } from "next-intl";
 
+const PLAN_KEYS = { PRO: "pro", PREMIUM: "premium" } as const;
+
 export const LoginForm = () => {
     const t = useTranslations("Auth.login");
     const tCommon = useTranslations("Common");
     const tPricing = useTranslations("Pricing");
+    const tPlans = useTranslations("Landing.pricing.plans");
     const searchParams = useSearchParams();
     const urlError = searchParams.get("error") === "OAuthAccountNotLinked"
         ? t("errors.oauthAccountNotLinked")
@@ -42,9 +45,6 @@ export const LoginForm = () => {
     const [success, setSuccess] = useState<string | undefined>("");
     const [isPending, startTransition] = useTransition();
 
-    const router = useRouter();
-    const pathname = usePathname();
-
     const form = useForm<z.infer<typeof LoginSchema>>({
         resolver: zodResolver(LoginSchema),
         defaultValues: {
@@ -53,27 +53,11 @@ export const LoginForm = () => {
         },
     });
 
-    // Plan picked on the pricing page, if any
+    // Plan picked on the landing or pricing page, if any. Returning users don't pick here;
+    // a paid choice just carries on to checkout after sign-in.
     const selection = readPlanSelection(searchParams);
     const selectedPlan = selection.plan ?? "FREE";
     const selectedPeriod = selection.period ?? "MONTHLY";
-    const isYearly = selectedPeriod === "YEARLY";
-
-    const setPlan = (plan: string) => {
-        const params = new URLSearchParams(searchParams.toString());
-        params.set("plan", plan);
-        params.set("period", selectedPeriod);
-        params.delete("s");
-        router.push(`${pathname}?${params.toString()}`, { scroll: false });
-    };
-
-    const setPeriod = (period: string) => {
-        const params = new URLSearchParams(searchParams.toString());
-        params.set("plan", selectedPlan);
-        params.set("period", period);
-        params.delete("s");
-        router.push(`${pathname}?${params.toString()}`, { scroll: false });
-    };
 
     const onSubmit = (values: z.infer<typeof LoginSchema>) => {
         setError("");
@@ -107,126 +91,74 @@ export const LoginForm = () => {
 
     return (
         <CardWrapper
-            headerLabel={t("title")}
-            backButtonLabel={t("noAccount")}
-            backButtonHref="/auth/register"
+            title={t("title")}
+            description={t("description")}
+            footer={{ prompt: t("noAccount"), label: t("createAccount"), href: "/auth/register" }}
         >
-            <div className="space-y-4 mb-8">
-                <div className="flex items-center justify-between px-1">
-                    <p className="text-sm font-medium text-muted-foreground">{t("subtitle")}</p>
-                    <div className="flex items-center gap-2 scale-75 origin-right">
-                        <span className={`text-xs ${!isYearly ? "text-foreground font-bold" : "text-muted-foreground"}`}>
-                            {tPricing("monthly")}
-                        </span>
-                        <Switch
-                            checked={isYearly}
-                            onCheckedChange={(checked) => setPeriod(checked ? "YEARLY" : "MONTHLY")}
-                        />
-                        <span className={`text-xs ${isYearly ? "text-foreground font-bold" : "text-muted-foreground"}`}>
-                            {tPricing("yearly")}
-                        </span>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3">
-                    {[
-                        { id: "FREE", icon: Sparkles, color: "emerald", monthly: tPricing("plans.free.price"), yearly: tPricing("plans.free.price") },
-                        { id: "PRO", icon: Zap, color: "blue", monthly: tPricing("plans.pro.priceMonthly"), yearly: tPricing("plans.pro.priceYearly") },
-                        { id: "PREMIUM", icon: Crown, color: "purple", monthly: tPricing("plans.premium.priceMonthly"), yearly: tPricing("plans.premium.priceYearly") }
-                    ].map((plan) => (
-                        <button
-                            key={plan.id}
-                            type="button"
-                            onClick={() => setPlan(plan.id)}
-                            className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all duration-200 ${selectedPlan === plan.id
-                                ? `border-${plan.color}-500 bg-${plan.color}-500/5 shadow-sm`
-                                : "border-border/50 hover:border-border bg-muted/30"
-                                }`}
-                        >
-                            <div className={`p-1.5 rounded-lg ${selectedPlan === plan.id
-                                ? `bg-${plan.color}-500/20 text-${plan.color}-500`
-                                : "bg-muted text-muted-foreground"
-                                }`}>
-                                <plan.icon className="h-4 w-4" />
-                            </div>
-                            <div className="text-center">
-                                <p className={`text-[10px] font-bold uppercase tracking-tighter ${selectedPlan === plan.id ? `text-${plan.color}-500` : "text-muted-foreground"
-                                    }`}>
-                                    {plan.id}
-                                </p>
-                                <p className="text-[10px] font-medium text-muted-foreground">
-                                    {isYearly ? plan.yearly : plan.monthly}
-                                </p>
-                            </div>
-                        </button>
-                    ))}
-                </div>
-            </div>
+            {selectedPlan !== "FREE" && (
+                <p className="mb-6 rounded-2xl bg-sg-lavender-soft px-4 py-3 text-sm font-semibold text-sg-lavender-ink">
+                    {t("planNote", {
+                        plan: tPlans(`${PLAN_KEYS[selectedPlan]}.name`),
+                        period: selectedPeriod === "YEARLY" ? tPricing("yearly") : tPricing("monthly"),
+                    })}
+                </p>
+            )}
 
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="email"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{tCommon("email")}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            disabled={isPending}
-                                            placeholder="john.doe@example.com"
-                                            type="email"
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="password"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{tCommon("password")}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            disabled={isPending}
-                                            placeholder="******"
-                                            type="password"
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <div className="text-right">
-                            <a
-                                href="/auth/forgot-password"
-                                className="text-sm text-primary hover:underline"
-                            >
-                                {t("forgotPassword")}
-                            </a>
-                        </div>
-                    </div>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
+                    <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className={fieldLabel}>{tCommon("email")}</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        {...field}
+                                        disabled={isPending}
+                                        placeholder="you@example.com"
+                                        type="email"
+                                        autoComplete="email"
+                                        className={fieldInput}
+                                    />
+                                </FormControl>
+                                <FormMessage className={fieldError} />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                            <FormItem>
+                                <div className="flex items-center justify-between gap-3">
+                                    <FormLabel className={fieldLabel}>{tCommon("password")}</FormLabel>
+                                    <Link
+                                        href="/auth/forgot-password"
+                                        className={cn("rounded text-sm font-semibold text-sg-lavender-ink underline-offset-4 hover:underline", focusRing)}
+                                    >
+                                        {t("forgotPassword")}
+                                    </Link>
+                                </div>
+                                <FormControl>
+                                    <Input
+                                        {...field}
+                                        disabled={isPending}
+                                        type="password"
+                                        autoComplete="current-password"
+                                        className={fieldInput}
+                                    />
+                                </FormControl>
+                                <FormMessage className={fieldError} />
+                            </FormItem>
+                        )}
+                    />
                     <FormError message={error || urlError} />
                     <FormSuccess message={success} />
-                    <Button
-                        disabled={isPending}
-                        type="submit"
-                        className="w-full"
-                    >
-                        {isPending ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                {t("submitting")}
-                            </>
-                        ) : (
-                            t("submit")
-                        )}
-                    </Button>
+                    <button disabled={isPending} type="submit" className={cn(coralButton, "mt-1 h-12 w-full")}>
+                        {isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+                        {isPending ? t("submitting") : t("submit")}
+                    </button>
                 </form>
             </Form>
         </CardWrapper>

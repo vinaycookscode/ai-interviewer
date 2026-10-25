@@ -1,63 +1,61 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 import { Languages, Loader2 } from "lucide-react";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { focusRing } from "@/components/soft-glass/classes";
+
+const LANGUAGES = ["Hindi", "Marathi", "Tamil", "Kannada", "English", "Spanish"];
 
 interface TranslationButtonProps {
     onTranslate: (language: string) => Promise<void>;
 }
 
+/** "Translate to…" for the job description. A native select, so it works inside any surface. */
 export function TranslationButton({ onTranslate }: TranslationButtonProps) {
+    const t = useTranslations("Employer.form");
     const [isLoading, setIsLoading] = useState(false);
-    const [open, setOpen] = useState(false);
 
-    const handleTranslate = async (lang: string) => {
+    async function handleChange(lang: string) {
+        if (!lang) return;
         setIsLoading(true);
         try {
             await onTranslate(lang);
-            setOpen(false);
         } catch (error) {
             console.error(error);
         } finally {
             setIsLoading(false);
         }
-    };
+    }
 
     return (
-        <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-8 px-2 text-xs">
-                    {isLoading ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Languages className="mr-2 h-3.5 w-3.5" />}
-                    Translate
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-2" align="end">
-                <div className="space-y-2">
-                    <h4 className="font-medium text-xs leading-none mb-2 text-muted-foreground">Translate to...</h4>
-                    <div className="grid grid-cols-1 gap-1">
-                        {['Hindi', 'Marathi', 'Tamil', 'Kannada', 'English', 'Spanish'].map(lang => (
-                            <Button
-                                key={lang}
-                                variant="ghost"
-                                size="sm"
-                                className="justify-start h-7 text-xs"
-                                onClick={() => handleTranslate(lang)}
-                            >
-                                {lang}
-                            </Button>
-                        ))}
-                    </div>
-                </div>
-            </PopoverContent>
-        </Popover>
+        <span className="relative inline-flex items-center">
+            {isLoading ? (
+                <Loader2 className="pointer-events-none absolute left-3 size-4 animate-spin" aria-hidden="true" />
+            ) : (
+                <Languages className="pointer-events-none absolute left-3 size-4" aria-hidden="true" />
+            )}
+            <label htmlFor="jf-translate" className="sr-only">
+                {t("translate")}
+            </label>
+            <select
+                id="jf-translate"
+                value=""
+                disabled={isLoading}
+                onChange={(e) => handleChange(e.target.value)}
+                className={cn(
+                    "h-10 appearance-none rounded-full border border-sg-field-border bg-transparent pr-4 pl-9 text-sm font-semibold text-sg-text disabled:opacity-60",
+                    focusRing
+                )}
+            >
+                <option value="">{isLoading ? t("translating") : t("translate")}</option>
+                {LANGUAGES.map((lang) => (
+                    <option key={lang} value={lang}>
+                        {lang}
+                    </option>
+                ))}
+            </select>
+        </span>
     );
 }

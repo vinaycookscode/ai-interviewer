@@ -1,361 +1,294 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import {
-  ArrowRight,
-  Sparkles,
-  Calendar,
-  Building2,
-  FileSearch,
-  Users,
-  UserCircle,
-  DollarSign,
-  Mic,
-  Brain,
-  Target,
-  TrendingUp,
-  CheckCircle2,
-  Play
-} from "lucide-react";
-import { HomePricingSection } from "@/components/home/pricing-section";
+import { softGlassFonts } from "@/lib/fonts";
+import { cn } from "@/lib/utils";
+import { AmbientLight } from "@/components/soft-glass/ambient-light";
+import { Mascot, UMark } from "@/components/soft-glass/mascot";
+import { ScoreGauge } from "@/components/soft-glass/score-gauge";
+import { ThemeSwitch } from "@/components/soft-glass/theme-switch";
+import { LandingMenu } from "@/components/soft-glass/landing-menu";
+import { coralButton as coralBase, focusRing } from "@/components/soft-glass/classes";
+import { LandingPricing } from "@/components/home/landing-pricing";
+
+const CONTACT_EMAIL = "hello@getbacktou.com";
+const CONTACT_PHONE = "+91 8600137191";
 
 export async function generateMetadata() {
-  const t = await getTranslations("Home");
-  return {
-    title: t("hero.title") + " " + t("hero.titleAccent") + " | Get Back To U",
-    description: t("hero.subtitle"),
-  };
+    const t = await getTranslations("Landing.meta");
+    return { title: t("title"), description: t("description") };
 }
 
-// Stats data (labels will be translated in the component)
-const STATS_DATA = [
-  { key: "practice", icon: Mic },
-  { key: "success", icon: Target },
-  { key: "companies", icon: Building2 },
-  { key: "available", icon: Brain },
-];
+interface TitledItem {
+    title: string;
+    body: string;
+}
 
-// Feature data (titles and descriptions will be translated in the component)
-const FEATURES_DATA = [
-  {
-    key: "aiPractice",
-    icon: Sparkles,
-    gradient: "from-violet-500 to-purple-600",
-    bgGlow: "group-hover:shadow-violet-500/25",
-  },
-  {
-    key: "placement",
-    icon: Calendar,
-    gradient: "from-blue-500 to-cyan-500",
-    bgGlow: "group-hover:shadow-blue-500/25",
-  },
-  {
-    key: "companyPrep",
-    icon: Building2,
-    gradient: "from-emerald-500 to-teal-500",
-    bgGlow: "group-hover:shadow-emerald-500/25",
-  },
-  {
-    key: "resumeScreener",
-    icon: FileSearch,
-    gradient: "from-orange-500 to-amber-500",
-    bgGlow: "group-hover:shadow-orange-500/25",
-  },
-  {
-    key: "studySquad",
-    icon: Users,
-    gradient: "from-pink-500 to-rose-500",
-    bgGlow: "group-hover:shadow-pink-500/25",
-  },
-  {
-    key: "mentors",
-    icon: UserCircle,
-    gradient: "from-indigo-500 to-violet-500",
-    bgGlow: "group-hover:shadow-indigo-500/25",
-  },
-  {
-    key: "offerTracker",
-    icon: DollarSign,
-    gradient: "from-green-500 to-emerald-500",
-    bgGlow: "group-hover:shadow-green-500/25",
-  },
-];
+const coralButton = cn(coralBase, "h-14 px-7 text-[17px]");
+const sectionTitle = "font-display sg-soft text-[32px] font-semibold leading-[38px] tracking-[-0.025em] sm:text-[44px] sm:leading-[50px]";
 
 export default async function HomePage() {
-  const t = await getTranslations("Home");
-  const tCommon = await getTranslations("Common");
+    const t = await getTranslations("Landing");
+    const tHome = await getTranslations("Home");
 
-  return (
-    <div className="min-h-screen bg-background overflow-hidden">
-      {/* Navigation */}
-      <nav className="liquid-glass liquid-shimmer liquid-specular border-b border-white/5 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Image src="/logo.png" alt="Get Back To U Logo" width={40} height={40} className="h-10 w-10 object-contain" />
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 bg-clip-text text-transparent">
-              Get Back To U
-            </h1>
-          </div>
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium">
-            <Link href="#features" className="text-muted-foreground hover:text-foreground transition-colors">{t("nav.features")}</Link>
-            <Link href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">{t("nav.pricing")}</Link>
-            <Link href="#contact" className="text-muted-foreground hover:text-foreground transition-colors">{t("nav.contact")}</Link>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/auth/login">
-              <Button variant="ghost" className="text-muted-foreground hover:text-foreground">
-                {t("nav.login")}
-              </Button>
-            </Link>
-            <Link href="/auth/register">
-              <Button className="bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 shadow-lg shadow-cyan-500/25">
-                {tCommon("getStarted")}
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </nav >
+    const steps = t.raw("how.steps") as TitledItem[];
+    const features = t.raw("features.items") as TitledItem[];
+    const employerItems = t.raw("employers.items") as TitledItem[];
+    const faqs = t.raw("faq.items") as { q: string; a: string }[];
+    const stepBadges = ["bg-sg-coral text-sg-coral-ink", "bg-sg-lavender-soft text-sg-lavender-ink", "bg-sg-ink text-sg-ink-foreground"];
+    const navLinks = [
+        { href: "#how", label: t("nav.how") },
+        { href: "#employers", label: t("nav.employers") },
+        { href: "#pricing", label: t("nav.pricing") },
+    ];
 
-      {/* Hero Section */}
-      < section className="relative py-24 md:py-32 lg:py-40" >
-        < div className="absolute inset-0 bg-gradient-to-br from-cyan-500/20 via-teal-500/10 to-emerald-500/20" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(34,211,238,0.3),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,rgba(16,185,129,0.3),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(45,212,191,0.15),transparent_70%)]" />
+    return (
+        // overflow-x-clip, not overflow-hidden: hidden makes a scroll container and breaks the sticky header.
+        <div className={cn(softGlassFonts, "soft-glass relative min-h-screen overflow-x-clip text-base leading-6")}>
+            <AmbientLight />
 
-        <div className="absolute top-20 left-10 w-72 h-72 bg-cyan-500/30 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-teal-500/20 rounded-full blur-3xl animate-pulse delay-1000" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-3xl" />
-
-        <div className="container mx-auto px-4 relative">
-          <div className="max-w-5xl mx-auto text-center space-y-8">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500/10 to-teal-500/10 border border-cyan-500/20 backdrop-blur-sm">
-              <Sparkles className="h-4 w-4 text-cyan-400" />
-              <span className="text-sm font-medium bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">
-                {t("hero.badge")}
-              </span>
-            </div>
-
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold leading-tight tracking-tight">
-              <span className="bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-400 bg-clip-text text-transparent">
-                {t("hero.title")}
-              </span>
-              <br />
-              <span className="text-foreground">{t("hero.titleAccent")}</span>
-            </h1>
-
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              {t("hero.subtitle")}
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6">
-              <Link href="/auth/register">
-                <Button size="lg" className="text-lg px-8 py-6 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 shadow-xl shadow-cyan-500/30 hover:shadow-cyan-500/40 transition-all">
-                  {t("hero.ctaPrimary")}
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Link href="/auth/login">
-                <Button size="lg" variant="outline" className="text-lg px-8 py-6 border-2 hover:bg-muted/50 backdrop-blur-sm">
-                  <Play className="mr-2 h-5 w-5" />
-                  {t("hero.ctaSecondary")}
-                </Button>
-              </Link>
-            </div>
-
-            <div className="flex items-center justify-center gap-8 pt-8 text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                <span className="text-sm">{t("hero.trust.noCreditCard")}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                <span className="text-sm">{t("hero.trust.freeForever")}</span>
-              </div>
-              <div className="flex items-center gap-2 hidden sm:flex">
-                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                <span className="text-sm">{t("hero.trust.cancelAnytime")}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section >
-
-      <section className="py-16 relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-teal-500/5 to-emerald-500/5" />
-        <div className="container mx-auto px-4 relative">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-            {STATS_DATA.map((stat, index) => {
-              const Icon = stat.icon;
-              return (
-                <div
-                  key={index}
-                  className="text-center p-6 rounded-2xl bg-gradient-to-br from-background to-muted/50 border border-border/50 backdrop-blur-sm"
-                >
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500/20 to-teal-500/20 mb-4">
-                    <Icon className="h-6 w-6 text-cyan-400" />
-                  </div>
-                  <div className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">
-                    {t(`stats.${stat.key}.value`)}
-                  </div>
-                  <div className="text-sm text-muted-foreground mt-1">
-                    {t(`stats.${stat.key}.label`)}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="py-24 relative">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-16 space-y-4">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20">
-              <TrendingUp className="h-4 w-4 text-emerald-400" />
-              <span className="text-sm font-medium text-emerald-400">{t("features.badge")}</span>
-            </div>
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold">
-              <span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent">
-                {t("features.title")}
-              </span>
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              {t("features.subtitle")}
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
-            {FEATURES_DATA.map((feature, index) => {
-              const Icon = feature.icon;
-              return (
-                <Card
-                  key={index}
-                  className={`group relative overflow-hidden border-2 border-transparent hover:border-white/10 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${feature.bgGlow}`}
-                >
-                  <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`} />
-                  <CardContent className="pt-6 pb-6 space-y-4 relative">
-                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
-                      <Icon className="h-7 w-7 text-white" />
+            <div className="relative mx-auto flex max-w-[1160px] flex-col gap-16 px-4 pt-4 sm:gap-28 sm:px-8 sm:pt-6">
+                {/* Sized to fit a 320px phone: below 360px "Start free" moves into the menu (the hero CTA sits right below). */}
+                <header className="sg-bar sticky top-4 z-50 flex items-center justify-between gap-2 rounded-full py-2 pl-3 pr-2 sm:gap-3 sm:pl-4">
+                    <Link href="/" className={cn("flex items-center gap-2 rounded-full sm:gap-2.5", focusRing)}>
+                        <UMark className="size-7 sm:size-8" />
+                        <span className="whitespace-nowrap font-display sg-soft text-base font-semibold sm:text-xl">Get Back To U</span>
+                    </Link>
+                    <nav aria-label={t("nav.label")} className="hidden items-center gap-1 lg:flex">
+                        {navLinks.map((link) => (
+                            <a
+                                key={link.href}
+                                href={link.href}
+                                className={cn("whitespace-nowrap rounded-full px-3.5 py-2 font-semibold text-sg-muted transition-colors hover:text-sg-text", focusRing)}
+                            >
+                                {link.label}
+                            </a>
+                        ))}
+                    </nav>
+                    <div className="flex items-center gap-1">
+                        <ThemeSwitch className="hidden sm:inline-flex" />
+                        <Link href="/auth/login" className={cn("hidden whitespace-nowrap rounded-full px-4 py-2.5 font-semibold sm:inline-flex", focusRing)}>
+                            {t("nav.signIn")}
+                        </Link>
+                        <Link
+                            href="/auth/register"
+                            className={cn(
+                                "hidden h-10 items-center whitespace-nowrap rounded-full bg-sg-ink px-3.5 text-[15px] font-bold text-sg-ink-foreground transition-opacity hover:opacity-90 min-[360px]:inline-flex sm:px-[18px] sm:text-base",
+                                focusRing
+                            )}
+                        >
+                            {t("nav.startFree")}
+                        </Link>
+                        <LandingMenu
+                            links={navLinks}
+                            labels={{
+                                nav: t("nav.label"),
+                                open: t("nav.menuOpen"),
+                                close: t("nav.menuClose"),
+                                signIn: t("nav.signIn"),
+                                startFree: t("nav.startFree"),
+                                theme: t("nav.theme"),
+                            }}
+                            className="lg:hidden"
+                        />
                     </div>
-                    <h3 className="text-xl font-bold group-hover:text-foreground transition-colors">
-                      {t(`features.items.${feature.key}.title`)}
-                    </h3>
-                    <p className="text-muted-foreground text-sm leading-relaxed">
-                      {t(`features.items.${feature.key}.description`)}
-                    </p>
-                    <div className="flex items-center text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                      <span>{t("features.learnMore")}</span>
-                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </header>
+
+                <main className="flex flex-col gap-16 sm:gap-28">
+                    <section aria-labelledby="hero-title" className="grid items-center gap-14 lg:grid-cols-[1.1fr_0.9fr]">
+                        <div className="flex flex-col gap-6">
+                            <h1
+                                id="hero-title"
+                                className="font-display sg-soft text-[38px] font-semibold leading-[42px] tracking-[-0.035em] text-balance min-[360px]:text-[44px] min-[360px]:leading-[48px] sm:text-[56px] sm:leading-[60px] lg:text-[62px] lg:leading-[66px]"
+                            >
+                                {t("hero.title")}
+                            </h1>
+                            <p className="max-w-[520px] text-lg leading-[30px] text-sg-muted sm:text-[19px]">{t("hero.subtitle")}</p>
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                <Link href="/auth/register" className={coralButton}>
+                                    {t("hero.primary")}
+                                </Link>
+                                <a href="#how" className={cn("sg-glass inline-flex h-14 items-center justify-center rounded-full px-6 font-bold", focusRing)}>
+                                    {t("hero.secondary")}
+                                </a>
+                            </div>
+                            <p className="text-sm text-sg-muted">{t("hero.note")}</p>
+                        </div>
+
+                        {/* Product preview built from the real interview UI pieces. */}
+                        <div aria-hidden="true" className="sg-glass sg-shadow-lg mx-auto flex w-full max-w-[540px] flex-col gap-5 rounded-[32px] p-6 sm:p-7">
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="rounded-full bg-sg-lavender-soft px-3 py-1 text-[13px] font-bold text-sg-lavender-ink">
+                                    {t("preview.progress")}
+                                </span>
+                                <span className="flex gap-1">
+                                    <span className="h-1.5 w-2.5 rounded-full bg-sg-coral" />
+                                    <span className="h-1.5 w-2.5 rounded-full bg-sg-coral" />
+                                    <span className="h-1.5 w-[22px] rounded-full bg-sg-ink" />
+                                    <span className="h-1.5 w-2.5 rounded-full bg-sg-track" />
+                                    <span className="h-1.5 w-2.5 rounded-full bg-sg-track" />
+                                </span>
+                            </div>
+                            <p className="font-display sg-soft text-[26px] font-semibold leading-[33px] tracking-[-0.015em]">
+                                {t("preview.question")}
+                            </p>
+                            <div className="flex flex-col gap-2">
+                                <span className="text-[13px] font-bold leading-[18px] text-sg-muted">{t("preview.answerLabel")}</span>
+                                <p className="rounded-[18px] bg-sg-row px-4 py-3.5 text-[15px] leading-[23px] text-sg-muted">
+                                    {t("preview.transcript")}
+                                </p>
+                            </div>
+                            <div className="flex flex-col gap-3.5 rounded-[22px] bg-sg-lavender-soft p-[18px]">
+                                <div className="flex items-center gap-3.5">
+                                    <ScoreGauge value={9} showValue={false} className="w-16" arcClassName="stroke-sg-lavender-ink" />
+                                    <div className="flex flex-col">
+                                        <span className="flex items-baseline gap-1">
+                                            <span className="font-display text-[28px] font-semibold leading-[30px]">9.0</span>
+                                            <span className="text-sm font-semibold text-sg-muted">{t("preview.outOf")}</span>
+                                        </span>
+                                        <span className="text-[13px] font-bold leading-[18px] text-sg-lavender-ink">{t("preview.scoreNote")}</span>
+                                    </div>
+                                </div>
+                                <div className="h-px bg-sg-rule" />
+                                <div className="flex items-center gap-3">
+                                    <Mascot className="size-10" />
+                                    <div className="flex flex-col">
+                                        <span className="text-[13px] font-bold leading-[18px] text-sg-muted">{t("preview.tipLabel")}</span>
+                                        <span className="text-[15px] font-semibold leading-[22px]">{t("preview.tip")}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="how" aria-labelledby="how-title" className="flex scroll-mt-24 flex-col gap-8">
+                        <h2 id="how-title" className={cn(sectionTitle, "max-w-[640px]")}>
+                            {t("how.title")}
+                        </h2>
+                        {/* Phones get compact rows (number beside the text); md+ gets three columns. */}
+                        <ol className="grid gap-3 sm:gap-5 md:grid-cols-3">
+                            {steps.map((step, i) => (
+                                <li key={step.title} className="sg-glass flex gap-4 rounded-[24px] p-5 sm:p-7 md:flex-col md:gap-3 md:rounded-[28px]">
+                                    <span
+                                        className={cn(
+                                            "flex size-11 shrink-0 items-center justify-center rounded-[14px] font-display text-[22px] font-bold",
+                                            stepBadges[i]
+                                        )}
+                                    >
+                                        {i + 1}
+                                    </span>
+                                    <div className="flex flex-col gap-1 md:gap-3">
+                                        <h3 className="text-lg font-bold md:text-xl">{step.title}</h3>
+                                        <p className="text-sg-muted">{step.body}</p>
+                                    </div>
+                                </li>
+                            ))}
+                        </ol>
+                    </section>
+
+                    <section aria-label={t("features.label")} className="grid gap-3 sm:gap-5 md:grid-cols-2">
+                        {features.map((feature) => (
+                            <div key={feature.title} className="sg-glass flex flex-col gap-2 rounded-[24px] p-6 sm:gap-2.5 sm:rounded-[32px] sm:p-8">
+                                <h3 className="font-display sg-soft text-[23px] font-semibold leading-[29px] sm:text-[28px] sm:leading-[34px]">{feature.title}</h3>
+                                <p className="text-sg-muted">{feature.body}</p>
+                            </div>
+                        ))}
+                    </section>
+
+                    <section
+                        id="employers"
+                        aria-labelledby="employers-title"
+                        className="grid scroll-mt-24 items-center gap-8 rounded-[28px] bg-sg-ink p-6 text-sg-ink-foreground sm:gap-10 sm:rounded-[36px] sm:p-12 lg:grid-cols-2"
+                    >
+                        <div className="flex flex-col gap-4">
+                            <p className="font-bold opacity-80">{t("employers.eyebrow")}</p>
+                            <h2 id="employers-title" className="font-display sg-soft text-[32px] font-semibold leading-[38px] tracking-[-0.025em] sm:text-[42px] sm:leading-[48px]">
+                                {t("employers.title")}
+                            </h2>
+                            <p className="text-[17px] leading-[27px] opacity-80">{t("employers.body")}</p>
+                            <a
+                                href={`mailto:${CONTACT_EMAIL}`}
+                                className={cn(
+                                    "inline-flex h-[52px] items-center self-start rounded-full bg-sg-ink-foreground px-6 font-bold text-sg-ink transition-opacity hover:opacity-90",
+                                    focusRing
+                                )}
+                            >
+                                {t("employers.cta")}
+                            </a>
+                            <p className="text-sm opacity-80">{t("employers.note")}</p>
+                        </div>
+                        <ul className="grid gap-2 sm:grid-cols-2 sm:gap-3">
+                            {employerItems.map((item) => (
+                                <li key={item.title} className="flex flex-col gap-1 rounded-2xl bg-sg-ink-foreground/[0.08] p-4 sm:gap-1.5 sm:rounded-[20px] sm:p-[18px]">
+                                    <span className="font-bold">{item.title}</span>
+                                    <span className="text-[15px] opacity-80">{item.body}</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+
+                    <LandingPricing />
+
+                    <section aria-labelledby="faq-title" className="grid gap-10 md:grid-cols-2">
+                        <h2 id="faq-title" className={sectionTitle}>
+                            {t("faq.title")}
+                        </h2>
+                        <dl className="flex flex-col gap-5">
+                            {faqs.map((faq, i) => (
+                                <div key={faq.q} className={cn("pb-5", i < faqs.length - 1 && "border-b border-sg-rule")}>
+                                    <dt className="text-lg font-bold">{faq.q}</dt>
+                                    <dd className="mt-1.5 text-sg-muted">{faq.a}</dd>
+                                </div>
+                            ))}
+                        </dl>
+                    </section>
+
+                    <section aria-labelledby="closing-title" className="flex flex-col items-center gap-6 py-6 text-center">
+                        <Mascot className="size-24" />
+                        <h2
+                            id="closing-title"
+                            className="max-w-[700px] font-display sg-soft text-[40px] font-semibold leading-[44px] tracking-[-0.03em] text-balance sm:text-[52px] sm:leading-[56px]"
+                        >
+                            {t("closing.title")}
+                        </h2>
+                        <Link href="/auth/register" className={coralButton}>
+                            {t("closing.cta")}
+                        </Link>
+                    </section>
+
+                    <section aria-label={tHome("legal.contact.title")} className="grid gap-5 md:grid-cols-3">
+                        <div id="privacy" className="sg-glass scroll-mt-24 rounded-[24px] p-6">
+                            <h3 className="mb-2 font-bold">{tHome("legal.privacy.title")}</h3>
+                            <p className="text-sm leading-relaxed text-sg-muted">{tHome("legal.privacy.content")}</p>
+                        </div>
+                        <div id="terms" className="sg-glass scroll-mt-24 rounded-[24px] p-6">
+                            <h3 className="mb-2 font-bold">{tHome("legal.terms.title")}</h3>
+                            <p className="text-sm leading-relaxed text-sg-muted">{tHome("legal.terms.content")}</p>
+                        </div>
+                        <div id="contact" className="sg-glass scroll-mt-24 rounded-[24px] p-6">
+                            <h3 className="mb-2 font-bold">{tHome("legal.contact.title")}</h3>
+                            <p className="text-sm leading-relaxed text-sg-muted">
+                                {tHome("legal.contact.content", { email: CONTACT_EMAIL, phone: CONTACT_PHONE })}
+                            </p>
+                            <div className="mt-3 flex flex-col gap-1 text-sm font-semibold">
+                                <a href={`mailto:${CONTACT_EMAIL}`} className="hover:underline">{CONTACT_EMAIL}</a>
+                                <a href={`tel:${CONTACT_PHONE.replace(/\s/g, "")}`} className="hover:underline">{CONTACT_PHONE}</a>
+                            </div>
+                        </div>
+                    </section>
+                </main>
+
+                <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-sg-rule pb-9 pt-7 text-sm text-sg-muted">
+                    <div className="flex items-center gap-2.5">
+                        <UMark className="size-6" />
+                        <span>{tHome("footer.rights")}</span>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                    <nav aria-label={t("footer.label")} className="flex flex-wrap gap-5">
+                        <a href="#privacy" className="hover:text-sg-text">{tHome("footer.privacy")}</a>
+                        <a href="#terms" className="hover:text-sg-text">{tHome("footer.terms")}</a>
+                        <a href="#contact" className="hover:text-sg-text">{tHome("footer.contact")}</a>
+                    </nav>
+                </footer>
+            </div>
         </div>
-      </section>
-
-      {/* Pricing Section */}
-      <HomePricingSection />
-
-      {/* CTA Section */}
-      <section className="py-24 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-cyan-600/20 via-teal-600/20 to-emerald-600/20" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(45,212,191,0.2),transparent_70%)]" />
-
-        <div className="absolute top-10 right-20 w-64 h-64 bg-cyan-500/30 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 left-20 w-80 h-80 bg-teal-500/20 rounded-full blur-3xl" />
-
-        <div className="container mx-auto px-4 relative">
-          <div className="max-w-4xl mx-auto text-center space-y-8">
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold">
-              <span className="bg-gradient-to-r from-cyan-400 via-teal-400 to-emerald-400 bg-clip-text text-transparent">
-                {t("cta.title")}
-              </span>
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              {t("cta.subtitle")}
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-              <Link href="/auth/register">
-                <Button size="lg" className="text-lg px-10 py-6 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700 shadow-xl shadow-cyan-500/30">
-                  {t("cta.button")}
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Privacy, Terms, Contact Section */}
-      <section id="legal" className="py-16 bg-muted/20">
-        <div className="container mx-auto px-4 max-w-5xl">
-          <div className="grid md:grid-cols-3 gap-8">
-            <div id="privacy" className="scroll-mt-20">
-              <h3 className="text-lg font-bold mb-4 bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">
-                {t("legal.privacy.title")}
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {t("legal.privacy.content")}
-              </p>
-            </div>
-
-            <div id="terms" className="scroll-mt-20">
-              <h3 className="text-lg font-bold mb-4 bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
-                {t("legal.terms.title")}
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {t("legal.terms.content")}
-              </p>
-            </div>
-
-            <div id="contact" className="scroll-mt-20">
-              <h3 className="text-lg font-bold mb-4 bg-gradient-to-r from-blue-400 to-sky-400 bg-clip-text text-transparent">
-                {t("legal.contact.title")}
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {t("legal.contact.content")}
-                <br />
-                <a href="mailto:hello@getbacktou.com" className="text-cyan-400 hover:underline">
-                  hello@getbacktou.com
-                </a>
-                <br />
-                <a href="tel:+918600137191" className="text-cyan-400 hover:underline">
-                  +91 8600137191
-                </a>
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t py-12 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-3">
-              <Image src="/logo.png" alt="Get Back To U Logo" width={32} height={32} className="h-8 w-8 object-contain" />
-              <span className="text-lg font-semibold bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">
-                Get Back To U
-              </span>
-            </div>
-            <div className="flex items-center gap-8 text-sm text-muted-foreground">
-              <a href="#privacy" className="hover:text-foreground transition-colors">{t("footer.privacy")}</a>
-              <a href="#terms" className="hover:text-foreground transition-colors">{t("footer.terms")}</a>
-              <a href="#contact" className="hover:text-foreground transition-colors">{t("footer.contact")}</a>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {t("footer.rights")}
-            </p>
-          </div>
-        </div>
-      </footer>
-    </div >
-  );
+    );
 }

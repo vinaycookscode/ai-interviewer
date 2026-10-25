@@ -8,8 +8,8 @@ export const FormSuccess = ({ message }: FormSuccessProps) => {
     if (!message) return null;
 
     return (
-        <div className="bg-emerald-500/15 p-3 rounded-md flex items-center gap-x-2 text-sm text-emerald-500">
-            <CheckCircle className="h-4 w-4" />
+        <div role="status" className="flex items-start gap-2.5 rounded-2xl bg-sg-success/10 px-4 py-3 text-sm font-semibold text-sg-success">
+            <CheckCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
             <p>{message}</p>
         </div>
     );

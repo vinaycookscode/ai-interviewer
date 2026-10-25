@@ -1,108 +1,84 @@
 "use client";
 
-import dynamic from 'next/dynamic';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2 } from 'lucide-react';
+import { useState } from "react";
+import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
+import { focusRing } from "@/components/soft-glass/classes";
 
-// Lazy load Recharts for better initial page load
-const BarChart = dynamic(() => import("recharts").then(mod => mod.BarChart), {
-    loading: () => <ChartSkeleton />,
-    ssr: false
-});
-const LineChart = dynamic(() => import("recharts").then(mod => mod.LineChart), {
-    loading: () => <ChartSkeleton />,
-    ssr: false
-});
-const Bar = dynamic(() => import("recharts").then(mod => mod.Bar), { ssr: false });
-const Line = dynamic(() => import("recharts").then(mod => mod.Line), { ssr: false });
-const XAxis = dynamic(() => import("recharts").then(mod => mod.XAxis), { ssr: false });
-const YAxis = dynamic(() => import("recharts").then(mod => mod.YAxis), { ssr: false });
-const CartesianGrid = dynamic(() => import("recharts").then(mod => mod.CartesianGrid), { ssr: false });
-const Tooltip = dynamic(() => import("recharts").then(mod => mod.Tooltip), { ssr: false });
-const ResponsiveContainer = dynamic(() => import("recharts").then(mod => mod.ResponsiveContainer), { ssr: false });
+export interface ScoreBin {
+    /** Display label, e.g. "6–8". */
+    label: string;
+    from: number;
+    to: number;
+    count: number;
+}
 
-function ChartSkeleton() {
+/** Completed interviews by score: one colour, counts written on the bars. */
+export function ScoreChart({ bins }: { bins: ScoreBin[] }) {
+    const t = useTranslations("Employer.overview");
+    const max = Math.max(1, ...bins.map((b) => b.count));
+    const busiest = bins.reduce((best, b, i) => (b.count > bins[best].count ? i : best), 0);
+    const [selected, setSelected] = useState(busiest);
+    const current = bins[selected];
+
     return (
-        <div className="flex items-center justify-center h-[300px] bg-muted/30 rounded-lg">
-            <div className="flex flex-col items-center gap-2">
-                <Loader2 className="h-6 w-6 animate-spin text-primary/60" />
-                <p className="text-xs text-muted-foreground">Loading chart...</p>
-            </div>
-        </div>
+        <>
+            <ul aria-label={t("scoresAria")} className="flex h-[200px] items-end gap-2.5 border-b border-sg-rule">
+                {bins.map((bin, i) => (
+                    <li key={bin.label} className="flex min-w-0 flex-1 flex-col items-center justify-end gap-1.5">
+                        <span className="text-sm font-bold" aria-hidden="true">
+                            {bin.count}
+                        </span>
+                        <button
+                            type="button"
+                            aria-label={t("binAria", { range: bin.label, count: bin.count })}
+                            aria-pressed={selected === i}
+                            onMouseEnter={() => setSelected(i)}
+                            onFocus={() => setSelected(i)}
+                            onClick={() => setSelected(i)}
+                            style={{ height: Math.round((bin.count / max) * 140) + 4 }}
+                            className={cn(
+                                "w-full max-w-16 rounded-t-[4px] transition-colors",
+                                selected === i ? "bg-sg-ink" : "bg-sg-lavender-ink",
+                                focusRing
+                            )}
+                        />
+                        <span className="text-[13px] text-sg-muted" aria-hidden="true">
+                            {bin.label}
+                        </span>
+                    </li>
+                ))}
+            </ul>
+            <p aria-live="polite" className="text-sm text-sg-muted">
+                {t("binTip", { count: current.count, from: current.from, to: current.to })}
+            </p>
+        </>
     );
 }
 
-interface AnalyticsChartsProps {
-    scoreDistribution: { range: string; count: number }[];
-    statusDistribution: { status: string; count: number }[];
-    activityData: { date: string; count: number }[];
+export interface StatusCount {
+    label: string;
+    count: number;
 }
 
-export function AnalyticsCharts({
-    scoreDistribution,
-    statusDistribution,
-    activityData,
-}: AnalyticsChartsProps) {
+/** Where candidates are: horizontal bars with the number beside each. */
+export function StatusChart({ rows }: { rows: StatusCount[] }) {
+    const total = Math.max(1, rows.reduce((sum, r) => sum + r.count, 0));
     return (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {/* Score Distribution Chart */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-base">Score Distribution</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={scoreDistribution}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="range" />
-                            <YAxis />
-                            <Tooltip />
-                            <Bar dataKey="count" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </CardContent>
-            </Card>
-
-            {/* Status Distribution Chart */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-base">Interview Status</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <BarChart data={statusDistribution}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="status" />
-                            <YAxis />
-                            <Tooltip />
-                            <Bar dataKey="count" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </CardContent>
-            </Card>
-
-            {/* Activity Chart (Last 7 Days) */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-base">Recent Activity</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <LineChart data={activityData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="date" />
-                            <YAxis />
-                            <Tooltip />
-                            <Line
-                                type="monotone"
-                                dataKey="count"
-                                stroke="var(--chart-1)"
-                                strokeWidth={2}
-                            />
-                        </LineChart>
-                    </ResponsiveContainer>
-                </CardContent>
-            </Card>
-        </div>
+        <ul className="flex flex-col gap-3.5">
+            {rows.map((r) => (
+                <li key={r.label} className="grid grid-cols-[minmax(96px,170px)_1fr_auto] items-center gap-3">
+                    <span className="font-semibold">{r.label}</span>
+                    <span className="h-3.5 min-w-0">
+                        <span
+                            aria-hidden="true"
+                            className="block h-full rounded-[4px] bg-sg-lavender-ink"
+                            style={{ width: `${Math.max(r.count > 0 ? 2 : 0, (r.count / total) * 100)}%` }}
+                        />
+                    </span>
+                    <span className="font-bold tabular-nums">{r.count}</span>
+                </li>
+            ))}
+        </ul>
     );
 }

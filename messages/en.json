@@ -1,4 +1,349 @@
 {
+    "FeedbackReport": {
+        "backCandidate": "All interviews",
+        "backEmployer": "Overview",
+        "headingCandidate": "Your interview report",
+        "headingEmployer": "{name}’s interview",
+        "meta": "{job} · {date} · {count, plural, one {# answer} other {# answers}}",
+        "practise": "Practise again",
+        "overallLabel": "Overall result",
+        "outOf": "out of 10, across {count, plural, one {# answer} other {# answers}}",
+        "scoring": "Your answers are still being scored. Check back in a minute.",
+        "strongest": "Strongest answer · {score}",
+        "weakest": "Most room to grow · {score}",
+        "summary": {
+            "candidate": {
+                "high": "Great work. You showed strong knowledge and explained your thinking clearly.",
+                "mid": "Good effort. There’s room to grow, especially in technical depth.",
+                "low": "This one needs work. Your answers needed more detail or a closer link to the question."
+            },
+            "employer": {
+                "high": "Great job! The candidate demonstrated strong knowledge and communication skills.",
+                "mid": "Good effort. There are some areas for improvement, particularly in technical depth.",
+                "low": "Needs improvement. The answers lacked sufficient detail or relevance."
+            }
+        },
+        "answersTitle": "Answer by answer",
+        "showing": "Showing {shown} of {total}",
+        "showAll": "Show all {total} answers",
+        "questionNumber": "Question {n}",
+        "outOfTen": "out of 10",
+        "notScored": "Not scored yet",
+        "feedback": "Feedback",
+        "noFeedback": "No feedback for this answer yet.",
+        "whatYouSaid": "What you said",
+        "whatTheySaid": "What they said",
+        "noAnswers": "No answers were recorded for this interview.",
+        "pdf": {
+            "download": "Download PDF",
+            "generating": "Making the PDF…",
+            "done": "PDF downloaded",
+            "failed": "Couldn’t make the PDF. Try again.",
+            "missing": "There’s nothing to download yet."
+        },
+        "personality": {
+            "title": "How they came across",
+            "teamOnly": "Visible to your team only",
+            "communication": "Communication",
+            "technicalDepth": "Technical depth",
+            "confidence": "Confidence",
+            "cultureFit": "Culture fit",
+            "outOfTen": "{value} / 10",
+            "outOfHundred": "{value} / 100",
+            "strengths": "Strengths",
+            "growthAreas": "Growth areas"
+        }
+    },
+    "Employer": {
+        "loading": "Loading",
+        "status": {
+            "PENDING": "Invited",
+            "IN_PROGRESS": "In progress",
+            "COMPLETED": "Completed"
+        },
+        "docs": {
+            "resume": "Resume",
+            "pan": "PAN",
+            "aadhaar": "Aadhaar",
+            "pending": "pending",
+            "noneAsked": "None asked",
+            "open": "Open {doc}"
+        },
+        "settings": {
+            "title": "Settings",
+            "subtitle": "Your account.",
+            "account": "Account",
+            "name": "Your name",
+            "nameRequired": "Enter your name.",
+            "email": "Email",
+            "emailHint": "Your sign-in email can’t be changed. Employer accounts are invite-only.",
+            "save": "Save changes",
+            "saved": "Saved",
+            "saveFailed": "Couldn’t save your name. Try again.",
+            "closeTitle": "Close your account",
+            "closeBody": "Closing an account isn’t self-serve yet. Contact support and we’ll delete your jobs and your candidates’ interviews, then confirm by email."
+        },
+        "overview": {
+            "title": "Overview",
+            "subtitle": "How your interviews are going across every job.",
+            "newJob": "New job",
+            "emptyTitle": "Post your first job",
+            "emptyBody": "Paste a job description and U writes the interview questions. Then invite candidates by email or with a CSV, and read every scored interview here.",
+            "emptyCta": "Create a job",
+            "statJobs": "Jobs",
+            "statInvited": "Candidates invited",
+            "statCompleted": "Interviews completed",
+            "statAverage": "Average score out of 10",
+            "scoresTitle": "Scores",
+            "scoresCaption": "{count, plural, one {# scored interview} other {# scored interviews}}",
+            "scoresEmpty": "Scores appear here once a candidate finishes an interview.",
+            "scoresAria": "Completed interviews by score",
+            "binAria": "Score {range}: {count, plural, one {# interview} other {# interviews}}",
+            "binTip": "{count, plural, =0 {No interviews} one {# interview} other {# interviews}} scored between {from} and {to}",
+            "statusTitle": "Where candidates are",
+            "statusCompleted": "Completed",
+            "statusInProgress": "In progress",
+            "statusNotStarted": "Invited, not started",
+            "notStartedLead": "{count, plural, one {# hasn’t started.} other {# haven’t started.}}",
+            "notStartedHint": "Copy their link from the job to nudge them.",
+            "recentTitle": "Recent jobs",
+            "allJobs": "All jobs",
+            "posted": "Posted {date} · {count, plural, one {# question} other {# questions}}",
+            "completedOf": "<strong>{done}</strong> completed of {invited} invited"
+        },
+        "jobs": {
+            "title": "Jobs",
+            "subtitle": "Each job has its own questions. Every candidate you invite gets their own interview link.",
+            "newJob": "New job",
+            "search": "Search jobs",
+            "empty": "No jobs yet. Create one to start interviewing.",
+            "noMatch": "No jobs match “{q}”.",
+            "posted": "Posted {date} · {count, plural, one {# question} other {# questions}}",
+            "invited": "Invited",
+            "completed": "Completed",
+            "documents": "Documents",
+            "view": "View",
+            "edit": "Edit",
+            "viewAria": "View {title}",
+            "editAria": "Edit {title}"
+        },
+        "candidates": {
+            "title": "Candidates",
+            "subtitle": "Everyone you’ve invited, across every job.",
+            "lockedTitle": "Candidate search is switched off",
+            "lockedBody": "An administrator has turned this feature off. Your candidates are still on each job’s page.",
+            "emptyTitle": "No candidates yet",
+            "emptyBody": "Open a job and invite candidates by email or with a CSV. They’ll all show up here.",
+            "emptyCta": "Go to jobs",
+            "search": "Search by name or email",
+            "job": "Job",
+            "allJobs": "All jobs",
+            "statusGroup": "Status",
+            "filter": {
+                "all": "All",
+                "COMPLETED": "Completed",
+                "IN_PROGRESS": "In progress",
+                "PENDING": "Invited"
+            },
+            "listLabel": "Candidate list",
+            "count": "{count, plural, one {# candidate} other {# candidates}}",
+            "sorted": "Sorted by score, highest first",
+            "noMatch": "No candidates match these filters.",
+            "pages": "Pages",
+            "previous": "Previous",
+            "next": "Next",
+            "pageOf": "Page {page} of {total}",
+            "colCandidate": "Candidate",
+            "colJob": "Job",
+            "colStatus": "Status",
+            "colScore": "Score",
+            "colDocuments": "Documents",
+            "colInvited": "Invited",
+            "colActions": "Actions",
+            "noScore": "No score yet",
+            "outOfTen": "out of 10",
+            "viewFeedback": "View feedback",
+            "viewFeedbackAria": "View {name}’s feedback",
+            "copyLink": "Copy link",
+            "copyTheirLink": "Copy their link",
+            "copyLinkAria": "Copy {name}’s interview link",
+            "copied": "Copied",
+            "linkCopied": "Interview link copied",
+            "linkCopyFailed": "Couldn’t copy the link. Try again."
+        },
+        "deleteCandidate": {
+            "trigger": "Delete this candidate",
+            "triggerAria": "Delete {name}",
+            "title": "Delete this candidate?",
+            "body": "This permanently deletes their interview and answers for this job and removes them from your dashboard. It can’t be undone.",
+            "cancel": "Cancel",
+            "confirm": "Delete candidate",
+            "deleting": "Deleting…",
+            "done": "Candidate deleted",
+            "failed": "Couldn’t delete the candidate. Try again."
+        },
+        "job": {
+            "back": "Jobs",
+            "edit": "Edit",
+            "posted": "Posted {date}",
+            "length": "{count, plural, one {# question} other {# questions}} · about {minutes} min",
+            "docResume": "Resume",
+            "docPan": "PAN",
+            "docAadhaar": "Aadhaar",
+            "docsRequired": "{docs} required",
+            "noDocs": "No documents required",
+            "candidates": "Candidates",
+            "invitedCompleted": "{invited} invited · {completed} completed",
+            "noCandidates": "No one invited yet. Invite a candidate, or invite several from a CSV.",
+            "questions": "Questions",
+            "noQuestions": "No questions yet. Add some before you invite anyone.",
+            "description": "Job description"
+        },
+        "deleteJob": {
+            "trigger": "Delete job",
+            "title": "Delete this job?",
+            "body": "This permanently deletes the job and all of its interview data. It can’t be undone.",
+            "cancel": "Cancel",
+            "confirm": "Delete job",
+            "failed": "Couldn’t delete the job. Try again."
+        },
+        "invite": {
+            "trigger": "Invite a candidate",
+            "title": "Invite a candidate",
+            "sentTitle": "Invite sent",
+            "close": "Close",
+            "description": "We email them the interview link. You can copy it too.",
+            "name": "Candidate’s name",
+            "namePlaceholder": "For example: Priya Sharma",
+            "email": "Email",
+            "emailPlaceholder": "name@example.com",
+            "startFrom": "Can start from",
+            "startHint": "The link opens at this time and works for 48 hours.",
+            "errorName": "Enter their name (at least 2 characters).",
+            "errorEmail": "Enter a full email address, like name@example.com.",
+            "errorTime": "Choose when they can start.",
+            "failed": "Couldn’t send the invite. Try again.",
+            "cancel": "Cancel",
+            "send": "Send invite",
+            "sentTo": "Invite sent to {email}.",
+            "link": "Interview link",
+            "copy": "Copy",
+            "copied": "Copied",
+            "done": "Done"
+        },
+        "bulk": {
+            "trigger": "Invite from CSV",
+            "close": "Close",
+            "titleUpload": "Invite from a CSV",
+            "titleCheck": "Check the list",
+            "titleSchedule": "When can they start?",
+            "titleSending": "Sending invites",
+            "titleDone": "Invites sent",
+            "stepsLabel": "Steps",
+            "stepDone": "(done)",
+            "step": {
+                "upload": "Upload",
+                "preview": "Check",
+                "schedule": "Schedule",
+                "results": "Send"
+            },
+            "choose": "Choose a CSV, or drop it here",
+            "columns": "Two columns: name and email",
+            "template": "Download a template",
+            "header": {
+                "tooShort": "The file needs a header row and at least one candidate.",
+                "noName": "The file needs a “name” column.",
+                "noEmail": "The file needs an “email” column."
+            },
+            "readyOf": "{ready} of {total} {total, plural, one {is} other {are}} ready.",
+            "skipNote": "We’ll skip the other {count}: fix {count, plural, one {it} other {them}} in your file and upload again if you need {count, plural, one {it} other {them}}.",
+            "colName": "Name",
+            "colEmail": "Email",
+            "colCheck": "Check",
+            "ready": "Ready",
+            "check": {
+                "missingName": "Name is missing",
+                "missingEmail": "Email is missing",
+                "badEmail": "Email looks wrong",
+                "alreadyInvited": "Already invited"
+            },
+            "more": "…and {count} more",
+            "back": "Back",
+            "continueWith": "Continue with {count}",
+            "startFrom": "Everyone can start from",
+            "expires": "Links stop working on (optional)",
+            "expiresHint": "Leave empty and links work for 48 hours after the start.",
+            "send": "Send {count, plural, one {# invite} other {# invites}}",
+            "sending": "Sending {count, plural, one {# invite} other {# invites}}…",
+            "statSent": "Sent",
+            "statAlready": "Already invited",
+            "statFailed": "Couldn’t send",
+            "emptyRow": "A row",
+            "reason": {
+                "missingName": "has no name.",
+                "missingEmail": "has no email.",
+                "badEmail": "isn’t a full email address.",
+                "sendFailed": "couldn’t be invited."
+            },
+            "done": "Done"
+        },
+        "form": {
+            "back": "Jobs",
+            "newTitle": "New job",
+            "editTitle": "Edit {title}",
+            "subtitle": "U interviews every candidate with the same questions and scores each answer.",
+            "lockedTitle": "Creating jobs is switched off",
+            "lockedBody": "An administrator has turned job creation off for now.",
+            "jobTitle": "The job",
+            "title": "Job title",
+            "titlePlaceholder": "For example: Senior React Developer",
+            "errorTitle": "Give the job a title (at least 2 characters).",
+            "description": "Job description",
+            "descriptionPlaceholder": "Paste the full job description here.",
+            "errorDescription": "Add a description of at least 10 characters.",
+            "translate": "Translate to…",
+            "translating": "Translating…",
+            "translated": "Description translated",
+            "translateFailed": "Couldn’t translate the description.",
+            "docsTitle": "Documents to collect",
+            "docsBody": "Candidates upload these before they can start. Only your team can see them.",
+            "docResume": "Resume",
+            "docResumeHint": "PDF or Word document",
+            "docPan": "PAN card",
+            "docAadhaar": "Aadhaar card",
+            "docIdHint": "PDF, JPG, PNG or WebP",
+            "questionsTitle": "Questions",
+            "questionCount": "{count, plural, one {# question} other {# questions}} · about {minutes} minutes",
+            "aim": "Aim for 5 to 8",
+            "letU": "Let U write them",
+            "letUBody": "From the job description above. You can edit or remove any of them.",
+            "language": "Language",
+            "sameAsDescription": "Same as the description",
+            "write": "Write questions",
+            "writeMore": "Write more",
+            "writing": "Writing…",
+            "needDescription": "Add a job description first (at least 10 characters).",
+            "generated": "Questions added",
+            "generateFailed": "Couldn’t write questions. Try again.",
+            "settings": "Settings",
+            "questionLabel": "Question {n}",
+            "questionPlaceholder": "Type the question",
+            "answerType": "How question {n} is answered",
+            "typeText": "Spoken answer",
+            "typeCode": "Code",
+            "emptyQuestion": "Empty question",
+            "editQuestion": "Edit question {n}",
+            "doneEditing": "Done editing question {n}",
+            "deleteQuestion": "Delete question {n}",
+            "noQuestions": "No questions yet. Let U write them, or add your own.",
+            "addQuestion": "Add a question",
+            "cancel": "Cancel",
+            "create": "Create job",
+            "save": "Save changes",
+            "saved": "Job saved",
+            "saveFailed": "Couldn’t save the job. Try again."
+        }
+    },
     "Sidebar": {
         "myInterviews": "My Interviews",
         "analytics": "Analytics",
@@ -124,45 +469,49 @@
     },
     "Auth": {
         "email": "Email",
+        "loading": "Loading",
         "login": {
             "title": "Welcome back",
-            "subtitle": "Logging in for",
+            "description": "Sign in to pick up where you left off.",
+            "planNote": "After you sign in, we'll take you to {plan} ({period}) to finish upgrading.",
             "forgotPassword": "Forgot password?",
-            "submit": "Login",
-            "submitting": "Logging in...",
-            "noAccount": "Don't have an account?",
+            "submit": "Sign in",
+            "submitting": "Signing in…",
+            "noAccount": "New here?",
+            "createAccount": "Create an account",
             "errors": {
                 "oauthAccountNotLinked": "Email already in use with different provider!",
                 "generic": "Something went wrong"
             }
         },
         "register": {
-            "title": "Create an account",
-            "selectPlan": "Select your plan",
+            "title": "Create your account",
+            "description": "Free to start. No card needed.",
+            "selectPlan": "Choose a plan",
             "name": "Name",
-            "roleLabel": "I am a...",
-            "roleCandidate": "Candidate (I want to be interviewed)",
-            "roleEmployer": "Employer (I want to hire)",
-            "submit": "Create an account",
-            "submitting": "Creating account...",
+            "submit": "Create account",
+            "submitting": "Creating account…",
             "alreadyHaveAccount": "Already have an account?",
+            "signIn": "Sign in",
             "employerQuestion": "Hiring? Employer accounts are invite-only.",
             "employerContact": "Contact us"
         },
         "forgotPassword": {
-            "title": "Forgot Password",
-            "backToLogin": "Back to login",
-            "description": "Enter your email address and we'll send you a link to reset your password.",
-            "sending": "Sending link...",
-            "sendLink": "Send Reset Link"
+            "title": "Forgot your password?",
+            "backToLogin": "Back to sign in",
+            "description": "Enter your email and we'll send you a link to choose a new one.",
+            "sending": "Sending link…",
+            "sendLink": "Send reset link"
         },
         "resetPassword": {
-            "title": "Reset Password",
-            "invalidLink": "Invalid or expired reset link. Please request a new one.",
-            "newPassword": "New Password",
-            "confirmPassword": "Confirm Password",
-            "resetting": "Resetting...",
-            "reset": "Reset Password"
+            "title": "Choose a new password",
+            "invalidTitle": "This reset link doesn't work",
+            "invalidLink": "Reset links work once and expire after an hour. Ask for a new one and we'll email it straight away.",
+            "requestNew": "Send me a new link",
+            "newPassword": "New password",
+            "confirmPassword": "Confirm password",
+            "resetting": "Saving…",
+            "reset": "Save new password"
         }
     },
     "Pricing": {
@@ -298,6 +647,142 @@
             "uploadDocs": "Upload Docs"
         }
     },
+    "AppShell": {
+        "brand": "Get Back To U",
+        "home": "Get Back To U, home",
+        "mainNav": "Main",
+        "today": "Today",
+        "interviews": "Interviews",
+        "practice": "Practice",
+        "resume": "Resume",
+        "plan": "90-day plan",
+        "planHint": "Your day-by-day placement plan",
+        "more": "More",
+        "prepare": "Prepare",
+        "companyPrep": "Company prep",
+        "companyPrepHint": "Rounds and questions by company",
+        "flashcards": "Flashcards",
+        "flashcardsHint": "Short decks, spaced for memory",
+        "progress": "Progress",
+        "analytics": "Analytics",
+        "analyticsHint": "Scores and streaks over time",
+        "offers": "Offers",
+        "offersHint": "Compare offers side by side",
+        "community": "Community",
+        "studySquad": "Study squad",
+        "studySquadHint": "Practise with friends",
+        "mentors": "Mentors",
+        "mentorsHint": "Book time with a mentor",
+        "goPro": "Go Pro",
+        "accountMenu": "Account menu",
+        "profile": "Profile",
+        "billing": "Plans and billing",
+        "admin": "Admin",
+        "theme": "Theme",
+        "signOut": "Sign out",
+        "skip": "Skip to content",
+        "overview": "Overview",
+        "jobs": "Jobs",
+        "candidates": "Candidates",
+        "settings": "Settings",
+        "newJob": "New job"
+    },
+    "Today": {
+        "metaTitle": "Today",
+        "loading": "Loading your day",
+        "greeting": "{part, select, morning {Good morning} afternoon {Good afternoon} other {Good evening}}",
+        "greetingNamed": "{part, select, morning {Good morning} afternoon {Good afternoon} other {Good evening}}, {name}",
+        "coach": {
+            "todo": "Your {role} interview is {when}. {count, plural, one {One quick thing left} other {# quick things left}}, and you’re ready.",
+            "ready": "Your {role} interview is {when}. You’re ready.",
+            "open": "Your {role} interview is open. Start when you’re ready.",
+            "inProgress": "You’re partway through your {role} interview. Pick up where you left off.",
+            "plan": "Day {day} of your plan today. A little every day adds up.",
+            "idle": "Nothing booked right now. A short mock interview keeps you sharp."
+        },
+        "when": {
+            "today": "today",
+            "tomorrow": "tomorrow",
+            "on": "on {date}"
+        },
+        "next": {
+            "label": "Next interview",
+            "labelInProgress": "Interview in progress",
+            "questions": "{count, plural, one {# question} other {# questions}}",
+            "anyTime": "Open any time",
+            "checklist": "Before you start",
+            "done": "Done",
+            "toDo": "To do",
+            "doneResume": "Resume uploaded",
+            "doneAadhaar": "Aadhaar card added",
+            "donePan": "PAN card added",
+            "todoResume": "Add your resume",
+            "todoAadhaar": "Add your Aadhaar card",
+            "todoPan": "Add your PAN card",
+            "add": "Add",
+            "startsIn": "Starts in",
+            "days": "{count, plural, one {# day} other {# days}}",
+            "hours": "{count, plural, one {# hour} other {# hours}}",
+            "minutes": "{count, plural, one {# minute} other {# minutes}}",
+            "andRest": "and {rest} · {day} at {time}",
+            "at": "{day} at {time}",
+            "openTitle": "It’s open",
+            "openBody": "Find a quiet spot and start when you’re ready.",
+            "start": "Start interview",
+            "inProgressTitle": "In progress",
+            "inProgressBody": "Pick up where you left off.",
+            "continue": "Continue interview",
+            "expiredTitle": "This link has expired",
+            "expiredBody": "Ask the employer to send you a new invitation.",
+            "browserNote": "Open it in Chrome or Edge so your spoken answers are captured.",
+            "noneTitle": "No upcoming interview",
+            "noneBody": "When an employer invites you, the interview shows up here with everything you need before you start."
+        },
+        "week": {
+            "streak": "{count, plural, =0 {No streak yet} other {#-day streak}}",
+            "dayOf": "Day {day} of {total}",
+            "days": "Days practised this week",
+            "practised": "practised",
+            "notYet": "not yet",
+            "tasks": "Today: {title} · {done} of {total} done",
+            "allDone": "Today: {title} · all done",
+            "openPlan": "Open today’s plan",
+            "joinTitle": "Your 90-day plan",
+            "joinBody": "One short task a day, built around the role you want.",
+            "joinCta": "See the plan"
+        },
+        "score": {
+            "title": "Average score",
+            "up": "Up {delta} since your first interview",
+            "down": "Down {delta} since your first interview",
+            "same": "Same as your first interview",
+            "one": "From your first interview",
+            "empty": "Your score shows here after your first interview."
+        },
+        "practice": {
+            "title": "Warm up in 10 minutes",
+            "body": "Answer a few questions out loud and get a score for each one.",
+            "cta": "Start a mock interview"
+        },
+        "list": {
+            "title": "Your interviews",
+            "upcoming": "Coming up",
+            "past": "Done",
+            "empty": "No interviews yet. Invitations from employers show up here.",
+            "invited": "Invited {date}",
+            "expires": "Link expires {date}",
+            "notStarted": "Not started",
+            "inProgress": "In progress",
+            "completed": "Completed",
+            "expired": "Expired",
+            "score": "Score {score} out of 10",
+            "feedback": "See feedback",
+            "start": "Start",
+            "continue": "Continue"
+        },
+        "missingTitle": "We couldn’t find your account",
+        "missingBody": "Sign out and sign back in. If it keeps happening, send us feedback."
+    },
     "ResumeScreener": {
         "title": "AI Resume Screener",
         "subtitle": "Upload your resume and optionally paste a job description.",
@@ -385,6 +870,42 @@
     },
     "PracticeInterviews": {
         "title": "AI Practice Interview",
+        "setup": {
+            "title": "Practice, out loud",
+            "description": "Five questions for the role you choose, answered by voice, with feedback after every answer.",
+            "allowance": "{remaining} of {limit} practices left this month",
+            "sectionLabel": "Set up a practice interview",
+            "roleLabel": "Which role?",
+            "rolePlaceholder": "e.g. Frontend Developer",
+            "popularRoles": "Popular roles",
+            "roles": {
+                "frontend": "Frontend Developer",
+                "software": "Software Engineer",
+                "data": "Data Analyst",
+                "pm": "Product Manager",
+                "hr": "HR round"
+            },
+            "levelLabel": "How experienced?",
+            "levels": {
+                "Junior": "Junior",
+                "JuniorNote": "0–2 years",
+                "Mid": "Mid",
+                "MidNote": "2–5 years",
+                "Senior": "Senior",
+                "SeniorNote": "5+ years"
+            },
+            "start": "Start practice",
+            "starting": "Setting up your practice…",
+            "checking": "Checking that U is ready…",
+            "estimate": "About 15 minutes · {role}, {level}",
+            "estimateNoRole": "About 15 minutes",
+            "coach": "Pick the role you’re applying for. I’ll ask the kind of questions their interviewers ask, and score each answer as you go.",
+            "recentTitle": "Recent practice",
+            "recentLabel": "Recent practice",
+            "recentEmpty": "Your practice sessions will show up here.",
+            "inProgress": "In progress",
+            "outOfTen": "out of 10"
+        },
         "subtitle": "Practice with AI and get instant feedback.",
         "badge": "AI-Powered Interview Practice",
         "mainTitle": "Practice Makes Perfect",
@@ -542,6 +1063,171 @@
             "terms": "Terms",
             "contact": "Contact",
             "rights": "© 2025 Get Back To U. All rights reserved."
+        }
+    },
+    "Landing": {
+        "meta": {
+            "title": "Get Back To U | AI mock interviews for placements",
+            "description": "Practise interviews out loud with an AI interviewer that scores every answer and tells you exactly what to fix. Built for campus placements and first jobs."
+        },
+        "nav": {
+            "label": "Main",
+            "how": "How it works",
+            "employers": "For employers",
+            "pricing": "Pricing",
+            "signIn": "Sign in",
+            "startFree": "Start free",
+            "menuOpen": "Open menu",
+            "menuClose": "Close menu",
+            "theme": "Theme"
+        },
+        "hero": {
+            "title": "Practise the interview before it counts.",
+            "subtitle": "An AI interviewer that listens to your answers, scores each one, and tells you exactly what to fix. Built for campus placements and first jobs.",
+            "primary": "Start free practice",
+            "secondary": "See how it works",
+            "note": "Free plan includes 2 mock interviews a month. No card needed."
+        },
+        "preview": {
+            "progress": "Question 3 of 8",
+            "question": "Tell me about a time you made a web app noticeably faster.",
+            "answerLabel": "Your answer",
+            "transcript": "Our product page took six seconds to load on mobile. I measured with Lighthouse first…",
+            "outOf": "/ 10",
+            "scoreNote": "Great use of numbers",
+            "tipLabel": "Tip from U",
+            "tip": "Lead with the number."
+        },
+        "how": {
+            "title": "Three steps, about fifteen minutes.",
+            "steps": [
+                {
+                    "title": "Pick your role",
+                    "body": "Frontend, data, product, HR rounds and more, at junior, mid or senior level."
+                },
+                {
+                    "title": "Answer out loud",
+                    "body": "Speak like you would in the room. Answer in English, Hindi or Marathi."
+                },
+                {
+                    "title": "Know what to fix",
+                    "body": "Every answer gets a score and one specific way to make it better."
+                }
+            ]
+        },
+        "features": {
+            "label": "What you get",
+            "items": [
+                {
+                    "title": "Resume review",
+                    "body": "See how your resume scores against a job description, then get a rewritten version and a matching cover letter."
+                },
+                {
+                    "title": "A 90-day placement plan",
+                    "body": "A few tasks a day across DSA, aptitude and HR rounds, with a streak to keep you going."
+                },
+                {
+                    "title": "Company prep",
+                    "body": "Interview rounds and real practice questions for companies like Amazon and Infosys, with a code editor built in."
+                },
+                {
+                    "title": "Flashcards that space themselves",
+                    "body": "Short decks for DSA, system design, SQL and behavioural answers, timed so you review just before you forget."
+                }
+            ]
+        },
+        "employers": {
+            "eyebrow": "For employers",
+            "title": "First-round interviews that run themselves.",
+            "body": "Paste a job description, invite candidates in bulk, and get a scored, proctored report for every interview.",
+            "cta": "Talk to us",
+            "note": "Employer accounts are set up by our team.",
+            "items": [
+                {
+                    "title": "Questions from your JD",
+                    "body": "Generated, then yours to edit."
+                },
+                {
+                    "title": "Bulk invites",
+                    "body": "Upload a CSV of candidates."
+                },
+                {
+                    "title": "Proctoring",
+                    "body": "Tab switches, extra screens, copy-paste."
+                },
+                {
+                    "title": "Clear reports",
+                    "body": "Scores, answers and a short profile."
+                }
+            ]
+        },
+        "pricing": {
+            "title": "Start free. Upgrade when it clicks.",
+            "periodLabel": "Billing period",
+            "monthly": "Monthly",
+            "yearly": "Yearly · 2 months free",
+            "popular": "Most popular",
+            "forever": "forever",
+            "perMonth": "a month",
+            "perYear": "a year",
+            "plans": {
+                "free": {
+                    "name": "Free",
+                    "tagline": "Get a feel for it.",
+                    "cta": "Start free",
+                    "features": [
+                        "2 mock interviews a month",
+                        "1 resume review",
+                        "5 AI-generated questions"
+                    ]
+                },
+                "pro": {
+                    "name": "Pro",
+                    "tagline": "For placement season.",
+                    "cta": "Get Pro",
+                    "features": [
+                        "15 mock interviews a month",
+                        "10 resume reviews",
+                        "5 cover letters, 3 resume rewrites",
+                        "The 90-day plan, company prep and flashcards"
+                    ]
+                },
+                "premium": {
+                    "name": "Premium",
+                    "tagline": "No limits.",
+                    "cta": "Get Premium",
+                    "features": [
+                        "Unlimited mock interviews",
+                        "Unlimited resume reviews and rewrites",
+                        "Everything in Pro",
+                        "Priority support"
+                    ]
+                }
+            }
+        },
+        "faq": {
+            "title": "Good to know",
+            "items": [
+                {
+                    "q": "What do I need?",
+                    "a": "A laptop with a camera and microphone, and Chrome or Edge. Answers are captured by voice."
+                },
+                {
+                    "q": "Which languages can I answer in?",
+                    "a": "English, Hindi and Marathi. Feedback comes back in the same language."
+                },
+                {
+                    "q": "Can I cancel any time?",
+                    "a": "Yes. You keep your plan until the end of the period you paid for."
+                }
+            ]
+        },
+        "closing": {
+            "title": "Your next interview is closer than you think.",
+            "cta": "Start free practice"
+        },
+        "footer": {
+            "label": "Footer"
         }
     }
 }

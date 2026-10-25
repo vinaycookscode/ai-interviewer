@@ -3,7 +3,7 @@
 import * as z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState, useTransition, useEffect } from "react";
+import { useId, useState, useTransition } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 import { RegisterSchema } from "@/schemas";
@@ -16,30 +16,36 @@ import {
     FormLabel,
     FormMessage,
 } from "@/components/ui/form";
-import { Switch } from "@/components/ui/switch";
 import { CardWrapper } from "@/components/auth/card-wrapper";
-import { Button } from "@/components/ui/button";
 import { FormError } from "@/components/auth/form-error";
 import { FormSuccess } from "@/components/auth/form-success";
+import { coralButton, fieldError, fieldInput, fieldLabel, focusRing } from "@/components/soft-glass/classes";
 import { register } from "@/actions/auth";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2, Crown, Zap, Sparkles } from "lucide-react";
-import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 
 import { planSelectionQuery, readPlanSelection } from "@/lib/plan-selection";
 
 import { useTranslations } from "next-intl";
 
+const PLANS = [
+    { id: "FREE", key: "free" },
+    { id: "PRO", key: "pro" },
+    { id: "PREMIUM", key: "premium" },
+] as const;
+
 export const RegisterForm = () => {
     const t = useTranslations("Auth.register");
     const tCommon = useTranslations("Common");
     const tPricing = useTranslations("Pricing");
+    const tLanding = useTranslations("Landing.pricing");
     const [error, setError] = useState<string | undefined>("");
     const [success, setSuccess] = useState<string | undefined>("");
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
+    const planLabelId = useId();
 
     // Plan picked on the pricing page, if any
     const selection = readPlanSelection(searchParams);
@@ -47,7 +53,7 @@ export const RegisterForm = () => {
     const selectedPeriod = selection.period ?? "MONTHLY";
     const isYearly = selectedPeriod === "YEARLY";
 
-    // Check if user is coming from interview invitation
+    // Invited candidates are here for an employer's interview, not to pick a plan
     const callbackUrlParam = searchParams.get("callbackUrl");
     const isInterviewInvitation = callbackUrlParam?.includes("/interview/");
 
@@ -99,181 +105,126 @@ export const RegisterForm = () => {
         router.push(`${pathname}?${params.toString()}`, { scroll: false });
     };
 
+    const periodButton = (active: boolean) =>
+        cn(
+            "h-8 rounded-full px-3 text-[13px] font-bold transition-colors",
+            focusRing,
+            active ? "bg-sg-ink text-sg-ink-foreground" : "text-sg-muted hover:text-sg-text"
+        );
+
+    const price = (key: (typeof PLANS)[number]["key"]) =>
+        key === "free" ? tPricing("plans.free.price") : tPricing(isYearly ? `plans.${key}.priceYearly` : `plans.${key}.priceMonthly`);
+
     return (
         <CardWrapper
-            headerLabel={t("title")}
-            backButtonLabel={t("alreadyHaveAccount")}
-            backButtonHref="/auth/login"
+            title={t("title")}
+            description={t("description")}
+            footer={{ prompt: t("alreadyHaveAccount"), label: t("signIn"), href: "/auth/login" }}
         >
-            <div className="space-y-4 mb-8">
-                <div className="flex items-center justify-between px-1">
-                    <p className="text-sm font-medium text-muted-foreground">{t("selectPlan")}</p>
-                    <div className="flex items-center gap-2 scale-75 origin-right">
-                        <span className={`text-xs ${!isYearly ? "text-foreground font-bold" : "text-muted-foreground"}`}>
-                            {tPricing("monthly")}
+            {!isInterviewInvitation && (
+                <div className="mb-7">
+                    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                        <span id={planLabelId} className="whitespace-nowrap text-sm font-semibold">
+                            {t("selectPlan")}
                         </span>
-                        <Switch
-                            checked={isYearly}
-                            onCheckedChange={(checked) => setPeriod(checked ? "YEARLY" : "MONTHLY")}
-                        />
-                        <span className={`text-xs ${isYearly ? "text-foreground font-bold" : "text-muted-foreground"}`}>
-                            {tPricing("yearly")}
-                        </span>
+                        <div role="group" aria-label={tLanding("periodLabel")} className="inline-flex gap-0.5 rounded-full bg-sg-chip p-1">
+                            <button type="button" aria-pressed={!isYearly} onClick={() => setPeriod("MONTHLY")} className={periodButton(!isYearly)}>
+                                {tPricing("monthly")}
+                            </button>
+                            <button type="button" aria-pressed={isYearly} onClick={() => setPeriod("YEARLY")} className={periodButton(isYearly)}>
+                                {tPricing("yearly")}
+                            </button>
+                        </div>
+                    </div>
+                    {/* Three across from 400px; narrower, "Premium" barely fits a third of the card, so plans become rows. */}
+                    <div role="group" aria-labelledby={planLabelId} className="mt-3 grid gap-2 min-[400px]:grid-cols-3">
+                        {PLANS.map((plan) => {
+                            const selected = selectedPlan === plan.id;
+                            return (
+                                <button
+                                    key={plan.id}
+                                    type="button"
+                                    aria-pressed={selected}
+                                    onClick={() => setPlan(plan.id)}
+                                    className={cn(
+                                        "flex min-w-0 items-center justify-between gap-2 rounded-2xl border px-3 py-2.5 text-left transition-colors min-[400px]:flex-col min-[400px]:items-start min-[400px]:justify-start min-[400px]:gap-0.5",
+                                        focusRing,
+                                        selected
+                                            ? "border-sg-lavender bg-sg-lavender-soft text-sg-lavender-ink"
+                                            : "border-sg-field-border bg-sg-row hover:border-sg-lavender"
+                                    )}
+                                >
+                                    <span className="text-sm font-bold">{tLanding(`plans.${plan.key}.name`)}</span>
+                                    <span className={cn("text-[13px] font-semibold", !selected && "text-sg-muted")}>{price(plan.key)}</span>
+                                </button>
+                            );
+                        })}
                     </div>
                 </div>
-
-                <div className="grid grid-cols-3 gap-3">
-                    {[
-                        { id: "FREE", icon: Sparkles, color: "emerald", monthly: tPricing("plans.free.price"), yearly: tPricing("plans.free.price") },
-                        { id: "PRO", icon: Zap, color: "blue", monthly: tPricing("plans.pro.priceMonthly"), yearly: tPricing("plans.pro.priceYearly") },
-                        { id: "PREMIUM", icon: Crown, color: "purple", monthly: tPricing("plans.premium.priceMonthly"), yearly: tPricing("plans.premium.priceYearly") }
-                    ].map((plan) => (
-                        <button
-                            key={plan.id}
-                            type="button"
-                            onClick={() => setPlan(plan.id)}
-                            className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all duration-200 ${selectedPlan === plan.id
-                                ? `border-${plan.color}-500 bg-${plan.color}-500/5 shadow-sm`
-                                : "border-border/50 hover:border-border bg-muted/30"
-                                }`}
-                        >
-                            <div className={`p-1.5 rounded-lg ${selectedPlan === plan.id
-                                ? `bg-${plan.color}-500/20 text-${plan.color}-500`
-                                : "bg-muted text-muted-foreground"
-                                }`}>
-                                <plan.icon className="h-4 w-4" />
-                            </div>
-                            <div className="text-center">
-                                <p className={`text-[10px] font-bold uppercase tracking-tighter ${selectedPlan === plan.id ? `text-${plan.color}-500` : "text-muted-foreground"
-                                    }`}>
-                                    {plan.id}
-                                </p>
-                                <p className="text-[10px] font-medium text-muted-foreground">
-                                    {isYearly ? plan.yearly : plan.monthly}
-                                </p>
-                            </div>
-                        </button>
-                    ))}
-                </div>
-            </div>
+            )}
 
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <div className="space-y-4">
-                        <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t("name")}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            disabled={isPending}
-                                            placeholder="John Doe"
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="email"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{tCommon("email")}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            disabled={isPending}
-                                            placeholder="john.doe@example.com"
-                                            type="email"
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="password"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{tCommon("password")}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            disabled={isPending}
-                                            placeholder="******"
-                                            type="password"
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        {/* EMPLOYER SIGNUP DISABLED - Uncomment to re-enable
-                        {!isInterviewInvitation && (
-                            <FormField
-                                control={form.control}
-                                name="role"
-                                render={({ field }) => (
-                                    <FormItem className="space-y-3">
-                                        <FormLabel>{t("roleLabel")}</FormLabel>
-                                        <FormControl>
-                                            <RadioGroup
-                                                onValueChange={field.onChange}
-                                                defaultValue={field.value}
-                                                className="flex flex-col space-y-1"
-                                                disabled={isPending}
-                                            >
-                                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                                    <FormControl>
-                                                        <RadioGroupItem value="CANDIDATE" />
-                                                    </FormControl>
-                                                    <FormLabel className="font-normal">
-                                                        {t("roleCandidate")}
-                                                    </FormLabel>
-                                                </FormItem>
-                                                <FormItem className="flex items-center space-x-3 space-y-0">
-                                                    <FormControl>
-                                                        <RadioGroupItem value="EMPLOYER" />
-                                                    </FormControl>
-                                                    <FormLabel className="font-normal">
-                                                        {t("roleEmployer")}
-                                                    </FormLabel>
-                                                </FormItem>
-                                            </RadioGroup>
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-5">
+                    <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className={fieldLabel}>{t("name")}</FormLabel>
+                                <FormControl>
+                                    <Input {...field} disabled={isPending} autoComplete="name" className={fieldInput} />
+                                </FormControl>
+                                <FormMessage className={fieldError} />
+                            </FormItem>
                         )}
-                        */}
-                    </div>
+                    />
+                    <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className={fieldLabel}>{tCommon("email")}</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        {...field}
+                                        disabled={isPending}
+                                        placeholder="you@example.com"
+                                        type="email"
+                                        autoComplete="email"
+                                        className={fieldInput}
+                                    />
+                                </FormControl>
+                                <FormMessage className={fieldError} />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="password"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className={fieldLabel}>{tCommon("password")}</FormLabel>
+                                <FormControl>
+                                    <Input {...field} disabled={isPending} type="password" autoComplete="new-password" className={fieldInput} />
+                                </FormControl>
+                                <FormMessage className={fieldError} />
+                            </FormItem>
+                        )}
+                    />
                     <FormError message={error} />
                     <FormSuccess message={success} />
-                    <Button
-                        disabled={isPending}
-                        type="submit"
-                        className="w-full"
-                    >
-                        {isPending ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                {t("submitting")}
-                            </>
-                        ) : (
-                            t("submit")
-                        )}
-                    </Button>
+                    <button disabled={isPending} type="submit" className={cn(coralButton, "mt-1 h-12 w-full")}>
+                        {isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+                        {isPending ? t("submitting") : t("submit")}
+                    </button>
                     {/* Employer sign-up is invite-only; don't let employers silently become candidates */}
                     {!isInterviewInvitation && (
-                        <p className="text-center text-sm text-muted-foreground">
+                        <p className="text-center text-sm text-sg-muted">
                             {t("employerQuestion")}{" "}
-                            <a href="mailto:hello@getbacktou.com" className="font-medium text-primary hover:underline">
+                            <a
+                                href="mailto:hello@getbacktou.com"
+                                className={cn("rounded font-bold text-sg-text underline-offset-4 hover:underline", focusRing)}
+                            >
                                 {t("employerContact")}
                             </a>
                         </p>

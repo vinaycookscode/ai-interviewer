@@ -1,63 +1,29 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
 
+function Bone({ className }: { className?: string }) {
+    return <div className={cn("animate-pulse rounded-2xl bg-sg-chip motion-reduce:animate-none", className)} />;
+}
+
+/** Placeholder for the employer screens while their data loads. */
 export default function DashboardLoading() {
+    const t = useTranslations("Employer");
     return (
-        <div className="space-y-8">
-            <div>
-                <Skeleton className="h-9 w-64" />
-                <Skeleton className="h-5 w-96 mt-2" />
+        <div role="status" className="flex flex-col gap-6 sm:gap-9">
+            <span className="sr-only">{t("loading")}</span>
+            <div className="flex flex-col gap-3">
+                <Bone className="h-11 w-56 max-w-full" />
+                <Bone className="h-6 w-96 max-w-full" />
             </div>
-
-            {/* Stats Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {[1, 2, 3, 4].map((i) => (
-                    <Card key={i}>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <Skeleton className="h-4 w-24" />
-                            <Skeleton className="h-4 w-4" />
-                        </CardHeader>
-                        <CardContent>
-                            <Skeleton className="h-8 w-16 mb-2" />
-                            <Skeleton className="h-3 w-32" />
-                        </CardContent>
-                    </Card>
+            <div className="grid grid-cols-1 gap-4 min-[400px]:grid-cols-2 lg:grid-cols-4">
+                {[0, 1, 2, 3].map((i) => (
+                    <Bone key={i} className="h-[92px] rounded-[24px]" />
                 ))}
             </div>
-
-            {/* Charts */}
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
-                {[1, 2, 3].map((i) => (
-                    <Card key={i}>
-                        <CardHeader>
-                            <Skeleton className="h-6 w-32" />
-                        </CardHeader>
-                        <CardContent>
-                            <Skeleton className="h-[220px] w-full" />
-                        </CardContent>
-                    </Card>
-                ))}
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                <Bone className="h-[300px] rounded-[28px]" />
+                <Bone className="h-[300px] rounded-[28px]" />
             </div>
-
-            {/* Recent Jobs */}
-            <Card>
-                <CardHeader>
-                    <Skeleton className="h-6 w-32" />
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="flex items-center gap-4">
-                                <Skeleton className="h-12 w-12 rounded-full" />
-                                <div className="flex-1">
-                                    <Skeleton className="h-5 w-48 mb-2" />
-                                    <Skeleton className="h-4 w-32" />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     );
 }

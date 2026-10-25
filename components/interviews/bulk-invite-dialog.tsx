@@ -1,79 +1,46 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import { bulkInviteCandidates, CandidateData, BulkInviteResult } from "@/actions/bulk-invite";
-import { Loader2, Upload, Users, CheckCircle, XCircle, AlertCircle, FileSpreadsheet, ArrowLeft, Send } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
+import { useTranslations } from "next-intl";
+import { AlertCircle, CheckCircle2, Download, FileSpreadsheet, Loader2, Upload, UserCheck, XCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { bulkInviteCandidates, type BulkInviteResult, type CandidateData } from "@/actions/bulk-invite";
+import { field, fieldLabel, glassButton, inkButton, outlineButton, textLink } from "@/components/jobs/employer-ui";
+import { Dialog, DialogClose, DialogPanel, DialogTrigger } from "@/components/interviews/sg-dialog";
 
-// Utility function to validate email format
+// Stricter than the browser's check: valid local part, a domain with a dot, no consecutive dots.
 function validateEmail(email: string): boolean {
-    // Stricter email validation:
-    // - No consecutive dots
-    // - Must have valid local part and domain
-    // - Domain must have at least one dot with valid TLD
-    const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
-
-    // Additional check: no consecutive dots anywhere
-    if (email.includes('..')) {
-        return false;
-    }
-
+    const emailRegex =
+        /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+    if (email.includes("..")) return false;
     return emailRegex.test(email);
 }
+
+type RowProblem = "missingName" | "missingEmail" | "badEmail" | "alreadyInvited";
 
 interface ParsedCandidate {
     name: string;
     email: string;
-    isValid: boolean;
-    error?: string;
+    problem?: RowProblem;
 }
 
-// Parse CSV content - returns all candidates with validation status
-function parseCSV(content: string): { candidates: ParsedCandidate[]; headerErrors: string[] } {
-    const lines = content.trim().split("\n");
+type HeaderError = "tooShort" | "noName" | "noEmail";
+
+// Parse the CSV; every row is kept with what's wrong with it, if anything.
+function parseCSV(content: string, invited: Set<string>): { candidates: ParsedCandidate[]; headerError: HeaderError | null } {
+    const lines = content.trim().split(/\r?\n/);
     const candidates: ParsedCandidate[] = [];
-    const headerErrors: string[] = [];
 
-    if (lines.length < 2) {
-        headerErrors.push("CSV must have a header row and at least one data row");
-        return { candidates, headerErrors };
-    }
+    if (lines.length < 2) return { candidates, headerError: "tooShort" };
 
-    // Parse header
-    const header = lines[0].toLowerCase().split(",").map((h) => h.trim());
+    const header = lines[0].toLowerCase().split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
     const nameIndex = header.findIndex((h) => h === "name" || h === "candidate name" || h === "full name");
     const emailIndex = header.findIndex((h) => h === "email" || h === "email address" || h === "candidate email");
 
-    if (nameIndex === -1) {
-        headerErrors.push("CSV must have a 'name' column");
-        return { candidates, headerErrors };
-    }
-    if (emailIndex === -1) {
-        headerErrors.push("CSV must have an 'email' column");
-        return { candidates, headerErrors };
-    }
+    if (nameIndex === -1) return { candidates, headerError: "noName" };
+    if (emailIndex === -1) return { candidates, headerError: "noEmail" };
 
-    // Parse data rows - include all rows with validation status
     for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
@@ -82,432 +49,371 @@ function parseCSV(content: string): { candidates: ParsedCandidate[]; headerError
         const name = values[nameIndex] || "";
         const email = values[emailIndex] || "";
 
-        if (!name) {
-            candidates.push({ name: name || "(empty)", email: email || "(empty)", isValid: false, error: "Missing name" });
-            continue;
-        }
-        if (!email) {
-            candidates.push({ name, email: "(empty)", isValid: false, error: "Missing email" });
-            continue;
-        }
-        if (!validateEmail(email)) {
-            candidates.push({ name, email, isValid: false, error: "Invalid email format" });
-            continue;
-        }
-
-        candidates.push({ name, email, isValid: true });
+        if (!name) candidates.push({ name: "", email, problem: "missingName" });
+        else if (!email) candidates.push({ name, email: "", problem: "missingEmail" });
+        else if (!validateEmail(email)) candidates.push({ name, email, problem: "badEmail" });
+        else if (invited.has(email.toLowerCase())) candidates.push({ name, email, problem: "alreadyInvited" });
+        else candidates.push({ name, email });
     }
 
-    return { candidates, headerErrors };
+    return { candidates, headerError: null };
 }
 
-type Step = "upload" | "preview" | "schedule" | "sending" | "results";
+const TEMPLATE = "name,email\nPriya Sharma,priya.s@example.com\nRohan Desai,rohan.d@example.com\n";
+const TEMPLATE_HREF = `data:text/csv;charset=utf-8,${encodeURIComponent(TEMPLATE)}`;
+const PREVIEW_LIMIT = 50;
 
-export function BulkInviteDialog({ jobId }: { jobId: string }) {
+type Step = "upload" | "preview" | "schedule" | "sending" | "results";
+const STEPS = ["upload", "preview", "schedule", "results"] as const;
+
+// Earliest start: an hour from now.
+function getMinDateTime() {
+    const now = new Date();
+    now.setHours(now.getHours() + 1);
+    return now.toISOString().slice(0, 16);
+}
+
+interface BulkInviteDialogProps {
+    jobId: string;
+    /** Emails already invited to this job (lower case), marked "Already invited" in the check step. */
+    invitedEmails?: string[];
+}
+
+export function BulkInviteDialog({ jobId, invitedEmails = [] }: BulkInviteDialogProps) {
+    const t = useTranslations("Employer.bulk");
     const router = useRouter();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [open, setOpen] = useState(false);
     const [step, setStep] = useState<Step>("upload");
     const [allCandidates, setAllCandidates] = useState<ParsedCandidate[]>([]);
-    const [headerErrors, setHeaderErrors] = useState<string[]>([]);
+    const [headerError, setHeaderError] = useState<HeaderError | null>(null);
+    const [dragging, setDragging] = useState(false);
     const [scheduledTime, setScheduledTime] = useState("");
     const [expiresAt, setExpiresAt] = useState("");
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [progress, setProgress] = useState(0);
     const [result, setResult] = useState<BulkInviteResult | null>(null);
 
-    // Computed values
-    const validCandidates = allCandidates.filter(c => c.isValid);
-    const invalidCandidates = allCandidates.filter(c => !c.isValid);
-    const hasInvalidCandidates = invalidCandidates.length > 0;
-    const sortedCandidates = [...invalidCandidates, ...validCandidates]; // Invalid first
+    const ready = allCandidates.filter((c) => !c.problem);
+    const alreadyInvited = allCandidates.filter((c) => c.problem === "alreadyInvited");
+    const invalid = allCandidates.filter((c) => c.problem && c.problem !== "alreadyInvited");
+    const skipped = allCandidates.length - ready.length;
 
-    // Get minimum datetime (now + 1 hour)
-    const getMinDateTime = () => {
-        const now = new Date();
-        now.setHours(now.getHours() + 1);
-        return now.toISOString().slice(0, 16);
-    };
-
-    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
+    function readFile(file: File | undefined) {
         if (!file) return;
-
         const reader = new FileReader();
         reader.onload = (e) => {
-            const content = e.target?.result as string;
-            const { candidates: parsedCandidates, headerErrors: errors } = parseCSV(content);
-            setAllCandidates(parsedCandidates);
-            setHeaderErrors(errors);
+            const content = (e.target?.result as string) ?? "";
+            const parsed = parseCSV(content, new Set(invitedEmails));
+            setAllCandidates(parsed.candidates);
+            setHeaderError(parsed.headerError);
             setStep("preview");
         };
         reader.readAsText(file);
-    };
+    }
 
-    const handleSendInvites = async () => {
-        if (!scheduledTime || hasInvalidCandidates) return;
-
-        setIsProcessing(true);
+    async function handleSendInvites() {
+        if (!scheduledTime || ready.length === 0) return;
         setStep("sending");
-        setProgress(10);
-
         try {
-            // Simulate progress for UX
-            const progressInterval = setInterval(() => {
-                setProgress((prev) => Math.min(prev + 5, 90));
-            }, 200);
-
-            // Convert to CandidateData format
-            const candidatesToSend: CandidateData[] = validCandidates.map(c => ({ name: c.name, email: c.email }));
-
-            const result = await bulkInviteCandidates({
+            const candidatesToSend: CandidateData[] = ready.map((c) => ({ name: c.name, email: c.email }));
+            const res = await bulkInviteCandidates({
                 jobId,
                 candidates: candidatesToSend,
                 scheduledTime: new Date(scheduledTime).toISOString(),
                 expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
             });
-
-            clearInterval(progressInterval);
-            setProgress(100);
-            setResult(result);
-            setStep("results");
+            setResult(res);
             router.refresh();
         } catch (error) {
             console.error("Bulk invite failed:", error);
-            setResult({
-                success: false,
-                total: validCandidates.length,
-                successful: 0,
-                failed: validCandidates.length,
-                duplicates: 0,
-                results: [],
-            });
-            setStep("results");
-        } finally {
-            setIsProcessing(false);
+            setResult({ success: false, total: ready.length, successful: 0, failed: ready.length, duplicates: 0, results: [] });
         }
-    };
+        setStep("results");
+    }
 
-    const resetDialog = () => {
+    function resetDialog() {
         setStep("upload");
         setAllCandidates([]);
-        setHeaderErrors([]);
+        setHeaderError(null);
         setScheduledTime("");
         setExpiresAt("");
-        setProgress(0);
         setResult(null);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-        }
-    };
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    }
 
-    const handleOpenChange = (isOpen: boolean) => {
+    function handleOpenChange(isOpen: boolean) {
+        // Don't let the dialog close mid-send.
+        if (!isOpen && step === "sending") return;
         setOpen(isOpen);
-        if (!isOpen) {
-            resetDialog();
-        }
+        if (!isOpen) resetDialog();
+    }
+
+    const titles: Record<Step, string> = {
+        upload: t("titleUpload"),
+        preview: t("titleCheck"),
+        schedule: t("titleSchedule"),
+        sending: t("titleSending"),
+        results: t("titleDone"),
     };
+    const stepIndex = step === "sending" ? 3 : STEPS.indexOf(step as (typeof STEPS)[number]);
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>
-                <Button variant="outline">
-                    <Users className="mr-2 h-4 w-4" />
-                    Bulk Invite
-                </Button>
+            <DialogTrigger className={cn(glassButton, "h-12")}>
+                <Upload className="size-5" aria-hidden="true" />
+                {t("trigger")}
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                {/* Step 1: Upload */}
+
+            <DialogPanel title={titles[step]} closeLabel={t("close")} className={step === "preview" ? "max-w-[600px]" : "max-w-[560px]"}>
+                <ol aria-label={t("stepsLabel")} className="flex flex-wrap gap-x-4 gap-y-1.5">
+                    {STEPS.map((s, i) => {
+                        const current = i === stepIndex;
+                        const done = i < stepIndex;
+                        return (
+                            <li
+                                key={s}
+                                aria-current={current ? "step" : undefined}
+                                className={cn("flex items-center gap-1.5 text-sm", current ? "font-bold" : "font-medium", !current && !done && "text-sg-muted")}
+                            >
+                                <span
+                                    className={cn(
+                                        "inline-flex size-[22px] items-center justify-center rounded-full text-xs font-bold",
+                                        current ? "bg-sg-ink text-sg-ink-foreground" : done ? "bg-sg-lavender-soft text-sg-lavender-ink" : "bg-sg-chip"
+                                    )}
+                                >
+                                    {i + 1}
+                                </span>
+                                {t(`step.${s}`)}
+                                {done && <span className="sr-only"> {t("stepDone")}</span>}
+                            </li>
+                        );
+                    })}
+                </ol>
+
                 {step === "upload" && (
                     <>
-                        <DialogHeader>
-                            <DialogTitle>Bulk Invite Candidates</DialogTitle>
-                            <DialogDescription>
-                                Upload a CSV file with candidate names and emails.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                            <div
-                                className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer"
-                                onClick={() => fileInputRef.current?.click()}
-                            >
-                                <FileSpreadsheet className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                                <p className="text-lg font-medium mb-2">Drop your CSV file here</p>
-                                <p className="text-sm text-muted-foreground mb-4">
-                                    or click to browse
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    Required columns: name, email
-                                </p>
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    accept=".csv"
-                                    onChange={handleFileUpload}
-                                    className="hidden"
-                                />
-                            </div>
-                            <div className="bg-muted/50 rounded-lg p-4">
-                                <p className="text-sm font-medium mb-2">CSV Format Example:</p>
-                                <pre className="text-xs bg-background p-2 rounded overflow-x-auto">
-                                    {`name,email
-John Doe,john@example.com
-Jane Smith,jane@example.com`}
-                                </pre>
-                            </div>
-                        </div>
+                        <label
+                            htmlFor="bk-file"
+                            onDragOver={(e) => {
+                                e.preventDefault();
+                                setDragging(true);
+                            }}
+                            onDragLeave={() => setDragging(false)}
+                            onDrop={(e) => {
+                                e.preventDefault();
+                                setDragging(false);
+                                readFile(e.dataTransfer.files?.[0]);
+                            }}
+                            className={cn(
+                                "flex cursor-pointer flex-col items-center gap-2 rounded-[20px] border-2 border-dashed px-4 py-7 text-center transition-colors focus-within:ring-[3px] focus-within:ring-sg-lavender/50",
+                                dragging ? "border-sg-lavender bg-sg-lavender-soft" : "border-sg-field-border"
+                            )}
+                        >
+                            <FileSpreadsheet className="size-8 text-sg-muted" aria-hidden="true" />
+                            <span className="font-bold">{t("choose")}</span>
+                            <span className="text-[13px] leading-[18px] font-medium text-sg-muted">{t("columns")}</span>
+                            <input
+                                ref={fileInputRef}
+                                id="bk-file"
+                                type="file"
+                                accept=".csv,text/csv"
+                                onChange={(e) => readFile(e.target.files?.[0])}
+                                className="sr-only"
+                            />
+                        </label>
+                        <pre className="overflow-x-auto rounded-2xl bg-sg-row px-3.5 py-3 font-mono text-[13px] leading-5">{TEMPLATE.trim()}</pre>
+                        <a href={TEMPLATE_HREF} download="candidates-template.csv" className={cn(textLink, "inline-flex items-center gap-1.5 self-start")}>
+                            <Download className="size-4" aria-hidden="true" />
+                            {t("template")}
+                        </a>
                     </>
                 )}
 
-                {/* Step 2: Preview */}
                 {step === "preview" && (
                     <>
-                        <DialogHeader>
-                            <DialogTitle>Review Candidates</DialogTitle>
-                            <DialogDescription>
-                                {validCandidates.length} valid, {invalidCandidates.length} invalid of {allCandidates.length} total
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                            {headerErrors.length > 0 && (
-                                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
-                                    <p className="text-sm font-medium text-destructive mb-2">
-                                        <AlertCircle className="inline h-4 w-4 mr-1" />
-                                        CSV Format Error
-                                    </p>
-                                    <ul className="text-xs text-muted-foreground space-y-1">
-                                        {headerErrors.map((error: string, i: number) => (
-                                            <li key={i}>{error}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            )}
-
-                            {hasInvalidCandidates && (
-                                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
-                                    <p className="text-sm font-medium text-destructive">
-                                        <XCircle className="inline h-4 w-4 mr-1" />
-                                        {invalidCandidates.length} row(s) have invalid data. Please fix your CSV and re-upload.
-                                    </p>
-                                </div>
-                            )}
-
-                            {allCandidates.length > 0 && (
-                                <div className="border rounded-lg overflow-hidden max-h-64 overflow-y-auto">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead className="w-12">#</TableHead>
-                                                <TableHead>Name</TableHead>
-                                                <TableHead>Email</TableHead>
-                                                <TableHead className="w-24">Status</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {sortedCandidates.slice(0, 20).map((candidate: ParsedCandidate, index: number) => (
-                                                <TableRow key={index} className={candidate.isValid ? "" : "bg-red-50 dark:bg-red-950/30"}>
-                                                    <TableCell className="text-muted-foreground">
-                                                        {index + 1}
-                                                    </TableCell>
-                                                    <TableCell className={candidate.isValid ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
-                                                        {candidate.name}
-                                                    </TableCell>
-                                                    <TableCell className={candidate.isValid ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
-                                                        {candidate.email}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        {candidate.isValid ? (
-                                                            <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
-                                                                <CheckCircle className="h-3 w-3" /> Valid
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-xs text-red-600 dark:text-red-400" title={candidate.error}>
-                                                                {candidate.error}
-                                                            </span>
-                                                        )}
-                                                    </TableCell>
-                                                </TableRow>
+                        {headerError ? (
+                            <p role="alert" className="flex items-start gap-2.5 rounded-2xl bg-sg-danger/10 px-4 py-3 text-sm font-semibold text-sg-danger">
+                                <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                                {t(`header.${headerError}`)}
+                            </p>
+                        ) : (
+                            <>
+                                <p>
+                                    <strong>{t("readyOf", { ready: ready.length, total: allCandidates.length })}</strong>
+                                    {skipped > 0 && <span className="text-sg-muted"> {t("skipNote", { count: skipped })}</span>}
+                                </p>
+                                <div className="max-h-[260px] overflow-auto rounded-2xl bg-sg-row">
+                                    <table className="w-full min-w-[440px] border-collapse text-sm">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col" className="px-3 py-2.5 text-left text-[13px] font-bold text-sg-muted">
+                                                    {t("colName")}
+                                                </th>
+                                                <th scope="col" className="px-3 py-2.5 text-left text-[13px] font-bold text-sg-muted">
+                                                    {t("colEmail")}
+                                                </th>
+                                                <th scope="col" className="px-3 py-2.5 text-left text-[13px] font-bold text-sg-muted">
+                                                    {t("colCheck")}
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {allCandidates.slice(0, PREVIEW_LIMIT).map((c, i) => (
+                                                <tr key={i} className="border-t border-sg-rule">
+                                                    <td className="px-3 py-2.5 font-semibold break-words">{c.name || "—"}</td>
+                                                    <td className="px-3 py-2.5 break-all">{c.email || "—"}</td>
+                                                    <td className="px-3 py-2.5">
+                                                        <RowCheck problem={c.problem} />
+                                                    </td>
+                                                </tr>
                                             ))}
-                                        </TableBody>
-                                    </Table>
-                                    {allCandidates.length > 20 && (
-                                        <div className="px-4 py-2 bg-muted/50 text-sm text-muted-foreground">
-                                            ...and {allCandidates.length - 20} more candidates
-                                        </div>
+                                        </tbody>
+                                    </table>
+                                    {allCandidates.length > PREVIEW_LIMIT && (
+                                        <p className="border-t border-sg-rule px-3 py-2 text-sm text-sg-muted">
+                                            {t("more", { count: allCandidates.length - PREVIEW_LIMIT })}
+                                        </p>
                                     )}
                                 </div>
-                            )}
-
-                            <div className="flex gap-2">
-                                <Button variant="outline" onClick={resetDialog}>
-                                    <ArrowLeft className="mr-2 h-4 w-4" />
-                                    Back
-                                </Button>
-                                <Button
-                                    className="flex-1"
+                            </>
+                        )}
+                        <div className="flex justify-between gap-2.5">
+                            <button type="button" onClick={resetDialog} className={cn(outlineButton, "h-12 px-5 text-base")}>
+                                {t("back")}
+                            </button>
+                            {!headerError && (
+                                <button
+                                    type="button"
                                     onClick={() => setStep("schedule")}
-                                    disabled={validCandidates.length === 0 || hasInvalidCandidates}
+                                    disabled={ready.length === 0}
+                                    className={cn(inkButton, "h-12")}
                                 >
-                                    {hasInvalidCandidates
-                                        ? `Fix ${invalidCandidates.length} Invalid Row(s) First`
-                                        : `Continue with ${validCandidates.length} Candidates`
-                                    }
-                                </Button>
-                            </div>
+                                    {t("continueWith", { count: ready.length })}
+                                </button>
+                            )}
                         </div>
                     </>
                 )}
 
-                {/* Step 3: Schedule */}
                 {step === "schedule" && (
                     <>
-                        <DialogHeader>
-                            <DialogTitle>Schedule Interviews</DialogTitle>
-                            <DialogDescription>
-                                Set the interview time for all {validCandidates.length} candidates.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="scheduledTime">Scheduled Interview Time *</Label>
-                                <Input
-                                    id="scheduledTime"
-                                    type="datetime-local"
-                                    min={getMinDateTime()}
-                                    value={scheduledTime}
-                                    onChange={(e) => setScheduledTime(e.target.value)}
-                                />
-                                <p className="text-xs text-muted-foreground">
-                                    All candidates will be able to start their interview from this time.
-                                </p>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="expiresAt">Expiry Date (Optional)</Label>
-                                <Input
-                                    id="expiresAt"
-                                    type="datetime-local"
-                                    min={scheduledTime || getMinDateTime()}
-                                    value={expiresAt}
-                                    onChange={(e) => setExpiresAt(e.target.value)}
-                                />
-                                <p className="text-xs text-muted-foreground">
-                                    Default: 48 hours after scheduled time
-                                </p>
-                            </div>
-
-                            <div className="flex gap-2">
-                                <Button variant="outline" onClick={() => setStep("preview")}>
-                                    <ArrowLeft className="mr-2 h-4 w-4" />
-                                    Back
-                                </Button>
-                                <Button
-                                    className="flex-1"
-                                    onClick={handleSendInvites}
-                                    disabled={!scheduledTime || isProcessing}
-                                >
-                                    <Send className="mr-2 h-4 w-4" />
-                                    Send {validCandidates.length} Invitations
-                                </Button>
-                            </div>
+                        <div className="flex min-w-0 flex-col gap-2">
+                            <label htmlFor="bk-start" className={fieldLabel}>
+                                {t("startFrom")}
+                            </label>
+                            <input
+                                id="bk-start"
+                                type="datetime-local"
+                                required
+                                min={getMinDateTime()}
+                                value={scheduledTime}
+                                onChange={(e) => setScheduledTime(e.target.value)}
+                                className={cn(field, "h-12")}
+                            />
+                        </div>
+                        <div className="flex min-w-0 flex-col gap-2">
+                            <label htmlFor="bk-end" className={fieldLabel}>
+                                {t("expires")}
+                            </label>
+                            <input
+                                id="bk-end"
+                                type="datetime-local"
+                                min={scheduledTime || getMinDateTime()}
+                                value={expiresAt}
+                                onChange={(e) => setExpiresAt(e.target.value)}
+                                aria-describedby="bk-end-hint"
+                                className={cn(field, "h-12")}
+                            />
+                            <span id="bk-end-hint" className="text-[13px] leading-[18px] font-medium text-sg-muted">
+                                {t("expiresHint")}
+                            </span>
+                        </div>
+                        <div className="flex justify-between gap-2.5">
+                            <button type="button" onClick={() => setStep("preview")} className={cn(outlineButton, "h-12 px-5 text-base")}>
+                                {t("back")}
+                            </button>
+                            <button type="button" onClick={handleSendInvites} disabled={!scheduledTime} className={cn(inkButton, "h-12")}>
+                                {t("send", { count: ready.length })}
+                            </button>
                         </div>
                     </>
                 )}
 
-                {/* Step 4: Sending */}
                 {step === "sending" && (
-                    <>
-                        <DialogHeader>
-                            <DialogTitle>Sending Invitations...</DialogTitle>
-                            <DialogDescription>
-                                Please wait while we process {validCandidates.length} invitations.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4 py-8">
-                            <div className="flex justify-center">
-                                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                            </div>
-                            <Progress value={progress} className="h-2" />
-                            <p className="text-center text-sm text-muted-foreground">
-                                Processing... {Math.round(progress)}%
-                            </p>
-                        </div>
-                    </>
+                    <p role="status" className="flex items-center justify-center gap-3 py-8 font-semibold">
+                        <Loader2 className="size-6 animate-spin" aria-hidden="true" />
+                        {t("sending", { count: ready.length })}
+                    </p>
                 )}
 
-                {/* Step 5: Results */}
                 {step === "results" && result && (
                     <>
-                        <DialogHeader>
-                            <DialogTitle>
-                                {result.successful > 0 ? "Invitations Sent!" : "Process Complete"}
-                            </DialogTitle>
-                            <DialogDescription>
-                                {result.successful} of {result.total} invitations sent successfully.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                            <div className="grid grid-cols-3 gap-4">
-                                <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 text-center">
-                                    <CheckCircle className="h-8 w-8 mx-auto text-green-500 mb-2" />
-                                    <p className="text-2xl font-bold text-green-600">{result.successful}</p>
-                                    <p className="text-xs text-muted-foreground">Successful</p>
-                                </div>
-                                <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 text-center">
-                                    <AlertCircle className="h-8 w-8 mx-auto text-yellow-500 mb-2" />
-                                    <p className="text-2xl font-bold text-yellow-600">{result.duplicates}</p>
-                                    <p className="text-xs text-muted-foreground">Duplicates</p>
-                                </div>
-                                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-center">
-                                    <XCircle className="h-8 w-8 mx-auto text-red-500 mb-2" />
-                                    <p className="text-2xl font-bold text-red-600">{result.failed}</p>
-                                    <p className="text-xs text-muted-foreground">Failed</p>
-                                </div>
-                            </div>
-
-                            {result.results.filter((r) => r.status !== "success").length > 0 && (
-                                <div className="border rounded-lg overflow-hidden max-h-48 overflow-y-auto">
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Email</TableHead>
-                                                <TableHead>Status</TableHead>
-                                                <TableHead>Reason</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {result.results
-                                                .filter((r) => r.status !== "success")
-                                                .map((r, i) => (
-                                                    <TableRow key={i}>
-                                                        <TableCell className="text-sm">{r.email}</TableCell>
-                                                        <TableCell>
-                                                            <span
-                                                                className={`text-xs px-2 py-1 rounded-full ${r.status === "duplicate"
-                                                                    ? "bg-yellow-100 text-yellow-700"
-                                                                    : "bg-red-100 text-red-700"
-                                                                    }`}
-                                                            >
-                                                                {r.status}
-                                                            </span>
-                                                        </TableCell>
-                                                        <TableCell className="text-xs text-muted-foreground">
-                                                            {r.error}
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                            )}
-
-                            <Button className="w-full" onClick={() => handleOpenChange(false)}>
-                                Done
-                            </Button>
+                        <div role="status" className="grid grid-cols-1 gap-2 min-[400px]:grid-cols-3">
+                            <Stat value={result.successful} label={t("statSent")} />
+                            <Stat value={result.duplicates + alreadyInvited.length} label={t("statAlready")} />
+                            <Stat value={result.failed + invalid.length} label={t("statFailed")} />
                         </div>
+                        {(invalid.length > 0 || result.results.some((r) => r.status === "failed")) && (
+                            <ul className="flex max-h-48 flex-col gap-2 overflow-y-auto text-[15px]">
+                                {invalid.map((c, i) => (
+                                    <li key={`invalid-${i}`} className="flex gap-2">
+                                        <XCircle className="mt-[3px] size-4 shrink-0 text-sg-danger" aria-hidden="true" />
+                                        <span className="min-w-0 break-words">
+                                            <strong>{c.email || c.name || t("emptyRow")}</strong> {t(`reason.${c.problem}`)}
+                                        </span>
+                                    </li>
+                                ))}
+                                {result.results
+                                    .filter((r) => r.status === "failed")
+                                    .map((r, i) => (
+                                        <li key={`failed-${i}`} className="flex gap-2">
+                                            <XCircle className="mt-[3px] size-4 shrink-0 text-sg-danger" aria-hidden="true" />
+                                            <span className="min-w-0 break-words">
+                                                <strong>{r.email}</strong> {r.error || t("reason.sendFailed")}
+                                            </span>
+                                        </li>
+                                    ))}
+                            </ul>
+                        )}
+                        <DialogClose className={cn(inkButton, "h-12 self-end")}>{t("done")}</DialogClose>
                     </>
                 )}
-            </DialogContent>
+            </DialogPanel>
         </Dialog>
     );
 }
+
+function RowCheck({ problem }: { problem?: RowProblem }) {
+    const t = useTranslations("Employer.bulk");
+    if (!problem) {
+        return (
+            <span className="inline-flex items-center gap-1.5 font-bold text-sg-success">
+                <CheckCircle2 className="size-4" aria-hidden="true" />
+                {t("ready")}
+            </span>
+        );
+    }
+    if (problem === "alreadyInvited") {
+        return (
+            <span className="inline-flex items-center gap-1.5 font-bold text-sg-muted">
+                <UserCheck className="size-4" aria-hidden="true" />
+                {t("check.alreadyInvited")}
+            </span>
+        );
+    }
+    return (
+        <span className="inline-flex items-center gap-1.5 font-bold text-sg-danger">
+            <XCircle className="size-4 shrink-0" aria-hidden="true" />
+            {t(`check.${problem}`)}
+        </span>
+    );
+}
+
+function Stat({ value, label }: { value: number; label: string }) {
+    return (
+        <div className="flex flex-col rounded-2xl bg-sg-row p-3.5">
+            <span className="font-display sg-soft text-[28px] font-semibold">{value}</span>
+            <span className="text-[13px] leading-[18px] font-medium text-sg-muted">{label}</span>
+        </div>
+    );
+}
+

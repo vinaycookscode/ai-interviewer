@@ -1,10 +1,13 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { ArrowLeft, RotateCw } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { redirect } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { CheckCircle, Home, ArrowRight } from "lucide-react";
-import Link from "next/link";
+import { ScoreGauge } from "@/components/soft-glass/score-gauge";
+import { CoachBubble } from "@/components/soft-glass/coach-bubble";
+import { coralButton, focusRing } from "@/components/soft-glass/classes";
+import { cn } from "@/lib/utils";
+import { AnswerList } from "./answer-list";
 
 export default async function PracticeResultPage({ params }: { params: Promise<{ id: string }> }) {
     const session = await auth();
@@ -20,7 +23,7 @@ export default async function PracticeResultPage({ params }: { params: Promise<{
             userId: session.user.id,
         },
         include: {
-            answers: true,
+            answers: { orderBy: { createdAt: "asc" } },
         },
     });
 
@@ -28,73 +31,104 @@ export default async function PracticeResultPage({ params }: { params: Promise<{
         redirect("/candidate/practice");
     }
 
+    const { answers } = mockInterview;
+    // Unscored answers (0: AI was unavailable) can't be strongest or weakest.
+    const scored = answers.filter((a) => (a.score ?? 0) > 0);
+    const strongest = scored.reduce<(typeof scored)[number] | null>((best, a) => (!best || a.score! > best.score! ? a : best), null);
+    const weakest = scored.reduce<(typeof scored)[number] | null>((low, a) => (!low || a.score! < low.score! ? a : low), null);
+    const showExtremes = strongest && weakest && strongest.id !== weakest.id;
+
+    const date = mockInterview.createdAt.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+    const again = new URLSearchParams({ role: mockInterview.role, level: mockInterview.difficulty }).toString();
+
     return (
-        <div className="container max-w-3xl py-10">
-            <div className="text-center mb-10">
-                <div className="inline-flex items-center justify-center p-3 bg-green-100 rounded-full mb-4">
-                    <CheckCircle className="h-10 w-10 text-green-600" />
+        <div className="flex flex-col gap-6 sm:gap-9">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+                <div className="flex flex-col gap-2">
+                    <Link
+                        href="/candidate/practice"
+                        className={cn(
+                            "inline-flex items-center gap-1.5 self-start rounded-full font-semibold text-sg-muted hover:text-sg-text",
+                            focusRing
+                        )}
+                    >
+                        <ArrowLeft className="size-4" aria-hidden="true" />
+                        All practice
+                    </Link>
+                    <h1 className="font-display sg-soft text-[32px] font-semibold leading-[1.14] tracking-[-0.025em] text-balance sm:text-[44px]">
+                        Practice complete
+                    </h1>
+                    <span className="font-medium text-sg-muted">
+                        {mockInterview.role} · {mockInterview.difficulty} · {answers.length}{" "}
+                        {answers.length === 1 ? "question" : "questions"} · {date}
+                    </span>
                 </div>
-                <h1 className="text-3xl font-bold mb-2">Interview Completed!</h1>
-                <p className="text-muted-foreground">Here's how you performed in your {mockInterview.role} interview.</p>
-            </div>
-
-            <div className="grid gap-6 mb-8">
-                <Card className="border-2 border-primary/10">
-                    <CardHeader>
-                        <CardTitle>Overall Performance</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">Score</span>
-                            <span className="text-2xl font-bold text-primary">{mockInterview.score.toFixed(1)}/10</span>
-                        </div>
-                        <div className="p-4 bg-muted rounded-lg">
-                            <h4 className="font-semibold mb-2">Feedback Summary</h4>
-                            <p className="text-sm text-muted-foreground">{mockInterview.feedback}</p>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <div className="space-y-4">
-                    <h2 className="text-xl font-semibold">Question Breakdown</h2>
-                    {mockInterview.answers.map((answer, index) => (
-                        <Card key={answer.id}>
-                            <CardHeader>
-                                <CardTitle className="text-base">Q{index + 1}: {answer.question}</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                <div className="p-3 bg-muted/30 rounded-md">
-                                    <p className="text-sm italic text-muted-foreground">"{answer.transcript}"</p>
-                                </div>
-                                <div className="flex items-start gap-2">
-                                    <div className={`mt-1 h-2 w-2 rounded-full ${(answer.score || 0) >= 8 ? "bg-green-500" :
-                                        (answer.score || 0) >= 5 ? "bg-yellow-500" : "bg-red-500"
-                                        }`} />
-                                    <div>
-                                        <span className="font-semibold text-sm">Score: {answer.score}/10</span>
-                                        <p className="text-sm text-muted-foreground">{answer.feedback}</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                    <Link
+                        href="/candidate/practice"
+                        className={cn("sg-glass inline-flex h-12 items-center justify-center rounded-full px-[22px] font-bold", focusRing)}
+                    >
+                        Try a different role
+                    </Link>
+                    <Link href={`/candidate/practice?${again}`} className={cn(coralButton, "h-12 px-6")}>
+                        <RotateCw className="size-4" aria-hidden="true" />
+                        Practise again
+                    </Link>
                 </div>
             </div>
 
-            <div className="flex justify-center gap-4">
-                <Button variant="outline" asChild>
-                    <Link href="/candidate/dashboard">
-                        <Home className="mr-2 h-4 w-4" />
-                        Back to Dashboard
-                    </Link>
-                </Button>
-                <Button asChild>
-                    <Link href="/candidate/practice">
-                        Start Another Session
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                </Button>
-            </div>
+            <section
+                aria-label="Overall result"
+                className="sg-glass sg-shadow-lg grid items-center gap-7 rounded-[24px] p-5 sm:rounded-[28px] sm:p-8 md:grid-cols-2"
+            >
+                <div className="flex flex-col items-center gap-2 text-center">
+                    <ScoreGauge value={mockInterview.score} className="w-56" />
+                    <span className="font-semibold">
+                        out of 10, across {answers.length} {answers.length === 1 ? "answer" : "answers"}
+                    </span>
+                </div>
+                <div className="flex min-w-0 flex-col gap-4">
+                    {mockInterview.feedback && (
+                        <CoachBubble>
+                            <p className="whitespace-pre-line text-[17px] leading-[27px]">{mockInterview.feedback}</p>
+                        </CoachBubble>
+                    )}
+                    {showExtremes && (
+                        <div className="grid gap-2.5 sm:grid-cols-2">
+                            <div className="flex min-w-0 flex-col gap-1 rounded-[18px] bg-sg-row px-4 py-3.5">
+                                <span className="text-[13px] font-bold leading-[18px] text-sg-muted">
+                                    Strongest · {strongest.score!.toFixed(1)}
+                                </span>
+                                <span className="line-clamp-2 font-semibold">{strongest.question}</span>
+                            </div>
+                            <div className="flex min-w-0 flex-col gap-1 rounded-[18px] bg-sg-row px-4 py-3.5">
+                                <span className="text-[13px] font-bold leading-[18px] text-sg-muted">
+                                    Most room to grow · {weakest.score!.toFixed(1)}
+                                </span>
+                                <span className="line-clamp-2 font-semibold">{weakest.question}</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </section>
+
+            <section aria-labelledby="answers-heading" className="flex flex-col gap-3.5">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <h2 id="answers-heading" className="font-display sg-soft text-[26px] font-semibold leading-[33px] tracking-[-0.015em]">
+                        Question by question
+                    </h2>
+                    <span className="font-medium text-sg-muted">Open a question for feedback</span>
+                </div>
+                <AnswerList
+                    answers={answers.map((a) => ({
+                        id: a.id,
+                        question: a.question,
+                        transcript: a.transcript,
+                        score: a.score,
+                        feedback: a.feedback,
+                    }))}
+                />
+            </section>
         </div>
     );
 }

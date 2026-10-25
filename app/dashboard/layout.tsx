@@ -1,14 +1,11 @@
-import Link from "next/link";
-import { LayoutDashboard, PlusCircle, Users, Settings } from "lucide-react";
-import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-
-import { ModeToggle } from "@/components/mode-toggle";
-import { DashboardHeader } from "@/components/dashboard/header";
-import { DashboardSidebar } from "@/components/dashboard/sidebar";
 import { getFeatureFlags } from "@/actions/feature-flags";
 import { FeedbackButton } from "@/components/feedback-button";
+import { softGlassFonts } from "@/lib/fonts";
+import { cn } from "@/lib/utils";
+import { AmbientLight } from "@/components/soft-glass/ambient-light";
+import { AppShell } from "@/components/soft-glass/app-shell";
 
 export default async function DashboardLayout({
     children,
@@ -26,20 +23,20 @@ export default async function DashboardLayout({
     }
 
     const flags = await getFeatureFlags();
-    const flagMap = flags.reduce((acc: Record<string, boolean>, f: any) => ({ ...acc, [f.key]: f.enabled }), {});
+    const flagMap = flags.reduce<Record<string, boolean>>((acc, f) => ({ ...acc, [f.key]: f.enabled }), {});
 
     return (
-        <div className="min-h-screen bg-background flex flex-col">
-            <DashboardHeader user={session.user} userRole={session.user.role} />
-
-            <div className="flex flex-1">
-                <DashboardSidebar userRole={session.user.role} featureFlags={flagMap} />
-
-                {/* Main Content Area */}
-                <main className="flex-1 overflow-y-auto">
-                    {children}
-                </main>
-            </div>
+        // overflow-x-clip, not overflow-hidden: hidden makes a scroll container and breaks the sticky tab bar.
+        <div className={cn(softGlassFonts, "soft-glass relative flex min-h-screen flex-col overflow-x-clip text-base leading-6")}>
+            <AmbientLight />
+            <AppShell
+                role="employer"
+                user={{ name: session.user.name, email: session.user.email }}
+                isAdmin={session.user.role === "ADMIN"}
+                featureFlags={flagMap}
+            >
+                {children}
+            </AppShell>
 
             {/* Floating Feedback Button */}
             <FeedbackButton />

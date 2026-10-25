@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Camera, Mic, AlertCircle, CheckCircle2 } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, ArrowLeft, Camera, CheckCircle2, Mic } from "lucide-react";
 import { AudioVisualizer } from "./audio-visualizer";
+import { coralButton, focusRing } from "@/components/soft-glass/classes";
+import { cn } from "@/lib/utils";
+import { FocusRoot, eyebrow } from "./session-shell";
 
 interface PermissionCheckProps {
     onPermissionsGranted: (stream: MediaStream) => void;
@@ -51,11 +51,12 @@ export function PermissionCheck({ onPermissionsGranted }: PermissionCheckProps) 
             setStream(mediaStream);
             setHasCamera(true);
             setHasMic(true);
-        } catch (err: any) {
+        } catch (err) {
             console.error("Error accessing media devices:", err);
-            if (err.name === "NotAllowedError") {
+            const name = (err as { name?: string } | null)?.name ?? "";
+            if (name === "NotAllowedError") {
                 setError("Permission denied. Please allow access to your camera and microphone to proceed.");
-            } else if (err.name === "NotFoundError") {
+            } else if (name === "NotFoundError") {
                 setError("No camera or microphone found. Please ensure your devices are connected.");
             } else {
                 setError("Failed to access media devices. Please try again.");
@@ -69,100 +70,93 @@ export function PermissionCheck({ onPermissionsGranted }: PermissionCheckProps) 
         }
     };
 
+    const blocked = speechSupported === false;
+
     return (
-        <div className="max-w-2xl mx-auto space-y-6">
-            <div className="text-center space-y-2">
-                <div className="flex justify-start mb-4">
-                    <Button variant="ghost" asChild>
-                        <Link href="/candidate/dashboard">← Back to Dashboard</Link>
-                    </Button>
+        <FocusRoot>
+            <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center gap-6 py-6">
+                <Link
+                    href="/candidate/dashboard"
+                    className={cn("inline-flex items-center gap-1.5 self-start rounded-full font-semibold text-sg-muted hover:text-sg-text", focusRing)}
+                >
+                    <ArrowLeft className="size-4" aria-hidden="true" />
+                    Dashboard
+                </Link>
+                <div className="flex flex-col gap-2">
+                    <h1 className="font-display sg-soft text-[32px] font-semibold leading-[1.14] tracking-[-0.025em] sm:text-[44px]">
+                        Check your camera and mic
+                    </h1>
+                    <p className="text-lg text-sg-muted">
+                        The interview records your voice and video. Let&apos;s make sure both work before you start.
+                    </p>
                 </div>
-                <h1 className="text-3xl font-bold">System Check</h1>
-                <p className="text-gray-500">
-                    Let's make sure your camera and microphone are working properly before we start.
-                </p>
-            </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Media Permissions</CardTitle>
-                    <CardDescription>
-                        We need access to your camera and microphone for the interview.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    {speechSupported === false && (
-                        <Alert variant="destructive">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Browser not supported</AlertTitle>
-                            <AlertDescription>
-                                This interview needs voice input, which your browser doesn&apos;t support. Please open this link in Google Chrome or Microsoft Edge.
-                            </AlertDescription>
-                        </Alert>
-                    )}
+                {blocked && (
+                    <div role="alert" className="flex items-start gap-3 rounded-2xl bg-sg-danger/10 px-4 py-3 font-semibold text-sg-danger">
+                        <AlertCircle className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+                        <p>
+                            This browser can&apos;t capture voice answers. Please open this link in Google Chrome or
+                            Microsoft Edge.
+                        </p>
+                    </div>
+                )}
+                {error && (
+                    <div role="alert" className="flex items-start gap-3 rounded-2xl bg-sg-danger/10 px-4 py-3 font-semibold text-sg-danger">
+                        <AlertCircle className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+                        <p>{error}</p>
+                    </div>
+                )}
 
-                    {error && (
-                        <Alert variant="destructive">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Error</AlertTitle>
-                            <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                    )}
-
-                    <div className="grid md:grid-cols-2 gap-6">
-                        {/* Video Preview */}
-                        <div className="space-y-2">
-                            <div className="aspect-video bg-slate-900 rounded-lg overflow-hidden relative flex items-center justify-center">
-                                {stream ? (
-                                    <video
-                                        ref={videoRef}
-                                        autoPlay
-                                        playsInline
-                                        muted
-                                        className="w-full h-full object-cover transform scale-x-[-1]"
-                                    />
-                                ) : (
-                                    <Camera className="h-12 w-12 text-slate-600" />
-                                )}
-
-                                {hasCamera && (
-                                    <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                                        <CheckCircle2 className="h-3 w-3" /> Camera OK
-                                    </div>
-                                )}
-                            </div>
-                            <p className="text-sm text-center text-gray-500">Video Preview</p>
-                        </div>
-
-                        {/* Audio Preview */}
-                        <div className="space-y-4 flex flex-col justify-center">
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm font-medium flex items-center gap-2">
-                                        <Mic className="h-4 w-4" /> Microphone
-                                    </span>
-                                    {hasMic && (
-                                        <span className="text-xs text-green-600 font-medium flex items-center gap-1">
-                                            <CheckCircle2 className="h-3 w-3" /> Working
-                                        </span>
-                                    )}
-                                </div>
-                                <AudioVisualizer stream={stream} />
-                            </div>
-
-                            {!stream ? (
-                                <Button onClick={requestPermissions} className="w-full" disabled={speechSupported === false}>
-                                    Check Devices
-                                </Button>
+                <section
+                    aria-label="Device check"
+                    className="sg-glass sg-shadow-lg grid gap-6 rounded-[24px] p-5 sm:rounded-[28px] sm:p-8 md:grid-cols-2"
+                >
+                    <div className="flex flex-col gap-2">
+                        <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-[18px] bg-sg-lavender-soft">
+                            {stream ? (
+                                <video ref={videoRef} autoPlay playsInline muted className="size-full -scale-x-100 object-cover" />
                             ) : (
-                                <Button onClick={handleContinue} className="w-full" disabled={speechSupported === false}>
-                                    Start Interview
-                                </Button>
+                                <Camera className="size-10 text-sg-lavender-ink" aria-hidden="true" />
+                            )}
+                            {hasCamera && (
+                                <span className="absolute left-2 top-2 inline-flex h-7 items-center gap-1.5 rounded-full bg-sg-ink px-2.5 text-[13px] font-bold text-sg-ink-foreground">
+                                    <CheckCircle2 className="size-3.5" aria-hidden="true" />
+                                    Camera working
+                                </span>
                             )}
                         </div>
+                        <span className={cn(eyebrow, "text-center")}>Video preview</span>
                     </div>
-                </CardContent>
-            </Card>
-        </div>
+
+                    <div className="flex flex-col justify-center gap-5">
+                        <div className="flex flex-col gap-2 rounded-[18px] bg-sg-row p-4">
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="inline-flex items-center gap-2 font-semibold">
+                                    <Mic className="size-4" aria-hidden="true" />
+                                    Microphone
+                                </span>
+                                {hasMic && (
+                                    <span className="inline-flex items-center gap-1 text-[13px] font-bold text-sg-success">
+                                        <CheckCircle2 className="size-3.5" aria-hidden="true" />
+                                        Working
+                                    </span>
+                                )}
+                            </div>
+                            <AudioVisualizer stream={stream} className="h-16" />
+                        </div>
+
+                        {!stream ? (
+                            <button type="button" onClick={requestPermissions} disabled={blocked} className={cn(coralButton, "h-14 w-full text-[17px]")}>
+                                Check my devices
+                            </button>
+                        ) : (
+                            <button type="button" onClick={handleContinue} disabled={blocked} className={cn(coralButton, "h-14 w-full text-[17px]")}>
+                                Start interview
+                            </button>
+                        )}
+                    </div>
+                </section>
+            </div>
+        </FocusRoot>
     );
 }

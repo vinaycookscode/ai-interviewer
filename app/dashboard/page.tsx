@@ -1,180 +1,161 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+import { Plus } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Link from "next/link";
-import { PlusCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { coralButton } from "@/components/soft-glass/classes";
+import { Mascot } from "@/components/soft-glass/mascot";
+import { ScoreChart, StatusChart, type ScoreBin } from "@/components/dashboard/analytics-charts";
+import { Figure, PageHeading, caption, formatShortDate, panel, panelTitle, row, textLink } from "@/components/jobs/employer-ui";
 
-import { AnalyticsCharts } from "@/components/dashboard/analytics-charts";
+const BIN_EDGES = [0, 2, 4, 6, 8, 10];
 
 export default async function DashboardPage() {
     const session = await auth();
     const userId = session?.user?.id;
+    if (!userId) redirect("/auth/login");
 
-    if (!userId) {
-        return <div>Please sign in</div>;
-    }
+    const t = await getTranslations("Employer.overview");
 
-    // Parallel data fetching - fetch user and jobs separately
-    const [user, jobs] = await Promise.all([
-        db.user.findUnique({
-            where: { id: userId },
-            select: { id: true, name: true, email: true }
-        }),
-        db.job.findMany({
-            where: { employerId: userId },
-            orderBy: { createdAt: "desc" },
-            include: {
-                interviews: {
-                    include: { answers: true }
-                }
-            }
-        })
-    ]);
-
-    if (!user) {
-        return <div>Please sign in</div>;
-    }
-
-    // Aggregate Analytics Data
-    const allInterviews = jobs.flatMap((job) => job.interviews) || [];
-
-    // 1. Score Distribution
-    const scoreRanges = [
-        { range: "0-2", min: 0, max: 2, count: 0 },
-        { range: "3-5", min: 3, max: 5, count: 0 },
-        { range: "6-8", min: 6, max: 8, count: 0 },
-        { range: "9-10", min: 9, max: 10, count: 0 },
-    ];
-
-    allInterviews.forEach((interview) => {
-        if (interview.score !== null) {
-            const score = interview.score;
-            const range = scoreRanges.find((r) => score >= r.min && score <= r.max);
-            if (range) {
-                range.count++;
-            }
-        }
+    const jobs = await db.job.findMany({
+        where: { employerId: userId },
+        orderBy: { createdAt: "desc" },
+        select: {
+            id: true,
+            title: true,
+            createdAt: true,
+            _count: { select: { questions: { where: { archived: false } } } },
+            interviews: { select: { status: true, score: true } },
+        },
     });
 
-    const scoreDistribution = scoreRanges.map(({ range, count }) => ({ range, count }));
+    const newJob = (
+        <Link href="/dashboard/jobs/new" className={cn(coralButton, "h-12 px-[22px]")}>
+            <Plus className="size-5" aria-hidden="true" />
+            {t("newJob")}
+        </Link>
+    );
 
-    // 2. Status Distribution
-    const statusCounts: Record<string, number> = {
-        PENDING: 0,
-        IN_PROGRESS: 0,
-        COMPLETED: 0,
-    };
-
-    allInterviews.forEach((interview) => {
-        if (statusCounts[interview.status] !== undefined) {
-            statusCounts[interview.status]++;
-        }
-    });
-
-    const statusDistribution = Object.entries(statusCounts).map(([status, count]) => ({
-        status: status.replace("_", " "),
-        count,
-    }));
-
-    // 3. Activity Data (Last 7 Days)
-    const activityMap = new Map<string, number>();
-    const today = new Date();
-    for (let i = 6; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(today.getDate() - i);
-        const dateString = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-        activityMap.set(dateString, 0);
+    if (jobs.length === 0) {
+        return (
+            <div className="flex flex-col gap-6 sm:gap-9">
+                <PageHeading title={t("title")} subtitle={t("subtitle")} />
+                <section className="sg-glass sg-shadow-lg flex flex-col items-center gap-3 rounded-[28px] px-6 py-7 text-center sm:py-12">
+                    <Mascot className="size-16" />
+                    <h2 className="font-display sg-soft text-[26px] leading-[33px] font-semibold tracking-[-0.015em]">{t("emptyTitle")}</h2>
+                    <p className="max-w-[460px] text-sg-muted">{t("emptyBody")}</p>
+                    <Link href="/dashboard/jobs/new" className={cn(coralButton, "mt-1 h-14 w-full px-[26px] text-[17px] sm:w-auto")}>
+                        {t("emptyCta")}
+                    </Link>
+                </section>
+            </div>
+        );
     }
 
-    allInterviews.forEach((interview) => {
-        const dateString = new Date(interview.createdAt).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-        });
-        if (activityMap.has(dateString)) {
-            activityMap.set(dateString, (activityMap.get(dateString) || 0) + 1);
-        }
-    });
+    const interviews = jobs.flatMap((job) => job.interviews);
+    const completed = interviews.filter((i) => i.status === "COMPLETED");
+    const inProgress = interviews.filter((i) => i.status === "IN_PROGRESS").length;
+    const notStarted = interviews.filter((i) => i.status === "PENDING").length;
+    const scored = completed.filter((i): i is typeof i & { score: number } => i.score !== null);
+    const average = scored.length > 0 ? scored.reduce((sum, i) => sum + i.score, 0) / scored.length : null;
 
-    const activityData = Array.from(activityMap.entries()).map(([date, count]) => ({
-        date,
-        count,
-    }));
+    const bins: ScoreBin[] = BIN_EDGES.slice(0, -1).map((from, i) => {
+        const to = BIN_EDGES[i + 1];
+        const last = i === BIN_EDGES.length - 2;
+        return {
+            label: `${from}–${to}`,
+            from,
+            to,
+            count: scored.filter((s) => s.score >= from && (last ? s.score <= to : s.score < to)).length,
+        };
+    });
 
     return (
-        <div className="p-4 md:p-8 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 pb-6 border-b gap-4">
-                <div>
-                    <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                        Dashboard
-                    </h1>
-                    <p className="text-muted-foreground mt-2 text-sm sm:text-base">Manage your job postings and interviews</p>
+        <div className="flex flex-col gap-6 sm:gap-9">
+            <PageHeading title={t("title")} subtitle={t("subtitle")} actions={newJob} />
+
+            <ul className="grid grid-cols-1 gap-4 min-[400px]:grid-cols-2 lg:grid-cols-4">
+                <li className="sg-glass rounded-[24px] p-5">
+                    <Figure value={jobs.length} label={t("statJobs")} />
+                </li>
+                <li className="sg-glass rounded-[24px] p-5">
+                    <Figure value={interviews.length} label={t("statInvited")} />
+                </li>
+                <li className="sg-glass rounded-[24px] p-5">
+                    <Figure value={completed.length} label={t("statCompleted")} />
+                </li>
+                <li className="sg-glass rounded-[24px] p-5">
+                    <Figure value={average === null ? "—" : average.toFixed(1)} label={t("statAverage")} />
+                </li>
+            </ul>
+
+            <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-2">
+                <section aria-labelledby="scores-title" className={panel}>
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <h2 id="scores-title" className={panelTitle}>
+                            {t("scoresTitle")}
+                        </h2>
+                        <span className={caption}>{t("scoresCaption", { count: scored.length })}</span>
+                    </div>
+                    {scored.length > 0 ? <ScoreChart bins={bins} /> : <p className="text-sg-muted">{t("scoresEmpty")}</p>}
+                </section>
+
+                <section aria-labelledby="status-title" className={panel}>
+                    <h2 id="status-title" className={panelTitle}>
+                        {t("statusTitle")}
+                    </h2>
+                    <StatusChart
+                        rows={[
+                            { label: t("statusCompleted"), count: completed.length },
+                            { label: t("statusInProgress"), count: inProgress },
+                            { label: t("statusNotStarted"), count: notStarted },
+                        ]}
+                    />
+                    {notStarted > 0 && (
+                        <p className="text-[15px] leading-[23px]">
+                            <strong>{t("notStartedLead", { count: notStarted })}</strong>{" "}
+                            <span className="text-sg-muted">{t("notStartedHint")}</span>
+                        </p>
+                    )}
+                </section>
+            </div>
+
+            <section aria-labelledby="recent-title" className={panel}>
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <h2 id="recent-title" className={panelTitle}>
+                        {t("recentTitle")}
+                    </h2>
+                    <Link href="/dashboard/jobs" className={textLink}>
+                        {t("allJobs")}
+                    </Link>
                 </div>
-                <Link href="/dashboard/jobs/new">
-                    <Button size="lg" className="shadow-lg hover:shadow-xl transition-shadow w-full sm:w-auto">
-                        <PlusCircle className="mr-2 h-5 w-5" />
-                        <span className="hidden sm:inline">New Job</span>
-                        <span className="sm:hidden">Create Job</span>
-                    </Button>
-                </Link>
-            </div>
-
-            <div className="mb-8">
-                <h2 className="text-2xl font-bold mb-4">Analytics Overview</h2>
-                <AnalyticsCharts
-                    scoreDistribution={scoreDistribution}
-                    statusDistribution={statusDistribution}
-                    activityData={activityData}
-                />
-            </div>
-
-            <h2 className="text-2xl font-bold mb-4">Recent Jobs</h2>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {jobs && jobs.length > 0 ? (
-                    jobs.map((job) => (
-                        <Card
-                            key={job.id}
-                            className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 border-2 hover:border-primary/50"
-                        >
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-xl group-hover:text-primary transition-colors">
-                                    {job.title}
-                                </CardTitle>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    Posted {new Date(job.createdAt).toLocaleString()}
-                                </p>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-sm text-muted-foreground line-clamp-3 mb-4">
-                                    {job.description}
-                                </p>
-                                <Link href={`/dashboard/jobs/${job.id}`}>
-                                    <Button variant="outline" size="sm" className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                                        View Details →
-                                    </Button>
-                                </Link>
-                            </CardContent>
-                        </Card>
-                    ))
-                ) : (
-                    <Card className="col-span-full border-dashed border-2">
-                        <CardContent className="flex flex-col items-center justify-center py-16">
-                            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                                <PlusCircle className="h-8 w-8 text-primary" />
-                            </div>
-                            <p className="text-lg font-semibold mb-2">No jobs posted yet</p>
-                            <p className="text-muted-foreground mb-6">Create your first job to start interviewing candidates</p>
-                            <Link href="/dashboard/jobs/new">
-                                <Button size="lg" className="shadow-lg">
-                                    <PlusCircle className="mr-2 h-5 w-5" />
-                                    Create Your First Job
-                                </Button>
-                            </Link>
-                        </CardContent>
-                    </Card>
-                )}
-            </div>
+                <ul className="flex flex-col gap-2">
+                    {jobs.slice(0, 3).map((job) => {
+                        const done = job.interviews.filter((i) => i.status === "COMPLETED").length;
+                        return (
+                            <li key={job.id} className={cn(row, "flex flex-wrap items-center gap-x-4 gap-y-2")}>
+                                <div className="flex min-w-0 flex-[1_1_220px] flex-col">
+                                    <Link href={`/dashboard/jobs/${job.id}`} className={cn(textLink, "self-start text-base whitespace-normal break-words")}>
+                                        {job.title}
+                                    </Link>
+                                    <span className={caption}>
+                                        {t("posted", { date: formatShortDate(job.createdAt), count: job._count.questions })}
+                                    </span>
+                                </div>
+                                <span className="text-sm text-sg-muted">
+                                    {t.rich("completedOf", {
+                                        done,
+                                        invited: job.interviews.length,
+                                        strong: (chunks) => <strong className="text-sg-text">{chunks}</strong>,
+                                    })}
+                                </span>
+                            </li>
+                        );
+                    })}
+                </ul>
+            </section>
         </div>
     );
 }

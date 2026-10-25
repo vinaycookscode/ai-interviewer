@@ -1,110 +1,35 @@
+import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { UserButton } from "@/components/auth/user-button";
-
 import { db } from "@/lib/db";
+import { PageHeading, panel, panelTitle } from "@/components/jobs/employer-ui";
+import { SettingsForm } from "./settings-form";
 
 export default async function SettingsPage() {
     const session = await auth();
     const userId = session?.user?.id;
+    if (!userId) redirect("/auth/login");
 
-    if (!userId) {
-        return <div>Unauthorized</div>;
-    }
-
-    const dbUser = await db.user.findUnique({
-        where: { id: userId },
-    });
+    const t = await getTranslations("Employer.settings");
+    const user = await db.user.findUnique({ where: { id: userId }, select: { name: true, email: true } });
+    if (!user) redirect("/auth/login");
 
     return (
-        <div>
-            <div className="flex items-center justify-between mb-8 pb-6 border-b">
-                <div>
-                    <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                        Settings
-                    </h1>
-                    <p className="text-muted-foreground mt-2">
-                        Manage your account and preferences
-                    </p>
-                </div>
-            </div>
-
-            <div className="grid gap-6 max-w-2xl">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Profile</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                                Role
-                            </label>
-                            <p className="text-lg font-semibold capitalize">
-                                {dbUser?.role?.toLowerCase() || "Unknown"}
-                            </p>
-                        </div>
-                        <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                                Email
-                            </label>
-                            <p className="text-lg">
-                                {dbUser?.email}
-                            </p>
-                        </div>
-                        <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                                Name
-                            </label>
-                            <p className="text-lg">
-                                {dbUser?.name}
-                            </p>
-                        </div>
-                        <div className="pt-4">
-                            <p className="text-sm text-muted-foreground mb-2">
-                                Manage your account settings
-                            </p>
-                            <UserButton />
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Environment Variables</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                                Gemini API Key
-                            </label>
-                            <p className="text-sm text-muted-foreground">
-                                {process.env.GEMINI_API_KEY ? "✓ Configured" : "✗ Not configured"}
-                            </p>
-                        </div>
-                        <div>
-                            <label className="text-sm font-medium text-muted-foreground">
-                                Resend API Key
-                            </label>
-                            <p className="text-sm text-muted-foreground">
-                                {process.env.RESEND_API_KEY ? "✓ Configured" : "✗ Not configured"}
-                            </p>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                            Manage your API keys and other settings
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-red-200">
-                    <CardHeader>
-                        <CardTitle className="text-red-600">Danger Zone</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-sm text-muted-foreground">
-                            Account deletion and other destructive actions will be available in a future update.
-                        </p>
-                    </CardContent>
-                </Card>
+        <div className="flex flex-col gap-6 sm:gap-9">
+            <PageHeading title={t("title")} subtitle={t("subtitle")} />
+            <div className="flex w-full max-w-[760px] flex-col gap-5">
+                <section aria-labelledby="settings-account" className={panel}>
+                    <h2 id="settings-account" className={panelTitle}>
+                        {t("account")}
+                    </h2>
+                    <SettingsForm name={user.name ?? ""} email={user.email} />
+                </section>
+                <section aria-labelledby="settings-close" className={panel}>
+                    <h2 id="settings-close" className={panelTitle}>
+                        {t("closeTitle")}
+                    </h2>
+                    <p className="text-[15px] leading-[23px] text-sg-muted">{t("closeBody")}</p>
+                </section>
             </div>
         </div>
     );

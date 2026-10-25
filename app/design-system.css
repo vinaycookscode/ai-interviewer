@@ -1,0 +1,228 @@
+/* ============================================
+   DESIGN SYSTEM SCALE
+   Screens use these names instead of picking their own sizes.
+   ============================================
+
+   Type          text-page-title    one per screen (PageHeader)
+                 text-section-title section headings (Section)
+                 text-card-title    card and dialog titles
+                 text-body          default copy
+                 text-caption       labels, meta, badges (smallest size, never below 12px)
+                 text-metric        KPI numbers in stat cards
+
+   Spacing       gap-section / space-y-section   between sections of a screen
+                 gap-stack / space-y-stack       between items inside a section
+                 p-card                          card padding
+
+   Radius        rounded-control    buttons, inputs, chips
+                 rounded-card       cards, panels, dialogs
+                 rounded-full       avatars and pills only
+
+   Height        h-control-sm / h-control / h-control-lg   (32 / 36 / 40px)
+
+   Colour        bg-brand, text-brand, border-brand, bg-brand-subtle,
+                 text-brand-foreground (text on a brand fill)
+*/
+
+@theme {
+  --text-page-title: 1.5rem;
+  --text-page-title--line-height: 2rem;
+  --text-page-title--letter-spacing: -0.015em;
+  --text-page-title--font-weight: 600;
+
+  --text-section-title: 1.125rem;
+  --text-section-title--line-height: 1.75rem;
+  --text-section-title--font-weight: 600;
+
+  --text-card-title: 1rem;
+  --text-card-title--line-height: 1.5rem;
+  --text-card-title--font-weight: 600;
+
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.25rem;
+
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+
+  --text-metric: 1.875rem;
+  --text-metric--line-height: 2.25rem;
+  --text-metric--letter-spacing: -0.02em;
+  --text-metric--font-weight: 600;
+
+  --spacing-section: 2rem;
+  --spacing-stack: 1rem;
+  --spacing-card: 1.5rem;
+
+  --spacing-control-sm: 2rem;
+  --spacing-control: 2.25rem;
+  --spacing-control-lg: 2.5rem;
+
+  /* Soft Glass display styles (Fraunces; pair with font-display sg-soft). */
+  --text-display-2xs: 1.375rem;
+  --text-display-2xs--line-height: 1.75rem;
+  --text-display-2xs--font-weight: 600;
+}
+
+@theme inline {
+  --radius-control: var(--radius-md);
+  --radius-card: var(--radius-xl);
+
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-subtle: var(--brand-subtle);
+}
+
+/* Brand teal. Light mode uses a darker shade so it stays readable as text
+   on white (about 5.4:1) and as a fill behind white text. */
+:root {
+  --brand: hsl(175 77% 26%);
+  --brand-foreground: hsl(0 0% 100%);
+  --brand-subtle: hsl(166 76% 97%);
+}
+
+.dark {
+  --brand: hsl(172 66% 50%);
+  --brand-foreground: hsl(179 84% 10%);
+  --brand-subtle: hsl(173 80% 40% / 0.12);
+}
+
+/* ============================================
+   SOFT GLASS (AIIN-122)
+   The new visual language: frosted glass over soft coral/lavender light,
+   Fraunces display over Plus Jakarta Sans. Scoped to `.soft-glass` so
+   screens move over one at a time; light and dark are designed equally.
+
+   Surfaces    bg-sg-bg, sg-glass (card), sg-glass-strong (bubble, popover),
+               bg-sg-row (inset row), bg-sg-chip
+   Text        text-sg-text, text-sg-muted
+   Ink         bg-sg-ink + text-sg-ink-foreground (primary button, active nav)
+   Accents     bg-sg-coral + text-sg-coral-ink (hero CTA, mascot),
+               bg-sg-lavender-soft + text-sg-lavender-ink (tags, scores)
+   Type        font-display sg-soft (headings), font-body,
+               text-display-2xs (card headings in the app, 22/28)
+   Focus       outline-sg-focus (via focusRing in components/soft-glass/classes.ts)
+   ============================================ */
+
+@theme inline {
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-body: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+
+  --color-sg-bg: var(--sg-bg);
+  --color-sg-text: var(--sg-text);
+  --color-sg-muted: var(--sg-muted);
+  --color-sg-rule: var(--sg-rule);
+  --color-sg-row: var(--sg-row);
+  --color-sg-chip: var(--sg-chip);
+  --color-sg-track: var(--sg-track);
+  --color-sg-glass-border: var(--sg-glass-border);
+  --color-sg-ink: var(--sg-ink);
+  --color-sg-ink-foreground: var(--sg-ink-foreground);
+  --color-sg-coral: var(--sg-coral);
+  --color-sg-coral-ink: var(--sg-coral-ink);
+  --color-sg-lavender: var(--sg-lavender);
+  --color-sg-lavender-soft: var(--sg-lavender-soft);
+  --color-sg-lavender-ink: var(--sg-lavender-ink);
+  --color-sg-field-border: var(--sg-field-border);
+  --color-sg-focus: var(--sg-focus);
+  --color-sg-danger: var(--sg-danger);
+  --color-sg-success: var(--sg-success);
+}
+
+.soft-glass {
+  --sg-bg: #f6f2ee;
+  --sg-text: #1f1a26;
+  --sg-muted: #5b5466;
+  --sg-rule: rgb(31 26 38 / 0.1);
+  --sg-glass: rgb(255 255 255 / 0.62);
+  --sg-glass-strong: rgb(255 255 255 / 0.86);
+  --sg-bar: rgb(255 255 255 / 0.72);
+  --sg-glass-border: rgb(255 255 255 / 0.9);
+  --sg-row: rgb(255 255 255 / 0.7);
+  --sg-chip: rgb(31 26 38 / 0.06);
+  --sg-track: rgb(31 26 38 / 0.1);
+  --sg-ink: #1f1a26;
+  --sg-ink-foreground: #ffffff;
+  --sg-coral: #f28c6b;
+  --sg-coral-ink: #2a1612;
+  --sg-lavender: #8f7ff0;
+  --sg-lavender-soft: #e7e2ff;
+  --sg-lavender-ink: #3f3196;
+  /* Form fields sit on white glass, so they need a darker edge than --sg-glass-border (3.3:1 against the fill). */
+  --sg-field-border: rgb(31 26 38 / 0.5);
+  /* Keyboard focus ring. Plain lavender is 2.9:1 on the light ground, so light uses the deep lavender. */
+  --sg-focus: var(--sg-lavender-ink);
+  --sg-danger: #b3261e;
+  --sg-success: #17693f;
+  --sg-shadow: 0 1px 0 rgb(255 255 255 / 0.9) inset, 0 12px 32px -16px rgb(60 35 70 / 0.25);
+  --sg-shadow-lg: 0 1px 0 rgb(255 255 255 / 0.9) inset, 0 34px 70px -30px rgb(60 35 70 / 0.4);
+  --sg-blob-a: rgb(255 170 140 / 0.55);
+  --sg-blob-b: rgb(176 160 255 / 0.45);
+  --sg-blob-c: rgb(255 214 170 / 0.45);
+
+  background-color: var(--sg-bg);
+  color: var(--sg-text);
+  /* Not var(--font-body): @theme inline values exist only inside utilities. */
+  font-family: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+}
+
+.dark .soft-glass {
+  --sg-bg: #14111c;
+  --sg-text: #f4f0f8;
+  --sg-muted: #b8b0c6;
+  --sg-rule: rgb(255 255 255 / 0.12);
+  --sg-glass: rgb(255 255 255 / 0.06);
+  --sg-glass-strong: rgb(255 255 255 / 0.11);
+  --sg-bar: rgb(20 17 28 / 0.8);
+  --sg-glass-border: rgb(255 255 255 / 0.12);
+  --sg-row: rgb(255 255 255 / 0.06);
+  --sg-chip: rgb(255 255 255 / 0.08);
+  --sg-track: rgb(255 255 255 / 0.12);
+  --sg-ink: #f4f0f8;
+  --sg-ink-foreground: #14111c;
+  --sg-lavender: #a99cff;
+  --sg-lavender-soft: rgb(169 156 255 / 0.18);
+  --sg-lavender-ink: #d6cfff;
+  --sg-field-border: rgb(255 255 255 / 0.35);
+  --sg-focus: var(--sg-lavender);
+  --sg-danger: #ff9d90;
+  --sg-success: #74d6a2;
+  --sg-shadow: 0 1px 0 rgb(255 255 255 / 0.08) inset, 0 16px 40px -20px rgb(0 0 0 / 0.7);
+  --sg-shadow-lg: 0 1px 0 rgb(255 255 255 / 0.1) inset, 0 44px 90px -38px rgb(0 0 0 / 0.9);
+  --sg-blob-a: rgb(242 120 90 / 0.3);
+  --sg-blob-b: rgb(130 110 255 / 0.32);
+  --sg-blob-c: rgb(255 170 110 / 0.16);
+}
+
+@utility sg-glass {
+  background-color: var(--sg-glass);
+  border: 1px solid var(--sg-glass-border);
+  box-shadow: var(--sg-shadow);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+}
+
+/* Bars that float over every section (the sticky header): opaque enough to stay readable on light and dark bands. */
+@utility sg-bar {
+  background-color: var(--sg-bar);
+  border: 1px solid var(--sg-glass-border);
+  box-shadow: var(--sg-shadow);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+}
+
+@utility sg-glass-strong {
+  background-color: var(--sg-glass-strong);
+  border: 1px solid var(--sg-glass-border);
+  box-shadow: var(--sg-shadow);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+@utility sg-shadow-lg {
+  box-shadow: var(--sg-shadow-lg);
+}
+
+/* Fraunces' soft, rounded terminals. */
+@utility sg-soft {
+  font-variation-settings: "SOFT" 100;
+}

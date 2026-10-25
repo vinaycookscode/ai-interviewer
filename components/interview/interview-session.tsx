@@ -1,10 +1,23 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mic, Square, Volume2, ArrowRight, CheckCircle2, Globe, Code, Maximize2, Minimize2, Play, Loader2, Sparkles, FileText } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+    AlertTriangle,
+    Check,
+    CheckCircle2,
+    FileText,
+    Loader2,
+    Maximize2,
+    Mic,
+    OctagonX,
+    Play,
+    ShieldAlert,
+    ShieldCheck,
+    Square,
+    Video,
+    Volume2,
+    X,
+} from "lucide-react";
 import { startInterview, submitAnswer, completeInterview } from "@/actions/interview-session";
 import { runCode } from "@/actions/code-execution";
 import { gradeAnswer } from "@/actions/scoring";
@@ -17,14 +30,11 @@ import { CodeEditor } from "@/components/ui/code-editor";
 import { cn } from "@/lib/utils";
 import { LANGUAGE_CODES, InterviewLanguage } from "@/lib/constants";
 import { useCopyPastePrevention } from "@/hooks/use-copy-paste-prevention";
-import {
-    HoverCard,
-    HoverCardContent,
-    HoverCardTrigger,
-} from "@/components/ui/hover-card";
 import { useLimit } from "@/components/providers/limit-provider";
-import { Label } from "@/components/ui/label";
 import { documentHref } from "@/lib/document-url";
+import { CoachBubble } from "@/components/soft-glass/coach-bubble";
+import { coralButton, focusRing } from "@/components/soft-glass/classes";
+import { FocusCard, FocusRoot, SessionHeader, eyebrow, inkButton, outlineButton } from "./session-shell";
 
 // Define strict types for questions
 interface Question {
@@ -33,12 +43,34 @@ interface Question {
     type?: "TEXT" | "CODE"; // Optional for backward compatibility, defaults to TEXT
 }
 
+// The Web Speech API isn't in the DOM typings yet; only what this component uses.
+interface SpeechRecognitionResultEvent {
+    resultIndex: number;
+    results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>;
+}
+
+interface SpeechRecognitionLike {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    onresult: ((event: SpeechRecognitionResultEvent) => void) | null;
+    onend: (() => void) | null;
+    onerror: ((event: { error: string }) => void) | null;
+    start: () => void;
+    stop: () => void;
+    abort: () => void;
+}
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
 interface InterviewSessionProps {
     interviewId: string;
     questions: Question[];
     stream: MediaStream;
     language?: string;
     onLanguageChange?: (lang: string) => void;
+    /** Shown in the session header. */
+    jobTitle?: string;
     userDocuments?: {
         resumeUrl?: string | null;
         panUrl?: string | null;
@@ -52,14 +84,16 @@ export function InterviewSession({
     stream,
     language = "en",
     onLanguageChange,
+    jobTitle,
     userDocuments
 }: InterviewSessionProps) {
     const router = useRouter();
-    const { warningCount, warnings, isFullScreen, enterFullScreen, addWarning } = useProctoring(interviewId);
+    const { warningCount, isFullScreen, enterFullScreen, addWarning } = useProctoring(interviewId);
     const { screenCount } = useScreenDetection(true);
     const [screenViolationCount, setScreenViolationCount] = useState(0);
     const [terminationReason, setTerminationReason] = useState<string | null>(null);
-    const [questionsState, setQuestionsState] = useState<Question[]>(questions);
+    // The setter returns with follow-up questions (commented out in handleNext).
+    const [questionsState] = useState<Question[]>(questions);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isRecording, setIsRecording] = useState(false);
     const [transcript, setTranscript] = useState("");
@@ -67,9 +101,12 @@ export function InterviewSession({
     const isRecordingRef = useRef(isRecording);
     const [translatedQuestionText, setTranslatedQuestionText] = useState<string | null>(null);
 
+    // Presentation only: the "Listening · 00:42" timer.
+    const [recordingStartedAt, setRecordingStartedAt] = useState<number | null>(null);
+    const [clock, setClock] = useState(0);
+
     // Code Editor State
     const [codeAnswer, setCodeAnswer] = useState("// Write your solution here...\n");
-    const [editorExpanded, setEditorExpanded] = useState(false);
     const [isRunning, setIsRunning] = useState(false);
     const [editorLanguage, setEditorLanguage] = useState("javascript");
     const [codeOutput, setCodeOutput] = useState<{ stdout?: string; stderr?: string; error?: string }>({});
@@ -80,7 +117,13 @@ export function InterviewSession({
         isRecordingRef.current = isRecording;
     }, [isRecording]);
 
-    const recognitionRef = useRef<any>(null);
+    useEffect(() => {
+        if (!isRecording) return;
+        const timer = setInterval(() => setClock(Date.now()), 1000);
+        return () => clearInterval(timer);
+    }, [isRecording]);
+
+    const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [isCompleted, setIsCompleted] = useState(false);
@@ -128,7 +171,11 @@ export function InterviewSession({
     // Initialize Speech Recognition
     useEffect(() => {
         if (typeof window !== "undefined") {
-            const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+            const speechWindow = window as unknown as {
+                SpeechRecognition?: SpeechRecognitionConstructor;
+                webkitSpeechRecognition?: SpeechRecognitionConstructor;
+            };
+            const SpeechRecognition = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
 
             // Cleanup previous instance
             if (recognitionRef.current) {
@@ -173,7 +220,7 @@ export function InterviewSession({
 
                 recognition.lang = langCode;
 
-                recognition.onresult = (event: any) => {
+                recognition.onresult = (event) => {
                     let final = "";
                     let interim = "";
                     for (let i = event.resultIndex; i < event.results.length; ++i) {
@@ -200,7 +247,7 @@ export function InterviewSession({
                     }
                 };
 
-                recognition.onerror = (event: any) => {
+                recognition.onerror = (event) => {
                     console.error("[STT] Recognition error:", event.error);
                     if (event.error === 'not-allowed') {
                         setIsRecording(false);
@@ -215,7 +262,9 @@ export function InterviewSession({
             if (recognitionRef.current) {
                 try {
                     recognitionRef.current.abort();
-                } catch (e) { }
+                } catch {
+                    // Already stopped.
+                }
             }
         };
     }, [language]);
@@ -232,6 +281,8 @@ export function InterviewSession({
                 handleNewQuestion(questionsState[0].text);
             }
         }
+        // Runs once on entering full screen; handleNewQuestion is recreated every render.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isFullScreen, interviewId, questionsState]);
 
     // Centralized Audio Playback Logic
@@ -252,7 +303,9 @@ export function InterviewSession({
             }, 500);
             return () => clearTimeout(timer);
         }
-    }, [isFullScreen, currentIndex, questionsState]); // We handle new question trigger mostly here now
+        // We handle new question trigger mostly here now; handleNewQuestion is recreated every render.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isFullScreen, currentIndex, questionsState]);
 
     // cleanup speech on unmount
     useEffect(() => {
@@ -336,6 +389,9 @@ export function InterviewSession({
     };
 
     const startRecording = () => {
+        const startedAt = Date.now();
+        setRecordingStartedAt(startedAt);
+        setClock(startedAt);
         setIsRecording(true);
         // Don't clear transcript - preserve existing content when resuming
         setInterimTranscript("");
@@ -434,358 +490,390 @@ export function InterviewSession({
             };
             terminate();
         }
+        // Terminates once; the handlers it calls are recreated every render.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [terminationReason, isCompleted]);
 
     // Safety guard for empty questions. Must stay below every hook (Rules of Hooks).
     if (!currentQuestion) {
         return (
-            <div className="flex items-center justify-center min-h-screen text-red-500">
-                <p>Error: No questions available for this interview.</p>
-            </div>
+            <FocusRoot>
+                <FocusCard>
+                    <p role="alert" className="flex items-start gap-3 font-semibold text-sg-danger">
+                        <AlertTriangle className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+                        This interview has no questions yet. Please contact the hiring team.
+                    </p>
+                </FocusCard>
+            </FocusRoot>
         );
     }
 
     if (isCompleted) {
         if (terminationReason) {
             return (
-                <div className="max-w-2xl mx-auto text-center space-y-6 pt-20">
-                    <div className="flex justify-center">
-                        <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center">
-                            <Square className="h-12 w-12 text-red-600" />
+                <FocusRoot>
+                    <FocusCard>
+                        <span className="flex size-12 items-center justify-center rounded-full bg-sg-danger/10 text-sg-danger">
+                            <OctagonX className="size-6" aria-hidden="true" />
+                        </span>
+                        <div className="flex flex-col gap-3">
+                            <h1 className="font-display sg-soft text-[30px] font-semibold leading-9 sm:text-[34px] sm:leading-10">
+                                Interview ended
+                            </h1>
+                            <p role="alert" className="rounded-2xl bg-sg-danger/10 px-4 py-3 font-semibold text-sg-danger">
+                                {terminationReason}
+                            </p>
                         </div>
-                    </div>
-                    <h1 className="text-4xl font-bold text-red-600">Interview Terminated</h1>
-                    <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-xl">
-                        <p className="text-xl text-red-200 font-medium">{terminationReason}</p>
-                    </div>
-                    <Button onClick={() => router.push("/candidate/dashboard")} variant="outline" size="lg" className="border-red-500/20 hover:bg-red-500/10 hover:text-red-200">
-                        Return to Dashboard
-                    </Button>
-                </div>
+                        <button
+                            type="button"
+                            onClick={() => router.push("/candidate/dashboard")}
+                            className={cn(inkButton, "h-12 w-full")}
+                        >
+                            Return to dashboard
+                        </button>
+                    </FocusCard>
+                </FocusRoot>
             );
         }
         return (
-            <div className="max-w-2xl mx-auto text-center space-y-6 pt-20">
-                <div className="flex justify-center"><CheckCircle2 className="h-24 w-24 text-green-500" /></div>
-                <h1 className="text-4xl font-bold">Interview Completed!</h1>
-                <div className="flex gap-4 justify-center">
-                    <Button onClick={() => router.push(`/candidate/interview/${interviewId}/feedback`)} size="lg">View Feedback</Button>
-                    <Button onClick={() => router.push("/candidate/dashboard")} variant="outline" size="lg">Back to Dashboard</Button>
-                </div>
-            </div>
+            <FocusRoot>
+                <FocusCard>
+                    <span className="flex size-12 items-center justify-center rounded-full bg-sg-success/10 text-sg-success">
+                        <CheckCircle2 className="size-6" aria-hidden="true" />
+                    </span>
+                    <div className="flex flex-col gap-2">
+                        <h1 className="font-display sg-soft text-[30px] font-semibold leading-9 sm:text-[34px] sm:leading-10">
+                            Interview complete
+                        </h1>
+                        <p className="text-sg-muted">Thank you. Your answers are in, and your feedback is ready to read.</p>
+                    </div>
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                        <button
+                            type="button"
+                            onClick={() => router.push(`/candidate/interview/${interviewId}/feedback`)}
+                            className={cn(coralButton, "h-12 px-6 sm:flex-1")}
+                        >
+                            View feedback
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => router.push("/candidate/dashboard")}
+                            className={cn(outlineButton, "h-12 px-6 text-base sm:flex-1")}
+                        >
+                            Back to dashboard
+                        </button>
+                    </div>
+                </FocusCard>
+            </FocusRoot>
         );
     }
 
     if (!isFullScreen) {
         return (
-            <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4">
-                <div className="max-w-md w-full bg-card border shadow-lg rounded-xl p-8 text-center space-y-6">
-                    <div className="mx-auto w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center">
-                        <Square className="w-8 h-8 text-yellow-600" />
+            <FocusRoot>
+                <FocusCard>
+                    <span className="flex size-12 items-center justify-center rounded-full bg-sg-lavender-soft text-sg-lavender-ink">
+                        <Maximize2 className="size-6" aria-hidden="true" />
+                    </span>
+                    <div className="flex flex-col gap-2">
+                        <h1 className="font-display sg-soft text-[30px] font-semibold leading-9 sm:text-[34px] sm:leading-10">
+                            Full screen, please
+                        </h1>
+                        <p className="text-sg-muted">
+                            The interview runs in full screen. Leaving it, or switching tabs, is recorded for the hiring team.
+                        </p>
                     </div>
-                    <h2 className="text-2xl font-bold">Full Screen Required</h2>
-
-                    {/* Interview Guidelines */}
-                    <div className="text-left bg-white/5 p-4 rounded-lg space-y-3 text-sm">
-                        <h3 className="font-semibold text-white/90">Dos & Don'ts</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <ul className="space-y-1 text-green-400">
-                                <li>✓ Speak clearly</li>
-                                <li>✓ Stay in frame</li>
-                                <li>✓ Good lighting</li>
+                    <div className="grid gap-3 rounded-[18px] bg-sg-row p-4 sm:grid-cols-2">
+                        <div className="flex flex-col gap-2">
+                            <span className={eyebrow}>Do</span>
+                            <ul className="flex flex-col gap-1.5 font-medium">
+                                {["Speak clearly", "Stay in frame", "Sit in good light"].map((item) => (
+                                    <li key={item} className="flex items-center gap-2">
+                                        <Check className="size-4 shrink-0 text-sg-success" aria-hidden="true" />
+                                        {item}
+                                    </li>
+                                ))}
                             </ul>
-                            <ul className="space-y-1 text-red-400">
-                                <li>✗ No tab switching</li>
-                                <li>✗ No cheat sheets</li>
-                                <li>✗ No phones</li>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <span className={eyebrow}>Don&apos;t</span>
+                            <ul className="flex flex-col gap-1.5 font-medium">
+                                {["Switch tabs", "Use notes", "Use your phone"].map((item) => (
+                                    <li key={item} className="flex items-center gap-2">
+                                        <X className="size-4 shrink-0 text-sg-danger" aria-hidden="true" />
+                                        {item}
+                                    </li>
+                                ))}
                             </ul>
                         </div>
                     </div>
-
-                    <Button onClick={enterFullScreen} size="lg" className="w-full">
-                        Return to Full Screen & Start
-                    </Button>
-                </div>
-            </div>
+                    <button type="button" onClick={enterFullScreen} className={cn(coralButton, "h-14 w-full text-[17px]")}>
+                        Go full screen and start
+                    </button>
+                </FocusCard>
+            </FocusRoot>
         );
     }
 
+    const hasDocuments = !!(userDocuments?.resumeUrl || userDocuments?.panUrl || userDocuments?.aadhaarUrl);
+    const documents = [
+        { label: "Resume", url: userDocuments?.resumeUrl },
+        { label: "PAN card", url: userDocuments?.panUrl },
+        { label: "Aadhaar card", url: userDocuments?.aadhaarUrl },
+    ].filter((doc): doc is { label: string; url: string } => !!doc.url);
+
     return (
-        <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900 via-slate-900 to-black text-slate-50 select-none overflow-hidden">
-            {/* Ambient Background */}
-            <div className="fixed inset-0 z-0 pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-purple-500/10 blur-[120px]" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/10 blur-[120px]" />
-            </div>
+        <FocusRoot className="select-none">
+            <SessionHeader title={jobTitle || "Interview"} current={currentIndex} total={questionsState.length}>
+                <span className="inline-flex h-10 items-center gap-1.5 rounded-full bg-sg-chip px-3 text-[13px] font-semibold">
+                    {warningCount === 0 ? (
+                        <ShieldCheck className="size-4 text-sg-success" aria-hidden="true" />
+                    ) : (
+                        <ShieldAlert className="size-4 text-sg-danger" aria-hidden="true" />
+                    )}
+                    {warningCount === 0
+                        ? "Proctoring: all clear"
+                        : `Proctoring: ${warningCount} ${warningCount === 1 ? "warning" : "warnings"}`}
+                </span>
+                {onLanguageChange && (
+                    <>
+                        <label htmlFor="interview-language" className="sr-only">
+                            Answer language
+                        </label>
+                        <select
+                            id="interview-language"
+                            value={normalizedLanguageCode}
+                            onChange={(e) => onLanguageChange(e.target.value)}
+                            className={cn(
+                                "h-10 rounded-full border border-sg-field-border bg-sg-row px-3 text-sm font-semibold text-sg-text",
+                                focusRing
+                            )}
+                        >
+                            {Object.keys(LANGUAGE_CODES).map((langName) => (
+                                <option key={langName} value={LANGUAGE_CODES[langName as InterviewLanguage]}>
+                                    {langName}
+                                </option>
+                            ))}
+                        </select>
+                    </>
+                )}
+            </SessionHeader>
 
-            <div className={cn(
-                "relative z-10 mx-auto h-screen p-4 md:p-8 flex flex-col gap-6 justify-center transition-all duration-500",
-                isCodingQuestion ? "max-w-[1800px]" : "max-w-7xl"
-            )}>
-
-                {/* SPLIT LAYOUT */}
-                <div className={cn(
-                    "grid gap-6 w-full max-h-[85vh] transition-all duration-500",
-                    isCodingQuestion ? "grid-cols-[450px_1fr_350px]" : "grid-cols-[1fr_400px]"
-                )}>
-
-                    {/* LEFT COLUMN */}
-                    <div className="flex flex-col gap-6 h-full">
-
-                        {/* Question Card */}
-                        <div className="relative group flex-1 flex flex-col min-h-0">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
-                            <Card className="relative bg-black/40 border-white/10 backdrop-blur-xl shadow-2xl overflow-hidden h-full flex flex-col">
-                                <CardContent className="p-8 space-y-6 flex-1 flex flex-col overflow-y-auto">
-                                    <div className="flex items-center justify-between shrink-0">
-                                        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-                                            <span className="text-xs font-medium text-blue-100">
-                                                Question {currentIndex + 1} <span className="text-white/40">/</span> {questionsState.length}
-                                            </span>
-                                            <span className="text-xs font-medium text-blue-100">
-                                                {isCodingQuestion ? "(Coding Challenge)" : "(Behavioral)"}
-                                            </span>
-                                        </div>
-
-                                        {/* Language Selector (Visible only if onLanguageChange provided) */}
-                                        {onLanguageChange && (
-                                            <div className="flex items-center gap-2">
-                                                <Globe className="w-4 h-4 text-muted-foreground" />
-                                                <Select value={normalizedLanguageCode} onValueChange={onLanguageChange}>
-                                                    <SelectTrigger className="w-[140px] h-8 bg-white/5 border-white/10 text-xs">
-                                                        <SelectValue placeholder="Language" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {Object.keys(LANGUAGE_CODES).map((langName) => (
-                                                            <SelectItem key={langName} value={LANGUAGE_CODES[langName as InterviewLanguage]}>
-                                                                {langName}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <h2 className="text-2xl md:text-3xl font-bold leading-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-100 via-white to-purple-100">
-                                            {currentQuestion.text}
-                                        </h2>
-                                        {translatedQuestionText && (
-                                            <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-100 text-lg">
-                                                {translatedQuestionText}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Action Area */}
-                                    <div className="mt-auto pt-6 border-t border-white/10 space-y-4">
-                                        <div className="flex gap-4">
-                                            {!isRecording ? (
-                                                <Button
-                                                    onClick={startRecording}
-                                                    disabled={isProcessing}
-                                                    className="flex-1 bg-blue-600 hover:bg-blue-500 text-white border-0 py-6 text-lg font-semibold shadow-lg shadow-blue-500/20 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
-                                                >
-                                                    <Mic className="mr-2 h-5 w-5" /> Start Answering
-                                                </Button>
-                                            ) : (
-                                                <Button
-                                                    onClick={stopRecording}
-                                                    variant="destructive"
-                                                    className="flex-1 bg-red-500 hover:bg-red-600 border-0 py-6 text-lg font-semibold shadow-lg shadow-red-500/20 animate-pulse"
-                                                >
-                                                    <Square className="mr-2 h-5 w-5" /> Stop Recording
-                                                </Button>
-                                            )}
-                                        </div>
-
-                                        <Button
-                                            variant="ghost"
-                                            onClick={() => speakQuestion(translatedQuestionText || currentQuestion.text)}
-                                            disabled={isSpeaking}
-                                            className="w-full text-white/50 hover:text-white hover:bg-white/5"
-                                        >
-                                            {isSpeaking ? <Volume2 className="mr-2 h-4 w-4 animate-pulse text-blue-400" /> : <Volume2 className="mr-2 h-4 w-4" />}
-                                            {isSpeaking ? "Speaking..." : "Read Question Again"}
-                                        </Button>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
-
-                        {/* Transcript (Compact) */}
-                        <div className="h-[200px] shrink-0">
-                            <Card className="h-full bg-black/40 border-white/10 backdrop-blur-xl">
-                                <CardContent className="p-4 h-full overflow-y-auto font-mono text-sm text-white/70">
-                                    {transcript || interimTranscript ? (
-                                        <>
-                                            <span className="text-white/90">{transcript}</span>
-                                            <span className="text-white/50 italic">{interimTranscript}</span>
-                                        </>
-                                    ) : (
-                                        <span className="text-white/30 italic">Detailed transcript will appear here...</span>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </div>
+            <div className="flex flex-1 flex-wrap items-stretch gap-5">
+                <main className="sg-glass sg-shadow-lg flex min-w-0 flex-[999_1_560px] flex-col gap-5 rounded-[24px] p-5 sm:rounded-[28px] sm:p-8">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <span className="inline-flex h-[30px] items-center rounded-full bg-sg-lavender-soft px-3 text-[13px] font-bold text-sg-lavender-ink">
+                            {isCodingQuestion ? "Coding challenge" : "Spoken answer"}
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => speakQuestion(translatedQuestionText || currentQuestion.text)}
+                            disabled={isSpeaking}
+                            className={cn(
+                                "inline-flex h-10 items-center gap-2 rounded-full bg-sg-chip px-3.5 text-sm font-semibold transition-opacity hover:opacity-80 disabled:opacity-70",
+                                focusRing
+                            )}
+                        >
+                            <Volume2 className={cn("size-4", isSpeaking && "animate-pulse")} aria-hidden="true" />
+                            {isSpeaking ? "Speaking…" : "Hear it again"}
+                        </button>
                     </div>
 
-                    {/* RIGHT COLUMN */}
-                    <div className="flex flex-col gap-6 h-full min-h-0">
+                    <h1 className="font-display sg-soft max-w-[760px] text-[26px] font-semibold leading-[1.22] tracking-[-0.02em] text-pretty sm:text-[34px]">
+                        {currentQuestion.text}
+                    </h1>
+                    {translatedQuestionText && (
+                        <p className="rounded-[18px] bg-sg-lavender-soft px-4 py-3 text-lg text-sg-lavender-ink">{translatedQuestionText}</p>
+                    )}
 
-                        {/* Code Editor or Video */}
-                        {isCodingQuestion ? (
-                            <div className="flex-1 flex flex-col gap-4 min-h-0">
-                                {/* Editor */}
-                                <div className="flex-1 min-h-0 rounded-xl overflow-hidden border border-white/10 shadow-2xl bg-[#1e1e1e]">
-                                    <CodeEditor
-                                        value={codeAnswer}
-                                        onChange={handleCodeChange}
-                                        language={editorLanguage}
-                                        onLanguageChange={setEditorLanguage}
-                                        height="100%"
-                                        theme="vs-dark"
-                                        showLanguageSelector={true}
-                                        className="h-full border-0"
-                                    />
-                                    {/* Editor Action Overlay */}
-                                    <div className="absolute top-4 right-8 flex gap-2">
+                    <section
+                        aria-label="Your answer"
+                        className={cn(
+                            "flex min-h-[180px] flex-col gap-2.5 rounded-[18px] bg-sg-row p-5",
+                            !isCodingQuestion && "flex-1"
+                        )}
+                    >
+                        <div className="flex items-center justify-between gap-2">
+                            <span className={eyebrow}>Live transcript</span>
+                            {isRecording && (
+                                <span className="inline-flex items-center gap-1.5 text-[13px] font-bold">
+                                    <span aria-hidden="true" className="size-2 animate-pulse rounded-full bg-sg-coral" />
+                                    Listening · {formatElapsed(recordingStartedAt, clock)}
+                                </span>
+                            )}
+                        </div>
+                        <div className="max-h-[40vh] overflow-y-auto">
+                            {transcript || interimTranscript ? (
+                                <p className="text-[17px] leading-7">
+                                    {transcript}{" "}
+                                    <span className="italic text-sg-muted">{interimTranscript}</span>
+                                </p>
+                            ) : (
+                                <p className="text-sg-muted">
+                                    Your words appear here as you speak. Take a breath first; there&apos;s no rush.
+                                </p>
+                            )}
+                        </div>
+                    </section>
 
-                                        <Button
-                                            size="sm"
-                                            onClick={handleRunCode}
-                                            disabled={isRunning}
-                                            className="h-8 bg-green-600 hover:bg-green-500 text-white"
-                                        >
-                                            {isRunning ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : <Play className="w-3 h-3 mr-1" />}
-                                            Run Code
-                                        </Button>
-                                    </div>
-                                </div>
-
-                                {/* Terminal Output */}
-                                <div className="h-[150px] shrink-0 rounded-xl bg-black border border-white/10 p-4 font-mono text-xs overflow-auto">
-                                    <div className="text-white/50 mb-2 border-b border-white/10 pb-1">Tagline Terminal</div>
-                                    {codeOutput.error ? (
-                                        <pre className="text-red-400 whitespace-pre-wrap">{codeOutput.error}</pre>
-                                    ) : codeOutput.stderr ? (
-                                        <pre className="text-yellow-400 whitespace-pre-wrap">{codeOutput.stderr}</pre>
+                    {isCodingQuestion && (
+                        <section aria-label="Code editor" className="flex flex-col gap-3">
+                            <div className="flex items-center justify-between gap-2">
+                                <span className={eyebrow}>Your code</span>
+                                <button
+                                    type="button"
+                                    onClick={handleRunCode}
+                                    disabled={isRunning}
+                                    className={cn(inkButton, "h-10 px-4 text-sm")}
+                                >
+                                    {isRunning ? (
+                                        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                                     ) : (
-                                        <pre className="text-green-400 whitespace-pre-wrap">{codeOutput.stdout || "Ready to execute..."}</pre>
+                                        <Play className="size-4" aria-hidden="true" />
                                     )}
-                                </div>
+                                    {isRunning ? "Running…" : "Run code"}
+                                </button>
                             </div>
+                            <div className="h-[420px] overflow-hidden rounded-[18px] border border-sg-glass-border">
+                                <CodeEditor
+                                    value={codeAnswer}
+                                    onChange={handleCodeChange}
+                                    language={editorLanguage}
+                                    onLanguageChange={setEditorLanguage}
+                                    height="100%"
+                                    theme="vs-dark"
+                                    showLanguageSelector={true}
+                                    className="h-full border-0"
+                                />
+                            </div>
+                            <div className="flex max-h-[180px] min-h-[120px] flex-col gap-2 overflow-auto rounded-[18px] bg-sg-row p-4 font-mono text-[13px]">
+                                <span className={cn(eyebrow, "font-sans")}>Output</span>
+                                {codeOutput.error ? (
+                                    <pre role="alert" className="whitespace-pre-wrap text-sg-danger">
+                                        {codeOutput.error}
+                                    </pre>
+                                ) : codeOutput.stderr ? (
+                                    <pre className="whitespace-pre-wrap text-sg-danger">{codeOutput.stderr}</pre>
+                                ) : (
+                                    <pre className="whitespace-pre-wrap">{codeOutput.stdout || "Run your code to see its output here."}</pre>
+                                )}
+                            </div>
+                        </section>
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+                        {!isRecording ? (
+                            <button
+                                type="button"
+                                onClick={startRecording}
+                                disabled={isProcessing}
+                                className={cn(coralButton, "h-14 w-full px-7 text-base sm:w-auto")}
+                            >
+                                {isProcessing ? (
+                                    <Loader2 className="size-5 animate-spin" aria-hidden="true" />
+                                ) : (
+                                    <Mic className="size-5" aria-hidden="true" />
+                                )}
+                                {isProcessing ? "Saving your answer…" : "Start answering"}
+                            </button>
                         ) : (
-                            // Use the standard large video view + visualizer for Non-Coding Questions
-                            <div className="flex-1 relative rounded-3xl overflow-hidden bg-black border border-white/10 shadow-2xl group">
-                                <video
-                                    ref={setVideoRef}
-                                    autoPlay
-                                    playsInline
-                                    muted
-                                    className="w-full h-full object-cover transform scale-x-[-1]"
-                                />
+                            <button
+                                type="button"
+                                onClick={stopRecording}
+                                className={cn(inkButton, "h-14 w-full px-7 text-base sm:w-auto")}
+                            >
+                                <Square className="size-5" aria-hidden="true" />
+                                Stop and submit
+                            </button>
+                        )}
+                        <span className="text-sm text-sg-muted">
+                            {isRecording
+                                ? "Your answer is scored after you submit."
+                                : "Answers are captured by voice. Chrome or Edge works best."}
+                        </span>
+                    </div>
+                </main>
 
-                                {/* Audio Visualizer Overlay */}
-                                <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/90 to-transparent pointer-events-none">
-                                    <div className="absolute bottom-4 left-4 right-4 h-16 flex items-end justify-center gap-1">
-                                        <AudioVisualizer stream={stream} />
-                                    </div>
-                                </div>
+                <aside
+                    aria-label="You and your coach"
+                    className="flex min-w-[min(260px,100%)] max-w-full flex-[1_1_300px] flex-col gap-4 lg:max-w-[380px]"
+                >
+                    <div className="relative aspect-[4/3] overflow-hidden rounded-[24px] border border-sg-glass-border bg-sg-lavender-soft shadow-[var(--sg-shadow)]">
+                        <video
+                            ref={setVideoRef}
+                            autoPlay
+                            playsInline
+                            muted
+                            className="size-full -scale-x-100 object-cover"
+                        />
+                        <span className="absolute left-3 top-3 inline-flex h-7 items-center gap-1.5 rounded-full bg-sg-ink px-2.5 text-[13px] font-bold text-sg-ink-foreground">
+                            {isRecording ? (
+                                <>
+                                    <span aria-hidden="true" className="size-2 animate-pulse rounded-full bg-sg-coral" />
+                                    Recording
+                                </>
+                            ) : (
+                                <>
+                                    <Video className="size-3.5" aria-hidden="true" />
+                                    Mic on · Camera on
+                                </>
+                            )}
+                        </span>
+                        <div className="pointer-events-none absolute inset-x-3 bottom-2 h-12">
+                            <AudioVisualizer stream={stream} className="h-12 text-sg-lavender" />
+                        </div>
 
-                                {/* Status Badge */}
-                                <div className="absolute top-4 right-4 px-3 py-1.5 rounded-full bg-red-500/20 border border-red-500/30 backdrop-blur-md flex items-center gap-2 animate-pulse">
-                                    <div className="w-2 h-2 rounded-full bg-red-500" />
-                                    <span className="text-xs font-semibold text-red-100 tracking-wide uppercase">Live Rec</span>
-                                </div>
-
-                                {/* Gaze Tracker */}
-                                <GazeTracker
-                                    videoElement={videoElement}
-                                    isActive={isRecording}
-                                    onWarning={handleWarningWrapper}
-                                />
-                            </div>
+                        {/* Gaze tracking only runs on spoken questions, as before. */}
+                        {!isCodingQuestion && (
+                            <GazeTracker videoElement={videoElement} isActive={isRecording} onWarning={handleWarningWrapper} />
                         )}
                     </div>
 
-                    {/* DOCUMENT PANEL (NEW) */}
-                    <div className="flex flex-col gap-6 h-full min-h-0">
-                        <Card className="bg-black/40 border-white/10 backdrop-blur-xl h-full flex flex-col">
-                            <CardHeader className="p-4 border-b border-white/10 flex flex-row items-center gap-2 shrink-0">
-                                <FileText className="w-5 h-5 text-blue-400" />
-                                <CardTitle className="text-sm font-bold uppercase tracking-wider">Reference Docs</CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-4 space-y-4 flex-1 overflow-y-auto">
-                                {!userDocuments?.resumeUrl && !userDocuments?.panUrl && !userDocuments?.aadhaarUrl ? (
-                                    <div className="text-center py-10">
-                                        <p className="text-sm text-white/30 italic">No documents uploaded</p>
-                                    </div>
-                                ) : (
-                                    <>
-                                        {userDocuments?.resumeUrl && (
-                                            <div className="group space-y-2">
-                                                <Label className="text-[10px] text-white/40 uppercase font-bold tracking-widest">Resume</Label>
-                                                <div className="relative aspect-[3/4] bg-white rounded-lg overflow-hidden border border-white/10 shadow-lg group-hover:border-blue-500/50 transition-all">
-                                                    <iframe
-                                                        src={documentHref(userDocuments.resumeUrl)}
-                                                        className="w-full h-full pointer-events-none"
-                                                        title="Resume Preview"
-                                                    />
-                                                    <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
-                                                    <a
-                                                        href={documentHref(userDocuments.resumeUrl)}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/60 transition-opacity"
-                                                    >
-                                                        <Button size="sm" variant="secondary">View Full PDF</Button>
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        )}
+                    <CoachBubble>
+                        <span className="block font-bold">A tip from U</span>
+                        <span className="text-sg-muted">
+                            Lead with the result, then how you got there. A real number lands better than a list of tools.
+                        </span>
+                    </CoachBubble>
 
-                                        {(userDocuments?.panUrl || userDocuments?.aadhaarUrl) && (
-                                            <div className="space-y-4 pt-4 border-t border-white/5">
-                                                <Label className="text-[10px] text-white/40 uppercase font-bold tracking-widest text-center block">Identity Proofs</Label>
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    {userDocuments?.panUrl && (
-                                                        <div className="group relative aspect-video bg-muted rounded-md overflow-hidden border border-white/10">
-                                                            <img src={documentHref(userDocuments.panUrl)} alt="PAN Card" className="w-full h-full object-cover" />
-                                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/60 transition-opacity">
-                                                                <a href={documentHref(userDocuments.panUrl)} target="_blank" rel="noopener noreferrer">
-                                                                    <Maximize2 className="w-4 h-4 text-white" />
-                                                                </a>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    {userDocuments?.aadhaarUrl && (
-                                                        <div className="group relative aspect-video bg-muted rounded-md overflow-hidden border border-white/10">
-                                                            <img src={documentHref(userDocuments.aadhaarUrl)} alt="Aadhaar Card" className="w-full h-full object-cover" />
-                                                            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/60 transition-opacity">
-                                                                <a href={documentHref(userDocuments.aadhaarUrl)} target="_blank" rel="noopener noreferrer">
-                                                                    <Maximize2 className="w-4 h-4 text-white" />
-                                                                </a>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </>
-                                )}
-                            </CardContent>
-                            <div className="p-3 bg-blue-500/5 border-t border-white/5 rounded-b-xl">
-                                <p className="text-[10px] text-center text-blue-300/60 leading-tight italic">
-                                    Documents are visible to the interviewer for verification.
-                                </p>
-                            </div>
-                        </Card>
+                    <div className="sg-glass mt-auto flex flex-col gap-2.5 rounded-[20px] p-4">
+                        <span className={eyebrow}>Your documents</span>
+                        {hasDocuments ? (
+                            <ul className="flex flex-col">
+                                {documents.map((doc) => (
+                                    <li key={doc.label}>
+                                        <a
+                                            href={documentHref(doc.url)}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className={cn(
+                                                "flex min-h-10 items-center justify-between gap-2 rounded-xl font-semibold",
+                                                focusRing
+                                            )}
+                                        >
+                                            <span className="inline-flex items-center gap-2">
+                                                <FileText className="size-4" aria-hidden="true" />
+                                                {doc.label}
+                                            </span>
+                                            <span className="font-medium text-sg-muted">
+                                                View<span className="sr-only"> (opens in a new tab)</span>
+                                            </span>
+                                        </a>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="text-sg-muted">No documents uploaded.</p>
+                        )}
+                        <p className="text-[13px] leading-[18px] text-sg-muted">The hiring team can see these to verify you.</p>
                     </div>
-                </div>
+                </aside>
             </div>
-        </div>
+        </FocusRoot>
     );
+}
+
+function formatElapsed(startedAt: number | null, now: number) {
+    const seconds = startedAt ? Math.max(0, Math.floor((now - startedAt) / 1000)) : 0;
+    return `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
 }

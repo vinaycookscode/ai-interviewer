@@ -1,11 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { updateInterviewLanguage } from "@/actions/interview";
-import { Loader2, Globe } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, Languages } from "lucide-react";
+import { coralButton, focusRing } from "@/components/soft-glass/classes";
+import { cn } from "@/lib/utils";
+import { FocusCard, FocusRoot } from "./session-shell";
+
+const LANGUAGES = [
+    { value: "en", label: "English", native: "Default" },
+    { value: "hi", label: "Hindi", native: "हिंदी" },
+    { value: "mr", label: "Marathi", native: "मराठी" },
+    { value: "kn", label: "Kannada", native: "ಕನ್ನಡ" },
+    { value: "ta", label: "Tamil", native: "தமிழ்" },
+];
 
 interface LanguageSelectorProps {
     interviewId: string;
@@ -33,41 +41,49 @@ export function LanguageSelector({ interviewId, onLanguageSelected }: LanguageSe
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-background p-4">
-            <Card className="w-full max-w-md">
-                <CardHeader className="text-center">
-                    <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
-                        <Globe className="h-8 w-8 text-primary" />
-                    </div>
-                    <CardTitle className="text-2xl">Select Interview Language</CardTitle>
-                    <CardDescription>
-                        Choose your comfortable language for the interview.
-                        Questions and feedback will be adapted to this language.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Language</label>
-                        <Select value={language} onValueChange={setLanguage}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select Language" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="en">English (Default)</SelectItem>
-                                <SelectItem value="hi">Hindi (हिंदी)</SelectItem>
-                                <SelectItem value="mr">Marathi (मराठी)</SelectItem>
-                                <SelectItem value="kn">Kannada (कन्नड़)</SelectItem>
-                                <SelectItem value="ta">Tamil (தமிழ்)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <Button onClick={handleContinue} className="w-full" disabled={isLoading}>
-                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Continue
-                    </Button>
-                </CardContent>
-            </Card>
-        </div>
+        <FocusRoot>
+            <FocusCard>
+                <span className="flex size-12 items-center justify-center rounded-full bg-sg-lavender-soft text-sg-lavender-ink">
+                    <Languages className="size-6" aria-hidden="true" />
+                </span>
+                <div className="flex flex-col gap-2">
+                    <h1 className="font-display sg-soft text-[30px] font-semibold leading-9 sm:text-[34px] sm:leading-10">
+                        Which language?
+                    </h1>
+                    <p className="text-sg-muted">
+                        Answer in the language you&apos;re most comfortable in. Questions are read out in it, and your
+                        feedback uses it too.
+                    </p>
+                </div>
+                <div role="radiogroup" aria-label="Interview language" className="flex flex-col gap-2">
+                    {LANGUAGES.map((option) => {
+                        const checked = language === option.value;
+                        return (
+                            <button
+                                key={option.value}
+                                type="button"
+                                role="radio"
+                                aria-checked={checked}
+                                onClick={() => setLanguage(option.value)}
+                                className={cn(
+                                    "flex min-h-12 items-center justify-between gap-3 rounded-2xl border-2 px-4 text-left font-semibold transition-colors",
+                                    checked
+                                        ? "border-sg-ink bg-[var(--sg-glass-strong)]"
+                                        : "border-transparent bg-sg-row hover:bg-sg-chip",
+                                    focusRing
+                                )}
+                            >
+                                <span>{option.label}</span>
+                                <span className="text-sm font-medium text-sg-muted">{option.native}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+                <button type="button" onClick={handleContinue} disabled={isLoading} className={cn(coralButton, "h-14 w-full text-[17px]")}>
+                    {isLoading && <Loader2 className="size-5 animate-spin" aria-hidden="true" />}
+                    Continue
+                </button>
+            </FocusCard>
+        </FocusRoot>
     );
 }

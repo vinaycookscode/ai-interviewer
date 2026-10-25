@@ -1,86 +1,74 @@
-import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
+import { Hourglass } from "lucide-react";
+import { ScoreGauge } from "@/components/soft-glass/score-gauge";
+import { CoachBubble } from "@/components/soft-glass/coach-bubble";
+import { label, row } from "@/components/jobs/employer-ui";
 
-interface ScoreCardProps {
-    score: number | null;
+export interface HighlightAnswer {
+    question: string;
+    score: number;
 }
 
-export function ScoreCard({ score }: ScoreCardProps) {
-    if (score === null) {
-        return (
-            <div className="flex flex-col items-center justify-center h-full">
-                <h3 className="text-2xl font-semibold mb-6">Overall Score</h3>
-                <div className="flex flex-col items-center justify-center py-8">
-                    <div className="text-center">
-                        <div className="w-32 h-32 rounded-full bg-muted flex items-center justify-center mb-3">
-                            <span className="text-4xl">⏳</span>
-                        </div>
-                        <p className="text-muted-foreground">Scoring in progress...</p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
+interface ScoreCardProps {
+    /** Average score out of 10; null while answers are still being scored. */
+    score: number | null;
+    answerCount: number;
+    viewer: "candidate" | "employer";
+    strongest: HighlightAnswer | null;
+    weakest: HighlightAnswer | null;
+}
 
-    const formattedScore = score.toFixed(1);
-    const percentage = (score / 10) * 100;
-
-    let colorClass = "text-yellow-600";
-    let bgClass = "bg-yellow-500";
-    let borderClass = "border-yellow-200";
-
-    if (score >= 8) {
-        colorClass = "text-green-600";
-        bgClass = "bg-green-500";
-        borderClass = "border-green-200";
-    } else if (score < 5) {
-        colorClass = "text-red-600";
-        bgClass = "bg-red-500";
-        borderClass = "border-red-200";
-    }
+/** The overall result: the gauge, U's summary, and the strongest and weakest answers. */
+export function ScoreCard({ score, answerCount, viewer, strongest, weakest }: ScoreCardProps) {
+    const t = useTranslations("FeedbackReport");
+    const band = score === null ? null : score >= 7 ? "high" : score >= 4 ? "mid" : "low";
 
     return (
-        <div className="flex flex-col items-center justify-center h-full">
-            <h3 className="text-2xl font-semibold mb-6">Overall Score</h3>
-            <div className="flex flex-col items-center justify-center">
-                <div className="relative w-40 h-40 mb-4">
-                    {/* Background circle */}
-                    {/* Background circle */}
-                    <svg className="w-full h-full" viewBox="0 0 160 160">
-                        <circle
-                            cx="80"
-                            cy="80"
-                            r="70"
-                            stroke="currentColor"
-                            strokeWidth="12"
-                            fill="none"
-                            className="text-muted-foreground/20"
-                        />
-                        {/* Progress circle */}
-                        <circle
-                            cx="80"
-                            cy="80"
-                            r="70"
-                            stroke="currentColor"
-                            strokeWidth="12"
-                            fill="none"
-                            strokeDasharray={`${2 * Math.PI * 70}`}
-                            strokeDashoffset={`${2 * Math.PI * 70 * (1 - percentage / 100)}`}
-                            className={cn("transition-all duration-1000 origin-center -rotate-90", colorClass)}
-                            strokeLinecap="round"
-                        />
-                    </svg>
-                    {/* Score text */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className={cn("text-5xl font-bold", colorClass)}>
-                            {formattedScore}
+        <section
+            aria-label={t("overallLabel")}
+            className="sg-glass sg-shadow-lg grid grid-cols-1 items-center gap-7 rounded-[24px] p-5 sm:rounded-[28px] sm:p-8 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]"
+        >
+            <div className="flex flex-col items-center gap-2 text-center">
+                {score === null ? (
+                    <>
+                        <span className="inline-flex size-24 items-center justify-center rounded-full bg-sg-chip">
+                            <Hourglass className="size-9 text-sg-muted" aria-hidden="true" />
                         </span>
-                        <span className="text-sm text-muted-foreground">out of 10</span>
-                    </div>
-                </div>
-                <div className={cn("px-3 py-1 rounded-full text-xs font-medium mt-2", bgClass, "text-white")}>
-                    {score >= 8 ? "Excellent" : score >= 5 ? "Good" : "Needs Improvement"}
-                </div>
+                        <p role="status" className="font-semibold">
+                            {t("scoring")}
+                        </p>
+                    </>
+                ) : (
+                    <>
+                        <ScoreGauge value={score} className="w-56" />
+                        <span className="font-semibold">{t("outOf", { count: answerCount })}</span>
+                    </>
+                )}
             </div>
-        </div>
+
+            <div className="flex min-w-0 flex-col gap-4">
+                {band && (
+                    <CoachBubble>
+                        <p className="text-[17px] leading-[27px]">{t(`summary.${viewer}.${band}`)}</p>
+                    </CoachBubble>
+                )}
+                {(strongest || weakest) && (
+                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                        {strongest && (
+                            <div className={`${row} flex min-w-0 flex-col gap-1`}>
+                                <span className={label}>{t("strongest", { score: strongest.score.toFixed(1) })}</span>
+                                <span className="line-clamp-2 font-semibold break-words">{strongest.question}</span>
+                            </div>
+                        )}
+                        {weakest && (
+                            <div className={`${row} flex min-w-0 flex-col gap-1`}>
+                                <span className={label}>{t("weakest", { score: weakest.score.toFixed(1) })}</span>
+                                <span className="line-clamp-2 font-semibold break-words">{weakest.question}</span>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        </section>
     );
 }

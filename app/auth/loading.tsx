@@ -1,35 +1,28 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { getTranslations } from "next-intl/server";
 
-export default function AuthLoading() {
+/** Placeholder card while an auth screen loads; renders inside the auth layout. */
+export default async function AuthLoading() {
+    const t = await getTranslations("Auth");
+
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/20 via-background to-secondary/20">
-            <Card className="w-full max-w-md mx-4">
-                <CardHeader className="space-y-1 text-center">
-                    <Skeleton className="h-8 w-48 mx-auto mb-2" />
-                    <Skeleton className="h-4 w-64 mx-auto" />
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Skeleton className="h-4 w-16" />
-                        <Skeleton className="h-10 w-full" />
-                    </div>
-                    <div className="space-y-2">
-                        <Skeleton className="h-4 w-16" />
-                        <Skeleton className="h-10 w-full" />
-                    </div>
-                    <Skeleton className="h-10 w-full" />
-                    <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t" />
+        <div role="status" className="w-full max-w-[440px]">
+            <span className="sr-only">{t("loading")}</span>
+            <div aria-hidden="true" className="sg-glass animate-pulse rounded-[28px] p-6 sm:rounded-[32px] sm:p-9">
+                <div className="flex flex-col items-center gap-3">
+                    <div className="size-14 rounded-2xl bg-sg-track" />
+                    <div className="h-8 w-48 rounded-full bg-sg-track" />
+                    <div className="h-4 w-56 max-w-full rounded-full bg-sg-track" />
+                </div>
+                <div className="mt-7 flex flex-col gap-5">
+                    {[0, 1].map((i) => (
+                        <div key={i} className="flex flex-col gap-2">
+                            <div className="h-4 w-20 rounded-full bg-sg-track" />
+                            <div className="h-12 rounded-2xl bg-sg-track" />
                         </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                            <Skeleton className="h-4 w-8" />
-                        </div>
-                    </div>
-                    <Skeleton className="h-4 w-full mx-auto" />
-                </CardContent>
-            </Card>
+                    ))}
+                    <div className="mt-1 h-12 rounded-full bg-sg-track" />
+                </div>
+            </div>
         </div>
     );
 }
