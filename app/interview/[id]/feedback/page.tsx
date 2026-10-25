@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
-import { db } from "@/lib/db";
 import { cn } from "@/lib/utils";
 import { softGlassFonts } from "@/lib/fonts";
 import { getInterviewFeedback } from "@/actions/feedback";
@@ -16,20 +15,14 @@ export default async function FeedbackPage({ params }: { params: Promise<{ id: s
     const user = session?.user;
     if (!user?.id) notFound();
 
-    // Only the candidate, the job's employer or an admin may read this report.
-    const isAdmin = user.role === "ADMIN";
-    const allowed = await db.interview.findFirst({
-        where: isAdmin ? { id } : { id, OR: [{ candidateId: user.id }, { job: { employerId: user.id } }] },
-        select: { id: true },
-    });
-    if (!allowed) notFound();
-
-    const { success, interview, averageScore } = await getInterviewFeedback(id);
-    if (!success || !interview) notFound();
+    // The action only returns the report to its candidate, the job's employer or an admin.
+    const result = await getInterviewFeedback(id);
+    if (!result.success) notFound();
+    const { interview, averageScore, viewer } = result;
 
     const t = await getTranslations("FeedbackReport");
-    const isCandidate = user.email === interview.candidate.email;
-    const back = isCandidate
+    const isAdmin = user.role === "ADMIN";
+    const back = viewer === "candidate"
         ? { href: "/candidate/dashboard", label: t("backCandidate") }
         : { href: `/dashboard/jobs/${interview.job.id}`, label: interview.job.title };
 
@@ -49,7 +42,7 @@ export default async function FeedbackPage({ params }: { params: Promise<{ id: s
                 <FeedbackReport
                     interview={interview}
                     averageScore={averageScore ?? null}
-                    viewer={isCandidate ? "candidate" : "employer"}
+                    viewer={viewer}
                     back={back}
                 />
             </AppShell>

@@ -25,7 +25,6 @@ export default async function DocumentUploadPage({
         where: { id },
         include: {
             job: true,
-            candidate: true,
         },
     });
 

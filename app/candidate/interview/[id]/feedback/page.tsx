@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
-import { db } from "@/lib/db";
 import { getInterviewFeedback } from "@/actions/feedback";
 import { FeedbackReport } from "@/components/feedback/feedback-report";
 
@@ -9,30 +8,22 @@ import { FeedbackReport } from "@/components/feedback/feedback-report";
 export default async function CandidateFeedbackPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const session = await auth();
-    const user = session?.user;
-    if (!user?.id) notFound();
+    if (!session?.user?.id) notFound();
 
-    // Only the candidate, the job's employer or an admin may read this report.
-    const isAdmin = user.role === "ADMIN";
-    const allowed = await db.interview.findFirst({
-        where: isAdmin ? { id } : { id, OR: [{ candidateId: user.id }, { job: { employerId: user.id } }] },
-        select: { id: true },
-    });
-    if (!allowed) notFound();
-
-    const { success, interview, averageScore } = await getInterviewFeedback(id);
-    if (!success || !interview) notFound();
+    // The action only returns the report to its candidate, the job's employer or an admin.
+    const result = await getInterviewFeedback(id);
+    if (!result.success) notFound();
+    const { interview, averageScore, viewer } = result;
 
     const t = await getTranslations("FeedbackReport");
-    const isCandidate = user.email === interview.candidate.email;
 
     return (
         <div className="mx-auto w-full max-w-[1160px]">
             <FeedbackReport
                 interview={interview}
                 averageScore={averageScore ?? null}
-                viewer={isCandidate ? "candidate" : "employer"}
-                back={isCandidate ? { href: "/candidate/dashboard", label: t("backCandidate") } : { href: "/dashboard", label: t("backEmployer") }}
+                viewer={viewer}
+                back={viewer === "candidate" ? { href: "/candidate/dashboard", label: t("backCandidate") } : { href: "/dashboard", label: t("backEmployer") }}
             />
         </div>
     );

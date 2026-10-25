@@ -34,7 +34,8 @@ export default async function InterviewPage({
                     },
                 },
             },
-            candidate: true,
+            // Only what this page needs: never the whole User row (it holds the password hash).
+            candidate: { select: { id: true, email: true, resumeUrl: true, panUrl: true, aadhaarUrl: true } },
         },
     });
 
@@ -189,7 +190,7 @@ export default async function InterviewPage({
     // All checks passed - show interview
     return (
         <InterviewClientPage
-            interview={interview}
+            interview={{ id: interview.id, language: interview.language, job: { title: interview.job.title } }}
             questions={interview.job.questions}
             userDocuments={{
                 resumeUrl: interview.candidate.resumeUrl,
