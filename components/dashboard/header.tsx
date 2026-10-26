@@ -28,7 +28,7 @@ export async function DashboardHeader({ user, userRole }: DashboardHeaderProps) 
             <Link href="/dashboard" className="flex items-center gap-3 group relative z-10 transition-transform active:scale-95">
                 <div className="relative">
                     <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <Image src="/logo.png" alt="Logo" width={32} height={32} className="relative z-10 h-8 w-8 object-contain" />
+                    <Image src="/brand/u-mark.svg" alt="" width={32} height={32} className="relative z-10 h-8 w-8 object-contain" />
                 </div>
                 <div className="hidden md:block">
                     <h1 className="text-xl font-black tracking-tighter uppercase leading-none italic">

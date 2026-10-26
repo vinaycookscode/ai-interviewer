@@ -7,7 +7,7 @@ export default function JsonLd() {
         '@type': 'Organization',
         name: 'Get Back To U',
         url: baseUrl,
-        logo: `${baseUrl}/icon.png`,
+        logo: `${baseUrl}/brand/u-mark.png`,
         description: 'AI-powered interview platform helping candidates master job interviews with mock practice, flashcards, and resume analysis.',
         sameAs: [
             'https://twitter.com/getbacktou',

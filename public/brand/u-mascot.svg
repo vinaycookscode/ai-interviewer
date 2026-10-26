@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="U, the Get Back To U mascot">
+  <path d="M12 14c0-3 2-5 5-5h4c3 0 5 2 5 5v20c0 4 3 7 6 7s6-3 6-7V14c0-3 2-5 5-5h4c3 0 5 2 5 5v20c0 12-9 21-20 21S12 46 12 34z" fill="#f28c6b"/>
+  <path d="M16 17c0-2 1-3 3-3h2" fill="none" stroke="#ffffff" stroke-opacity="0.6" stroke-width="2.4" stroke-linecap="round"/>
+  <circle cx="24" cy="30" r="2.6" fill="#2a1612"/>
+  <circle cx="40" cy="30" r="2.6" fill="#2a1612"/>
+  <circle cx="24.9" cy="29.1" r="0.9" fill="#ffffff"/>
+  <circle cx="40.9" cy="29.1" r="0.9" fill="#ffffff"/>
+  <ellipse cx="18.5" cy="36.5" rx="3" ry="1.8" fill="#ffffff" fill-opacity="0.35"/>
+  <ellipse cx="45.5" cy="36.5" rx="3" ry="1.8" fill="#ffffff" fill-opacity="0.35"/>
+  <path d="M27 38c3 3 7 3 10 0" fill="none" stroke="#2a1612" stroke-width="2.4" stroke-linecap="round"/>
+</svg>

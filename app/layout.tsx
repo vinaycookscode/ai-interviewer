@@ -106,12 +106,8 @@ export const metadata: Metadata = {
     images: ["/opengraph-image.png"],
     creator: "@getbacktou",
   },
-  icons: {
-    icon: "/icon.png",
-    shortcut: "/icon.png",
-    apple: "/icon.png",
-  },
-  manifest: "/manifest.json",
+  // Icons come from the file conventions: app/favicon.ico, app/icon.svg, app/apple-icon.png.
+  manifest: "/manifest.webmanifest",
   alternates: {
     canonical: "/",
   },
