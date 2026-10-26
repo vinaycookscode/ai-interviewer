@@ -9,7 +9,7 @@
 > - **In Review:** shipped, still needing a manual or test-key check.
 > - **To Do:** not started.
 
-## Status — 2026-10-25
+## Status — 2026-10-26
 
 **P0**
 
@@ -31,27 +31,27 @@
 | Webhook `GET` handler | AIIN-24 | Done |
 | Webhook signature and payment activation | AIIN-25 | In Review (needs Razorpay test mode) |
 | Seed routes reachable in production | AIIN-26 | Done (admin only) |
-| Gemini keys stored in plaintext | AIIN-27, AIIN-111 | Done / In Review (feature removed, column dropped) |
+| Gemini keys stored in plaintext | AIIN-27, AIIN-111 | Done (feature removed, column dropped) |
 | Upload size and type validation | AIIN-28 | Done |
 
 **P1 — Performance, correctness and UX**
 
 | Finding | Ticket | Status |
 |---|---|---|
-| JWT callback hits the database on every request | AIIN-30 | In Review |
+| JWT callback hits the database on every request | AIIN-30 | Done |
 | Rate limiting in Postgres | AIIN-31 | To Do |
 | Dashboard query without pagination | AIIN-32 | To Do (deferred) |
 | Resume re-fetched from R2 on every analysis | AIIN-33 | To Do |
 | N+1 in `getDecks()` | AIIN-34 | To Do |
-| `completeInterview` race | AIIN-36 | In Review |
-| Unbounded Gemini retries | AIIN-37 | In Review |
+| `completeInterview` race | AIIN-36 | Done |
+| Unbounded Gemini retries | AIIN-37 | Done |
 | Grading blocks the UI between questions | AIIN-38 | To Do |
 | Fixed 450px + 350px interview grid | AIIN-39 | Done in AIIN-128 (Soft Glass interview session, on `develop`) |
-| No SpeechRecognition check | AIIN-40 | In Review |
+| No SpeechRecognition check | AIIN-40 | Done |
 | Questions lost on refresh in mock interviews | AIIN-47 | To Do |
 | `checkApiStatus` always "available" | AIIN-48 | To Do |
 | Onboarding wizard never triggered | AIIN-52 | To Do |
-| Employer sign-up silently creates a candidate | AIIN-53 | In Review (invite-only note) |
+| Employer sign-up silently creates a candidate | AIIN-53 | Done (invite-only note) |
 | No Google OAuth | AIIN-54 | To Do |
 
 **Found while fixing the above**
@@ -63,16 +63,16 @@
 | Webhook swallowed errors and returned 200 | AIIN-110 | In Review |
 | "Encrypted" plan parameter used a public key | AIIN-112 | In Review |
 | Aadhaar, PAN and resumes in a public R2 bucket | AIIN-113 | In Review (switch off public access after deploy) |
-| Local `.env` pointed at the production database | AIIN-114 | In Review |
+| Local `.env` pointed at the production database | AIIN-114 | Done |
 | Preview builds had no `DATABASE_URL` | AIIN-115 | In Progress (set it in Vercel) |
-| Interview actions had no auth | AIIN-116 | In Review |
-| Invited accounts claimable by email alone | AIIN-117 | In Review |
-| Feedback action had no auth and returned the candidate's password hash; the interview page sent it to the browser | AIIN-187 | In Review (fixed on `develop`) |
+| Interview actions had no auth | AIIN-116 | Done |
+| Invited accounts claimable by email alone | AIIN-117 | Done |
+| Feedback action had no auth and returned the candidate's password hash; the interview page sent it to the browser | AIIN-187 | Done (on `develop`) |
 | Problem solver shows made-up test results for Python, Java and C++ | AIIN-149 | To Do |
 | Deleting a job with candidates fails (no cascade) | AIIN-188 | To Do |
 | Free plan promises practice, but the practice page blocks free users | AIIN-189 | To Do (decision) |
 
-**Quick wins:** 1 (AIIN-15), 2 (AIIN-17), 3 (AIIN-18), 4 (AIIN-24), 5 (AIIN-22), 6 (AIIN-45), 8 (AIIN-40), 9 (AIIN-30) and 10 (AIIN-28) are shipped. 7 (pagination, AIIN-32) is deferred.
+**Quick wins:** 1 (AIIN-15), 2 (AIIN-17), 3 (AIIN-18), 4 (AIIN-24), 5 (AIIN-22), 6 (AIIN-45), 8 (AIIN-40), 9 (AIIN-30) and 10 (AIIN-28) are done. 7 (pagination, AIIN-32) is deferred.
 
 ---
 
@@ -264,13 +264,13 @@ ADRs added on 2026-10-24 and 2026-10-25, while fixing the findings, are listed i
 7. **P3** — Reduce sidebar from 12 equal-weight items to 6-7 with clear hierarchy
 8. **P4** — Align landing page and app interior visual register (currently feel like two products)
 
-**Update 2026-10-25:** the visual direction is now **Soft Glass** (ADR `docs/architecture/2026-10-25-soft-glass-design-language.md`). Every screen moves to it under epic AIIN-123. Where each decision above went:
+**Update 2026-10-25, statuses as of 2026-10-26:** the visual direction is now **Soft Glass** (ADR `docs/architecture/2026-10-25-soft-glass-design-language.md`). Every screen moves to it under epic AIIN-123. Where each decision above went:
 
-- **1 → AIIN-84:** brand tokens added; the teal is retired once screens move to Soft Glass.
-- **2, 5, 7 → AIIN-125, the new app shell:** they cover AIIN-85, AIIN-86 and AIIN-89. Built and on `develop` since 2026-10-26 (ADR `docs/architecture/2026-10-25-app-shell-navigation.md`).
-- **3 → AIIN-87 and AIIN-122:** the landing page is rebuilt in Soft Glass.
+- **1 → AIIN-84 (In Progress):** brand tokens added; the teal is retired once screens move to Soft Glass (AIIN-139).
+- **2, 5, 7 → AIIN-125, the new app shell:** AIIN-85, AIIN-86 and AIIN-89 are Done. Built and on `develop` since 2026-10-26 (ADR `docs/architecture/2026-10-25-app-shell-navigation.md`).
+- **3 → AIIN-87 and AIIN-122 (Done):** the landing page is rebuilt in Soft Glass.
 - **4 → AIIN-52:** still To Do.
-- **6 → AIIN-137:** system and empty states; covers AIIN-88.
+- **6 → AIIN-137 (To Do):** system and empty states; covers AIIN-88.
 - **8 → AIIN-90:** closed, superseded by AIIN-123.
 
 ---

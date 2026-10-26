@@ -48,7 +48,7 @@ The build refuses to run migrations against the production endpoint unless Verce
 | Variable | Production | Preview | Used for |
 |---|---|---|---|
 | `AUTH_SECRET` | ✅ | ✅ | NextAuth session signing |
-| `NEXTAUTH_URL` | `https://getbacktou.com` | the preview URL | NextAuth callbacks |
+| `AUTH_URL` | `https://getbacktou.com` | the preview URL | NextAuth's base URL for sign-in callbacks. NextAuth reads `AUTH_URL` first, then the older `NEXTAUTH_URL`; an environment that still sets `NEXTAUTH_URL` keeps working. Don't set both to different values. |
 | `NEXT_PUBLIC_APP_URL` | `https://getbacktou.com` | the preview URL | Links in emails and the app |
 | `APP_URL` | `https://getbacktou.com` | optional | Canonical URL for metadata, `robots.txt` and the sitemap (defaults to getbacktou.com) |
 | `GEMINI_API_KEY` | ✅ | ✅ | Every AI feature (one server key; see the [Gemini ADR](architecture/2026-10-24-gemini-models-and-keys.md)) |

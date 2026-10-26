@@ -2,10 +2,10 @@
 **Date:** 2026-10-24  
 **Score:** 38 / 100 — Does not yet feel like a product
 
-> **Update 2026-10-25:** the response to this audit is **Soft Glass**, a new design language for every screen. Why: `docs/architecture/2026-10-25-soft-glass-design-language.md`. How to build with it: `docs/design/soft-glass.md`. Tracked in Kaam epic AIIN-123.
+> **Update 2026-10-26:** the response to this audit is **Soft Glass**, a new design language for every screen. Why: `docs/architecture/2026-10-25-soft-glass-design-language.md`. How to build with it: `docs/design/soft-glass.md`. Tracked in Kaam epic AIIN-123.
 >
-> - **Shipped:** the landing page (Issues 2 and 3); auth screens built.
-> - **Next:** the app shell (Issues 4, 5 and 7).
+> - **Built (on `develop`):** the landing page (Issues 2 and 3), the auth screens, the app shell (Issues 4, 5 and 7: header noise, the 12-item sidebar, light mode), and the core screens: Today, practice, interview session, feedback report and the employer dashboard (AIIN-124 to AIIN-130).
+> - **Next:** the prep tools, account and community screens, system and empty states (Issue 6) and the admin console (AIIN-131 to AIIN-138), then retiring the old styles (AIIN-139).
 > - **Already in:** the size scale from Issue 1 (`docs/architecture/2026-10-25-design-system-size-scale.md`).
 
 ---

@@ -1,6 +1,6 @@
 # One size scale and brand tokens for the app interior
 **Date:** 2026-10-25  
-**Status:** Accepted — implemented, not yet committed (AIIN-118, AIIN-119, AIIN-120)  
+**Status:** Accepted — implemented, on `develop` since 2026-10-26 (AIIN-118, AIIN-119, AIIN-120; screen migration in `d970bc3`)  
 **Deciders:** Vinay, Engineering
 
 ## Context
@@ -29,7 +29,7 @@ Some screens were dark-only and unreadable in light mode.
    - `PageHeader`, `Section` and `SectionHeader` in `components/layout/page-header.tsx`.
    - `StatCard` in `components/layout/stat-card.tsx`.
    - `StatusScreen` in `components/layout/status-screen.tsx`, which replaced nine hand-styled interview status screens.
-4. **Migration.** Screens outside the uncommitted liquid-glass redesign moved first. Off-scale sizes in those files went from 121 to 0:
+4. **Migration.** Screens outside the liquid-glass redesign (uncommitted at the time, now parked on `feature/liquid-glass-redesign`) moved first. Off-scale sizes in those files went from 121 to 0:
    - career wizard
    - profile
    - interview entry page
@@ -41,14 +41,14 @@ Some screens were dark-only and unreadable in light mode.
 
 **Easier:** A new screen picks sizes by name, and changing the scale changes every screen that uses it. Light mode works on the migrated screens.
 
-**Harder:** Screens inside the uncommitted redesign still use their own sizes (AIIN-121) until that work is committed or set aside.
+**Harder:** Two systems coexist until the old styles are retired: screens not yet on Soft Glass use this scale, and Soft Glass screens use their own tokens. The screens that were part of the liquid-glass redesign were never migrated to the scale; they are rebuilt in Soft Glass instead (AIIN-121, closed as superseded by AIIN-123).
 
 **Relationship with Soft Glass.** [Soft Glass](2026-10-25-soft-glass-design-language.md) replaces the *look* (palette, fonts, surfaces). It does not replace the idea of a named scale.
-- The landing and auth screens currently write their larger display sizes inline.
-- When the app interior moves to Soft Glass (AIIN-125 onward), its sizes should be added to this scale rather than written inline.
+- The landing and auth screens write their larger display sizes inline.
+- The Soft Glass app interior (AIIN-125 onward) has started adding its sizes to this scale: `text-display-2xs` (22/28, weight 600) for card headings (AIIN-142). New Soft Glass sizes should go into the scale the same way rather than be written inline.
 - The teal `--brand` tokens are retired with the old styles (AIIN-139) once no screen uses them.
 
 ## Alternatives considered
 
 - **Use Tailwind's default scale directly.** It has every size, which is the problem: nothing says which one a page title should use.
-- **Put the tokens in `globals.css`.** That file holds the uncommitted redesign; a separate `design-system.css` imported from it keeps the two changes apart.
+- **Put the tokens in `globals.css`.** At the time that file held the uncommitted redesign; a separate `design-system.css` imported from it kept the two changes apart.

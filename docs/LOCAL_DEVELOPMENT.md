@@ -78,7 +78,7 @@ To test checkout end to end, use Razorpay **test-mode** keys (`rzp_test_…`) in
 Sometimes the owner wants to see a change with real accounts and data before it ships. This is the exception the [production guard](architecture/2026-10-24-keep-local-development-off-production.md) allows for a deliberate one-off, and it's the owner's call each time. It was done this way on 2026-10-26, to check the Soft Glass build.
 
 - **Switch off everything that reaches the outside world.** Override the Razorpay, Resend and R2 variables with dummy values (as in Option B) so nothing can charge a card, email a candidate or upload a file.
-- **Keep sign-in local.** Set `AUTH_URL` and `NEXT_PUBLIC_APP_URL` to `http://localhost:3000`, or sign-in redirects to the live domain.
+- **Keep sign-in local.** Set `AUTH_URL` and `NEXT_PUBLIC_APP_URL` to `http://localhost:3000`, or sign-in redirects to the live domain. `AUTH_URL` wins over the older `NEXTAUTH_URL`, so if a copied env file sets `AUTH_URL` to the live domain, overriding only `NEXTAUTH_URL` won't help.
 - **Never run migrations or `npm run build` against production.** The dev server doesn't migrate. If `npx prisma migrate status` lists unapplied migrations, leave them for the real deploy.
 - **Remember it's live data.** Starting a practice, inviting a candidate or editing a job writes real rows that users see. Read, don't change.
 - **Clear the cache when switching databases.** Stop the server and delete `.next/dev` before restarting on a different database. A stale chunk shows up as `Cannot read properties of undefined (reading 'call')`.
