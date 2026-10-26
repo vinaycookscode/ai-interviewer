@@ -204,4 +204,4 @@ AI-powered interview preparation platform built with Next.js 16, Prisma, and Tai
 - `lib/` - Utility functions
 - `components/soft-glass/` - Soft Glass components and shared class strings
 - `scripts/` - Build guards and seed scripts
-- `docs/` - ADRs (`architecture/`), design guide (`design/`), audits, environment and local-development guides
+- `docs/` - ADRs (`architecture/`), design guide (`design/`), feature specs (`specs/`), audits, environment and local-development guides
