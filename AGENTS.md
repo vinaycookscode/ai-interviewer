@@ -157,12 +157,17 @@ AI-powered interview preparation platform built with Next.js 16, Prisma, and Tai
 ### Components
 - Use shadcn/ui components from `@/components/ui/`
 - Server Components by default, add "use client" only when needed
+- A Server Component must not import a constant or array from a `"use client"` module (it gets a client reference and crashes at runtime; tsc and the build don't catch it). Put shared constants in a plain module.
+- Pass Client Components exactly the props they use, built at the call site. Never pass a database row.
 - Use `getTranslations` for i18n in server components
 - Use `useTranslations` for i18n in client components
 
 ### Styling
 - Use Tailwind CSS utilities
+- **Design first.** Every new or redesigned screen is designed and approved on the design canvas (https://claude.ai/artifact/Q1hFq3HP7UtDQ34dRQ17uQ) against the Soft Glass design system before it is built. Build from the approved artboard. See `docs/architecture/2026-10-25-design-first-on-the-canvas.md`.
 - **New and redesigned screens use Soft Glass**: `components/soft-glass/*`, the `sg-*` tokens and utilities in `app/design-system.css`, and the shared class strings in `components/soft-glass/classes.ts`. Follow `docs/design/soft-glass.md`. Don't add new `liquid-glass` or hardcoded emerald/cyan/teal styling: those are being retired (epic AIIN-123).
+- Pages under `app/candidate/*` and `app/dashboard/*` render inside `AppShell`, whose layout already provides the `.soft-glass` root, fonts and ambient light; don't add another. Focus pages (practice session, interview) use `FocusRoot` from `components/interview/session-shell.tsx`.
+- Status is told by icon and word, never colour alone; one coral call to action per view.
 - Screens not yet on Soft Glass use the named size scale (`text-page-title`, `gap-section`, `h-control`, `rounded-card`, …) and `bg-brand`/`text-brand` from `app/design-system.css`, plus `PageHeader`/`Section` from `components/layout/`.
 - Always support both light and dark modes, and widths from 320px up: nothing may overflow the page **or its own container**
 
@@ -170,6 +175,7 @@ AI-powered interview preparation platform built with Next.js 16, Prisma, and Tai
 - Schema defined in `prisma/schema.prisma`
 - Use server actions in `actions/` for data mutations
 - **Every action and route that touches user data loads it scoped to the session user** (or checks the role) before doing anything. Server Actions are public endpoints. See `docs/architecture/2026-10-24-authorize-every-data-access-on-the-server.md`.
+- **Select only what leaves the server.** Data returned from an action or passed to a client component uses `select` with the needed fields; never `include: { candidate | user | employer: true }` (the User row holds the password hash). See `docs/architecture/2026-10-26-send-the-client-only-what-it-needs.md`.
 - Schema changes: `npx prisma migrate dev --name <change>` and commit the migration. **Never `prisma db push`.**
 - Always run `npx prisma generate` after schema changes
 - Never run against the production database locally. `npm run dev` and the build's migrate step refuse to; don't bypass that with `ALLOW_PRODUCTION_DB=1`. Test on a throwaway database: `docs/LOCAL_DEVELOPMENT.md`.
@@ -187,7 +193,7 @@ AI-powered interview preparation platform built with Next.js 16, Prisma, and Tai
 ## Before Committing
 1. Run `npm run build` to verify no build errors (against a development or throwaway database)
 2. Use conventional commit messages (feat:, fix:, chore:, etc.) that name the Kaam ticket
-3. Test in both light and dark modes, at 320–1280px, and with the keyboard
+3. Test in both light and dark modes, at 320–1280px, and with the keyboard; open every changed page in the browser, not just the type check
 
 ## Key Directories
 - `app/` - Next.js App Router pages

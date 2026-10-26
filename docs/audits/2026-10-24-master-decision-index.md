@@ -3,7 +3,7 @@
 **Scope:** All 12 features + infrastructure  
 **Purpose:** Single reference for all decisions made in the 2026-10-24 analysis session
 
-> **Status as of 2026-10-25.** The audit text below is kept as written on 2026-10-24. This section tracks what happened to each finding. Tickets live in Kaam, project AIIN.
+> **Status as of 2026-10-26.** The audit text below is kept as written on 2026-10-24. This section tracks what happened to each finding. Tickets live in Kaam, project AIIN.
 >
 > - **Done:** shipped and verified.
 > - **In Review:** shipped, still needing a manual or test-key check.
@@ -46,7 +46,7 @@
 | `completeInterview` race | AIIN-36 | In Review |
 | Unbounded Gemini retries | AIIN-37 | In Review |
 | Grading blocks the UI between questions | AIIN-38 | To Do |
-| Fixed 450px + 350px interview grid | AIIN-39 | To Do (now part of AIIN-128) |
+| Fixed 450px + 350px interview grid | AIIN-39 | Done in AIIN-128 (Soft Glass interview session, on `develop`) |
 | No SpeechRecognition check | AIIN-40 | In Review |
 | Questions lost on refresh in mock interviews | AIIN-47 | To Do |
 | `checkApiStatus` always "available" | AIIN-48 | To Do |
@@ -67,6 +67,10 @@
 | Preview builds had no `DATABASE_URL` | AIIN-115 | In Progress (set it in Vercel) |
 | Interview actions had no auth | AIIN-116 | In Review |
 | Invited accounts claimable by email alone | AIIN-117 | In Review |
+| Feedback action had no auth and returned the candidate's password hash; the interview page sent it to the browser | AIIN-187 | In Review (fixed on `develop`) |
+| Problem solver shows made-up test results for Python, Java and C++ | AIIN-149 | To Do |
+| Deleting a job with candidates fails (no cascade) | AIIN-188 | To Do |
+| Free plan promises practice, but the practice page blocks free users | AIIN-189 | To Do (decision) |
 
 **Quick wins:** 1 (AIIN-15), 2 (AIIN-17), 3 (AIIN-18), 4 (AIIN-24), 5 (AIIN-22), 6 (AIIN-45), 8 (AIIN-40), 9 (AIIN-30) and 10 (AIIN-28) are shipped. 7 (pagination, AIIN-32) is deferred.
 
@@ -263,7 +267,7 @@ ADRs added on 2026-10-24 and 2026-10-25, while fixing the findings, are listed i
 **Update 2026-10-25:** the visual direction is now **Soft Glass** (ADR `docs/architecture/2026-10-25-soft-glass-design-language.md`). Every screen moves to it under epic AIIN-123. Where each decision above went:
 
 - **1 → AIIN-84:** brand tokens added; the teal is retired once screens move to Soft Glass.
-- **2, 5, 7 → AIIN-125, the new app shell:** they cover AIIN-85, AIIN-86 and AIIN-89.
+- **2, 5, 7 → AIIN-125, the new app shell:** they cover AIIN-85, AIIN-86 and AIIN-89. Built and on `develop` since 2026-10-26 (ADR `docs/architecture/2026-10-25-app-shell-navigation.md`).
 - **3 → AIIN-87 and AIIN-122:** the landing page is rebuilt in Soft Glass.
 - **4 → AIIN-52:** still To Do.
 - **6 → AIIN-137:** system and empty states; covers AIIN-88.

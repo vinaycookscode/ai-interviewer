@@ -1,6 +1,6 @@
 # Soft Glass: the product's design language
 **Date:** 2026-10-25  
-**Status:** Accepted — in progress (epic AIIN-123)  
+**Status:** Accepted — core screens on `develop` since 2026-10-26; the rest in progress (epic AIIN-123)  
 **Deciders:** Vinay, Engineering
 
 ## Context
@@ -39,8 +39,10 @@ Adopt **Soft Glass** for every screen.
 - **Components** in `components/soft-glass/`: `Mascot` and `UMark`, `AmbientLight`, `ScoreGauge`, `CoachBubble`, `ThemeSwitch`, `LandingMenu`.
 - **Shared class strings** in `components/soft-glass/classes.ts`: `focusRing`, `coralButton`, `fieldInput`, `fieldLabel`, `fieldError`. Every screen gets the same focus ring, field and button.
 - **Build order and file overlaps** are tracked in epic AIIN-123, one story per area.
-  - Done: the landing page (AIIN-122). The auth screens (AIIN-124) are built but not yet verified.
-  - Nine stories touch files that still hold the uncommitted liquid-glass redesign. They wait until that work is committed or set aside, so the two never mix in one change.
+  - **Update 2026-10-26:** every screen was designed and approved on the canvas first ([ADR](2026-10-25-design-first-on-the-canvas.md)).
+    - Built, merged to `develop` and pushed: the landing page, auth, the app shell ([ADR](2026-10-25-app-shell-navigation.md)), Today, practice, the interview session and documents, the feedback report and the employer dashboard (AIIN-122, AIIN-124 to AIIN-130). The design-system follow-ups (focus ring, field border, `display-2xs`) went in with them (AIIN-142).
+    - Still to build: resume, company prep, flashcards, the 90-day plan, profile and billing, progress and community, system states and admin (AIIN-131 to AIIN-138).
+  - The uncommitted liquid-glass redesign was set aside on its own local branch (`feature/liquid-glass-redesign`), so it never mixed with this work.
 
 The how-to for building a screen is in [`docs/design/soft-glass.md`](../design/soft-glass.md).
 
@@ -58,6 +60,11 @@ The how-to for building a screen is in [`docs/design/soft-glass.md`](../design/s
 - Page roots use `overflow-x-clip`, not `overflow-hidden`: hidden creates a scroll container and breaks the sticky header.
 - `@theme inline` values exist only inside utilities. Raw CSS must use `var(--font-jakarta)`, not `var(--font-body)`.
 - Check that each container fits from 320px up, not just that the page has no horizontal scroll: the header once overflowed its own pill while the page looked fine.
+
+**Lessons recorded while building the app screens (2026-10-25/26):**
+- A server component must not import a non-component value (a constant, an array) from a `"use client"` module. It receives a client reference instead of the value, and the page crashes at runtime (`STATUS_FILTERS.includes is not a function`). Neither the type check nor the build catches it. Put shared constants in a plain module.
+- Pages inside the app shell don't add their own `.soft-glass` root, fonts or `AmbientLight`: the layout provides them, and a nested root paints over the shell's light.
+- Portals (dialogs) render outside the page's `.soft-glass` root, so each dialog panel brings its own (`components/interviews/sg-dialog.tsx`).
 
 ## Alternatives considered
 

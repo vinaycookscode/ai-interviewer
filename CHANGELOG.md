@@ -4,34 +4,72 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-**Not committed yet.** Checked locally on a throwaway database unless marked otherwise.
+**Not committed yet.** Checked locally on a throwaway database.
+
+- **One size scale** for type, spacing, radius and control heights, plus brand colour tokens and shared `PageHeader`, `Section` and `StatCard` components (AIIN-118 to AIIN-120; [ADR](docs/architecture/2026-10-25-design-system-size-scale.md)). The tokens and the interview entry page are already on `develop`. These screens still wait to be committed:
+  - career wizard (was unreadable in light mode; its skill "Add" button did nothing)
+  - profile
+  - flashcards
+  - resume analysis
+- **Vercel Analytics** added to the root layout.
+
+## 2026-10-26
+
+On `develop`. The build was checked on a throwaway database, then by Vinay locally against production data with payments, email and uploads switched off.
 
 ### Design
 - **Soft Glass**, the new design language: frosted glass over soft coral and lavender light, Fraunces and Plus Jakarta Sans, and U, the mascot. Light and dark are designed equally (AIIN-122; [ADR](docs/architecture/2026-10-25-soft-glass-design-language.md)).
-- **Landing page rebuilt in Soft Glass:**
-  - a product-preview hero (question, answer, score and a tip from U in one card)
+- **Every screen designed first.** Each screen was drawn and approved on the design canvas against the Soft Glass design system before it was built, in batches 0 to 8 (AIIN-142 to AIIN-148, AIIN-156, AIIN-186; [ADR](docs/architecture/2026-10-25-design-first-on-the-canvas.md)).
+- **Landing page rebuilt:**
+  - a product-preview hero
   - how it works, features and the employer band
   - pricing with a monthly/yearly switch that carries the plan into sign-up
   - FAQ and contact
-  - Checked from 320px to 1280px in both themes. On phones the header nav moves into a menu.
-- **Sign-in, sign-up and password reset rebuilt in Soft Glass** (AIIN-124; built, not yet verified):
-  - one glass card with clearer prompts ("New here? Create an account")
-  - plan cards that actually show which plan is selected
+- **Sign-in, sign-up and password reset rebuilt** (AIIN-124):
+  - one glass card
+  - plan cards that show which plan is selected
   - no plan picker on sign-in or on interview invitations
-  - a reset link's token no longer follows you to the sign-in page
-- **One size scale** for type, spacing, radius and control heights, plus brand colour tokens and shared `PageHeader`, `Section`, `StatCard` and `StatusScreen` components (AIIN-118 to AIIN-120). These screens moved onto it:
-  - career wizard (was unreadable in light mode; its skill "Add" button did nothing)
-  - profile
-  - interview entry page
-  - flashcards
-  - resume analysis
-- Plan for the rest: epic AIIN-123, one story per area (AIIN-124 to AIIN-139).
+- **New app shell** instead of the sidebar (AIIN-125; [ADR](docs/architecture/2026-10-25-app-shell-navigation.md)):
+  - Desktop: a floating header with Today, Interviews, Practice, Resume and the 90-day plan, a More menu, Go Pro on the free plan, a theme switch and an account menu.
+  - Below 1024px: a bottom tab bar.
+  - Employers: Overview, Jobs, Candidates, Settings and New job.
+- **Today**, the candidate home: the next interview, plan and streak, average score, quick practice, and every interview with its actions (AIIN-126).
+- **Practice:**
+  - setup with role quick picks, level and the monthly allowance
+  - the session as a focus page, with U's feedback after each answer
+  - the result with strongest and weakest answers (AIIN-127)
+- **Interview session:**
+  - focus header with progress, a proctoring chip and the language picker
+  - camera and mic check
+  - document upload with clear size errors
+  - every interview-link screen (expired, not open yet, wrong account…) in the new style (AIIN-128)
+- **Feedback report** for candidates and employers; employers also see how the candidate came across (AIIN-129).
+- **Employer dashboard** (AIIN-130):
+  - overview with a score chart
+  - a new jobs list
+  - one job form with "Let U write the questions"
+  - job detail with per-candidate Copy link, invite and a 4-step bulk invite
+  - candidates with search and filters, sorted by score
+  - settings
+- **Upgrade prompt** for paid features restyled.
+- Design-system fixes: a stronger focus ring (2px solid with a 2px gap), a darker form-field edge (at least 3:1), and a card-heading type style (AIIN-142).
+
+### Security
+- The feedback report action requires a login and only returns a report to its candidate, the job's employer or an admin. It no longer returns the candidate's password hash (AIIN-187; [ADR](docs/architecture/2026-10-26-send-the-client-only-what-it-needs.md)).
+- The interview page no longer sends the candidate's account record (including the password hash) to the browser (AIIN-187).
+- Job detail and job edit only load jobs owned by the signed-in employer. Candidate lists no longer send full user rows to the browser.
+- Employer settings no longer show whether the server's Gemini and Resend keys are configured.
+
+### Fixes
+- Signing in from the documents page returns you to the right page.
+- Bulk invite sends the valid rows and lists the ones it skipped, instead of refusing the whole file.
+- The employer score chart no longer drops scores between bands (such as 2.5).
+- The feedback button sits above the phone tab bar.
 
 ### Docs
-- New ADRs for every decision made on 2026-10-24 and 2026-10-25, with an index in `docs/architecture/README.md`.
-- New `docs/LOCAL_DEVELOPMENT.md` (safe local testing) and `docs/design/soft-glass.md` (building a screen).
-- README, environment setup, deployment guide, example env files and agent instructions brought up to date. The Gemini key is `GEMINI_API_KEY`; the Razorpay and `APP_URL` variables were missing.
-- The audit decision index now shows the status of every finding.
+- ADRs for every decision made on 2026-10-24 to 2026-10-26, with an index in `docs/architecture/README.md`.
+- `docs/LOCAL_DEVELOPMENT.md` (safe local testing) and `docs/design/soft-glass.md` (building a screen).
+- README, environment setup, deployment guide, example env files and agent instructions brought up to date.
 
 ## 2026-10-25
 

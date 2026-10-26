@@ -1,18 +1,39 @@
 # Building a screen in Soft Glass
 
-How to move a screen to Soft Glass, the product's design language. Why we chose it is in the [ADR](../architecture/2026-10-25-soft-glass-design-language.md). The approved designs (home, practice, interview session, feedback report, landing; light and dark) are on the [design canvas](https://claude.ai/artifact/Q1hFq3HP7UtDQ34dRQ17uQ). Progress is tracked in Kaam epic **AIIN-123**.
+How to move a screen to Soft Glass, the product's design language. Why we chose it is in the [ADR](../architecture/2026-10-25-soft-glass-design-language.md). Progress is tracked in Kaam epic **AIIN-123**.
 
-**Already in Soft Glass**
-- Landing page: `app/page.tsx`
-- Auth screens: `app/auth/*` (built, not yet verified, AIIN-124)
+**Design first.** Every screen is drawn and approved on the [design canvas](https://claude.ai/artifact/Q1hFq3HP7UtDQ34dRQ17uQ) before it is built ([ADR](../architecture/2026-10-25-design-first-on-the-canvas.md)).
+- The values come from the [Soft Glass design system](https://claude.ai/artifact/2JZbtdJ8oyWeAcKrRep3JQ).
+- Build from the approved artboard for your screen: its HTML carries the exact layout, copy, sizes and states.
+- If the screen has no artboard yet, design it first.
+
+**Already in Soft Glass** (on `develop`)
+- Landing: `app/page.tsx`
+- Auth: `app/auth/*`
+- App shell: `components/soft-glass/app-shell.tsx`, in the candidate and employer layouts
+- Today: `app/candidate/dashboard/page.tsx`
+- Practice: `app/candidate/practice/**`, `components/practice/practice-session.tsx`
+- Interview session and its link screens: `app/interview/[id]/*`, `components/interview/*`
+- Document upload: `app/candidate/interview/[id]/documents`
+- Feedback report: `components/feedback/feedback-report.tsx`
+- Employer dashboard: `app/dashboard/**`
+- Upgrade prompt: `components/subscription/upgrade-prompt.tsx`
+
+**Still to build:** AIIN-131 to AIIN-138. Their artboards are in canvas batches 3, 4 and 6.
 
 **Good references to copy from**
-- Landing page: `app/page.tsx`
-- Sign-in form: `components/auth/login-form.tsx`
+- A page inside the app shell: `app/dashboard/page.tsx`, `app/candidate/dashboard/page.tsx`
+- A focus page: `components/practice/practice-session.tsx`
+- A form: `components/jobs/job-form.tsx`, `components/auth/login-form.tsx`
+- A dialog: `components/interviews/invite-candidate-dialog.tsx`
 
 ## 1. The root
 
-Soft Glass tokens only exist inside an element with the `soft-glass` class, so each screen opts in at its root:
+Soft Glass tokens only exist inside an element with the `soft-glass` class.
+
+- **Pages inside the app shell** (`app/candidate/*`, `app/dashboard/*`) already have it. The layouts provide `.soft-glass`, the fonts and `AmbientLight`. Don't add another root: a nested `.soft-glass` paints over the shell's light.
+- **Focus pages** (practice session, interview) use `FocusRoot` from `components/interview/session-shell.tsx`.
+- **Public pages** opt in at their own root:
 
 ```tsx
 import { softGlassFonts } from "@/lib/fonts";
@@ -46,7 +67,8 @@ All defined in `app/design-system.css`. Light and dark values switch automatical
 | Main call to action | `bg-sg-coral text-sg-coral-ink` (use `coralButton`) |
 | Secondary button, active nav | `bg-sg-ink text-sg-ink-foreground` |
 | Scores, tags, feedback panels | `bg-sg-lavender-soft text-sg-lavender-ink`, accent `sg-lavender` |
-| Form field edge | `border-sg-field-border` (use `fieldInput`) |
+| Form field edge | `border-sg-field-border`: 50% ink in light, 35% white in dark, at least 3:1 (use `fieldInput`) |
+| Keyboard focus | `outline-sg-focus`: deep lavender in light, lavender in dark (use `focusRing`) |
 | Error, success | `text-sg-danger`, `text-sg-success` (+ `/10` backgrounds) |
 
 **Type**
@@ -58,10 +80,12 @@ All defined in `app/design-system.css`. Light and dark values switch automatical
 | Hero heading | 38px below 360px · 44 · 56 from `sm` · 62 from `lg` |
 | Section heading | 32/38 · 44/50 from `sm` |
 | Card heading (Fraunces) | 23/29 · 28/34 from `sm` |
+| Card heading inside the app | `text-display-2xs` (22/28, weight 600) with `font-display sg-soft` |
 | Auth card heading | 30/36 · 34/40 from `sm` |
 | Body | 16/24 |
+| Smallest text (captions, chips) | 13/18; never below 13px for words |
 
-When the app interior moves over, add these sizes to the named scale in `app/design-system.css` instead of writing them inline (see the [size-scale ADR](../architecture/2026-10-25-design-system-size-scale.md)).
+The full list of type styles is in the design system. When you need a size that isn't a named style, add it to `app/design-system.css` instead of writing it inline (see the [size-scale ADR](../architecture/2026-10-25-design-system-size-scale.md)).
 
 ## 3. Components
 
@@ -73,12 +97,18 @@ When the app interior moves over, add these sizes to the named scale in `app/des
 | `CoachBubble` | `components/soft-glass/coach-bubble.tsx` | A tip from U: mascot plus speech bubble. |
 | `ThemeSwitch` | `components/soft-glass/theme-switch.tsx` | Light/dark toggle (next-themes). |
 | `LandingMenu` | `components/soft-glass/landing-menu.tsx` | The header menu below `lg`. Closes on link, Escape or a tap outside. Its panel is solid, not glass, so large text behind it doesn't bleed through. |
+| `AppShell` | `components/soft-glass/app-shell.tsx` | The signed-in shell: header nav, More and account menus, and a bottom tab bar below 1024px. Used by the layouts only ([ADR](../architecture/2026-10-25-app-shell-navigation.md)). |
+| `FocusRoot`, `FocusCard`, `SessionHeader` | `components/interview/session-shell.tsx` | Focus pages with no app nav: the session header with progress dots, and centred cards for the steps before and after a session. |
+| `StatusScreen` | `components/layout/status-screen.tsx` | A full-screen state the user can't continue past (expired link, not open yet…), with at most one next step. |
+| `UpgradePrompt` | `components/subscription/upgrade-prompt.tsx` | Shown in place of a paid feature on the free plan. |
+| `DialogPanel`, `AlertDialogPanel` | `components/interviews/sg-dialog.tsx` | Dialog panels. Portals render outside the page root, so each panel brings its own `.soft-glass`. |
+| `PageHeading`, `StatusChip`, `DocumentChips`, `Figure` | `components/jobs/employer-ui.tsx` | Page heading with back link and actions; status and document chips (icon plus word); a stat figure; panel and button class strings; `formatShortDate`. |
 
 **Shared class strings** in `components/soft-glass/classes.ts`. Use these instead of writing your own:
 
 | Export | What it is |
 |---|---|
-| `focusRing` | The lavender focus ring every interactive element uses |
+| `focusRing` | The focus ring every interactive element uses: 2px solid `sg-focus` with a 2px gap, keyboard only. `outline-solid` is explicit, so it also shows on elements whose base classes set `outline-none` |
 | `coralButton` | Main call to action; add the height and width at the call site (`h-12 w-full`, `h-14 px-7`) |
 | `fieldInput` | Overrides for the shadcn `Input`: 48px soft field with 16px text, so iOS doesn't zoom on focus |
 | `fieldLabel` | Overrides for `FormLabel` |
@@ -108,6 +138,13 @@ Build for 320px first.
 - Error messages use `role="alert"`; success messages use `role="status"`.
 - Touch targets are at least 40px; form fields and menu rows 48px.
 - Text contrast is at least 4.5:1 in **both** themes. Check muted text on tinted panels and anything placed on glass over the ink band.
+- Status (decisions, interview status, payment results, flags) is told by an icon and a word, never by colour alone.
+- One coral call to action per view. Other actions use ink, glass or outline buttons.
+
+## 5b. Data and server boundaries
+
+- A server component must not import a constant or array from a `"use client"` module: it gets a client reference, not the value, and crashes at runtime. Put shared constants in a plain module, like `app/dashboard/candidates/status-filters.ts`.
+- Pass client components exactly the props they use, built at the call site. Never pass a database row, especially one that includes a user ([ADR](../architecture/2026-10-26-send-the-client-only-what-it-needs.md)).
 
 ## 6. Done means
 

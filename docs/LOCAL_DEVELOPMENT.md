@@ -73,6 +73,16 @@ Requires Postgres 17 (`brew install postgresql@17`).
 
 To test checkout end to end, use Razorpay **test-mode** keys (`rzp_test_…`) instead of the dummy values, never live keys.
 
+## Looking at production data (only when the owner decides to)
+
+Sometimes the owner wants to see a change with real accounts and data before it ships. This is the exception the [production guard](architecture/2026-10-24-keep-local-development-off-production.md) allows for a deliberate one-off, and it's the owner's call each time. It was done this way on 2026-10-26, to check the Soft Glass build.
+
+- **Switch off everything that reaches the outside world.** Override the Razorpay, Resend and R2 variables with dummy values (as in Option B) so nothing can charge a card, email a candidate or upload a file.
+- **Keep sign-in local.** Set `AUTH_URL` and `NEXT_PUBLIC_APP_URL` to `http://localhost:3000`, or sign-in redirects to the live domain.
+- **Never run migrations or `npm run build` against production.** The dev server doesn't migrate. If `npx prisma migrate status` lists unapplied migrations, leave them for the real deploy.
+- **Remember it's live data.** Starting a practice, inviting a candidate or editing a job writes real rows that users see. Read, don't change.
+- **Clear the cache when switching databases.** Stop the server and delete `.next/dev` before restarting on a different database. A stale chunk shows up as `Cannot read properties of undefined (reading 'call')`.
+
 ## Checking a UI change
 
 Every screen supports light and dark, from 320px phones to wide desktops. Before calling a UI change done:
@@ -82,6 +92,8 @@ Every screen supports light and dark, from 320px phones to wide desktops. Before
 - [ ] The keyboard reaches every control in visual order, with a visible focus ring.
 - [ ] The browser console shows no errors.
 - [ ] `npx tsc --noEmit -p .` passes.
+- [ ] Every page you changed has been opened in the browser, not just type-checked. Some failures (a server page importing a value from a `"use client"` module) only show up at runtime.
+- [ ] It matches the approved artboard on the [design canvas](https://claude.ai/artifact/Q1hFq3HP7UtDQ34dRQ17uQ).
 
 The Soft Glass build guide has the details: [`docs/design/soft-glass.md`](design/soft-glass.md).
 

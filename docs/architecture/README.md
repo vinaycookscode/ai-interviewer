@@ -15,8 +15,11 @@ This directory records significant technical decisions made on this project — 
 | 2026-10-24 | [Gemini: one server key, a safe default model, bounded retries](2026-10-24-gemini-models-and-keys.md) | Accepted · implemented | AIIN-27, 37, 109, 111 |
 | 2026-10-24 | [Track work in Kaam](2026-10-24-track-work-in-kaam.md) | Accepted | — |
 | 2026-10-25 | [One size scale and brand tokens for the app interior](2026-10-25-design-system-size-scale.md) | Accepted · implemented, uncommitted | AIIN-118–120 |
-| 2026-10-25 | [Soft Glass: the product's design language](2026-10-25-soft-glass-design-language.md) | Accepted · in progress | AIIN-122–139 |
+| 2026-10-25 | [Soft Glass: the product's design language](2026-10-25-soft-glass-design-language.md) | Accepted · core screens on `develop`, rest in progress | AIIN-122–139 |
 | 2026-10-25 | [Employer accounts are invite-only](2026-10-25-employer-accounts-invite-only.md) | Accepted · implemented | AIIN-53 |
+| 2026-10-25 | [Design every screen on the canvas before building it](2026-10-25-design-first-on-the-canvas.md) | Accepted · implemented | AIIN-142–148, 156, 186 |
+| 2026-10-25 | [App shell: a floating header and a bottom tab bar instead of the sidebar](2026-10-25-app-shell-navigation.md) | Accepted · implemented | AIIN-125 |
+| 2026-10-26 | [Send the client only what it needs: never whole user rows](2026-10-26-send-the-client-only-what-it-needs.md) | Accepted · implemented | AIIN-187 |
 
 Proposals that aren't ADRs yet (Upstash rate limiting, Deepgram and Google TTS) are listed in `docs/audits/2026-10-24-master-decision-index.md`.
 
