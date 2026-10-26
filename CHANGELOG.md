@@ -4,7 +4,10 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-Nothing yet.
+On `develop`, not yet on `main`.
+
+- **U is the brand mark everywhere.** It's now the favicon, the browser and Apple icons, the installed-app icons and the link-preview image. The admin header and the logo in the site's structured data use it too. The old logo files are gone. Generate the PNG and ICO versions from `public/brand/*.svg` with `node scripts/generate-brand-assets.mjs`.
+- The web app manifest link works again: it pointed at a `/manifest.json` that didn't exist.
 
 ## 2026-10-26
 
