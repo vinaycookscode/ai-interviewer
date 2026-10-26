@@ -134,30 +134,30 @@ export function ProfileForm({ user }: ProfileFormProps) {
                 <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label>PAN Card</Label>
-                        <Card className="border-dashed bg-muted/5 min-h-[140px] flex items-center justify-center">
+                        <Card className="flex min-h-[140px] items-center justify-center gap-0 border-dashed bg-muted/20 py-0 shadow-none">
                             <CardContent className="p-4 w-full">
                                 {currentPan && !panFile ? (
-                                    <div className="flex items-center gap-3 p-2 bg-muted/50 rounded-lg border">
-                                        <div className="w-10 h-10 bg-blue-500/10 rounded flex items-center justify-center">
-                                            <FileText className="h-5 w-5 text-blue-500" />
+                                    <div className="flex items-center gap-3 rounded-control border bg-muted/50 p-2">
+                                        <div className="flex size-9 items-center justify-center rounded-control bg-brand-subtle">
+                                            <FileText className="size-4 text-brand" />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-semibold truncate uppercase">{currentPan.name}</p>
-                                            <a href={documentHref(currentPan.url)} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline font-bold">VIEW DOCUMENT</a>
+                                            <p className="truncate text-body font-medium">{currentPan.name}</p>
+                                            <a href={documentHref(currentPan.url)} target="_blank" rel="noopener noreferrer" className="text-caption font-medium text-brand hover:underline">View document</a>
                                         </div>
                                     </div>
                                 ) : null}
 
                                 {panFile ? (
-                                    <div className="flex items-center gap-3 p-2 bg-primary/5 rounded-lg border border-primary/20">
-                                        <div className="w-10 h-10 bg-primary/20 rounded flex items-center justify-center">
-                                            <FileText className="h-5 w-5 text-primary" />
+                                    <div className="flex items-center gap-3 rounded-control border border-brand/30 bg-brand-subtle p-2">
+                                        <div className="flex size-9 items-center justify-center rounded-control bg-background">
+                                            <FileText className="size-4 text-brand" />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-semibold truncate">{panFile.name}</p>
-                                            <p className="text-[10px] text-muted-foreground uppercase">{(panFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                                            <p className="truncate text-body font-medium">{panFile.name}</p>
+                                            <p className="text-caption text-muted-foreground">{(panFile.size / 1024 / 1024).toFixed(2)} MB</p>
                                         </div>
-                                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => handleRemoveFile('pan')}>
+                                        <Button type="button" variant="ghost" size="icon" aria-label="Remove file" className="size-8 text-destructive" onClick={() => handleRemoveFile('pan')}>
                                             <X className="h-4 w-4" />
                                         </Button>
                                     </div>
@@ -165,15 +165,15 @@ export function ProfileForm({ user }: ProfileFormProps) {
                                     <div className="text-center py-2">
                                         <Input type="file" accept="image/*,.pdf" className="hidden" id="pan-upload" onChange={(e) => handleFileChange(e, 'pan')} disabled={isPending} />
                                         <Button type="button" variant="outline" size="sm" asChild>
-                                            <label htmlFor="pan-upload" className="cursor-pointer text-xs">Upload PAN</label>
+                                            <label htmlFor="pan-upload" className="cursor-pointer">Upload PAN</label>
                                         </Button>
                                     </div>
                                 )}
                                 {currentPan && !panFile && (
                                     <div className="mt-3 text-center">
                                         <Input type="file" accept="image/*,.pdf" className="hidden" id="pan-upload" onChange={(e) => handleFileChange(e, 'pan')} disabled={isPending} />
-                                        <Button type="button" variant="link" size="sm" asChild className="text-[10px] h-auto p-0 opacity-50 hover:opacity-100">
-                                            <label htmlFor="pan-upload" className="cursor-pointer">Replace Document</label>
+                                        <Button type="button" variant="link" size="sm" asChild className="h-auto p-0 text-caption text-muted-foreground hover:text-foreground">
+                                            <label htmlFor="pan-upload" className="cursor-pointer">Replace document</label>
                                         </Button>
                                     </div>
                                 )}
@@ -183,30 +183,30 @@ export function ProfileForm({ user }: ProfileFormProps) {
 
                     <div className="space-y-2">
                         <Label>Aadhaar Card</Label>
-                        <Card className="border-dashed bg-muted/5 min-h-[140px] flex items-center justify-center">
+                        <Card className="flex min-h-[140px] items-center justify-center gap-0 border-dashed bg-muted/20 py-0 shadow-none">
                             <CardContent className="p-4 w-full">
                                 {currentAadhaar && !aadhaarFile ? (
-                                    <div className="flex items-center gap-3 p-2 bg-muted/50 rounded-lg border">
-                                        <div className="w-10 h-10 bg-green-500/10 rounded flex items-center justify-center">
-                                            <FileText className="h-5 w-5 text-green-500" />
+                                    <div className="flex items-center gap-3 rounded-control border bg-muted/50 p-2">
+                                        <div className="flex size-9 items-center justify-center rounded-control bg-brand-subtle">
+                                            <FileText className="size-4 text-brand" />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-semibold truncate uppercase">{currentAadhaar.name}</p>
-                                            <a href={documentHref(currentAadhaar.url)} target="_blank" rel="noopener noreferrer" className="text-[10px] text-primary hover:underline font-bold">VIEW DOCUMENT</a>
+                                            <p className="truncate text-body font-medium">{currentAadhaar.name}</p>
+                                            <a href={documentHref(currentAadhaar.url)} target="_blank" rel="noopener noreferrer" className="text-caption font-medium text-brand hover:underline">View document</a>
                                         </div>
                                     </div>
                                 ) : null}
 
                                 {aadhaarFile ? (
-                                    <div className="flex items-center gap-3 p-2 bg-primary/5 rounded-lg border border-primary/20">
-                                        <div className="w-10 h-10 bg-primary/20 rounded flex items-center justify-center">
-                                            <FileText className="h-5 w-5 text-primary" />
+                                    <div className="flex items-center gap-3 rounded-control border border-brand/30 bg-brand-subtle p-2">
+                                        <div className="flex size-9 items-center justify-center rounded-control bg-background">
+                                            <FileText className="size-4 text-brand" />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-xs font-semibold truncate">{aadhaarFile.name}</p>
-                                            <p className="text-[10px] text-muted-foreground uppercase">{(aadhaarFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                                            <p className="truncate text-body font-medium">{aadhaarFile.name}</p>
+                                            <p className="text-caption text-muted-foreground">{(aadhaarFile.size / 1024 / 1024).toFixed(2)} MB</p>
                                         </div>
-                                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => handleRemoveFile('aadhaar')}>
+                                        <Button type="button" variant="ghost" size="icon" aria-label="Remove file" className="size-8 text-destructive" onClick={() => handleRemoveFile('aadhaar')}>
                                             <X className="h-4 w-4" />
                                         </Button>
                                     </div>
@@ -214,15 +214,15 @@ export function ProfileForm({ user }: ProfileFormProps) {
                                     <div className="text-center py-2">
                                         <Input type="file" accept="image/*,.pdf" className="hidden" id="aadhaar-upload" onChange={(e) => handleFileChange(e, 'aadhaar')} disabled={isPending} />
                                         <Button type="button" variant="outline" size="sm" asChild>
-                                            <label htmlFor="aadhaar-upload" className="cursor-pointer text-xs">Upload Aadhaar</label>
+                                            <label htmlFor="aadhaar-upload" className="cursor-pointer">Upload Aadhaar</label>
                                         </Button>
                                     </div>
                                 )}
                                 {currentAadhaar && !aadhaarFile && (
                                     <div className="mt-3 text-center">
                                         <Input type="file" accept="image/*,.pdf" className="hidden" id="aadhaar-upload" onChange={(e) => handleFileChange(e, 'aadhaar')} disabled={isPending} />
-                                        <Button type="button" variant="link" size="sm" asChild className="text-[10px] h-auto p-0 opacity-50 hover:opacity-100">
-                                            <label htmlFor="aadhaar-upload" className="cursor-pointer">Replace Document</label>
+                                        <Button type="button" variant="link" size="sm" asChild className="h-auto p-0 text-caption text-muted-foreground hover:text-foreground">
+                                            <label htmlFor="aadhaar-upload" className="cursor-pointer">Replace document</label>
                                         </Button>
                                     </div>
                                 )}

@@ -22,17 +22,19 @@ interface PageHeaderProps {
 }
 
 /**
- * Consistent page header component for all dashboard pages.
- * Provides unified styling for page titles, subtitles, badges, and actions.
+ * The one title block per screen. Carries no outer margin: lay screens out
+ * with `space-y-section` so every page spaces its header the same way.
  *
  * @example
  * ```tsx
- * <PageHeader
- *   title="My Interviews"
- *   subtitle="View your interview invitations and results"
- *   badge={{ icon: Sparkles, text: "Pro Feature" }}
- *   actions={<Button>New Interview</Button>}
- * />
+ * <div className="space-y-section">
+ *   <PageHeader
+ *     title="My Interviews"
+ *     subtitle="View your interview invitations and results"
+ *     actions={<Button>New Interview</Button>}
+ *   />
+ *   <Section title="Upcoming">…</Section>
+ * </div>
  * ```
  */
 export function PageHeader({
@@ -46,38 +48,29 @@ export function PageHeader({
     const BadgeIcon = badge?.icon;
 
     return (
-        <div className={cn("mb-8", className)}>
-            {breadcrumb && <div className="mb-4">{breadcrumb}</div>}
+        <header className={cn("space-y-stack", className)}>
+            {breadcrumb && <div>{breadcrumb}</div>}
 
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="space-y-1">
-                    <div className="flex items-center gap-3">
-                        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                            {title}
-                        </h1>
+            <div className="flex flex-col gap-stack sm:flex-row sm:items-end sm:justify-between">
+                <div className="min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                        <h1 className="text-page-title">{title}</h1>
                         {badge && (
                             <Badge variant={badge.variant || "secondary"} className="gap-1">
-                                {BadgeIcon && <BadgeIcon className="h-3 w-3" />}
+                                {BadgeIcon && <BadgeIcon className="size-3" />}
                                 {badge.text}
                             </Badge>
                         )}
                     </div>
-                    {subtitle && (
-                        <p className="text-muted-foreground">{subtitle}</p>
-                    )}
+                    {subtitle && <p className="text-body text-muted-foreground">{subtitle}</p>}
                 </div>
 
-                {actions && (
-                    <div className="flex items-center gap-2 shrink-0">{actions}</div>
-                )}
+                {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
             </div>
-        </div>
+        </header>
     );
 }
 
-/**
- * Section header for dividing content within a page
- */
 interface SectionHeaderProps {
     title: string;
     description?: string;
@@ -85,26 +78,30 @@ interface SectionHeaderProps {
     className?: string;
 }
 
-export function SectionHeader({
-    title,
-    description,
-    actions,
-    className,
-}: SectionHeaderProps) {
+/** Heading row for a section; prefer `Section`, which also spaces its content. */
+export function SectionHeader({ title, description, actions, className }: SectionHeaderProps) {
     return (
-        <div
-            className={cn(
-                "flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4",
-                className
-            )}
-        >
-            <div>
-                <h2 className="text-lg font-semibold">{title}</h2>
-                {description && (
-                    <p className="text-sm text-muted-foreground">{description}</p>
-                )}
+        <div className={cn("flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between", className)}>
+            <div className="min-w-0 space-y-0.5">
+                <h2 className="text-section-title">{title}</h2>
+                {description && <p className="text-body text-muted-foreground">{description}</p>}
             </div>
-            {actions && <div className="flex items-center gap-2">{actions}</div>}
+            {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
         </div>
+    );
+}
+
+interface SectionProps extends Partial<Omit<SectionHeaderProps, "className">> {
+    children: React.ReactNode;
+    className?: string;
+}
+
+/** A titled block of a screen, with the standard gap between heading and content. */
+export function Section({ title, description, actions, children, className }: SectionProps) {
+    return (
+        <section className={cn("space-y-stack", className)}>
+            {title && <SectionHeader title={title} description={description} actions={actions} />}
+            {children}
+        </section>
     );
 }

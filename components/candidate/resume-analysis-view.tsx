@@ -115,7 +115,7 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-baseline gap-2">
-                            <span className={`text-4xl font-bold ${getScoreColor(analysis.matchScore || analysis.atsScore)}`}>
+                            <span className={`text-metric tabular-nums ${getScoreColor(analysis.matchScore || analysis.atsScore)}`}>
                                 {analysis.matchScore || analysis.atsScore}
                             </span>
                             <span className="text-sm text-muted-foreground">/100</span>
@@ -266,7 +266,7 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                                 <ul className="space-y-2">
                                     {analysis.improvementTips.map((item, i) => (
                                         <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                                            <span className="mt-1.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-600 dark:bg-blue-900 dark:text-blue-300">
+                                            <span className="mt-px flex size-5 shrink-0 items-center justify-center rounded-full bg-brand-subtle text-caption font-semibold text-brand">
                                                 {i + 1}
                                             </span>
                                             {item}
@@ -294,26 +294,26 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                         </CardHeader>
                         <CardContent className="space-y-6">
                             {!analysis.jobDescription ? (
-                                <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                                    <div className="p-4 rounded-full bg-yellow-500/10">
-                                        <AlertCircle className="h-12 w-12 text-yellow-500" />
+                                <div className="flex flex-col items-center justify-center space-y-stack py-section text-center">
+                                    <div className="rounded-full bg-amber-500/10 p-3">
+                                        <AlertCircle className="size-6 text-amber-700 dark:text-amber-400" />
                                     </div>
                                     <div className="text-center space-y-2">
-                                        <h3 className="text-lg font-medium">{t("coverLetter.jdRequired")}</h3>
-                                        <p className="text-sm text-muted-foreground max-sm mx-auto">
+                                        <h3 className="text-card-title">{t("coverLetter.jdRequired")}</h3>
+                                        <p className="mx-auto max-w-sm text-body text-muted-foreground">
                                             {t("coverLetter.jdRequiredDesc")}
                                         </p>
                                     </div>
-                                    <p className="text-xs text-muted-foreground">
+                                    <p className="text-caption text-muted-foreground">
                                         {t("coverLetter.jdRequiredNote")}
                                     </p>
                                 </div>
                             ) : !coverLetter ? (
-                                <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                                    <FileText className="h-16 w-16 text-muted-foreground/20" />
+                                <div className="flex flex-col items-center justify-center space-y-stack py-section text-center">
+                                    <FileText className="size-8 text-muted-foreground" />
                                     <div className="text-center space-y-2">
-                                        <h3 className="text-lg font-medium">{t("coverLetter.readyTitle")}</h3>
-                                        <p className="text-sm text-muted-foreground max-sm mx-auto">
+                                        <h3 className="text-card-title">{t("coverLetter.readyTitle")}</h3>
+                                        <p className="mx-auto max-w-sm text-body text-muted-foreground">
                                             {t("coverLetter.readyDesc")}
                                         </p>
                                     </div>
@@ -321,7 +321,6 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                                         size="lg"
                                         onClick={handleGenerateCoverLetter}
                                         disabled={isGeneratingCoverLetter}
-                                        className="bg-indigo-600 hover:bg-indigo-700 text-white"
                                     >
                                         {isGeneratingCoverLetter ? (
                                             <>
@@ -367,7 +366,7 @@ export function ResumeAnalysisView({ analysis }: ResumeAnalysisViewProps) {
                                         size="lg"
                                         onClick={handleRewrite}
                                         disabled={isRewriting}
-                                        className="w-full sm:w-auto bg-gradient-to-r from-purple-600 to-blue-600 text-white"
+                                        className="w-full sm:w-auto"
                                     >
                                         {isRewriting ? (
                                             <>

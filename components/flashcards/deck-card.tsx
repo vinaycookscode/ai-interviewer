@@ -42,7 +42,7 @@ export function DeckCard({
     return (
         <TooltipProvider>
             <Link href={`/candidate/flashcards/${id}`}>
-                <Card className="group cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all duration-300 hover:-translate-y-1 h-full overflow-hidden">
+                <Card className="group cursor-pointer h-full overflow-hidden transition-colors hover:border-foreground/20">
                     <CardHeader className="pb-3 overflow-hidden">
                         <div className="flex items-start gap-2">
                             <div className={`p-2 rounded-lg shrink-0 ${categoryColors[category] || "bg-gray-500"}`}>
@@ -51,7 +51,7 @@ export function DeckCard({
                             <div className="flex-1 min-w-0">
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <p className="text-base font-semibold leading-tight group-hover:text-primary transition-colors overflow-hidden text-ellipsis whitespace-nowrap">
+                                        <p className="line-clamp-2 text-card-title transition-colors group-hover:text-brand">
                                             {name}
                                         </p>
                                     </TooltipTrigger>

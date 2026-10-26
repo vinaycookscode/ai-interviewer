@@ -46,7 +46,7 @@ export function CreateDeckDialog() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="gap-2 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-700 hover:to-teal-700">
+                <Button>
                     <Plus className="h-4 w-4" />
                     Create Deck
                 </Button>
