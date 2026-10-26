@@ -14,7 +14,7 @@ This directory records significant technical decisions made on this project — 
 | 2026-10-24 | [Keep the role in the JWT, recheck every 5 minutes](2026-10-24-session-role-in-jwt.md) | Accepted · implemented | AIIN-30 |
 | 2026-10-24 | [Gemini: one server key, a safe default model, bounded retries](2026-10-24-gemini-models-and-keys.md) | Accepted · implemented | AIIN-27, 37, 109, 111 |
 | 2026-10-24 | [Track work in Kaam](2026-10-24-track-work-in-kaam.md) | Accepted | — |
-| 2026-10-25 | [One size scale and brand tokens for the app interior](2026-10-25-design-system-size-scale.md) | Accepted · implemented, uncommitted | AIIN-118–120 |
+| 2026-10-25 | [One size scale and brand tokens for the app interior](2026-10-25-design-system-size-scale.md) | Accepted · implemented | AIIN-118–120 |
 | 2026-10-25 | [Soft Glass: the product's design language](2026-10-25-soft-glass-design-language.md) | Accepted · core screens on `develop`, rest in progress | AIIN-122–139 |
 | 2026-10-25 | [Employer accounts are invite-only](2026-10-25-employer-accounts-invite-only.md) | Accepted · implemented | AIIN-53 |
 | 2026-10-25 | [Design every screen on the canvas before building it](2026-10-25-design-first-on-the-canvas.md) | Accepted · implemented | AIIN-142–148, 156, 186 |

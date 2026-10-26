@@ -4,14 +4,7 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-**Not committed yet.** Checked locally on a throwaway database.
-
-- **One size scale** for type, spacing, radius and control heights, plus brand colour tokens and shared `PageHeader`, `Section` and `StatCard` components (AIIN-118 to AIIN-120; [ADR](docs/architecture/2026-10-25-design-system-size-scale.md)). The tokens and the interview entry page are already on `develop`. These screens still wait to be committed:
-  - career wizard (was unreadable in light mode; its skill "Add" button did nothing)
-  - profile
-  - flashcards
-  - resume analysis
-- **Vercel Analytics** added to the root layout.
+Nothing yet.
 
 ## 2026-10-26
 
@@ -65,6 +58,15 @@ On `develop`. The build was checked on a throwaway database, then by Vinay local
 - Bulk invite sends the valid rows and lists the ones it skipped, instead of refusing the whole file.
 - The employer score chart no longer drops scores between bands (such as 2.5).
 - The feedback button sits above the phone tab bar.
+
+### Size scale
+- **One size scale** for type, spacing, radius and control heights, plus brand colour tokens and shared `PageHeader`, `Section` and `StatCard` components, for screens not yet on Soft Glass (AIIN-118 to AIIN-120; [ADR](docs/architecture/2026-10-25-design-system-size-scale.md)). These screens moved onto it:
+  - career wizard (was unreadable in light mode; its skill "Add" button did nothing)
+  - profile
+  - interview entry page
+  - flashcards
+  - resume analysis
+- **Vercel Analytics** added to the root layout.
 
 ### Docs
 - ADRs for every decision made on 2026-10-24 to 2026-10-26, with an index in `docs/architecture/README.md`.
