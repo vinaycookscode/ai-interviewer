@@ -33,7 +33,7 @@ prisma generate && node scripts/require-database-url.mjs && node scripts/guard-p
 
 **Harder:** Running against production on purpose (for example a one-off data check) needs `ALLOW_PRODUCTION_DB=1`. Local testing needs a local or development database set up first.
 
-**Still open:** Vercel Preview still needs `DATABASE_URL` set to the development branch (`ep-flat-paper`), scoped to Preview (AIIN-115). Until then, Preview builds stop at the new check.
+**Update 2026-10-28:** there's no Preview environment for now, so Preview never gets a `DATABASE_URL`; AIIN-115 is closed by that decision ([ADR](2026-10-28-no-preview-environment.md)). Any Preview build Vercel still starts stops at the new check without touching a database.
 
 ## Alternatives considered
 

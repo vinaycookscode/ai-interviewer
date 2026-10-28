@@ -80,7 +80,9 @@ The project uses **Neon**, with one branch per environment (production: `ep-deli
 
 ## Deployment Workflow
 
-### Development → Preview → Production
+### Local → Production
+
+There's no preview environment for now ([ADR](docs/architecture/2026-10-28-no-preview-environment.md)). Check every change locally, then release by merging `develop` into `main`.
 
 1. **Make changes locally**
    ```bash
@@ -92,20 +94,12 @@ The project uses **Neon**, with one branch per environment (production: `ep-deli
    - Check light **and** dark, from 320px phones to desktop
    - Test authentication
 
-3. **Deploy preview**
+3. **Release to production**
    ```bash
-   npm run deploy:preview
+   git switch main && git merge --ff-only develop && git push origin main
    ```
-   - Get a unique preview URL
-   - Test in production-like environment
-   - Share with team for review
-
-4. **Deploy to production**
-   ```bash
-   npm run deploy:prod
-   ```
-   - Updates your main production URL
-   - Available to all users
+   - Pushing `main` deploys to production (or run `npm run deploy:prod`)
+   - Then run the post-deployment checklist below
 
 ## Troubleshooting
 
@@ -115,7 +109,7 @@ The project uses **Neon**, with one branch per environment (production: `ep-deli
 - Run `npm run build` locally to catch errors early
 
 ### "DATABASE_URL is not set"
-The build checks this before migrating. Add `DATABASE_URL` for that environment in Vercel (Production and Preview are scoped separately).
+The build checks this before migrating. Add `DATABASE_URL` for Production in Vercel. A Preview build showing this is expected while there's no preview environment; skip those builds with Vercel's Ignored Build Step.
 
 ### "Refusing to run `prisma migrate deploy` against the PRODUCTION database"
 A non-production build (Preview, or a local `npm run build`) is pointing at the production Neon branch. Point it at the development branch. Override with `ALLOW_PRODUCTION_DB=1` only for a deliberate one-off.
@@ -150,8 +144,7 @@ vercel env pull
 
 If you've connected your GitHub repository to Vercel:
 - **Push to main branch** → Automatic production deployment
-- **Push to other branches** → Automatic preview deployment
-- **Pull requests** → Automatic preview deployment with unique URL
+- **Push to other branches or open a pull request** → Vercel starts a Preview build, which stops at the `DATABASE_URL` check while there's no preview environment
 
 ## Post-Deployment Checklist
 
@@ -160,7 +153,7 @@ If you've connected your GitHub repository to Vercel:
 - [ ] Test authentication: sign up, sign in, password reset
 - [ ] Test AI interview flow (Gemini)
 - [ ] Test email notifications (Resend)
-- [ ] Preview only: a Razorpay **test-mode** payment activates the plan that was paid for
+- [ ] Locally, before release: a payment change is checked with Razorpay **test-mode** keys and the webhook test (see `docs/LOCAL_DEVELOPMENT.md`)
 - [ ] Candidate documents open through `/api/files/…` for the right people, and are refused for others
 - [ ] R2 bucket public access is off (AIIN-113)
 - [ ] Light and dark both work, on a phone and on desktop

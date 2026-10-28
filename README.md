@@ -42,14 +42,14 @@ npm run dev        # http://localhost:3000, needs DATABASE_URL pointing at a dev
 | `npm run build` | `prisma generate`, checks `DATABASE_URL` and the production guard, `prisma migrate deploy`, `next build` |
 | `npm run start` | Serves a production build |
 | `npm run lint` | ESLint |
-| `npm run deploy:preview` / `deploy:prod` | Deploy with the Vercel CLI (pushing to `develop` / `main` deploys too) |
+| `npm run deploy:prod` | Deploy to production with the Vercel CLI (pushing `main` deploys too). `deploy:preview` exists, but there's no preview environment for now |
 
 ## Branches and environments
 
 | Branch | Environment | Database |
 |---|---|---|
 | `main` | Production | Neon `ep-delicate-firefly` |
-| `develop` | Preview | Neon `ep-flat-paper` |
+| `develop` | Integration branch, not deployed (no preview environment for now; [ADR](docs/architecture/2026-10-28-no-preview-environment.md)) | — |
 | `feature/*` | Merged into `develop` | — |
 
 Environment variables: [`docs/ENVIRONMENT_SETUP.md`](docs/ENVIRONMENT_SETUP.md). Deploying: [`DEPLOYMENT.md`](DEPLOYMENT.md).

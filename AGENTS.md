@@ -186,8 +186,8 @@ AI-powered interview preparation platform built with Next.js 16, Prisma, and Tai
 - Note user-facing and infrastructure changes in `CHANGELOG.md`
 
 ## Branching Strategy
-- `main` - Production branch
-- `develop` - Preview/staging branch  
+- `main` - Production branch: pushing it deploys to production
+- `develop` - Integration branch, not deployed. There's no preview environment for now: check every change locally (throwaway database), then merge `develop` into `main` to release. See `docs/architecture/2026-10-28-no-preview-environment.md`.
 - `feature/*` - Feature branches (merge to develop)
 
 ## Before Committing

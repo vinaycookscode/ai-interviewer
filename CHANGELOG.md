@@ -8,6 +8,7 @@ On `develop`, not yet on `main`.
 
 - **U is the brand mark everywhere.** It's now the favicon, the browser and Apple icons, the installed-app icons and the link-preview image. The admin header and the logo in the site's structured data use it too. The old logo files are gone. Generate the PNG and ICO versions from `public/brand/*.svg` with `node scripts/generate-brand-assets.mjs`.
 - The web app manifest link works again: it pointed at a `/manifest.json` that didn't exist.
+- **No preview environment for now.** `develop` isn't deployed. Changes are checked locally on a throwaway database and released by merging into `main` ([ADR](docs/architecture/2026-10-28-no-preview-environment.md)). Deployment and environment docs updated to match.
 - Docs:
   - Environment docs and example env files name NextAuth's URL `AUTH_URL`, the name NextAuth v5 reads first. The older `NEXTAUTH_URL` still works.
   - The audit decision index and the size-scale ADR match current Kaam statuses.

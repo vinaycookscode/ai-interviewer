@@ -21,6 +21,7 @@ This directory records significant technical decisions made on this project — 
 | 2026-10-25 | [App shell: a floating header and a bottom tab bar instead of the sidebar](2026-10-25-app-shell-navigation.md) | Accepted · implemented | AIIN-125 |
 | 2026-10-26 | [Send the client only what it needs: never whole user rows](2026-10-26-send-the-client-only-what-it-needs.md) | Accepted · implemented | AIIN-187 |
 | 2026-10-26 | [Talent Match: opt-in, anonymous until applied, a computed match %](2026-10-26-talent-match-consent-and-computed-score.md) | Proposed · not started | AIIN-190, AIIN-206 |
+| 2026-10-28 | [No preview environment for now: check locally, deploy to production](2026-10-28-no-preview-environment.md) | Accepted | AIIN-115 |
 
 Proposals that aren't ADRs yet (Upstash rate limiting, Deepgram and Google TTS) are listed in `docs/audits/2026-10-24-master-decision-index.md`.
 
