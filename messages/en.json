@@ -778,7 +778,9 @@
             "score": "Score {score} out of 10",
             "feedback": "See feedback",
             "start": "Start",
-            "continue": "Continue"
+            "continue": "Continue",
+            "showMore": "Show {count} more",
+            "shownOf": "({shown} of {total} shown)"
         },
         "missingTitle": "We couldn’t find your account",
         "missingBody": "Sign out and sign back in. If it keeps happening, send us feedback."

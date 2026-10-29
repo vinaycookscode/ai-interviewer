@@ -64,7 +64,11 @@ const interviewInclude = {
 type InterviewWithJob = Prisma.InterviewGetPayload<{ include: typeof interviewInclude }>;
 type T = Awaited<ReturnType<typeof getTranslations<"Today">>>;
 
-export default async function CandidateDashboardPage() {
+// Finished interviews are shown 10 at a time; "Show more" adds 10 through `?past=`.
+const PAST_PAGE = 10;
+const PAST_MAX = 200;
+
+export default async function CandidateDashboardPage({ searchParams }: { searchParams: Promise<{ past?: string }> }) {
     const t = await getTranslations("Today");
     const session = await auth();
     const userId = session?.user?.id;
@@ -73,17 +77,28 @@ export default async function CandidateDashboardPage() {
         redirect("/auth/login");
     }
 
+    const requested = Number((await searchParams).past);
+    const pastLimit = Number.isFinite(requested) ? Math.min(PAST_MAX, Math.max(PAST_PAGE, Math.ceil(requested / PAST_PAGE) * PAST_PAGE)) : PAST_PAGE;
+
     // Everything here is scoped to the signed-in candidate.
-    const [candidate, interviews, enrollment, flags] = await Promise.all([
+    const completed = { candidateId: userId, status: "COMPLETED" } satisfies Prisma.InterviewWhereInput;
+    const scoredWhere = { ...completed, score: { not: null } } satisfies Prisma.InterviewWhereInput;
+    const [candidate, upcoming, past, pastCount, scoreStats, firstScored, lastScored, enrollment, flags] = await Promise.all([
         db.user.findUnique({
             where: { id: userId },
             select: { id: true, name: true, candidateProfile: { select: { primaryRole: true } } },
         }),
+        // Every interview still to do: there are few, and the next one is chosen from them.
         db.interview.findMany({
-            where: { candidateId: userId },
+            where: { candidateId: userId, status: { in: ["PENDING", "IN_PROGRESS"] } },
             include: interviewInclude,
             orderBy: { createdAt: "desc" },
         }),
+        db.interview.findMany({ where: completed, include: interviewInclude, orderBy: { createdAt: "desc" }, take: pastLimit }),
+        db.interview.count({ where: completed }),
+        db.interview.aggregate({ where: scoredWhere, _avg: { score: true }, _count: { score: true } }),
+        db.interview.findFirst({ where: scoredWhere, orderBy: { createdAt: "asc" }, select: { score: true } }),
+        db.interview.findFirst({ where: scoredWhere, orderBy: { createdAt: "desc" }, select: { score: true } }),
         db.programEnrollment.findFirst({
             where: { userId, status: "ACTIVE" },
             select: { id: true, programId: true, currentDay: true, streak: true, program: { select: { slug: true, durationDays: true } } },
@@ -130,9 +145,7 @@ export default async function CandidateDashboardPage() {
     const todayDone = todayTasks.filter((task) => task.completions.some((c) => c.completedAt)).length;
 
     // ---- Interviews ----
-    const isExpired = (i: (typeof interviews)[number]) => i.status === "PENDING" && !!i.expiresAt && now > i.expiresAt;
-    const upcoming = interviews.filter((i) => i.status === "PENDING" || i.status === "IN_PROGRESS");
-    const past = interviews.filter((i) => i.status === "COMPLETED");
+    const isExpired = (i: InterviewWithJob) => i.status === "PENDING" && !!i.expiresAt && now > i.expiresAt;
     const next =
         upcoming.find((i) => i.status === "IN_PROGRESS") ??
         upcoming
@@ -140,11 +153,12 @@ export default async function CandidateDashboardPage() {
             .sort((a, b) => (a.scheduledTime?.getTime() ?? 0) - (b.scheduledTime?.getTime() ?? 0))[0] ??
         upcoming[0];
 
-    const scored = past
-        .filter((i): i is typeof i & { score: number } => typeof i.score === "number")
-        .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-    const average = scored.length ? scored.reduce((sum, i) => sum + i.score, 0) / scored.length : null;
-    const delta = scored.length > 1 ? Number((scored[scored.length - 1].score - scored[0].score).toFixed(1)) : null;
+    // Across every scored interview, not just the ones listed.
+    const average = scoreStats._avg.score;
+    const delta =
+        scoreStats._count.score > 1 && firstScored?.score != null && lastScored?.score != null
+            ? Number((lastScored.score - firstScored.score).toFixed(1))
+            : null;
 
     // ---- Greeting and the tip from U ----
     const hour = Number(hour24.format(now));
@@ -348,12 +362,22 @@ export default async function CandidateDashboardPage() {
                 <h2 id="interviews-title" className={cardTitle}>
                     {t("list.title")}
                 </h2>
-                {interviews.length === 0 ? (
+                {upcoming.length + pastCount === 0 ? (
                     <p className="text-sg-muted">{t("list.empty")}</p>
                 ) : (
                     <>
                         <InterviewList title={t("list.upcoming")} items={upcoming} now={now} t={t} />
                         <InterviewList title={t("list.past")} items={past} now={now} t={t} />
+                        {pastCount > past.length && (
+                            <Link
+                                href={`?past=${past.length + PAST_PAGE}#interviews`}
+                                scroll={false}
+                                className={cn("inline-flex h-11 items-center justify-center gap-2 self-center rounded-full bg-sg-chip px-5 font-semibold", focusRing)}
+                            >
+                                {t("list.showMore", { count: Math.min(PAST_PAGE, pastCount - past.length) })}
+                                <span className="sr-only">{t("list.shownOf", { shown: past.length, total: pastCount })}</span>
+                            </Link>
+                        )}
                     </>
                 )}
             </section>

@@ -6,6 +6,9 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 On `develop`, not yet on `main`.
 
+- **Today loads only what it shows** (AIIN-32):
+  - Finished interviews are listed 10 at a time, with a "Show 10 more" button. Upcoming interviews are all still listed.
+  - The average score and the change since the first interview are worked out by the database across every scored interview, instead of loading every interview.
 - **U is the brand mark everywhere.** It's now the favicon, the browser and Apple icons, the installed-app icons and the link-preview image. The admin header and the logo in the site's structured data use it too. The old logo files are gone. Generate the PNG and ICO versions from `public/brand/*.svg` with `node scripts/generate-brand-assets.mjs`.
 - The web app manifest link works again: it pointed at a `/manifest.json` that didn't exist.
 - **No preview environment for now.** `develop` isn't deployed. Changes are checked locally on a throwaway database and released by merging into `main` ([ADR](docs/architecture/2026-10-28-no-preview-environment.md)). Deployment and environment docs updated to match.
