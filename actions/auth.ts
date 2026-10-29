@@ -220,6 +220,17 @@ export const forgotPassword = async (values: z.infer<typeof ForgotPasswordSchema
 
     const { email } = validatedFields.data;
 
+    // Limit reset emails per IP and per address, so the form can't be used to flood an inbox (AIIN-56).
+    // The per-address limit applies whether or not the account exists, so it reveals nothing.
+    const ip = getClientIP(await headers());
+    const [byIp, byEmail] = await Promise.all([
+        checkRateLimit(`forgot-password:ip:${ip}`, 5, 15),
+        checkRateLimit(`forgot-password:email:${email.toLowerCase()}`, 3, 60),
+    ]);
+    if (!byIp.success || !byEmail.success) {
+        return { error: "Too many reset requests. Please try again later." };
+    }
+
     // Check if user exists
     const user = await db.user.findUnique({ where: { email } });
 
@@ -263,6 +274,11 @@ export const resetPassword = async (values: z.infer<typeof ResetPasswordSchema>)
     }
 
     const { token, password } = validatedFields.data;
+
+    const resetLimit = await checkRateLimit(`reset-password:ip:${getClientIP(await headers())}`, 10, 15);
+    if (!resetLimit.success) {
+        return { error: "Too many attempts. Please try again later." };
+    }
 
     // Find the token
     const resetToken = await db.passwordResetToken.findUnique({

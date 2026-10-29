@@ -3,7 +3,11 @@ import { db } from "@/lib/db";
 const MAX_ATTEMPTS = 5;
 const WINDOW_MINUTES = 15;
 
-export async function checkRateLimit(identifier: string): Promise<{ success: boolean; reset?: Date }> {
+export async function checkRateLimit(
+    identifier: string,
+    maxAttempts = MAX_ATTEMPTS,
+    windowMinutes = WINDOW_MINUTES
+): Promise<{ success: boolean; reset?: Date }> {
     const now = new Date();
 
     const rateLimit = await db.rateLimit.findUnique({
@@ -12,7 +16,7 @@ export async function checkRateLimit(identifier: string): Promise<{ success: boo
 
     // If no record exists, create one
     if (!rateLimit) {
-        const expiresAt = new Date(now.getTime() + WINDOW_MINUTES * 60 * 1000);
+        const expiresAt = new Date(now.getTime() + windowMinutes * 60 * 1000);
         await db.rateLimit.create({
             data: {
                 identifier,
@@ -25,7 +29,7 @@ export async function checkRateLimit(identifier: string): Promise<{ success: boo
 
     // If expired, reset
     if (now > rateLimit.expiresAt) {
-        const expiresAt = new Date(now.getTime() + WINDOW_MINUTES * 60 * 1000);
+        const expiresAt = new Date(now.getTime() + windowMinutes * 60 * 1000);
         await db.rateLimit.update({
             where: { identifier },
             data: {
@@ -37,7 +41,7 @@ export async function checkRateLimit(identifier: string): Promise<{ success: boo
     }
 
     // Check limit
-    if (rateLimit.count >= MAX_ATTEMPTS) {
+    if (rateLimit.count >= maxAttempts) {
         return { success: false, reset: rateLimit.expiresAt };
     }
 
