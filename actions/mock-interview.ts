@@ -90,8 +90,57 @@ interface MockQuestionsResult {
     };
 }
 
-export async function generateMockQuestions(role: string, difficulty: string): Promise<MockQuestionsResult> {
-    return generateMockQuestionsWithRetry(role, difficulty, 0);
+export interface MockSessionState {
+    questions?: string[];
+    /** Answers already given, by question index, so a refresh resumes where the candidate left off. */
+    answers?: { index: number; score: number | null; feedback: string | null }[];
+    isFallback?: boolean;
+    allModelsExhausted?: boolean;
+    error?: string;
+}
+
+/**
+ * The practice's questions: written on the first visit, then stored, so a refresh or a return visit
+ * shows the same five (AIIN-47). Scoped to the signed-in candidate.
+ */
+export async function getMockQuestions(mockInterviewId: string): Promise<MockSessionState> {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Unauthorized" };
+
+    const where = { id: mockInterviewId, userId: session.user.id };
+    const mockInterview = await db.mockInterview.findFirst({
+        where,
+        select: { role: true, difficulty: true, questions: true },
+    });
+    if (!mockInterview) return { error: "Mock interview not found" };
+
+    let questions = mockInterview.questions;
+    let generated: MockQuestionsResult | null = null;
+    if (questions.length === 0) {
+        generated = await generateMockQuestionsWithRetry(mockInterview.role, mockInterview.difficulty, 0);
+        if (!generated.questions?.length) return { error: generated.error || "Failed to generate questions" };
+        // Only the first writer wins; a second tab that raced us reads back the stored set.
+        await db.mockInterview.updateMany({ where: { ...where, questions: { isEmpty: true } }, data: { questions: generated.questions } });
+        questions = (await db.mockInterview.findFirst({ where, select: { questions: true } }))?.questions ?? generated.questions;
+    }
+
+    const answered = await db.mockAnswer.findMany({
+        where: { mockInterviewId },
+        orderBy: { createdAt: "asc" },
+        select: { question: true, score: true, feedback: true },
+    });
+    const answers = answered.flatMap((a) => {
+        const index = questions.indexOf(a.question);
+        return index === -1 ? [] : [{ index, score: a.score, feedback: a.feedback }];
+    });
+
+    return {
+        questions,
+        answers,
+        isFallback: generated?.isFallback,
+        allModelsExhausted: generated?.allModelsExhausted,
+        error: generated?.isFallback ? generated.error : undefined,
+    };
 }
 
 // Not exported: the retry counter must not be client-controllable.
@@ -184,11 +233,19 @@ export async function saveMockAnswer(
 
     const mockInterview = await db.mockInterview.findFirst({
         where: { id: mockInterviewId, userId: session.user.id },
-        select: { role: true },
+        select: { role: true, questions: true, answers: { select: { question: true } } },
     });
 
     if (!mockInterview) {
         return { error: "Mock interview not found" };
+    }
+
+    // Answers belong to this practice's stored questions, once each.
+    if (!mockInterview.questions.includes(question)) {
+        return { error: "That question isn't part of this practice" };
+    }
+    if (mockInterview.answers.some((a) => a.question === question)) {
+        return { error: "You've already answered this question" };
     }
 
     let evaluation = { score: 0, feedback: "" };

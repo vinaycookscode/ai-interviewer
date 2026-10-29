@@ -6,6 +6,7 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 On `develop`, not yet on `main`.
 
+- **Practice keeps its questions.** A practice's five questions are written once and stored, so a refresh or a return visit shows the same ones and picks up at the next unanswered question, with earlier scores kept. Answers are accepted only for the practice's own questions, once each. Question generation is no longer a public server action (AIIN-47; migration `mock_interview_questions`).
 - **Free users can practise.** The Free plan's 2 practice interviews a month now work: the practice page no longer blocks free users. When the month's practices are used up, "See plans" replaces Start (AIIN-189; [ADR](docs/architecture/2026-10-29-free-plan-includes-practice.md)).
 
 ## 2026-10-29

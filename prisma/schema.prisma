@@ -255,6 +255,8 @@ model MockInterview {
   // Practice settings
   role        String   // e.g., "Frontend Developer"
   difficulty  String   // "Junior", "Mid", "Senior"
+  // Written once on the first visit and kept, so a refresh shows the same questions (AIIN-47)
+  questions   String[] @default([])
   
   // Results
   score       Float?

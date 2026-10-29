@@ -3,7 +3,7 @@
 import { useState, useEffect, useTransition, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { generateMockQuestions, saveMockAnswer, completeMockInterview } from "@/actions/mock-interview";
+import { getMockQuestions, saveMockAnswer, completeMockInterview } from "@/actions/mock-interview";
 import { ArrowRight, CheckCircle2, Coffee, Loader2, Mic, RotateCw, Square, Volume2 } from "lucide-react";
 import { toast } from "sonner";
 import { Mascot } from "@/components/soft-glass/mascot";
@@ -29,7 +29,7 @@ export function PracticeSession({ mockInterviewId, role, difficulty }: PracticeS
     const [isSubmitting, startTransition] = useTransition();
     const [feedback, setFeedback] = useState<{ score: number; feedback: string } | null>(null);
     const [generationError, setGenerationError] = useState<string | null>(null);
-    // Presentation only: scores of answers given in this visit, for the question list.
+    // Presentation only: scores of the answers given so far, for the question list.
     const [scores, setScores] = useState<Record<number, number>>({});
 
     // Ref to track if first question has been spoken (prevents double speech in dev mode)
@@ -46,13 +46,25 @@ export function PracticeSession({ mockInterviewId, role, difficulty }: PracticeS
         hasSpokenFirstQuestion.current = true;
 
         const loadQuestions = async () => {
-            const result = await generateMockQuestions(role, difficulty);
+            // The stored questions (written on the first visit), plus any answers already given.
+            const result = await getMockQuestions(mockInterviewId);
             if (result.questions && result.questions.length > 0) {
+                const answers = result.answers ?? [];
+                const answered = new Set(answers.map((a) => a.index));
+                const next = result.questions.findIndex((_, i) => !answered.has(i));
                 setQuestions(result.questions);
+                setScores(Object.fromEntries(answers.map((a) => [a.index, a.score ?? 0])));
                 setIsGenerating(false);
                 setGenerationError(null);
-                // Speak first question
-                speak(result.questions[0]);
+                if (next === -1) {
+                    // Every question answered: show the last one's feedback, ready to finish.
+                    const last = answers.find((a) => a.index === result.questions!.length - 1);
+                    setCurrentQuestionIndex(result.questions.length - 1);
+                    setFeedback({ score: last?.score ?? 0, feedback: last?.feedback ?? "" });
+                } else {
+                    setCurrentQuestionIndex(next);
+                    speak(result.questions[next]);
+                }
             } else {
                 const errorMsg = result.error || "Failed to generate questions";
                 setGenerationError(errorMsg);
@@ -62,7 +74,7 @@ export function PracticeSession({ mockInterviewId, role, difficulty }: PracticeS
         };
         loadQuestions();
         // eslint-disable-next-line react-hooks/exhaustive-deps  
-    }, [role, difficulty]);
+    }, [mockInterviewId]);
 
     // Update answer from transcript
     useEffect(() => {
