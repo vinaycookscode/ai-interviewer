@@ -4,7 +4,11 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-On `develop`, not yet on `main`.
+Nothing yet.
+
+## 2026-10-29
+
+In production. Each change was checked locally on a throwaway database before release.
 
 - **Today loads only what it shows** (AIIN-32):
   - Finished interviews are listed 10 at a time, with a "Show 10 more" button. Upcoming interviews are all still listed.
