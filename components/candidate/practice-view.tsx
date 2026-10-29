@@ -108,6 +108,16 @@ export function PracticeView({ allowance, recent, initialRole = "", initialLevel
                     aria-label={t("setup.sectionLabel")}
                     className="sg-glass sg-shadow-lg flex min-w-0 flex-[999_1_560px] flex-col gap-7 rounded-[24px] p-5 sm:rounded-[28px] sm:p-8"
                 >
+                    {apiStatus && !apiStatus.available && (
+                        <div role="alert" className="flex items-start gap-3 rounded-[18px] bg-sg-danger/10 p-4 text-sg-danger">
+                            <AlertCircle className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+                            <div className="flex flex-col gap-1 font-semibold">
+                                <span>{t("aiUnavailable.title")}</span>
+                                <span>{apiStatus.reason} {t("aiUnavailable.later")}</span>
+                            </div>
+                        </div>
+                    )}
+
                     {apiStatus?.usingFallback && (
                         <div role="status" className="flex items-start gap-3 rounded-[18px] bg-sg-row p-4">
                             <AlertCircle className="mt-0.5 size-5 shrink-0 text-sg-lavender-ink" aria-hidden="true" />

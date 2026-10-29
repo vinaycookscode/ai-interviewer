@@ -10,7 +10,8 @@ import { getAIStatus } from "@/actions/ai-status";
 // const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!); // Removed
 
 // Check if AI is available
-export async function checkApiStatus() {
+// Unavailable (the status check fails) blocks practice; degraded (every model rate-limited) runs with fallback questions and a banner (AIIN-48)
+export async function checkApiStatus(): Promise<{ available: boolean; usingFallback?: boolean; reason?: string }> {
     try {
         const status = await getAIStatus();
 
@@ -23,14 +24,9 @@ export async function checkApiStatus() {
         }
 
         return { available: true };
-    } catch (error: any) {
+    } catch (error) {
         console.error("AI status check failed:", error);
-
-        return {
-            available: true,
-            usingFallback: true,
-            reason: "AI service is currently unavailable. Running in offline practice mode."
-        };
+        return { available: false, reason: "U couldn't reach the AI service." };
     }
 }
 

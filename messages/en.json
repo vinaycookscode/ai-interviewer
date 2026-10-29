@@ -924,6 +924,10 @@
             "results": "Instant Results"
         },
         "checking": "Checking AI service availability...",
+        "aiUnavailable": {
+            "title": "U can’t run practices right now",
+            "later": "Please try again later."
+        },
         "limitedAvailability": {
             "title": "Limited AI Availability",
             "fallback": "AI service is currently unavailable. You can still practice with offline questions."

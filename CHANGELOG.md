@@ -6,6 +6,7 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 On `develop`, not yet on `main`.
 
+- **Practice says when it can't run.** If U can't check the AI service, the practice page says so and Start stays off, instead of looking available. When every model is rate-limited, practice still runs with offline questions and a banner (AIIN-48).
 - **Deleting a job no longer fails or loses history.** A job no one was invited to is deleted. A job with candidates is archived instead: it leaves the employer's lists and stops taking invitations, and its interviews and reports are kept. Deleting used to fail with a database error for any job with interviews (AIIN-188; migration `job_archived_at`).
 - **Password reset requests are limited.** One address gets at most 3 reset emails an hour, and one IP at most 5 requests every 15 minutes. Setting the new password is limited to 10 tries every 15 minutes per IP (AIIN-56).
 - **Password reset uses the sign-up rule.** A new password needs at least 8 characters with an uppercase letter, a number and a symbol, whether it's set at sign-up or on reset. The reset server action checks it too, so a direct call can no longer set a weak or empty password. Both forms show the rule under the field before you type (AIIN-141).
