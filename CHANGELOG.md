@@ -4,7 +4,11 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-On `develop`, not yet on `main`.
+On `develop`, not yet on `main`. Nothing yet.
+
+## 2026-10-29, second release
+
+In production (`7794575`). Each change was checked locally on a throwaway database before release. Adds the `MockInterview.questions` and `Job.archivedAt` columns.
 
 - The flashcard deck list loads your mastery for every deck in one query instead of one query per deck (AIIN-34).
 - **Streaks and flashcards follow India time.** Placement-program streaks count IST calendar days, so finishing a task at 11:30 PM and another at 9 AM the next day continues the streak, and the first task now starts it. Flashcards come due at midnight IST (AIIN-67).
