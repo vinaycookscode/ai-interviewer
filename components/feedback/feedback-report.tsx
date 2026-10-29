@@ -28,10 +28,12 @@ interface FeedbackReportProps {
     averageScore: number | null;
     viewer: "candidate" | "employer";
     back: { href: string; label: string };
+    /** Shown beside the report, outside the PDF: the employer's decision panel (AIIN-157). */
+    aside?: React.ReactNode;
 }
 
 /** The interview report. Employers also see how the candidate came across. */
-export function FeedbackReport({ interview, averageScore, viewer, back }: FeedbackReportProps) {
+export function FeedbackReport({ interview, averageScore, viewer, back, aside }: FeedbackReportProps) {
     const t = useTranslations("FeedbackReport");
 
     const answers: ReportAnswer[] = interview.answers.map((a) => ({
@@ -66,16 +68,19 @@ export function FeedbackReport({ interview, averageScore, viewer, back }: Feedba
                 }
             />
 
-            <div id="feedback-content" className="flex flex-col gap-6 bg-sg-bg sm:gap-9">
-                <ScoreCard
-                    score={averageScore}
-                    answerCount={answers.length}
-                    viewer={viewer}
-                    strongest={strongest}
-                    weakest={weakest}
-                />
-                {viewer === "employer" && interview.personalityProfile && <PersonalityCard profile={interview.personalityProfile} />}
-                <AnswerList answers={answers} viewer={viewer} />
+            <div className="flex flex-wrap items-start gap-6">
+                <div id="feedback-content" className="flex min-w-0 flex-[999_1_560px] flex-col gap-6 sm:gap-9">
+                    <ScoreCard
+                        score={averageScore}
+                        answerCount={answers.length}
+                        viewer={viewer}
+                        strongest={strongest}
+                        weakest={weakest}
+                    />
+                    {viewer === "employer" && interview.personalityProfile && <PersonalityCard profile={interview.personalityProfile} />}
+                    <AnswerList answers={answers} viewer={viewer} />
+                </div>
+                {aside && <aside className="flex min-w-[min(280px,100%)] max-w-full flex-[1_1_320px] flex-col gap-4 lg:sticky lg:top-24 lg:max-w-[380px]">{aside}</aside>}
             </div>
         </div>
     );

@@ -6,6 +6,7 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 On `develop`, not yet on `main`.
 
+- **Hiring decisions.** On a finished interview's report, the employer can shortlist, put on hold or reject the candidate, with a note only their team sees, and see every change with who made it and when (IST). Candidates never see it (AIIN-157; migration `hiring_decision`).
 - **Error, not-found and empty states in Soft Glass.** A missing page and an error now show U, plain words and two ways forward (the error page adds a short reference to quote). Interview-link screens like "Invalid link" now always lead to your dashboard. Empty lists show U and one next step, and candidate pages have a loading screen (AIIN-137, AIIN-88).
 - **Profile, offers, plans and subscription in Soft Glass.** Offers compare total pay side by side, and an offer letter can be attached. Plans use the landing page's cards, with the same Razorpay checkout. Offers can no longer be changed or deleted by other users, and the profile page no longer sends your account record to the browser (AIIN-135).
 - **90-day plan in Soft Glass.** Your plan with this week's streak and badges, and each day's tasks and idea. A missed day now shows the streak as 0 straight away (on Today too), and pausing really keeps it. Other users' plan answers can no longer be read, and only you can resume your plan (AIIN-134).

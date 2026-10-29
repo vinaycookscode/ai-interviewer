@@ -1777,5 +1777,34 @@
             "noMatchBody": "Check the spelling, or try a shorter word.",
             "clear": "Clear search"
         }
+    },
+    "Decision": {
+        "title": "Your decision",
+        "locked": "You can decide once the interview is finished.",
+        "group": "Decision",
+        "options": {
+            "UNDECIDED": "Undecided",
+            "SHORTLISTED": "Shortlist",
+            "ON_HOLD": "Put on hold",
+            "REJECTED": "Reject"
+        },
+        "states": {
+            "UNDECIDED": "Undecided",
+            "SHORTLISTED": "Shortlisted",
+            "ON_HOLD": "On hold",
+            "REJECTED": "Rejected"
+        },
+        "note": "Note",
+        "noteHint": "(only your team sees it)",
+        "count": "{count} of {limit} characters",
+        "tooLong": "{count} of {limit} characters. Shorten the note to save it.",
+        "save": "Save decision",
+        "saving": "Saving…",
+        "saved": "Decision saved.",
+        "failed": "Couldn’t save the decision. Try again.",
+        "history": "History",
+        "by": "by {name}",
+        "system": "by Get Back To U",
+        "noHistory": "No decision yet."
     }
 }

@@ -132,9 +132,11 @@ export function PdfDownloadButton({ targetId, fileName }: PdfDownloadButtonProps
     );
 }
 
-/** The report's own background (Soft Glass uses plain sRGB colours), or black as before. */
+/** The report's own background; if it has none, the Soft Glass page colour it sits on; black as a last resort. */
 function pageBackground(element: HTMLElement): string {
-    const color = window.getComputedStyle(element).backgroundColor;
+    const style = window.getComputedStyle(element);
+    const color = style.backgroundColor;
     const transparent = color === "transparent" || color === "rgba(0, 0, 0, 0)";
-    return transparent || /oklch|oklab|lab\(|color\(/.test(color) ? "#000000" : color;
+    if (!transparent && !/oklch|oklab|lab\(|color\(/.test(color)) return color;
+    return style.getPropertyValue("--sg-bg").trim() || "#000000";
 }

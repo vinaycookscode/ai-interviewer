@@ -8,6 +8,11 @@ import { AmbientLight } from "@/components/soft-glass/ambient-light";
 import { AppShell } from "@/components/soft-glass/app-shell";
 import { getFeatureFlags } from "@/actions/feature-flags";
 import { FeedbackReport } from "@/components/feedback/feedback-report";
+import { DecisionPanel } from "@/components/feedback/decision-panel";
+import { db } from "@/lib/db";
+
+const istTime = (d: Date) =>
+    `${d.toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true })} IST`;
 
 export default async function FeedbackPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -25,6 +30,22 @@ export default async function FeedbackPage({ params }: { params: Promise<{ id: s
     const back = viewer === "candidate"
         ? { href: "/candidate/dashboard", label: t("backCandidate") }
         : { href: `/dashboard/jobs/${interview.job.id}`, label: interview.job.title };
+
+    // The decision and its history: only for the employer who owns the job, never the candidate (AIIN-157)
+    const decision =
+        viewer === "employer" && user.role === "EMPLOYER"
+            ? await db.interview.findFirst({
+                  where: { id, job: { employerId: user.id } },
+                  select: {
+                      status: true,
+                      decision: true,
+                      decisionEvents: {
+                          orderBy: { createdAt: "desc" },
+                          select: { id: true, to: true, note: true, createdAt: true, byUser: { select: { name: true, email: true } } },
+                      },
+                  },
+              })
+            : null;
 
     const flags = await getFeatureFlags();
     const flagMap = flags.reduce<Record<string, boolean>>((acc, f) => ({ ...acc, [f.key]: f.enabled }), {});
@@ -44,6 +65,22 @@ export default async function FeedbackPage({ params }: { params: Promise<{ id: s
                     averageScore={averageScore ?? null}
                     viewer={viewer}
                     back={back}
+                    aside={
+                        decision && (
+                            <DecisionPanel
+                                interviewId={id}
+                                current={decision.decision}
+                                finished={decision.status === "COMPLETED"}
+                                history={decision.decisionEvents.map((e) => ({
+                                    id: e.id,
+                                    to: e.to,
+                                    note: e.note,
+                                    by: e.byUser ? e.byUser.name || e.byUser.email : null,
+                                    when: istTime(e.createdAt),
+                                }))}
+                            />
+                        )
+                    }
                 />
             </AppShell>
         </div>

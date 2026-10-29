@@ -18,6 +18,20 @@ enum InterviewStatus {
   COMPLETED
 }
 
+// The employer's hiring outcome for a finished interview, separate from InterviewStatus (AIIN-157)
+enum HiringDecision {
+  UNDECIDED
+  SHORTLISTED
+  ON_HOLD
+  REJECTED
+}
+
+enum DecisionSource {
+  MANUAL
+  BULK
+  AUTO_CUTOFF
+}
+
 // ============================================
 // SUBSCRIPTION SYSTEM ENUMS
 // ============================================
@@ -76,6 +90,7 @@ model User {
   sessions      Session[]
   jobs          Job[]       @relation("EmployerJobs")
   interviews    Interview[]
+  decisionEvents InterviewDecisionEvent[]
   mockInterviews MockInterview[]
   
   // Placement Platform Relations
@@ -201,7 +216,13 @@ model Interview {
   language  String   @default("en") // Interview language (en, hi, mr, etc.)
   createdAt DateTime @default(now())
 
+  // Hiring decision (AIIN-157); history in InterviewDecisionEvent
+  decision     HiringDecision @default(UNDECIDED)
+  decisionAt   DateTime?
+  decisionById String?
+
   answers Answer[]
+  decisionEvents InterviewDecisionEvent[]
   personalityProfile PersonalityProfile?
   proctoringEvents ProctoringEvent[]
 
@@ -853,4 +874,21 @@ model UsageRecord {
   
   @@unique([userId, featureType, periodStart])
   @@index([userId, featureType])
+}
+
+// Every change to an interview's hiring decision, oldest first (AIIN-157)
+model InterviewDecisionEvent {
+  id          String         @id @default(cuid())
+  interviewId String
+  interview   Interview      @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  from        HiringDecision
+  to          HiringDecision
+  note        String?        @db.Text
+  // Null when the system decided, e.g. a drive's auto-shortlist
+  byUserId    String?
+  byUser      User?          @relation(fields: [byUserId], references: [id], onDelete: SetNull)
+  source      DecisionSource @default(MANUAL)
+  createdAt   DateTime       @default(now())
+
+  @@index([interviewId])
 }
