@@ -6,6 +6,7 @@ import { getGeminiModelInstance } from "@/lib/gemini";
 import { getGeminiModel, markModelRateLimited } from "@/actions/gemini-config";
 import { checkFeature } from "@/actions/feature-flags";
 import { FEATURES } from "@/lib/features";
+import { canRunTests } from "@/lib/code-languages";
 
 // ============================================
 // COMPANY QUERIES (Original functions)
@@ -89,6 +90,15 @@ export async function saveUserSolution(
         const session = await auth();
         if (!session?.user?.id) {
             return { success: false, error: "Not authenticated" };
+        }
+
+        // Test counts are only meaningful for languages the browser can run (AIIN-149)
+        if (canRunTests(language)) {
+            totalTests = Math.max(0, Math.floor(totalTests) || 0);
+            passedTests = Math.min(totalTests, Math.max(0, Math.floor(passedTests) || 0));
+        } else {
+            passedTests = 0;
+            totalTests = 0;
         }
 
         // Upsert the solution (update if exists, create if not)

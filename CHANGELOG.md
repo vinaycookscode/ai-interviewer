@@ -6,6 +6,7 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 On `develop`, not yet on `main`.
 
+- **Company prep shows only real test results.** Run Tests is offered for JavaScript and TypeScript, which run in the browser. Python, Java, C# and C++ used to show random pass/fail results; they now say tests aren't run for them and point to Analyze Code. Submitting saves test counts only for code that was actually run, and the server ignores counts for languages it can't run (AIIN-149).
 - **Practice keeps its questions.** A practice's five questions are written once and stored, so a refresh or a return visit shows the same ones and picks up at the next unanswered question, with earlier scores kept. Answers are accepted only for the practice's own questions, once each. Question generation is no longer a public server action (AIIN-47; migration `mock_interview_questions`).
 - **Free users can practise.** The Free plan's 2 practice interviews a month now work: the practice page no longer blocks free users. When the month's practices are used up, "See plans" replaces Start (AIIN-189; [ADR](docs/architecture/2026-10-29-free-plan-includes-practice.md)).
 

@@ -11,6 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { saveUserSolution, getUserSolution, analyzeSolution, type CodeAnalysis } from "@/actions/company-prep";
+import { canRunTests } from "@/lib/code-languages";
 import { toast } from "sonner";
 import { CodeEditor } from "@/components/ui/code-editor";
 
@@ -87,19 +88,10 @@ function solution(input) {
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysis, setAnalysis] = useState<CodeAnalysis | null>(null);
     const [testResults, setTestResults] = useState<any[] | null>(null);
+    const [testedCode, setTestedCode] = useState<string | null>(null);
     const [selectedLanguage, setSelectedLanguage] = useState<string>("javascript");
     const [hasSavedSolution, setHasSavedSolution] = useState(false);
     const [solutionInfo, setSolutionInfo] = useState<{ passedTests: number; totalTests: number } | null>(null);
-
-    // Supported programming languages
-    const SUPPORTED_LANGUAGES = [
-        { id: "javascript", name: "JavaScript", extension: ".js" },
-        { id: "python", name: "Python", extension: ".py" },
-        { id: "java", name: "Java", extension: ".java" },
-        { id: "csharp", name: "C#", extension: ".cs" },
-        { id: "typescript", name: "TypeScript", extension: ".ts" },
-        { id: "cpp", name: "C++", extension: ".cpp" },
-    ];
 
     // Get starter code for selected language
     const starterCodes: Record<string, string> = {
@@ -210,6 +202,7 @@ public:
         if (featureFlags.codePersistence && code && typeof window !== 'undefined') {
             localStorage.setItem(getCodeStorageKeyWithLang(selectedLanguage), code);
         }
+        setTestResults(null);
         setSelectedLanguage(newLang);
     };
 
@@ -314,49 +307,8 @@ public:
         return `Solve the following problem efficiently. Consider the time and space complexity of your solution. Make sure to handle edge cases appropriately.`;
     }
 
-    // Execute user code safely
-    // Execute user code safely (supports JS/TS natively, simulates for other languages)
-    const executeCode = (userCode: string, testCase: any, lang: string): { passed: boolean; output: string; error?: string } => {
-        // For non-JavaScript languages, provide simulated execution with feedback
-        if (!['javascript', 'typescript'].includes(lang)) {
-            // Check if the code has a proper implementation (not just starter code)
-            const hasImplementation = !userCode.includes('Your code here') &&
-                !userCode.includes('pass') &&
-                userCode.trim().length > 100;
-
-            if (!hasImplementation) {
-                return {
-                    passed: false,
-                    output: 'Not implemented',
-                    error: `Please implement your ${SUPPORTED_LANGUAGES.find(l => l.id === lang)?.name || lang} solution before running tests`
-                };
-            }
-
-            // Simulate execution based on code patterns
-            const hasReturn = userCode.includes('return') || userCode.includes('print') || userCode.includes('Console.Write');
-            const hasCorrectStructure = lang === 'python' ? userCode.includes('def ') :
-                lang === 'java' ? userCode.includes('class ') :
-                    lang === 'csharp' ? userCode.includes('class ') :
-                        lang === 'cpp' ? userCode.includes('class ') || userCode.includes('int ') : true;
-
-            if (hasReturn && hasCorrectStructure) {
-                // Simulate successful execution for well-structured code
-                const passed = Math.random() > 0.3; // 70% pass rate for demo
-                return {
-                    passed,
-                    output: passed ? JSON.stringify(testCase.expected) : '"simulated output"',
-                    error: passed ? undefined : `Expected ${JSON.stringify(testCase.expected)}, but got different result`
-                };
-            }
-
-            return {
-                passed: false,
-                output: 'Syntax/structure issue',
-                error: `Please check your ${SUPPORTED_LANGUAGES.find(l => l.id === lang)?.name || lang} code for proper syntax and structure`
-            };
-        }
-
-        // JavaScript/TypeScript execution (existing logic)
+    // Runs JavaScript or TypeScript in the browser; other languages never reach here (see canRunTests)
+    const executeCode = (userCode: string, testCase: any): { passed: boolean; output: string; error?: string } => {
         try {
             // Try to find a function definition in user's code
             const funcMatch = userCode.match(/function\s+(\w+)\s*\(/);
@@ -453,7 +405,7 @@ public:
 
         // Actually execute the code against test cases
         const results = testCases.map((tc: any, i: number) => {
-            const result = executeCode(code, tc, selectedLanguage);
+            const result = executeCode(code, tc);
             return {
                 passed: result.passed,
                 input: typeof tc.input === 'object' ? JSON.stringify(tc.input) : tc.input,
@@ -464,6 +416,7 @@ public:
         });
 
         setTestResults(results);
+        setTestedCode(code);
         setIsAnalyzing(false);
     };
 
@@ -498,11 +451,10 @@ public:
             return;
         }
         try {
-            let passedTests = 0;
-            let totalTests = testCases.length;
-            if (testResults) {
-                passedTests = testResults.filter((r: any) => r.passed).length;
-            }
+            // Only results from running this exact code count; languages that can't run save no test counts
+            const runnable = canRunTests(selectedLanguage);
+            const passedTests = runnable && testResults && testedCode === code ? testResults.filter((r: any) => r.passed).length : 0;
+            const totalTests = runnable ? testCases.length : 0;
             const result = await saveUserSolution(question.id, code, selectedLanguage, passedTests, totalTests);
             if (result.success) {
                 toast.success("Answer submitted successfully! ✓");
@@ -727,17 +679,19 @@ public:
 
                             {/* Action Buttons */}
                             <div className="flex gap-3 mt-4 shrink-0">
-                                <button
-                                    onClick={handleRunCode}
-                                    disabled={isAnalyzing}
-                                    className={cn(
-                                        "flex items-center justify-center gap-2 px-4 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 font-medium",
-                                        !featureFlags.aiCodeAnalysis && "w-full"
-                                    )}
-                                >
-                                    {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                                    Run Tests
-                                </button>
+                                {canRunTests(selectedLanguage) && (
+                                    <button
+                                        onClick={handleRunCode}
+                                        disabled={isAnalyzing}
+                                        className={cn(
+                                            "flex items-center justify-center gap-2 px-4 py-2.5 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 font-medium",
+                                            !featureFlags.aiCodeAnalysis && "w-full"
+                                        )}
+                                    >
+                                        {isAnalyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+                                        Run Tests
+                                    </button>
+                                )}
                                 <button
                                     onClick={handleSubmitAnswer}
                                     disabled={isAnalyzing}
@@ -757,6 +711,13 @@ public:
                                     </button>
                                 )}
                             </div>
+
+                            {!canRunTests(selectedLanguage) && (
+                                <p className="mt-3 text-sm text-muted-foreground shrink-0">
+                                    Tests run in the browser for JavaScript and TypeScript only.
+                                    {featureFlags.aiCodeAnalysis ? " Use Analyze Code to have U review this solution." : ""}
+                                </p>
+                            )}
 
                             {/* Scrollable Results Area */}
                             <div className="flex-1 overflow-y-auto mt-4 space-y-4 min-h-0">
