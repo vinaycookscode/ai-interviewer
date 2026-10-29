@@ -150,6 +150,8 @@ model Job {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  // Set instead of deleting once a job has interviews, so candidates' history is kept (AIIN-188)
+  archivedAt DateTime?
 
   questions  Question[]
   interviews Interview[]

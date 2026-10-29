@@ -55,21 +55,28 @@ export async function deleteJob(jobId: string) {
         throw new Error("Unauthorized");
     }
 
-    // Verify ownership
-    const job = await db.job.findUnique({
-        where: { id: jobId },
-        include: { employer: true },
+    // Loaded only if the signed-in employer owns it
+    const job = await db.job.findFirst({
+        where: { id: jobId, employerId: userId, archivedAt: null },
+        select: { id: true, _count: { select: { interviews: true } } },
     });
 
-    if (!job || job.employer.id !== userId) {
+    if (!job) {
         throw new Error("Unauthorized");
     }
 
-    await db.job.delete({
-        where: { id: jobId },
-    });
+    // A job with interviews is archived, never deleted: candidates keep their interviews and reports (AIIN-188)
+    if (job._count.interviews > 0) {
+        await db.job.update({ where: { id: jobId }, data: { archivedAt: new Date() } });
+    } else {
+        await db.$transaction([
+            db.question.deleteMany({ where: { jobId } }),
+            db.job.delete({ where: { id: jobId } }),
+        ]);
+    }
 
     revalidatePath("/dashboard");
+    return { archived: job._count.interviews > 0 };
 }
 
 export async function updateJob(jobId: string, data: {
@@ -93,7 +100,7 @@ export async function updateJob(jobId: string, data: {
         include: { employer: true },
     });
 
-    if (!job || job.employer.id !== userId) {
+    if (!job || job.employer.id !== userId || job.archivedAt) {
         throw new Error("Unauthorized");
     }
 

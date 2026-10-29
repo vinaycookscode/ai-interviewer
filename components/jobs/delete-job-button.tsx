@@ -18,7 +18,8 @@ export function DeleteJobButton({ jobId }: { jobId: string }) {
     async function handleDelete() {
         setIsDeleting(true);
         try {
-            await deleteJob(jobId);
+            const { archived } = await deleteJob(jobId);
+            toast.success(t(archived ? "archived" : "deleted"));
             router.push("/dashboard");
             router.refresh();
         } catch (error) {

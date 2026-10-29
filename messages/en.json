@@ -202,7 +202,9 @@
         "deleteJob": {
             "trigger": "Delete job",
             "title": "Delete this job?",
-            "body": "This permanently deletes the job and all of its interview data. It can’t be undone.",
+            "body": "If no one has been invited yet, the job is deleted. If it has candidates, it’s archived instead: it leaves your lists and stops taking candidates, and their interviews and reports are kept.",
+            "deleted": "Job deleted.",
+            "archived": "Job archived. Candidates’ interviews and reports are kept.",
             "cancel": "Cancel",
             "confirm": "Delete job",
             "failed": "Couldn’t delete the job. Try again."

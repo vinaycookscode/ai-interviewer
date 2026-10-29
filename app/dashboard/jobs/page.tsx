@@ -28,7 +28,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
     const q = (await searchParams).q?.trim() ?? "";
 
     const jobs = await db.job.findMany({
-        where: { employerId: userId, ...(q ? { title: { contains: q, mode: "insensitive" as const } } : {}) },
+        where: { employerId: userId, archivedAt: null, ...(q ? { title: { contains: q, mode: "insensitive" as const } } : {}) },
         orderBy: { createdAt: "desc" },
         select: {
             id: true,

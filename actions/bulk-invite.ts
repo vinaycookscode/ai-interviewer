@@ -65,7 +65,7 @@ export async function bulkInviteCandidates(data: {
         };
     }
 
-    if (job.questions.length === 0) {
+    if (job.questions.length === 0 || job.archivedAt) {
         return {
             success: false,
             total: data.candidates.length,
@@ -76,7 +76,7 @@ export async function bulkInviteCandidates(data: {
                 email: c.email,
                 name: c.name,
                 status: "failed" as const,
-                error: "Job has no questions",
+                error: job.archivedAt ? "Job is archived" : "Job has no questions",
             })),
         };
     }

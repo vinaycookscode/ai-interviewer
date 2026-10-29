@@ -13,7 +13,7 @@ export default async function EditJobPage({ params }: { params: Promise<{ id: st
 
     // Loaded only if the signed-in employer owns it.
     const job = await db.job.findFirst({
-        where: { id, employerId: userId },
+        where: { id, employerId: userId, archivedAt: null },
         select: {
             id: true,
             title: true,

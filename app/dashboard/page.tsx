@@ -20,7 +20,7 @@ export default async function DashboardPage() {
     const t = await getTranslations("Employer.overview");
 
     const jobs = await db.job.findMany({
-        where: { employerId: userId },
+        where: { employerId: userId, archivedAt: null },
         orderBy: { createdAt: "desc" },
         select: {
             id: true,

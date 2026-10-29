@@ -33,6 +33,10 @@ export async function inviteCandidate(data: {
             return { success: false, error: "Unauthorized" };
         }
 
+        if (job.archivedAt) {
+            return { success: false, error: "This job is archived, so it can't take new candidates" };
+        }
+
         if (job.questions.length === 0) {
             return {
                 success: false,

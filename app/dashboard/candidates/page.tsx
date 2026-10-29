@@ -62,7 +62,7 @@ export default async function CandidatesPage({
     };
 
     const [jobs, total, totalAll] = await Promise.all([
-        db.job.findMany({ where: { employerId: userId }, orderBy: { createdAt: "desc" }, select: { id: true, title: true } }),
+        db.job.findMany({ where: { employerId: userId, archivedAt: null }, orderBy: { createdAt: "desc" }, select: { id: true, title: true } }),
         db.interview.count({ where }),
         db.interview.count({ where: { job: { employerId: userId } } }),
     ]);
