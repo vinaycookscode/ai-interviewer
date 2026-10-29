@@ -148,6 +148,7 @@ export async function completeInterview(interviewId: string) {
             where: { id: interviewId },
             data: {
                 status: "COMPLETED",
+                completedAt: new Date(),
                 ...(avgScore !== null ? { score: avgScore } : {})
             },
             include: {

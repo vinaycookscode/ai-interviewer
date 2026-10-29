@@ -1806,5 +1806,62 @@
         "by": "by {name}",
         "system": "by Get Back To U",
         "noHistory": "No decision yet."
+    },
+    "Shortlist": {
+        "summary": {
+            "finished": "{count} finished",
+            "SHORTLISTED": "{count} shortlisted",
+            "ON_HOLD": "{count} on hold",
+            "REJECTED": "{count} rejected"
+        },
+        "search": "Search by name or email",
+        "score": "Score",
+        "anyScore": "Any score",
+        "minScore": "{score} and above",
+        "finished": "Finished",
+        "anyTime": "Any time",
+        "lastDays": "Last {count} days",
+        "status": "Status",
+        "anyStatus": "Everyone",
+        "statuses": {
+            "completed": "Finished",
+            "in_progress": "In progress",
+            "pending": "Not started"
+        },
+        "decision": "Decision",
+        "decisions": {
+            "UNDECIDED": "Undecided",
+            "SHORTLISTED": "Shortlisted",
+            "ON_HOLD": "On hold",
+            "REJECTED": "Rejected"
+        },
+        "ranked": "Ranked candidates",
+        "count": "{count, plural, one {# candidate} other {# candidates}}",
+        "rankedNote": "Ranked by overall score. Spread is their lowest and highest answer.",
+        "caption": "Candidates ranked by overall score",
+        "rank": "#",
+        "rankLabel": "Rank",
+        "candidate": "Candidate",
+        "scoreCol": "Score",
+        "spread": "Spread",
+        "skills": "Strongest · weakest",
+        "decisionCol": "Decision",
+        "finishedCol": "Finished",
+        "sortBy": "Sort by {column}",
+        "outOfTen": "out of 10",
+        "rankShort": "#{rank}",
+        "none": "—",
+        "pages": "Pages",
+        "previous": "Previous",
+        "next": "Next",
+        "range": "{from}–{to} of {total}",
+        "unfinished": "Not finished yet",
+        "unfinishedNote": "These candidates appear in the ranking once they finish.",
+        "noFinishedTitle": "No finished interviews yet",
+        "noFinishedBody": "{invited, plural, =0 {Invite candidates and they’ll appear here, ranked, as soon as they finish.} other {{invited, plural, one {# candidate is} other {# candidates are}} invited. They appear here, ranked, as soon as they finish.}}",
+        "noMatchTitle": "No one matches these filters",
+        "noMatchBody": "Try fewer filters, or clear them to see everyone.",
+        "clear": "Clear filters",
+        "openReport": "Open {name}’s report"
     }
 }

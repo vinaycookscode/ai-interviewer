@@ -14,8 +14,15 @@ import { db } from "@/lib/db";
 const istTime = (d: Date) =>
     `${d.toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true })} IST`;
 
-export default async function FeedbackPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function FeedbackPage({
+    params,
+    searchParams,
+}: {
+    params: Promise<{ id: string }>;
+    searchParams: Promise<{ from?: string }>;
+}) {
     const { id } = await params;
+    const { from } = await searchParams;
     const session = await auth();
     const user = session?.user;
     if (!user?.id) notFound();
@@ -29,7 +36,11 @@ export default async function FeedbackPage({ params }: { params: Promise<{ id: s
     const isAdmin = user.role === "ADMIN";
     const back = viewer === "candidate"
         ? { href: "/candidate/dashboard", label: t("backCandidate") }
-        : { href: `/dashboard/jobs/${interview.job.id}`, label: interview.job.title };
+        : {
+              // Back to the ranked list with the same filters, but only ever to this job's page (AIIN-158)
+              href: from && (from === `/dashboard/jobs/${interview.job.id}` || from.startsWith(`/dashboard/jobs/${interview.job.id}?`)) ? from : `/dashboard/jobs/${interview.job.id}`,
+              label: interview.job.title,
+          };
 
     // The decision and its history: only for the employer who owns the job, never the candidate (AIIN-157)
     const decision =

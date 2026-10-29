@@ -6,6 +6,7 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 On `develop`, not yet on `main`.
 
+- **Ranked candidates on each job.** A job's finished candidates are ranked by score (ties go to whoever finished first), with each one's answer spread, strongest and weakest skill, decision and finish date. Filter by decision, score, finish date and status, search by name or email, 50 to a page; the view lives in the URL, and the report's back link returns to it. Unfinished candidates are listed below (AIIN-158; migration `interview_completed_at`).
 - **Hiring decisions.** On a finished interview's report, the employer can shortlist, put on hold or reject the candidate, with a note only their team sees, and see every change with who made it and when (IST). Candidates never see it (AIIN-157; migration `hiring_decision`).
 - **Error, not-found and empty states in Soft Glass.** A missing page and an error now show U, plain words and two ways forward (the error page adds a short reference to quote). Interview-link screens like "Invalid link" now always lead to your dashboard. Empty lists show U and one next step, and candidate pages have a loading screen (AIIN-137, AIIN-88).
 - **Profile, offers, plans and subscription in Soft Glass.** Offers compare total pay side by side, and an offer letter can be attached. Plans use the landing page's cards, with the same Razorpay checkout. Offers can no longer be changed or deleted by other users, and the profile page no longer sends your account record to the browser (AIIN-135).
