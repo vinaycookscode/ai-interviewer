@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { EnrollmentStatus, TaskType } from "@prisma/client";
 import { generateDayToken } from "@/lib/day-token";
+import { istDay } from "@/lib/ist";
 
 // ============================================
 // PROGRAM QUERIES
@@ -263,15 +264,16 @@ async function updateStreak(enrollmentId: string) {
 
     if (!enrollment) return;
 
+    // Days are counted in IST, so 11:30 PM one evening and 9 AM the next morning are consecutive days (AIIN-67)
     const now = new Date();
-    const lastActive = enrollment.lastActiveAt;
-    const daysSinceLastActive = Math.floor(
-        (now.getTime() - lastActive.getTime()) / (1000 * 60 * 60 * 24)
-    );
+    const daysSinceLastActive = istDay(now) - istDay(enrollment.lastActiveAt);
 
     let newStreak = enrollment.streak;
 
-    if (daysSinceLastActive === 0) {
+    if (enrollment.streak === 0) {
+        // First completed task starts the streak, even on the day of enrolling
+        newStreak = 1;
+    } else if (daysSinceLastActive === 0) {
         // Same day, no streak change
     } else if (daysSinceLastActive === 1) {
         // Consecutive day, increment streak

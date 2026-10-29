@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { istDay, startOfIstDay } from "@/lib/ist";
 
 // Leitner box intervals (in days)
 const BOX_INTERVALS = {
@@ -142,8 +143,9 @@ export async function updateProgress(cardId: string, known: boolean) {
         newBox = 1;
     }
 
+    // Due from midnight IST on the target day, so a card reviewed at 10 PM is due first thing that day (AIIN-67)
     const intervalDays = BOX_INTERVALS[newBox as keyof typeof BOX_INTERVALS];
-    const nextReview = new Date(now.getTime() + intervalDays * 24 * 60 * 60 * 1000);
+    const nextReview = startOfIstDay(istDay(now) + intervalDays);
 
     // Get the card's deckId for path revalidation
     const card = await db.flashcard.findUnique({

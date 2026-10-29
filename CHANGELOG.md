@@ -6,6 +6,7 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 On `develop`, not yet on `main`.
 
+- **Streaks and flashcards follow India time.** Placement-program streaks count IST calendar days, so finishing a task at 11:30 PM and another at 9 AM the next day continues the streak, and the first task now starts it. Flashcards come due at midnight IST (AIIN-67).
 - **Today refreshes only when something can change.** It checks every 30 seconds only while an interview is in progress or waiting for its score, and no longer reloads itself right after opening (AIIN-81).
 - Interview proctoring always logs to the current interview, and full-screen state is read straight from the browser (AIIN-43).
 - **Practice says when it can't run.** If U can't check the AI service, the practice page says so and Start stays off, instead of looking available. When every model is rate-limited, practice still runs with offline questions and a banner (AIIN-48).
