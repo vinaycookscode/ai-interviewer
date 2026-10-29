@@ -4,7 +4,11 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-On `develop`, not yet on `main`.
+On `develop`, not yet on `main`. Nothing yet.
+
+## 2026-10-30
+
+In production (`f5003ca`). Each change was checked locally on a throwaway database before release. Adds the `Interview.decision`, `decisionAt`, `decisionById` and `completedAt` columns and the `InterviewDecisionEvent` table.
 
 - **Ranked candidates on each job.** A job's finished candidates are ranked by score (ties go to whoever finished first), with each one's answer spread, strongest and weakest skill, decision and finish date. Filter by decision, score, finish date and status, search by name or email, 50 to a page; the view lives in the URL, and the report's back link returns to it. Unfinished candidates are listed below (AIIN-158; migration `interview_completed_at`).
 - **Hiring decisions.** On a finished interview's report, the employer can shortlist, put on hold or reject the candidate, with a note only their team sees, and see every change with who made it and when (IST). Candidates never see it (AIIN-157; migration `hiring_decision`).
