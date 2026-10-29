@@ -33,32 +33,31 @@ export async function getDecks() {
         orderBy: { createdAt: "desc" },
     });
 
-    // For each deck, get user's progress stats
+    // Mastered cards for every deck in one query, counted per deck (AIIN-34)
     if (session?.user?.id) {
-        const decksWithProgress = await Promise.all(
-            decks.map(async (deck) => {
-                const progress = await db.flashcardProgress.findMany({
-                    where: {
-                        userId: session.user!.id!,
-                        card: { deckId: deck.id },
-                    },
-                });
+        const mastered = await db.flashcardProgress.findMany({
+            where: {
+                userId: session.user.id,
+                box: { gte: 4 },
+                card: { deckId: { in: decks.map((deck) => deck.id) } },
+            },
+            select: { card: { select: { deckId: true } } },
+        });
+        const masteredByDeck = new Map<string, number>();
+        for (const { card } of mastered) {
+            masteredByDeck.set(card.deckId, (masteredByDeck.get(card.deckId) ?? 0) + 1);
+        }
 
-                const masteredCount = progress.filter((p) => p.box >= 4).length;
-                const totalCards = deck._count.cards;
-                const masteryPercent = totalCards > 0
-                    ? Math.round((masteredCount / totalCards) * 100)
-                    : 0;
-
-                return {
-                    ...deck,
-                    cardCount: totalCards,
-                    masteredCount,
-                    masteryPercent,
-                };
-            })
-        );
-        return decksWithProgress;
+        return decks.map((deck) => {
+            const masteredCount = masteredByDeck.get(deck.id) ?? 0;
+            const totalCards = deck._count.cards;
+            return {
+                ...deck,
+                cardCount: totalCards,
+                masteredCount,
+                masteryPercent: totalCards > 0 ? Math.round((masteredCount / totalCards) * 100) : 0,
+            };
+        });
     }
 
     return decks.map((deck) => ({
