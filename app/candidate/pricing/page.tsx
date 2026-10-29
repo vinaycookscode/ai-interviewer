@@ -1,93 +1,55 @@
 import { Metadata } from "next";
-import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+import { ChevronDown } from "lucide-react";
+import { auth } from "@/auth";
 import { getSubscriptionPlans, getCurrentSubscription } from "@/actions/subscription";
 import { PricingCards } from "@/components/subscription/pricing-cards";
 import { getRazorpayKeyId } from "@/lib/razorpay";
-import { Sparkles } from "lucide-react";
+import { focusRing } from "@/components/soft-glass/classes";
+import { sectionTitle } from "@/components/jobs/employer-ui";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
-    title: "Pricing | AI Interviewer",
-    description: "Choose the perfect plan for your interview preparation journey",
+    title: "Plans | Get Back To U",
+    description: "Every plan has the same AI interviewer. Paid plans give you more of it.",
 };
 
 export default async function PricingPage() {
     const session = await auth();
+    if (!session?.user) redirect("/auth/login");
 
-    if (!session?.user) {
-        redirect("/auth/login");
-    }
-
-    const [plans, currentSubscription] = await Promise.all([
+    const [t, tLanding, plans, currentSubscription] = await Promise.all([
+        getTranslations("Pricing.page"),
+        getTranslations("Landing.pricing"),
         getSubscriptionPlans(),
         getCurrentSubscription(),
     ]);
-
-    const razorpayKeyId = getRazorpayKeyId();
+    const faq = t.raw("items") as { q: string; a: string }[];
 
     return (
-        <div className="max-w-6xl mx-auto space-y-8">
-            {/* Header */}
-            <div className="text-center space-y-4">
-                <div className="inline-flex items-center gap-2 text-primary">
-                    <Sparkles className="h-5 w-5" />
-                    <span className="text-sm font-medium">Upgrade Your Journey</span>
-                </div>
-                <h1 className="text-4xl font-bold tracking-tight">
-                    Choose Your Plan
-                </h1>
-                <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                    Unlock powerful AI features to accelerate your interview preparation
-                    and land your dream job.
-                </p>
+        <div className="flex flex-col gap-6 sm:gap-9">
+            <div className="flex max-w-[680px] flex-col gap-2">
+                <h1 className="font-display sg-soft text-[32px] font-semibold leading-[1.14] tracking-[-0.025em] text-balance sm:text-[44px]">{tLanding("title")}</h1>
+                <p className="text-lg text-sg-muted">{t("description")}</p>
             </div>
 
-            {/* Pricing Cards */}
-            <PricingCards
-                plans={plans}
-                currentPlanTier={currentSubscription?.plan?.tier}
-                razorpayKeyId={razorpayKeyId}
-            />
+            <PricingCards plans={plans} currentPlanTier={currentSubscription?.plan?.tier} razorpayKeyId={getRazorpayKeyId()} />
 
-            {/* FAQ Section */}
-            <div className="mt-16 space-y-8">
-                <h2 className="text-2xl font-bold text-center">Frequently Asked Questions</h2>
-                <div className="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto">
-                    <FaqItem
-                        question="Can I cancel anytime?"
-                        answer="Yes! You can cancel your subscription at any time. You'll continue to have access to your plan's features until the end of your billing period."
-                    />
-                    <FaqItem
-                        question="What payment methods do you accept?"
-                        answer="We accept all major credit/debit cards, UPI, net banking, and popular wallets through Razorpay's secure payment gateway."
-                    />
-                    <FaqItem
-                        question="What happens when I upgrade?"
-                        answer="When you upgrade, you'll immediately get access to all the features of your new plan. Your billing cycle will restart from the upgrade date."
-                    />
-                    <FaqItem
-                        question="Is my payment information secure?"
-                        answer="Absolutely! We use Razorpay, a PCI-DSS compliant payment gateway. We never store your card details on our servers."
-                    />
-                    <FaqItem
-                        question="Can I switch between monthly and yearly?"
-                        answer="Yes! You can switch between billing periods when your current period ends. Yearly plans save you 17% compared to monthly billing."
-                    />
-                    <FaqItem
-                        question="What if I need more features?"
-                        answer="If you need custom limits or enterprise features, contact us at hello@getbacktou.com and we'll create a tailored plan for you."
-                    />
+            <section aria-label={t("faq")} className="flex max-w-[760px] flex-col gap-4">
+                <h2 className={sectionTitle}>{t("faq")}</h2>
+                <div className="flex flex-col gap-2.5">
+                    {faq.map((item) => (
+                        <details key={item.q} className="group sg-glass rounded-[20px] px-5 py-4">
+                            <summary className={cn("flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold [&::-webkit-details-marker]:hidden", focusRing)}>
+                                {item.q}
+                                <ChevronDown className="size-5 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" />
+                            </summary>
+                            <p className="mt-2 text-sg-muted">{item.a}</p>
+                        </details>
+                    ))}
                 </div>
-            </div>
-        </div>
-    );
-}
-
-function FaqItem({ question, answer }: { question: string; answer: string }) {
-    return (
-        <div className="space-y-2 p-4 rounded-lg bg-muted/50">
-            <h3 className="font-semibold">{question}</h3>
-            <p className="text-sm text-muted-foreground">{answer}</p>
+            </section>
         </div>
     );
 }

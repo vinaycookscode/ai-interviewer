@@ -6,6 +6,7 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 On `develop`, not yet on `main`.
 
+- **Profile, offers, plans and subscription in Soft Glass.** Offers compare total pay side by side, and an offer letter can be attached. Plans use the landing page's cards, with the same Razorpay checkout. Offers can no longer be changed or deleted by other users, and the profile page no longer sends your account record to the browser (AIIN-135).
 - **90-day plan in Soft Glass.** Your plan with this week's streak and badges, and each day's tasks and idea. A missed day now shows the streak as 0 straight away (on Today too), and pausing really keeps it. Other users' plan answers can no longer be read, and only you can resume your plan (AIIN-134).
 - **Flashcards in Soft Glass.** Decks with what's due today, each deck's cards by stage, and a focused study mode. Private decks can no longer be opened by anyone with the link, shared decks can no longer be edited by users, and deck and study pages need a paid plan (AIIN-133).
 - **Company prep in Soft Glass.** A searchable company list, each company's rounds, questions and how it hires, and a full-screen problem solver. Run tests appears only for questions with real tests. Your solved questions can no longer be read by other users, and company pages now need a paid plan when opened directly (AIIN-132).

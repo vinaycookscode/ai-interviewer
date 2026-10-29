@@ -3,7 +3,8 @@ import { auth } from "@/auth";
 import { uploadToR2 } from "@/lib/r2";
 import { validateUpload } from "@/lib/upload-validation";
 
-const PROFILE_DOCUMENT_TYPES = ["resume", "pan", "aadhaar"] as const;
+// "offer" is an offer letter, stored with the user's own documents (AIIN-135).
+const PROFILE_DOCUMENT_TYPES = ["resume", "pan", "aadhaar", "offer"] as const;
 
 export async function POST(req: NextRequest) {
     try {
@@ -16,7 +17,7 @@ export async function POST(req: NextRequest) {
 
         const formData = await req.formData();
         const fileEntry = formData.get("file");
-        const type = formData.get("type"); // resume, pan, aadhaar
+        const type = formData.get("type"); // resume, pan, aadhaar, offer
 
         const file = fileEntry instanceof File ? fileEntry : null;
 
@@ -31,8 +32,8 @@ export async function POST(req: NextRequest) {
 
         const upload = await validateUpload(
             file,
-            // Profile resumes feed the resume screener, which only parses PDF.
-            docType === "resume" ? "resumePdf" : "idDocument",
+            // Profile resumes feed the resume screener, which only parses PDF; offer letters are PDFs too.
+            docType === "resume" || docType === "offer" ? "resumePdf" : "idDocument",
             docType,
         );
         if (!upload.ok) {

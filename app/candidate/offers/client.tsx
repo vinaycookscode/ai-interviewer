@@ -1,419 +1,255 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-    BriefcaseBusiness, Plus, IndianRupee, MapPin, Calendar,
-    Check, X, Edit, Trash2, FileText, TrendingUp, Award,
-    ChevronDown, MoreVertical, Scale, Sparkles, Upload
-} from "lucide-react";
-import { updateOfferStatus, deleteOffer } from "@/actions/job-offers";
+import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { CalendarClock, FileText, Gift, Plus } from "lucide-react";
+import { toast } from "sonner";
+import { deleteOffer, updateOfferStatus } from "@/actions/job-offers";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogPanel, AlertDialogTrigger } from "@/components/interviews/sg-dialog";
+import { coralButton, focusRing } from "@/components/soft-glass/classes";
+import { dangerButton, inkButton, outlineButton, panel, panelTitle, sectionTitle } from "@/components/jobs/employer-ui";
+import { companyInitial } from "@/lib/company-prep-format";
+import { cn } from "@/lib/utils";
 
-interface Offer {
+export interface OfferCard {
     id: string;
     company: string;
     role: string;
     location: string;
-    baseSalary: number;
-    bonus: number | null;
-    stocks: number | null;
-    deadline: Date | null;
-    joiningDate: Date | null;
-    offerLetterUrl: string | null;
     status: string;
-    notes: string | null;
-    createdAt: Date;
+    base: number;
+    bonus: number;
+    stocks: number;
+    /** ISO date */
+    deadline: string | null;
+    letterHref: string | null;
 }
 
-interface OffersClientProps {
-    offers: Offer[];
-}
+const DAY = 24 * 60 * 60 * 1000;
+const STATUSES = ["PENDING", "NEGOTIATING", "ACCEPTED", "REJECTED"] as const;
 
-function formatSalary(amount: number): string {
-    if (amount >= 10000000) {
-        return `₹${(amount / 10000000).toFixed(1)}Cr`;
-    }
-    if (amount >= 100000) {
-        return `₹${(amount / 100000).toFixed(1)}L`;
-    }
-    return `₹${amount.toLocaleString()}`;
-}
+/** ₹12,00,000 */
+const rupees = (n: number) => (n > 0 ? `₹${Math.round(n).toLocaleString("en-IN")}` : "—");
+/** ₹14.6 LPA */
+const lpa = (n: number) => `₹${Math.round((n / 100000) * 10) / 10} LPA`;
+const total = (o: OfferCard) => o.base + o.bonus + o.stocks;
+const daysLeft = (iso: string, now: number) => Math.ceil((new Date(iso).getTime() - now) / DAY);
+const shortDate = (iso: string) => new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 
-function getStatusColor(status: string): string {
-    switch (status) {
-        case "ACCEPTED": return "text-green-500 bg-green-500/10";
-        case "REJECTED": return "text-red-500 bg-red-500/10";
-        case "DECLINED": return "text-gray-500 bg-gray-500/10";
-        case "NEGOTIATING": return "text-blue-500 bg-blue-500/10";
-        default: return "text-yellow-500 bg-yellow-500/10";
-    }
-}
-
-function getBestOfferInsights(offers: Offer[]) {
-    if (offers.length === 0) return null;
-
-    const withTotals = offers.map(o => ({
-        ...o,
-        totalCTC: o.baseSalary + (o.bonus || 0) + (o.stocks || 0)
-    }));
-
-    const bestSalary = withTotals.reduce((max, o) => o.totalCTC > max.totalCTC ? o : max, withTotals[0]);
-    const pendingOffers = withTotals.filter(o => o.status === "PENDING");
-    const nextDeadline = pendingOffers
-        .filter(o => o.deadline)
-        .sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime())[0];
-
-    return { bestSalary, nextDeadline, pendingOffers };
-}
-
-export function OffersClient({ offers }: OffersClientProps) {
+export function OffersClient({ offers }: { offers: OfferCard[] }) {
+    const t = useTranslations("Offers");
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
-    const [showActionsFor, setShowActionsFor] = useState<string | null>(null);
-    const [showComparison, setShowComparison] = useState(false);
+    const [now] = useState(() => Date.now());
+    const [tip, setTip] = useState(0);
 
-    const totalOffers = offers.length;
-    const pendingOffers = offers.filter(o => o.status === "PENDING").length;
-    const acceptedOffers = offers.filter(o => o.status === "ACCEPTED").length;
+    const open = offers.filter((o) => o.status === "PENDING" || o.status === "NEGOTIATING");
+    const urgent = open
+        .filter((o) => o.deadline && daysLeft(o.deadline, now) >= 0)
+        .sort((a, b) => new Date(a.deadline!).getTime() - new Date(b.deadline!).getTime())[0];
+    const byPay = [...offers].sort((a, b) => total(b) - total(a));
+    const maxPay = Math.max(1, ...byPay.map(total));
+    const statusName = (s: string) => ((STATUSES as readonly string[]).includes(s) ? t(`status.${s as (typeof STATUSES)[number]}`) : s);
+    const when = (days: number) => (days <= 0 ? t("today") : t("inDays", { count: days }));
 
-    const insights = getBestOfferInsights(offers);
-
-    const handleStatusChange = async (offerId: string, status: string) => {
+    const setStatus = (id: string, status: string) =>
         startTransition(async () => {
-            await updateOfferStatus(offerId, status);
-            setShowActionsFor(null);
+            const result = await updateOfferStatus(id, status);
+            if ("error" in result) toast.error(t("failed"));
             router.refresh();
         });
-    };
 
-    const handleDelete = async (offerId: string) => {
-        if (!confirm("Are you sure you want to delete this offer?")) return;
+    const remove = (id: string) =>
         startTransition(async () => {
-            await deleteOffer(offerId);
+            const result = await deleteOffer(id);
+            if ("error" in result) toast.error(t("failed"));
             router.refresh();
         });
-    };
-
-    // Calculate comparison data
-    const comparisonData = offers.map(o => ({
-        ...o,
-        totalCTC: o.baseSalary + (o.bonus || 0) + (o.stocks || 0)
-    })).sort((a, b) => b.totalCTC - a.totalCTC);
-
-    const maxCTC = comparisonData[0]?.totalCTC || 1;
 
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold mb-2">My Offers</h1>
-                    <p className="text-muted-foreground">
-                        Track and compare your job offers
-                    </p>
+        <div className="flex flex-col gap-6 sm:gap-9">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+                <div className="flex max-w-[640px] flex-col gap-2">
+                    <h1 className="font-display sg-soft text-[32px] font-semibold leading-[1.14] tracking-[-0.025em] text-balance sm:text-[44px]">{t("title")}</h1>
+                    <p className="text-lg text-sg-muted">{t("description")}</p>
                 </div>
-                <Link
-                    href="/candidate/offers/new"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors font-medium"
-                >
-                    <Plus className="h-4 w-4" />
-                    Add Offer
-                </Link>
+                {offers.length > 0 && (
+                    <Link href="/candidate/offers/new" className={cn(coralButton, "h-12 px-6 text-base")}>
+                        <Plus className="size-[18px]" aria-hidden="true" />
+                        {t("add")}
+                    </Link>
+                )}
             </div>
 
-            {/* Feature Cards - Now at top */}
-            <div className="grid md:grid-cols-3 gap-4">
-                <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/10 border border-emerald-500/20 rounded-xl p-6">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2 bg-emerald-500 rounded-lg">
-                            <IndianRupee className="h-5 w-5 text-white" />
-                        </div>
-                        <h3 className="font-semibold">Salary Comparison</h3>
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-3">
-                        Compare base salary, bonuses, and total compensation
-                    </p>
-                    {offers.length >= 2 && (
-                        <button
-                            onClick={() => setShowComparison(!showComparison)}
-                            className="text-sm text-emerald-500 hover:text-emerald-400 font-medium"
-                        >
-                            {showComparison ? "Hide Comparison" : "View Comparison →"}
-                        </button>
-                    )}
-                </div>
-                <div className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 border border-blue-500/20 rounded-xl p-6">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2 bg-blue-500 rounded-lg">
-                            <MapPin className="h-5 w-5 text-white" />
-                        </div>
-                        <h3 className="font-semibold">Location Analysis</h3>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                        Adjust for cost of living in different cities
-                    </p>
-                </div>
-                <div className="bg-gradient-to-br from-orange-500/10 to-orange-600/10 border border-orange-500/20 rounded-xl p-6">
-                    <div className="flex items-center gap-3 mb-3">
-                        <div className="p-2 bg-orange-500 rounded-lg">
-                            <Calendar className="h-5 w-5 text-white" />
-                        </div>
-                        <h3 className="font-semibold">Deadline Tracking</h3>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                        Never miss an offer deadline with smart reminders
-                    </p>
-                    {insights?.nextDeadline && (
-                        <p className="text-sm text-orange-500 mt-2 font-medium">
-                            Next: {insights.nextDeadline.company} - {new Date(insights.nextDeadline.deadline!).toLocaleDateString()}
-                        </p>
-                    )}
-                </div>
-            </div>
+            {offers.length === 0 ? (
+                <section className="sg-glass flex flex-col items-center gap-3 rounded-[28px] p-8 text-center">
+                    <Gift className="size-8 text-sg-muted" aria-hidden="true" />
+                    <h2 className={sectionTitle}>{t("emptyTitle")}</h2>
+                    <p className="max-w-[440px] text-sg-muted">{t("emptyBody")}</p>
+                    <Link href="/candidate/offers/new" className={cn(inkButton, "mt-1 h-12")}>
+                        <Plus className="size-[18px]" aria-hidden="true" />
+                        {t("emptyAdd")}
+                    </Link>
+                </section>
+            ) : (
+                <>
+                    <div className="grid grid-cols-[repeat(auto-fit,minmax(min(340px,100%),1fr))] gap-4">
+                        <section aria-label={t("count")} className={panel}>
+                            <dl className="grid grid-cols-3 gap-2.5">
+                                {[
+                                    [offers.length, t("count")],
+                                    [offers.filter((o) => o.status === "PENDING").length, t("waiting")],
+                                    [offers.filter((o) => o.status === "NEGOTIATING").length, t("negotiating")],
+                                ].map(([value, label]) => (
+                                    <div key={label} className="flex flex-col">
+                                        <dd className="font-display sg-soft text-[28px] leading-[34px] font-semibold">{value}</dd>
+                                        <dt className="order-last text-[13px] leading-[18px] font-bold text-sg-muted">{label}</dt>
+                                    </div>
+                                ))}
+                            </dl>
+                            {urgent?.deadline && (
+                                <p className="flex items-center gap-2 text-[15px]">
+                                    <CalendarClock className="size-4 shrink-0" aria-hidden="true" />
+                                    <span>{t.rich("urgent", { company: urgent.company, when: when(daysLeft(urgent.deadline, now)), strong: (c) => <strong>{c}</strong> })}</span>
+                                </p>
+                            )}
+                        </section>
 
-            {/* AI Recommended Best Offer */}
-            {insights && offers.length >= 2 && (
-                <div className="bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-orange-500/10 border border-purple-500/20 rounded-xl p-6">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg">
-                            <Sparkles className="h-5 w-5 text-white" />
-                        </div>
-                        <div>
-                            <h3 className="font-semibold">Best Offer Recommendation</h3>
-                            <p className="text-sm text-muted-foreground">Based on total compensation</p>
-                        </div>
+                        <section aria-label={t("payTitle")} className={panel}>
+                            <h2 className={panelTitle}>{t("payTitle")}</h2>
+                            <ul aria-label={t("payLabel")} className="flex flex-col gap-2.5">
+                                {byPay.map((o, i) => (
+                                    <li key={o.id} className="grid grid-cols-[minmax(84px,120px)_1fr] items-center gap-3">
+                                        <span className="truncate font-semibold">{o.company}</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setTip(i)}
+                                            onFocus={() => setTip(i)}
+                                            onMouseEnter={() => setTip(i)}
+                                            aria-label={t("barLabel", { company: o.company, total: lpa(total(o)), base: rupees(o.base), bonus: rupees(o.bonus), stocks: rupees(o.stocks) })}
+                                            className={cn("flex min-w-0 items-center gap-2 rounded-md py-1 text-left", focusRing)}
+                                        >
+                                            <span
+                                                aria-hidden="true"
+                                                className={cn("block h-5 min-w-2 rounded", tip === i ? "bg-sg-ink" : "bg-sg-lavender-ink")}
+                                                style={{ width: `${Math.round((total(o) / maxPay) * 70)}%` }}
+                                            />
+                                            <span className="text-sm font-bold whitespace-nowrap">{lpa(total(o))}</span>
+                                            {i === 0 && byPay.length > 1 && (
+                                                <span className="hidden h-6 items-center rounded-full bg-sg-chip px-2 text-[13px] font-semibold sm:inline-flex">{t("highest")}</span>
+                                            )}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                            {byPay[tip] && (
+                                <p aria-live="polite" className="rounded-[14px] bg-sg-row px-3.5 py-2.5 text-sm">
+                                    <strong>{byPay[tip].company}</strong> · {t("breakdown", { base: rupees(byPay[tip].base), bonus: rupees(byPay[tip].bonus), stocks: rupees(byPay[tip].stocks) })}
+                                </p>
+                            )}
+                            <span className="text-[13px] leading-[18px] text-sg-muted">{t("payNote")}</span>
+                        </section>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <div className="flex-1">
-                            <p className="text-lg font-bold flex items-center gap-2">
-                                <Award className="h-5 w-5 text-yellow-500" />
-                                {insights.bestSalary.company} - {insights.bestSalary.role}
-                            </p>
-                            <p className="text-2xl font-bold text-emerald-500">
-                                {formatSalary(insights.bestSalary.totalCTC)} CTC
-                            </p>
-                        </div>
-                        {insights.bestSalary.status === "PENDING" && (
-                            <button
-                                onClick={() => handleStatusChange(insights.bestSalary.id, "ACCEPTED")}
-                                disabled={isPending}
-                                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50"
-                            >
-                                Accept This Offer
-                            </button>
-                        )}
-                    </div>
-                </div>
-            )}
 
-            {/* Comparison View */}
-            {showComparison && offers.length >= 2 && (
-                <div className="bg-card border rounded-xl p-6">
-                    <h3 className="font-semibold mb-4 flex items-center gap-2">
-                        <Scale className="h-5 w-5" />
-                        Offer Comparison
-                    </h3>
-                    <div className="space-y-4">
-                        {comparisonData.map((offer, index) => (
-                            <div key={offer.id} className="flex items-center gap-4">
-                                <div className="w-32 shrink-0">
-                                    <p className="font-medium truncate">{offer.company}</p>
-                                    <p className="text-xs text-muted-foreground">{offer.role}</p>
-                                </div>
-                                <div className="flex-1">
-                                    <div className="flex items-center gap-2">
-                                        <div
-                                            className="h-8 bg-gradient-to-r from-emerald-500 to-green-400 rounded transition-all"
-                                            style={{ width: `${(offer.totalCTC / maxCTC) * 100}%` }}
-                                        />
-                                        <span className="text-sm font-medium whitespace-nowrap">
-                                            {formatSalary(offer.totalCTC)}
-                                        </span>
-                                        {index === 0 && (
-                                            <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-500 text-xs rounded-full font-medium">
-                                                BEST
+                    <section aria-label={t("yours")} className="flex flex-col gap-4">
+                        <h2 className={sectionTitle}>{t("yours")}</h2>
+                        <ul className="flex flex-col gap-4">
+                            {offers.map((o) => {
+                                const days = o.deadline ? daysLeft(o.deadline, now) : null;
+                                const isOpen = o.status === "PENDING" || o.status === "NEGOTIATING";
+                                return (
+                                    <li key={o.id} className="sg-glass flex flex-col gap-4 rounded-[24px] p-5 sm:p-6">
+                                        <div className="flex flex-wrap items-center gap-3">
+                                            <span aria-hidden="true" className="font-display sg-soft flex size-11 shrink-0 items-center justify-center rounded-[14px] bg-sg-chip text-xl font-semibold">
+                                                {companyInitial(o.company)}
+                                            </span>
+                                            <div className="flex min-w-0 flex-[1_1_200px] flex-col">
+                                                <span className="text-xl leading-7 font-bold">{o.company}</span>
+                                                <span className="text-sg-muted">
+                                                    {o.role} · {o.location}
+                                                </span>
+                                            </div>
+                                            <span className="inline-flex h-7 items-center rounded-full bg-sg-chip px-2.5 text-sm font-semibold">{statusName(o.status)}</span>
+                                        </div>
+                                        {o.deadline && days !== null && isOpen && (
+                                            <span className={cn("inline-flex items-center gap-2 text-[15px]", days <= 3 ? "font-bold" : "font-medium text-sg-muted")}>
+                                                <CalendarClock className="size-4" aria-hidden="true" />
+                                                {days < 0 ? t("deadlinePassed", { date: shortDate(o.deadline) }) : t("deadline", { date: shortDate(o.deadline), when: when(days) })}
                                             </span>
                                         )}
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* Stats Overview */}
-            <div className="grid md:grid-cols-3 gap-4">
-                <div className="bg-card border rounded-xl p-6">
-                    <p className="text-sm text-muted-foreground mb-1">Total Offers</p>
-                    <p className="text-3xl font-bold">{totalOffers}</p>
-                </div>
-                <div className="bg-card border rounded-xl p-6">
-                    <p className="text-sm text-muted-foreground mb-1">Pending Decision</p>
-                    <p className="text-3xl font-bold text-yellow-500">{pendingOffers}</p>
-                </div>
-                <div className="bg-card border rounded-xl p-6">
-                    <p className="text-sm text-muted-foreground mb-1">Accepted</p>
-                    <p className="text-3xl font-bold text-green-500">{acceptedOffers}</p>
-                </div>
-            </div>
-
-            {/* Offers List or Empty State */}
-            {offers.length > 0 ? (
-                <div className="space-y-4">
-                    <h2 className="text-xl font-semibold">Your Offers</h2>
-                    <div className="grid gap-4">
-                        {offers.map((offer) => {
-                            const totalCTC = offer.baseSalary + (offer.bonus || 0) + (offer.stocks || 0);
-                            return (
-                                <div key={offer.id} className="bg-card border rounded-xl p-6 relative">
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                <h3 className="text-lg font-semibold">{offer.company}</h3>
-                                                <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getStatusColor(offer.status)}`}>
-                                                    {offer.status}
-                                                </span>
-                                                {offer.offerLetterUrl && (
-                                                    <a
-                                                        href={offer.offerLetterUrl}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-blue-500 hover:text-blue-400"
-                                                    >
-                                                        <FileText className="h-4 w-4" />
-                                                    </a>
-                                                )}
-                                            </div>
-                                            <p className="text-muted-foreground mb-3">{offer.role}</p>
-
-                                            <div className="flex flex-wrap gap-4 text-sm">
-                                                <div className="flex items-center gap-1.5 text-muted-foreground">
-                                                    <MapPin className="h-4 w-4" />
-                                                    {offer.location}
+                                        <dl className="grid grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-3 rounded-[18px] bg-sg-row p-4">
+                                            {[
+                                                [t("base"), rupees(o.base)],
+                                                [t("bonus"), rupees(o.bonus)],
+                                                [t("stocks"), rupees(o.stocks)],
+                                            ].map(([label, value]) => (
+                                                <div key={label} className="flex flex-col">
+                                                    <dt className="text-[13px] leading-[18px] font-bold text-sg-muted">{label}</dt>
+                                                    <dd className="font-semibold">{value}</dd>
                                                 </div>
-                                                <div className="flex items-center gap-1.5 text-emerald-500 font-medium">
-                                                    <IndianRupee className="h-4 w-4" />
-                                                    {formatSalary(totalCTC)} CTC
-                                                </div>
-                                                {offer.deadline && (
-                                                    <div className="flex items-center gap-1.5 text-muted-foreground">
-                                                        <Calendar className="h-4 w-4" />
-                                                        Deadline: {new Date(offer.deadline).toLocaleDateString()}
-                                                    </div>
-                                                )}
+                                            ))}
+                                            <div className="flex flex-col">
+                                                <dt className="text-[13px] leading-[18px] font-bold text-sg-muted">{t("total")}</dt>
+                                                <dd className="text-lg font-bold">{lpa(total(o))}</dd>
                                             </div>
-                                        </div>
-
-                                        {/* Actions Menu */}
-                                        <div className="relative">
-                                            <button
-                                                onClick={() => setShowActionsFor(showActionsFor === offer.id ? null : offer.id)}
-                                                className="p-2 hover:bg-muted rounded-lg"
-                                            >
-                                                <MoreVertical className="h-5 w-5" />
-                                            </button>
-
-                                            {showActionsFor === offer.id && (
-                                                <div className="absolute right-0 top-10 w-48 bg-popover border rounded-lg shadow-lg z-10 py-1">
-                                                    {offer.status === "PENDING" && (
-                                                        <>
-                                                            <button
-                                                                onClick={() => handleStatusChange(offer.id, "ACCEPTED")}
-                                                                disabled={isPending}
-                                                                className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 text-green-500"
-                                                            >
-                                                                <Check className="h-4 w-4" />
-                                                                Accept Offer
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleStatusChange(offer.id, "REJECTED")}
-                                                                disabled={isPending}
-                                                                className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 text-red-500"
-                                                            >
-                                                                <X className="h-4 w-4" />
-                                                                Decline Offer
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleStatusChange(offer.id, "NEGOTIATING")}
-                                                                disabled={isPending}
-                                                                className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 text-blue-500"
-                                                            >
-                                                                <TrendingUp className="h-4 w-4" />
-                                                                Negotiating
-                                                            </button>
-                                                            <div className="border-t my-1" />
-                                                        </>
-                                                    )}
-                                                    <Link
-                                                        href={`/candidate/offers/${offer.id}/edit`}
-                                                        className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2"
-                                                    >
-                                                        <Edit className="h-4 w-4" />
-                                                        Edit Offer
-                                                    </Link>
-                                                    <button
-                                                        onClick={() => handleDelete(offer.id)}
-                                                        disabled={isPending}
-                                                        className="w-full px-4 py-2 text-left text-sm hover:bg-muted flex items-center gap-2 text-red-500"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                        Delete
+                                        </dl>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            {isOpen ? (
+                                                <>
+                                                    <button type="button" disabled={isPending} onClick={() => setStatus(o.id, "ACCEPTED")} className={cn(inkButton, "h-10 px-4 text-sm")}>
+                                                        {t("accept")}
                                                     </button>
-                                                </div>
+                                                    {o.status !== "NEGOTIATING" && (
+                                                        <button type="button" disabled={isPending} onClick={() => setStatus(o.id, "NEGOTIATING")} className={cn(outlineButton, "h-10 text-sm")}>
+                                                            {t("markNegotiating")}
+                                                        </button>
+                                                    )}
+                                                    <button type="button" disabled={isPending} onClick={() => setStatus(o.id, "REJECTED")} className={cn(outlineButton, "h-10 text-sm")}>
+                                                        {t("decline")}
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <button type="button" disabled={isPending} onClick={() => setStatus(o.id, "PENDING")} className={cn(outlineButton, "h-10 text-sm")}>
+                                                    {t("reopen")}
+                                                </button>
                                             )}
+                                            <span className="flex-1" />
+                                            {o.letterHref && (
+                                                <a href={o.letterHref} target="_blank" rel="noreferrer" className={cn("inline-flex min-h-10 items-center gap-1.5 rounded-full px-3 text-sm font-bold hover:bg-sg-chip", focusRing)}>
+                                                    <FileText className="size-4" aria-hidden="true" />
+                                                    {t("letter")}
+                                                </a>
+                                            )}
+                                            <Link
+                                                href={`/candidate/offers/${o.id}/edit`}
+                                                aria-label={t("editLabel", { company: o.company })}
+                                                className={cn("inline-flex min-h-10 items-center rounded-full px-3 text-sm font-bold hover:bg-sg-chip", focusRing)}
+                                            >
+                                                {t("edit")}
+                                            </Link>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger
+                                                    aria-label={t("deleteLabel", { company: o.company })}
+                                                    className={cn("inline-flex min-h-10 items-center rounded-full px-3 text-sm font-bold text-sg-danger hover:bg-sg-danger/10", focusRing)}
+                                                >
+                                                    {t("delete")}
+                                                </AlertDialogTrigger>
+                                                <AlertDialogPanel title={t("deleteTitle")} description={t("deleteBody", { company: o.company })}>
+                                                    <AlertDialogCancel className={cn(outlineButton, "h-12 px-5 text-base")}>{t("cancel")}</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => remove(o.id)} className={dangerButton}>
+                                                        {t("delete")}
+                                                    </AlertDialogAction>
+                                                </AlertDialogPanel>
+                                            </AlertDialog>
                                         </div>
-                                    </div>
-
-                                    {/* Salary Breakdown */}
-                                    <div className="mt-4 pt-4 border-t grid grid-cols-3 gap-4 text-sm">
-                                        <div>
-                                            <p className="text-muted-foreground">Base Salary</p>
-                                            <p className="font-medium">{formatSalary(offer.baseSalary)}</p>
-                                        </div>
-                                        {offer.bonus && (
-                                            <div>
-                                                <p className="text-muted-foreground">Bonus</p>
-                                                <p className="font-medium">{formatSalary(offer.bonus)}</p>
-                                            </div>
-                                        )}
-                                        {offer.stocks && (
-                                            <div>
-                                                <p className="text-muted-foreground">Stocks/RSU</p>
-                                                <p className="font-medium">{formatSalary(offer.stocks)}</p>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {offer.notes && (
-                                        <p className="mt-4 pt-4 border-t text-sm text-muted-foreground">
-                                            {offer.notes}
-                                        </p>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            ) : (
-                <div className="bg-card border rounded-xl p-12 text-center">
-                    <div className="mx-auto w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mb-4">
-                        <BriefcaseBusiness className="h-8 w-8 text-emerald-500" />
-                    </div>
-                    <h2 className="text-2xl font-semibold mb-2">No Offers Yet</h2>
-                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                        When you receive job offers, add them here to track deadlines,
-                        compare compensation, and make informed decisions.
-                    </p>
-                    <Link
-                        href="/candidate/offers/new"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors font-medium"
-                    >
-                        <Plus className="h-4 w-4" />
-                        Add Your First Offer
-                    </Link>
-                </div>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </section>
+                </>
             )}
         </div>
     );

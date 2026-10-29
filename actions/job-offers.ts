@@ -8,9 +8,21 @@ import { revalidatePath } from "next/cache";
 // JOB OFFERS QUERIES
 // ============================================
 
-export async function getUserOffers(userId: string) {
+const OFFER_STATUSES = ["PENDING", "ACCEPTED", "REJECTED", "NEGOTIATING"];
+
+/** An offer letter must be a file this user uploaded to their own folder in our bucket. */
+function ownLetter(url: string | undefined, userId: string): string | undefined {
+    const bucket = process.env.R2_PUBLIC_URL;
+    return url && bucket && url.startsWith(`${bucket}/profiles/${userId}/`) ? url : undefined;
+}
+
+// The signed-in user's own offers only: server actions are public endpoints (AIIN-135).
+export async function getUserOffers() {
+    const session = await auth();
+    if (!session?.user?.id) return [];
+
     return db.jobOffer.findMany({
-        where: { userId },
+        where: { userId: session.user.id },
         orderBy: { createdAt: "desc" }
     });
 }
@@ -39,10 +51,15 @@ export async function createOffer(data: {
     joiningDate?: Date;
     deadline?: Date;
     notes?: string;
+    offerLetterUrl?: string;
+    status?: string;
 }) {
     const session = await auth();
     if (!session?.user?.id) {
         return { error: "Not authenticated" };
+    }
+    if (!data.company?.trim() || !(data.baseSalary > 0)) {
+        return { error: "Add the company and the base salary." };
     }
 
     const offer = await db.jobOffer.create({
@@ -57,7 +74,9 @@ export async function createOffer(data: {
             otherBenefits: data.otherBenefits,
             joiningDate: data.joiningDate,
             deadline: data.deadline,
-            notes: data.notes
+            notes: data.notes,
+            offerLetterUrl: ownLetter(data.offerLetterUrl, session.user.id),
+            status: data.status && OFFER_STATUSES.includes(data.status) ? data.status : undefined
         }
     });
 
@@ -71,10 +90,18 @@ export async function updateOfferStatus(offerId: string, status: string) {
         return { error: "Not authenticated" };
     }
 
-    await db.jobOffer.update({
-        where: { id: offerId },
+    if (!OFFER_STATUSES.includes(status)) {
+        return { error: "Unknown status" };
+    }
+
+    // Only the user's own offer (AIIN-135)
+    const { count } = await db.jobOffer.updateMany({
+        where: { id: offerId, userId: session.user.id },
         data: { status }
     });
+    if (count === 0) {
+        return { error: "Offer not found" };
+    }
 
     revalidatePath("/candidate/offers");
     return { success: true };
@@ -86,9 +113,13 @@ export async function deleteOffer(offerId: string) {
         return { error: "Not authenticated" };
     }
 
-    await db.jobOffer.delete({
-        where: { id: offerId }
+    // Only the user's own offer (AIIN-135)
+    const { count } = await db.jobOffer.deleteMany({
+        where: { id: offerId, userId: session.user.id }
     });
+    if (count === 0) {
+        return { error: "Offer not found" };
+    }
 
     revalidatePath("/candidate/offers");
     return { success: true };
@@ -105,6 +136,7 @@ export async function updateOffer(offerId: string, data: {
     deadline?: Date;
     notes?: string;
     offerLetterUrl?: string;
+    status?: string;
 }) {
     const session = await auth();
     if (!session?.user?.id) {
@@ -132,7 +164,8 @@ export async function updateOffer(offerId: string, data: {
             joiningDate: data.joiningDate,
             deadline: data.deadline,
             notes: data.notes,
-            offerLetterUrl: data.offerLetterUrl,
+            offerLetterUrl: ownLetter(data.offerLetterUrl, session.user.id),
+            status: data.status && OFFER_STATUSES.includes(data.status) ? data.status : undefined,
         }
     });
 

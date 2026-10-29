@@ -18,8 +18,13 @@ How to move a screen to Soft Glass, the product's design language. Why we chose 
 - Feedback report: `components/feedback/feedback-report.tsx`
 - Employer dashboard: `app/dashboard/**`
 - Upgrade prompt: `components/subscription/upgrade-prompt.tsx`
+- Resume review: `app/candidate/resume-screener`, `components/candidate/resume-*` (AIIN-131)
+- Company prep and the problem solver: `app/candidate/company-prep/**`, `components/company-prep/*` (AIIN-132)
+- Flashcards: `app/candidate/flashcards/**` (AIIN-133)
+- 90-day plan: `app/candidate/placement-program/**`, `components/placement/*` (AIIN-134; the task content inside each task is not restyled yet)
+- Profile, offers, plans and subscription: `app/candidate/{profile,offers,pricing,settings}/**` (AIIN-135; the career wizard's steps are not restyled yet)
 
-**Still to build:** AIIN-131 to AIIN-138. Their artboards are in canvas batches 3, 4 and 6.
+**Still to build:** AIIN-136 to AIIN-138. Their artboards are in canvas batches 4 and 6.
 
 **Good references to copy from**
 - A page inside the app shell: `app/dashboard/page.tsx`, `app/candidate/dashboard/page.tsx`

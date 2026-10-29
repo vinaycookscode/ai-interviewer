@@ -531,7 +531,7 @@
         "startFree": "Start Free",
         "getPro": "Get Pro",
         "getPremium": "Get Premium",
-        "currentPlan": "Current Plan",
+        "currentPlan": "Your current plan",
         "upgradeTo": "Upgrade to {name}",
         "plans": {
             "free": {
@@ -568,6 +568,34 @@
                     "Priority Support"
                 ]
             }
+        },
+        "yourPlan": "Your plan",
+        "freeIncluded": "Included when you downgrade",
+        "page": {
+            "description": "Every plan has the same AI interviewer. Paid plans give you more of it.",
+            "faq": "Questions",
+            "items": [
+                {
+                    "q": "Can I cancel any time?",
+                    "a": "Yes. You keep your plan’s features until the end of the period you paid for."
+                },
+                {
+                    "q": "How do I pay?",
+                    "a": "Through Razorpay: cards, UPI, net banking and wallets. We never see or store your card details."
+                },
+                {
+                    "q": "What happens when I upgrade?",
+                    "a": "You get the new plan’s features straight away, and your billing period starts from that day."
+                },
+                {
+                    "q": "Can I switch between monthly and yearly?",
+                    "a": "Yes, when your current period ends. Yearly costs the same as 10 months."
+                },
+                {
+                    "q": "Need more than Premium?",
+                    "a": "Write to hello@getbacktou.com and we’ll set up a plan for you."
+                }
+            ]
         }
     },
     "Subscription": {
@@ -632,6 +660,39 @@
                 "resumeScreener": "Get AI-powered resume analysis, cover letter generation, and resume optimization.",
                 "questionGen": "Generate tailored interview questions from any job description."
             }
+        },
+        "page": {
+            "title": "Subscription",
+            "description": "Your plan, what you’ve used this month, and your payments.",
+            "yourPlan": "Your plan",
+            "perMonth": "₹{price} a month",
+            "perYear": "₹{price} a year",
+            "free": "Free",
+            "renews": "Renews on {date}.",
+            "endsOn": "Cancelled. You keep {plan} until {date}.",
+            "pastDue": "Your last payment didn’t go through. Pay again to keep {plan}.",
+            "expired": "Ended on {date}.",
+            "freeNote": "2 mock interviews and 1 resume review a month.",
+            "change": "Change plan",
+            "cancel": "Cancel subscription",
+            "seePlans": "See Pro and Premium",
+            "month": "This month",
+            "resets": "Resets on {date}",
+            "unlimited": "Unlimited",
+            "usedOf": "{used} of {limit}",
+            "usedLabel": "{name}: {used} of {limit} used",
+            "payments": "Payments",
+            "paymentsNote": "Every payment you make shows here, including ones that didn’t go through.",
+            "noPayments": "No payments yet.",
+            "paid": "Paid",
+            "failed": "Didn’t go through",
+            "refunded": "Refunded",
+            "cancelTitle": "Cancel {plan}?",
+            "cancelBody": "You keep {plan} until {date}. After that you move to Free: 2 mock interviews and 1 resume review a month.",
+            "cancelKeep": "Your interviews, feedback and flashcards stay either way.",
+            "keep": "Keep {plan}",
+            "cancelled": "Your subscription is cancelled.",
+            "cancelFailed": "Couldn’t cancel. Try again."
         }
     },
     "Dashboard": {
@@ -1561,6 +1622,134 @@
             "mockDone": "Mark as done",
             "unknownTask": "This task can’t be shown here.",
             "markDone": "Mark as done"
+        }
+    },
+    "Profile": {
+        "title": "Your profile",
+        "description": "Your details, your documents, and the path you’re preparing for.",
+        "finishTitle": "Finish your career profile",
+        "finishBody": "Tell U your role and skills, and everything from practice to the 90-day plan fits you.",
+        "finish": "Finish my profile",
+        "account": "Account",
+        "name": "Full name",
+        "email": "Email",
+        "emailHint": "Your sign-in email can’t be changed.",
+        "save": "Save changes",
+        "saving": "Saving…",
+        "saved": "Your details are saved.",
+        "saveFailed": "Couldn’t save your details. Try again.",
+        "docs": "Identity documents",
+        "docsBody": "Some employers ask for these before an interview. Only the hiring team you’re interviewing with can see them.",
+        "pan": "PAN card",
+        "aadhaar": "Aadhaar card",
+        "notAdded": "Not added · PDF, JPG or PNG, up to 5 MB",
+        "uploaded": "Uploaded",
+        "view": "View",
+        "replace": "Replace",
+        "upload": "Upload",
+        "uploading": "Uploading…",
+        "uploadedToast": "{doc} saved.",
+        "uploadFailed": "Couldn’t upload that file. Use a PDF, JPG or PNG up to 5 MB.",
+        "viewLabel": "View your {doc}",
+        "replaceLabel": "Replace your {doc}",
+        "path": "Your career path",
+        "preparingFor": "Preparing for",
+        "skills": "Skills",
+        "goal": "Goal",
+        "resume": "Resume",
+        "resumeView": "View",
+        "resumeViewLabel": "View your resume",
+        "changePath": "Change my path",
+        "pathEmpty": "Not set yet. Four quick questions (role, skills, resume, goal) and U tailors your practice, company prep and 90-day plan.",
+        "setupPath": "Set up my path",
+        "wizardTitle": "Your career path",
+        "wizardBack": "Your profile"
+    },
+    "Offers": {
+        "title": "Offers",
+        "description": "Every offer in one place: compare the pay side by side and decide before the deadline.",
+        "unavailable": "Offers isn’t available right now.",
+        "add": "Add an offer",
+        "count": "Offers",
+        "waiting": "Waiting on you",
+        "negotiating": "Negotiating",
+        "urgent": "<strong>{company}</strong> needs an answer {when}.",
+        "today": "today",
+        "inDays": "{count, plural, one {tomorrow} other {in # days}}",
+        "payTitle": "Total pay per year",
+        "payLabel": "Total pay per year by company",
+        "highest": "Highest",
+        "barLabel": "{company}: {total} a year. Base {base}, bonus {bonus}, stocks {stocks}",
+        "breakdown": "Base {base} · Bonus {bonus} · Stocks {stocks}",
+        "payNote": "This compares pay only. Weigh the work, the team and the city too.",
+        "yours": "Your offers",
+        "status": {
+            "PENDING": "Waiting on you",
+            "NEGOTIATING": "Negotiating",
+            "ACCEPTED": "Accepted",
+            "REJECTED": "Declined"
+        },
+        "deadline": "Decide by {date} · {when}",
+        "deadlinePassed": "Deadline passed {date}",
+        "base": "Base",
+        "bonus": "Bonus",
+        "stocks": "Stocks",
+        "total": "Total a year",
+        "accept": "Accept",
+        "markNegotiating": "Mark as negotiating",
+        "decline": "Decline",
+        "reopen": "Back to waiting",
+        "letter": "Offer letter",
+        "edit": "Edit",
+        "editLabel": "Edit the {company} offer",
+        "delete": "Delete",
+        "deleteLabel": "Delete the {company} offer",
+        "deleteTitle": "Delete this offer?",
+        "deleteBody": "The {company} offer and its notes will be removed. It can’t be undone.",
+        "cancel": "Cancel",
+        "failed": "Something went wrong. Try again.",
+        "emptyTitle": "No offers yet",
+        "emptyBody": "When an offer comes in, add it here. You’ll see each deadline, and the pay of every offer side by side.",
+        "emptyAdd": "Add your first offer",
+        "form": {
+            "back": "Offers",
+            "newTitle": "Add an offer",
+            "editTitle": "Edit the {company} offer",
+            "errors": "Fix the highlighted fields before you save.",
+            "job": "The job",
+            "company": "Company",
+            "companyPlaceholder": "For example: Razorpay",
+            "companyError": "Add the company name.",
+            "role": "Role",
+            "rolePlaceholder": "For example: SDE-1",
+            "city": "City",
+            "cityPlaceholder": "For example: Pune, or Remote",
+            "stands": "Where it stands",
+            "pay": "Pay per year",
+            "base": "Base salary",
+            "baseHint": "Yearly, before tax.",
+            "baseError": "Enter the yearly amount, like 12,00,000.",
+            "bonus": "Bonus",
+            "bonusHint": "Joining or yearly bonus, if any.",
+            "stocks": "Stocks",
+            "stocksHint": "Yearly value of stock grants.",
+            "total": "Total a year",
+            "dates": "Dates",
+            "deadline": "Decide by",
+            "deadlineHint": "We’ll show how many days are left.",
+            "joining": "Joining date",
+            "letter": "Offer letter",
+            "letterPick": "Choose a PDF",
+            "letterHint": "PDF, up to 5 MB · optional",
+            "letterSaved": "Saved: {name}",
+            "letterCurrent": "An offer letter is saved. Choose another to replace it.",
+            "letterFailed": "Couldn’t upload that file. Use a PDF up to 5 MB.",
+            "notes": "Notes",
+            "notesPlaceholder": "Anything to remember: the team, the hybrid policy, who to reply to",
+            "cancel": "Cancel",
+            "save": "Save offer",
+            "saving": "Saving…",
+            "failed": "Couldn’t save the offer. Try again."
         }
     }
 }

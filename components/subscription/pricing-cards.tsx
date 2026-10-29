@@ -1,13 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef, Suspense } from "react";
-import { Check, X, Loader2, Sparkles, Crown, Zap } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+import { Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { focusRing } from "@/components/soft-glass/classes";
 import { BillingPeriod, PlanTier } from "@prisma/client";
 import { createSubscriptionOrder, verifyAndActivateSubscription } from "@/actions/subscription";
 import { toast } from "sonner";
@@ -45,22 +41,6 @@ interface PricingCardsProps {
     razorpayKeyId: string;
 }
 
-const tierIcons = {
-    FREE: Sparkles,
-    PRO: Zap,
-    PREMIUM: Crown,
-};
-
-const tierColors = {
-    FREE: "from-gray-500 to-gray-600",
-    PRO: "from-blue-500 to-indigo-600",
-    PREMIUM: "from-purple-500 to-pink-600",
-};
-
-/**
- * Isolated component to handle search parameter reading safely within a Suspense boundary.
- * This satisfies Next.js requirement during static builds.
- */
 function SearchParamsHandler({ onParams }: { onParams: (params: URLSearchParams) => void }) {
     const searchParams = useSearchParams();
 
@@ -81,12 +61,6 @@ export function PricingCards({ plans, currentPlanTier, razorpayKeyId }: PricingC
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
     const router = useRouter();
     const hasTriggeredRef = useRef(false);
-
-    function formatLimit(limit: number): string {
-        if (limit === -1) return tCommon("unlimited");
-        if (limit === 0) return "—";
-        return limit.toString();
-    }
 
     const handleSubscribe = async (plan: Plan, overrideYearly?: boolean) => {
         if (plan.tier === PlanTier.FREE) {
@@ -189,174 +163,96 @@ export function PricingCards({ plans, currentPlanTier, razorpayKeyId }: PricingC
         }
     };
 
+    const tLanding = useTranslations("Landing.pricing");
+    const KEYS: Record<PlanTier, "free" | "pro" | "premium"> = { FREE: "free", PRO: "pro", PREMIUM: "premium" };
+    const periodButton = (active: boolean) =>
+        cn("h-10 rounded-full px-4 text-sm font-bold transition-colors", focusRing, active ? "bg-sg-ink text-sg-ink-foreground" : "text-sg-muted hover:text-sg-text");
+
     return (
-        <div className="space-y-8">
+        <div className="flex flex-col gap-8">
             <Suspense fallback={null}>
                 <SearchParamsHandler onParams={handleParamsSync} />
             </Suspense>
 
-            {/* Billing Toggle */}
-            <div className="flex items-center justify-center gap-4">
-                <Label htmlFor="billing-toggle" className={cn(!isYearly && "font-semibold")}>
-                    {t("monthly")}
-                </Label>
-                <Switch
-                    id="billing-toggle"
-                    checked={isYearly}
-                    onCheckedChange={setIsYearly}
-                />
-                <Label htmlFor="billing-toggle" className={cn(isYearly && "font-semibold")}>
-                    {t("yearly")}
-                    <Badge variant="secondary" className="ml-2 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
-                        {t("save", { percent: 17 })}
-                    </Badge>
-                </Label>
+            <div role="group" aria-label={tLanding("periodLabel")} className="sg-glass inline-flex gap-1 self-start rounded-full p-1">
+                <button type="button" aria-pressed={!isYearly} onClick={() => setIsYearly(false)} className={periodButton(!isYearly)}>
+                    {tLanding("monthly")}
+                </button>
+                <button type="button" aria-pressed={isYearly} onClick={() => setIsYearly(true)} className={periodButton(isYearly)}>
+                    {tLanding("yearly")}
+                </button>
             </div>
 
-            {/* Pricing Cards */}
-            <div className="grid gap-6 md:grid-cols-3">
+            <ul className="grid gap-5 lg:grid-cols-3">
                 {plans.map((plan) => {
-                    const Icon = tierIcons[plan.tier];
+                    const key = KEYS[plan.tier];
                     const isCurrentPlan = plan.tier === currentPlanTier;
-                    const isMostPopular = plan.tier === PlanTier.PRO;
+                    const featured = plan.tier === PlanTier.PRO;
+                    const free = plan.tier === PlanTier.FREE;
                     const price = isYearly ? plan.yearlyPriceDisplay : plan.monthlyPriceDisplay;
+                    const features = tLanding.raw(`plans.${key}.features`) as string[];
 
                     return (
-                        <Card
+                        <li
                             key={plan.id}
                             className={cn(
-                                "relative flex flex-col transition-all duration-300 hover:shadow-lg",
-                                isMostPopular && "border-2 border-primary shadow-lg scale-105",
-                                isCurrentPlan && "ring-2 ring-primary"
+                                "flex flex-col gap-5 rounded-[24px] p-6 sm:rounded-[28px] sm:p-7",
+                                featured ? "sg-shadow-lg bg-sg-ink text-sg-ink-foreground" : "sg-glass"
                             )}
                         >
-                            {isMostPopular && (
-                                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                                    <Badge className="bg-gradient-to-r from-blue-500 to-indigo-600">
-                                        {t("popular")}
-                                    </Badge>
-                                </div>
-                            )}
-
-                            {isCurrentPlan && (
-                                <div className="absolute -top-3 right-4">
-                                    <Badge variant="outline" className="bg-background">
-                                        {t("currentPlan")}
-                                    </Badge>
-                                </div>
-                            )}
-
-                            <CardHeader className="text-center pb-2">
-                                <div className={cn(
-                                    "mx-auto rounded-full p-3 bg-gradient-to-br text-white mb-4",
-                                    tierColors[plan.tier]
-                                )}>
-                                    <Icon className="h-6 w-6" />
-                                </div>
-                                <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                                <CardDescription>
-                                    {plan.tier === PlanTier.FREE && t("plans.free.description")}
-                                    {plan.tier === PlanTier.PRO && t("plans.pro.description")}
-                                    {plan.tier === PlanTier.PREMIUM && t("plans.premium.description")}
-                                </CardDescription>
-                            </CardHeader>
-
-                            <CardContent className="flex-1">
-                                {/* Price */}
-                                <div className="text-center mb-6">
-                                    <div className="flex items-baseline justify-center gap-1">
-                                        <span className="text-4xl font-bold">
-                                            ₹{price}
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                <h2 className="text-xl font-bold">{tLanding(`plans.${key}.name`)}</h2>
+                                <span className="flex gap-1.5">
+                                    {featured && (
+                                        <span className="rounded-full bg-sg-coral px-3 py-1 text-[13px] font-bold text-sg-coral-ink">{tLanding("popular")}</span>
+                                    )}
+                                    {isCurrentPlan && (
+                                        <span className={cn("rounded-full px-3 py-1 text-[13px] font-bold", featured ? "bg-sg-ink-foreground/15" : "bg-sg-chip")}>
+                                            {t("yourPlan")}
                                         </span>
-                                        {plan.tier !== PlanTier.FREE && (
-                                            <span className="text-muted-foreground">
-                                                /{isYearly ? t("perYear") : t("perMonth")}
-                                            </span>
-                                        )}
-                                    </div>
-                                    {isYearly && plan.yearlySavings > 0 && (
-                                        <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                                            {t("saveAmount", { amount: plan.yearlySavings })}
-                                        </p>
                                     )}
-                                </div>
-
-                                {/* Features */}
-                                <ul className="space-y-3">
-                                    <FeatureItem
-                                        included={true}
-                                        label={tSub("features.mockInterviews", { limit: formatLimit(plan.mockInterviewLimit) })}
-                                    />
-                                    <FeatureItem
-                                        included={true}
-                                        label={tSub("features.resumeAnalysis", { limit: formatLimit(plan.resumeAnalysisLimit) })}
-                                    />
-                                    <FeatureItem
-                                        included={true}
-                                        label={tSub("features.questionGen", { limit: formatLimit(plan.questionGenerationLimit) })}
-                                    />
-                                    <FeatureItem
-                                        included={plan.coverLetterLimit !== 0}
-                                        label={tSub("features.coverLetters", { limit: formatLimit(plan.coverLetterLimit) })}
-                                    />
-                                    <FeatureItem
-                                        included={plan.resumeRewriteLimit !== 0}
-                                        label={tSub("features.resumeRewrites", { limit: formatLimit(plan.resumeRewriteLimit) })}
-                                    />
-                                    <FeatureItem
-                                        included={plan.aiEvaluationEnabled}
-                                        label={tSub("features.aiEvaluation")}
-                                    />
-                                    <FeatureItem
-                                        included={plan.prioritySupport}
-                                        label={tSub("features.prioritySupport")}
-                                    />
-                                </ul>
-                            </CardContent>
-
-                            <CardFooter>
-                                <Button
-                                    className={cn(
-                                        "w-full",
-                                        plan.tier === PlanTier.PREMIUM && "bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
-                                    )}
-                                    variant={plan.tier === PlanTier.FREE ? "outline" : "default"}
-                                    disabled={isCurrentPlan || loadingPlan !== null}
+                                </span>
+                            </div>
+                            <div className="flex items-baseline gap-1.5">
+                                <span className="font-display text-5xl font-semibold tracking-[-0.03em]">₹{price}</span>
+                                <span className={cn("font-medium", featured ? "opacity-80" : "text-sg-muted")}>
+                                    {free ? tLanding("forever") : isYearly ? tLanding("perYear") : tLanding("perMonth")}
+                                </span>
+                            </div>
+                            <p className={cn("font-medium", featured ? "opacity-80" : "text-sg-muted")}>{tLanding(`plans.${key}.tagline`)}</p>
+                            <ul className="flex flex-col gap-2.5">
+                                {features.map((feature) => (
+                                    <li key={feature} className="flex items-start gap-2.5">
+                                        <Check className="mt-0.5 size-[18px] shrink-0" strokeWidth={2.6} aria-hidden="true" />
+                                        <span>{feature}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                            {isCurrentPlan ? (
+                                <p className={cn("mt-auto flex h-12 items-center justify-center rounded-full font-bold", featured ? "bg-sg-ink-foreground/10" : "bg-sg-chip")}>
+                                    {t("currentPlan")}
+                                </p>
+                            ) : free ? (
+                                <p className={cn("mt-auto text-center text-sm font-medium", featured ? "opacity-80" : "text-sg-muted")}>{t("freeIncluded")}</p>
+                            ) : (
+                                <button
+                                    type="button"
+                                    disabled={loadingPlan !== null}
                                     onClick={() => handleSubscribe(plan)}
-                                >
-                                    {loadingPlan === plan.id ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            {tCommon("processing")}
-                                        </>
-                                    ) : isCurrentPlan ? (
-                                        t("currentPlan")
-                                    ) : plan.tier === PlanTier.FREE ? (
-                                        t("startFree")
-                                    ) : (
-                                        t("upgradeTo", { name: plan.name })
+                                    className={cn(
+                                        "mt-auto flex h-12 items-center justify-center gap-2 rounded-full font-bold transition-opacity hover:opacity-90 disabled:opacity-60",
+                                        focusRing,
+                                        featured ? "bg-sg-coral text-sg-coral-ink" : "border border-sg-glass-border bg-sg-row text-sg-text"
                                     )}
-                                </Button>
-                            </CardFooter>
-                        </Card>
+                                >
+                                    {loadingPlan === plan.id && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+                                    {loadingPlan === plan.id ? tCommon("processing") : tLanding(`plans.${key}.cta`)}
+                                </button>
+                            )}
+                        </li>
                     );
                 })}
-            </div>
+            </ul>
         </div>
-    );
-}
-
-function FeatureItem({ included, label }: { included: boolean; label: string }) {
-    return (
-        <li className="flex items-center gap-2">
-            {included ? (
-                <Check className="h-4 w-4 text-green-500 shrink-0" />
-            ) : (
-                <X className="h-4 w-4 text-muted-foreground shrink-0" />
-            )}
-            <span className={cn("text-sm", !included && "text-muted-foreground")}>
-                {label}
-            </span>
-        </li>
     );
 }
