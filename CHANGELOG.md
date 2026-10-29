@@ -6,6 +6,7 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 On `develop`, not yet on `main`.
 
+- **Today refreshes only when something can change.** It checks every 30 seconds only while an interview is in progress or waiting for its score, and no longer reloads itself right after opening (AIIN-81).
 - Interview proctoring always logs to the current interview, and full-screen state is read straight from the browser (AIIN-43).
 - **Practice says when it can't run.** If U can't check the AI service, the practice page says so and Start stays off, instead of looking available. When every model is rate-limited, practice still runs with offline questions and a banner (AIIN-48).
 - **Deleting a job no longer fails or loses history.** A job no one was invited to is deleted. A job with candidates is archived instead: it leaves the employer's lists and stops taking invitations, and its interviews and reports are kept. Deleting used to fail with a database error for any job with interviews (AIIN-188; migration `job_archived_at`).

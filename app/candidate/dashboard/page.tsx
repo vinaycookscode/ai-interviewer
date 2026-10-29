@@ -211,7 +211,7 @@ export default async function CandidateDashboardPage({ searchParams }: { searchP
 
     return (
         <div className="flex flex-col gap-6 sm:gap-9">
-            <DashboardRefresher />
+            <DashboardRefresher active={upcoming.some((i) => i.status === "IN_PROGRESS") || pastCount > scoreStats._count.score} />
 
             <section aria-label={t("metaTitle")} className="flex flex-wrap items-end gap-x-6 gap-y-4">
                 <Mascot className="size-20 sm:size-[104px]" />

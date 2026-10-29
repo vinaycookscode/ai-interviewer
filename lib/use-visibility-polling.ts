@@ -7,11 +7,13 @@ import { useEffect, useRef } from 'react';
  * @param callback - Function to call on each interval
  * @param interval - Polling interval in milliseconds
  * @param enabled - Whether polling is enabled (default: true)
+ * @param immediate - Whether to call once right away (default: true)
  */
 export function useVisibilityPolling(
     callback: () => void | Promise<void>,
     interval: number,
-    enabled: boolean = true
+    enabled: boolean = true,
+    immediate: boolean = true
 ) {
     const savedCallback = useRef(callback);
 
@@ -34,12 +36,12 @@ export function useVisibilityPolling(
         };
 
         // Initial call
-        tick();
+        if (immediate) tick();
 
         // Set up interval
         const timerId = setInterval(tick, interval);
 
         // Cleanup
         return () => clearInterval(timerId);
-    }, [interval, enabled]);
+    }, [interval, enabled, immediate]);
 }
