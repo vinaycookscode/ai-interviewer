@@ -1,106 +1,156 @@
-import { getDecks } from "@/actions/flashcards";
-import { DeckCard } from "@/components/flashcards/deck-card";
-import { Layers, Brain, Target, BookOpen } from "lucide-react";
-import { auth } from "@/auth";
-import { CreateDeckDialog } from "./create-deck-dialog";
-import { getCurrentSubscription } from "@/actions/subscription";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+import { ArrowRight, Layers } from "lucide-react";
 import { PlanTier } from "@prisma/client";
+import { auth } from "@/auth";
+import { getDecks } from "@/actions/flashcards";
+import { getCurrentSubscription } from "@/actions/subscription";
+import { DeckCard } from "@/components/flashcards/deck-card";
 import { UpgradePrompt } from "@/components/subscription/upgrade-prompt";
-import { PageHeader, Section } from "@/components/layout/page-header";
-import { StatCard } from "@/components/layout/stat-card";
+import { coralButton } from "@/components/soft-glass/classes";
+import { sectionTitle } from "@/components/jobs/employer-ui";
+import { cn } from "@/lib/utils";
+import { CreateDeckDialog } from "./create-deck-dialog";
 
 export const metadata = {
     title: "Flashcards | Get Back To U",
-    description: "Master interview concepts with spaced repetition flashcards",
+    description: "Short decks for the things interviews test from memory.",
 };
 
-// Force dynamic rendering to get fresh progress data
-export const dynamic = 'force-dynamic';
+// Fresh progress on every visit
+export const dynamic = "force-dynamic";
+
+// A card takes about 20 seconds to answer out loud and check.
+const SECONDS_PER_CARD = 20;
 
 export default async function FlashcardsPage() {
     const session = await auth();
+    if (!session?.user?.id) redirect("/auth/login");
 
-    // Check subscription - block free users
+    const t = await getTranslations("Flashcards");
+
     const subscription = await getCurrentSubscription();
     const isFreeUser = !subscription || subscription.isFree || subscription.plan?.tier === PlanTier.FREE;
-
     if (isFreeUser) {
-        return <UpgradePrompt feature="Flashcards" description="Master interview concepts with AI-powered spaced repetition flashcards." />;
+        return <UpgradePrompt feature={t("title")} description={t("upgrade")} />;
     }
 
     const decks = await getDecks();
+    const sharedDecks = decks.filter((d) => !d.userId);
+    const ownDecks = decks.filter((d) => d.userId === session.user.id);
 
-
-    const systemDecks = decks.filter((d) => !d.userId);
-    const userDecks = decks.filter((d) => d.userId === session?.user?.id);
-
-    // Calculate overall stats
     const totalCards = decks.reduce((sum, d) => sum + d.cardCount, 0);
-    const totalMastered = decks.reduce((sum, d) => sum + (d.masteredCount || 0), 0);
+    const totalMastered = decks.reduce((sum, d) => sum + d.masteredCount, 0);
+    const dueDecks = decks.filter((d) => d.dueCount > 0).sort((a, b) => b.dueCount - a.dueCount);
+    const dueCards = dueDecks.reduce((sum, d) => sum + d.dueCount, 0);
+    const minutes = Math.max(1, Math.ceil((dueCards * SECONDS_PER_CARD) / 60));
 
-    const deckGrid = "grid gap-stack sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5";
+    const stats = [
+        { label: t("stats.decks"), value: decks.length },
+        { label: t("stats.cards"), value: totalCards },
+        {
+            label: t("stats.mastered"),
+            value: totalMastered,
+            note: totalCards > 0 ? t("stats.percent", { value: Math.round((totalMastered / totalCards) * 100) }) : null,
+        },
+    ];
 
     return (
-        <div className="space-y-section">
-            <PageHeader
-                title="Flashcards"
-                subtitle="Master concepts with spaced repetition"
-                actions={<CreateDeckDialog />}
-            />
-
-            <div className="grid max-w-2xl grid-cols-3 gap-3">
-                <StatCard icon={BookOpen} label="Decks" value={decks.length} />
-                <StatCard icon={Brain} label="Total cards" value={totalCards} />
-                <StatCard icon={Target} label="Mastered" value={totalMastered} />
+        <div className="flex flex-col gap-6 sm:gap-9">
+            <div className="flex max-w-[680px] flex-col gap-2">
+                <h1 className="font-display sg-soft text-[32px] font-semibold leading-[1.14] tracking-[-0.025em] text-balance sm:text-[44px]">
+                    {t("title")}
+                </h1>
+                <p className="text-lg text-sg-muted">{t("description")}</p>
             </div>
 
-            {systemDecks.length > 0 && (
-                <Section title="Interview prep decks">
-                    <div className={deckGrid}>
-                        {systemDecks.map((deck) => (
-                            <DeckCard
-                                key={deck.id}
-                                id={deck.id}
-                                name={deck.name}
-                                description={deck.description}
-                                category={deck.category}
-                                cardCount={deck.cardCount}
-                                masteryPercent={deck.masteryPercent}
-                            />
-                        ))}
+            <section
+                aria-label={t("due.label")}
+                className="sg-shadow-lg flex flex-wrap items-center justify-between gap-5 rounded-[24px] bg-sg-ink p-5 text-sg-ink-foreground sm:rounded-[28px] sm:p-7"
+            >
+                <span className="flex min-w-0 max-w-[560px] flex-col gap-1.5">
+                    <span className="text-[13px] leading-[18px] font-bold opacity-75">{t("due.label")}</span>
+                    {dueCards > 0 ? (
+                        <>
+                            <span className="font-display sg-soft text-[26px] leading-[1.2] font-semibold sm:text-[34px]">
+                                {t("due.title", { cards: dueCards, decks: dueDecks.length })}
+                            </span>
+                            <span className="opacity-80">{t("due.minutes", { minutes })}</span>
+                        </>
+                    ) : (
+                        <>
+                            <span className="font-display sg-soft text-[26px] leading-[1.2] font-semibold sm:text-[34px]">{t("due.noneTitle")}</span>
+                            <span className="opacity-80">{t("due.noneBody")}</span>
+                        </>
+                    )}
+                </span>
+                {dueDecks[0] && (
+                    <Link href={`/candidate/flashcards/${dueDecks[0].id}/study`} className={cn(coralButton, "h-12 px-6 text-base")}>
+                        {t("due.study")}
+                        <ArrowRight className="size-[18px]" aria-hidden="true" />
+                    </Link>
+                )}
+            </section>
+
+            <dl className="grid max-w-[640px] grid-cols-3 gap-2.5 sm:gap-3">
+                {stats.map((s) => (
+                    <div key={s.label} className="sg-glass flex min-w-0 flex-col rounded-[22px] px-4 py-3.5">
+                        <dt className="text-[13px] leading-[18px] font-bold text-sg-muted">{s.label}</dt>
+                        <dd className="font-display sg-soft text-[28px] leading-[34px] font-semibold">{s.value}</dd>
+                        {s.note && <dd className="text-[13px] leading-[18px] font-medium text-sg-muted">{s.note}</dd>}
                     </div>
-                </Section>
+                ))}
+            </dl>
+
+            {sharedDecks.length > 0 && (
+                <section aria-label={t("prep")} className="flex flex-col gap-4">
+                    <h2 className={sectionTitle}>{t("prep")}</h2>
+                    <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(280px,100%),1fr))] gap-4">
+                        {sharedDecks.map((deck) => (
+                            <li key={deck.id} className="flex">
+                                <DeckCard {...deckProps(deck)} />
+                            </li>
+                        ))}
+                    </ul>
+                </section>
             )}
 
-            <Section title="Your decks">
-                {userDecks.length > 0 ? (
-                    <div className={deckGrid}>
-                        {userDecks.map((deck) => (
-                            <DeckCard
-                                key={deck.id}
-                                id={deck.id}
-                                name={deck.name}
-                                description={deck.description}
-                                category={deck.category}
-                                cardCount={deck.cardCount}
-                                masteryPercent={deck.masteryPercent}
-                                isOwned
-                            />
+            <section aria-label={t("own")} className="flex flex-col gap-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h2 className={sectionTitle}>{t("own")}</h2>
+                    <CreateDeckDialog />
+                </div>
+                {ownDecks.length > 0 ? (
+                    <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(280px,100%),1fr))] gap-4">
+                        {ownDecks.map((deck) => (
+                            <li key={deck.id} className="flex">
+                                <DeckCard {...deckProps(deck)} category={t("custom")} />
+                            </li>
                         ))}
-                    </div>
+                    </ul>
                 ) : (
-                    <div className="flex flex-col items-center gap-stack rounded-card border border-dashed p-card text-center">
-                        <Layers className="size-8 text-muted-foreground" />
-                        <div className="space-y-1">
-                            <h3 className="text-card-title">No custom decks yet</h3>
-                            <p className="mx-auto max-w-sm text-body text-muted-foreground">
-                                Create your own flashcard decks to study any topic you want.
-                            </p>
-                        </div>
-                        <CreateDeckDialog />
+                    <div className="sg-glass flex items-start gap-3.5 rounded-[24px] p-5 sm:p-6">
+                        <Layers className="mt-0.5 size-5 shrink-0 text-sg-muted" aria-hidden="true" />
+                        <span className="flex flex-col gap-1">
+                            <span className="font-bold">{t("noOwnTitle")}</span>
+                            <span className="text-sg-muted">{t("noOwnBody")}</span>
+                        </span>
                     </div>
                 )}
-            </Section>
+            </section>
         </div>
     );
+}
+
+function deckProps(deck: Awaited<ReturnType<typeof getDecks>>[number]) {
+    return {
+        id: deck.id,
+        name: deck.name,
+        description: deck.description,
+        category: deck.category,
+        cardCount: deck.cardCount,
+        dueCount: deck.dueCount,
+        masteryPercent: deck.masteryPercent,
+    };
 }

@@ -1,104 +1,52 @@
-"use client";
-
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { BookOpen, Layers } from "lucide-react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { focusRing } from "@/components/soft-glass/classes";
+import { cn } from "@/lib/utils";
 
 interface DeckCardProps {
     id: string;
     name: string;
-    description?: string | null;
+    description: string | null;
     category: string;
     cardCount: number;
+    dueCount: number;
     masteryPercent: number;
-    isOwned?: boolean;
 }
 
-const categoryColors: Record<string, string> = {
-    DSA: "bg-blue-500",
-    "System Design": "bg-purple-500",
-    Behavioral: "bg-green-500",
-    SQL: "bg-orange-500",
-    Custom: "bg-cyan-500",
-};
+const chip = "inline-flex h-7 items-center rounded-full bg-sg-chip px-2.5 text-sm font-semibold";
 
-export function DeckCard({
-    id,
-    name,
-    description,
-    category,
-    cardCount,
-    masteryPercent,
-    isOwned,
-}: DeckCardProps) {
+/** A deck in the list: category, due count, name and mastery. */
+export function DeckCard({ id, name, description, category, cardCount, dueCount, masteryPercent }: DeckCardProps) {
+    const t = useTranslations("Flashcards");
     return (
-        <TooltipProvider>
-            <Link href={`/candidate/flashcards/${id}`}>
-                <Card className="group cursor-pointer h-full overflow-hidden transition-colors hover:border-foreground/20">
-                    <CardHeader className="pb-3 overflow-hidden">
-                        <div className="flex items-start gap-2">
-                            <div className={`p-2 rounded-lg shrink-0 ${categoryColors[category] || "bg-gray-500"}`}>
-                                <Layers className="h-4 w-4 text-white" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <p className="line-clamp-2 text-card-title transition-colors group-hover:text-brand">
-                                            {name}
-                                        </p>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="top">
-                                        <p>{name}</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                                <Badge variant="outline" className="mt-1.5 text-xs">
-                                    {category}
-                                </Badge>
-                            </div>
-                            {isOwned && (
-                                <Badge variant="secondary" className="text-xs shrink-0">
-                                    Custom
-                                </Badge>
-                            )}
-                        </div>
-                    </CardHeader>
-                    <CardContent className="space-y-3 pt-0">
-                        {description && (
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <p className="text-sm text-muted-foreground line-clamp-2">
-                                        {description}
-                                    </p>
-                                </TooltipTrigger>
-                                <TooltipContent className="max-w-xs" side="top">
-                                    <p>{description}</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        )}
-
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <BookOpen className="h-4 w-4 shrink-0" />
-                            <span>{cardCount} cards</span>
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Mastery</span>
-                                <span className="font-medium">{masteryPercent}%</span>
-                            </div>
-                            <Progress value={masteryPercent} className="h-2" />
-                        </div>
-                    </CardContent>
-                </Card>
-            </Link>
-        </TooltipProvider>
+        <Link
+            href={`/candidate/flashcards/${id}`}
+            className={cn("sg-glass flex w-full min-w-0 flex-col gap-3.5 rounded-[24px] p-5 transition-transform hover:-translate-y-0.5 sm:p-6", focusRing)}
+        >
+            <span className="flex flex-wrap gap-1.5">
+                <span className={chip}>{category}</span>
+                {dueCount > 0 && <span className={cn(chip, "bg-sg-lavender-soft text-sg-lavender-ink")}>{t("dueChip", { count: dueCount })}</span>}
+            </span>
+            <span className="flex flex-col gap-1">
+                <span className="text-xl leading-7 font-bold">{name}</span>
+                {description && <span className="line-clamp-2 text-sg-muted">{description}</span>}
+            </span>
+            <span className="mt-auto flex flex-col gap-2">
+                <span className="flex justify-between gap-3 text-sm">
+                    <span className="text-sg-muted">{t("mastery", { count: cardCount })}</span>
+                    <span className="font-bold">{t("stats.percent", { value: masteryPercent })}</span>
+                </span>
+                <span
+                    role="progressbar"
+                    aria-label={t("masteryLabel", { value: masteryPercent })}
+                    aria-valuenow={masteryPercent}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    className="h-2 overflow-hidden rounded-full bg-sg-track"
+                >
+                    <span className="block h-full rounded-full bg-sg-lavender-ink" style={{ width: `${masteryPercent}%` }} />
+                </span>
+            </span>
+        </Link>
     );
 }

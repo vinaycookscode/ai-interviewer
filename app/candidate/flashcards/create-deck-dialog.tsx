@@ -1,29 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Plus, Loader2 } from "lucide-react";
-import { createDeck } from "@/actions/flashcards";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Loader2, Plus } from "lucide-react";
+import { toast } from "sonner";
+import { createDeck } from "@/actions/flashcards";
+import { Dialog, DialogPanel, DialogTrigger } from "@/components/interviews/sg-dialog";
+import { coralButton } from "@/components/soft-glass/classes";
+import { field, fieldLabel, inkButton } from "@/components/jobs/employer-ui";
+import { cn } from "@/lib/utils";
 
 export function CreateDeckDialog() {
+    const t = useTranslations("Flashcards.create");
+    const router = useRouter();
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
-    const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -31,13 +25,13 @@ export function CreateDeckDialog() {
 
         setLoading(true);
         try {
-            const deck = await createDeck(name, description || undefined);
+            const deck = await createDeck(name.trim(), description.trim() || undefined);
             setOpen(false);
             setName("");
             setDescription("");
             router.push(`/candidate/flashcards/${deck.id}`);
-        } catch (error) {
-            console.error("Failed to create deck:", error);
+        } catch {
+            toast.error(t("failed"));
         } finally {
             setLoading(false);
         }
@@ -45,53 +39,45 @@ export function CreateDeckDialog() {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button>
-                    <Plus className="h-4 w-4" />
-                    Create Deck
-                </Button>
+            <DialogTrigger className={cn(inkButton, "h-11 text-[15px]")}>
+                <Plus className="size-4" aria-hidden="true" />
+                {t("open")}
             </DialogTrigger>
-            <DialogContent>
-                <form onSubmit={handleSubmit}>
-                    <DialogHeader>
-                        <DialogTitle>Create New Deck</DialogTitle>
-                        <DialogDescription>
-                            Create a custom flashcard deck for your study needs.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Deck Name</Label>
-                            <Input
-                                id="name"
-                                placeholder="e.g., JavaScript Concepts"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="description">Description (optional)</Label>
-                            <Textarea
-                                id="description"
-                                placeholder="What topics does this deck cover?"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                                rows={3}
-                            />
-                        </div>
+            <DialogPanel title={t("title")} closeLabel={t("close")}>
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-2">
+                        <label htmlFor="nd-name" className={fieldLabel}>
+                            {t("name")}
+                        </label>
+                        <input
+                            id="nd-name"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder={t("namePlaceholder")}
+                            maxLength={80}
+                            required
+                            className={cn(field, "h-12")}
+                        />
                     </div>
-                    <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                            Cancel
-                        </Button>
-                        <Button type="submit" disabled={loading || !name.trim()}>
-                            {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                            Create Deck
-                        </Button>
-                    </DialogFooter>
+                    <div className="flex flex-col gap-2">
+                        <label htmlFor="nd-desc" className={fieldLabel}>
+                            {t("desc")} <span className="font-medium text-sg-muted">{t("descHint")}</span>
+                        </label>
+                        <input
+                            id="nd-desc"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder={t("descPlaceholder")}
+                            maxLength={200}
+                            className={cn(field, "h-12")}
+                        />
+                    </div>
+                    <button type="submit" disabled={loading || !name.trim()} className={cn(coralButton, "h-12 w-full")}>
+                        {loading && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+                        {loading ? t("creating") : t("submit")}
+                    </button>
                 </form>
-            </DialogContent>
+            </DialogPanel>
         </Dialog>
     );
 }

@@ -14,104 +14,110 @@ const BOX_INTERVALS = {
     5: 16,  // Review every 16 days
 };
 
+// Decks a user may see: the shared interview-prep decks and their own (AIIN-133).
+// Without a user, only shared decks: `userId: undefined` would match every deck.
+function visibleDecks(userId: string | undefined) {
+    return userId ? { OR: [{ isPublic: true }, { userId }] } : { isPublic: true };
+}
+
 // Get all decks (system + user's custom)
 export async function getDecks() {
     const session = await auth();
+    const userId = session?.user?.id;
 
     const decks = await db.flashcardDeck.findMany({
-        where: {
-            OR: [
-                { isPublic: true },
-                { userId: session?.user?.id },
-            ],
-        },
-        include: {
-            _count: {
-                select: { cards: true },
-            },
+        where: visibleDecks(userId),
+        select: {
+            id: true,
+            name: true,
+            description: true,
+            category: true,
+            userId: true,
+            _count: { select: { cards: true } },
         },
         orderBy: { createdAt: "desc" },
     });
 
-    // Mastered cards for every deck in one query, counted per deck (AIIN-34)
-    if (session?.user?.id) {
-        const mastered = await db.flashcardProgress.findMany({
-            where: {
-                userId: session.user.id,
-                box: { gte: 4 },
-                card: { deckId: { in: decks.map((deck) => deck.id) } },
-            },
-            select: { card: { select: { deckId: true } } },
+    // Mastered and not-yet-due cards for every deck in one query, counted per deck (AIIN-34)
+    const masteredByDeck = new Map<string, number>();
+    const waitingByDeck = new Map<string, number>();
+    if (userId) {
+        const now = new Date();
+        const progress = await db.flashcardProgress.findMany({
+            where: { userId, card: { deckId: { in: decks.map((deck) => deck.id) } } },
+            select: { box: true, nextReview: true, card: { select: { deckId: true } } },
         });
-        const masteredByDeck = new Map<string, number>();
-        for (const { card } of mastered) {
-            masteredByDeck.set(card.deckId, (masteredByDeck.get(card.deckId) ?? 0) + 1);
+        for (const { box, nextReview, card } of progress) {
+            if (box >= 4) masteredByDeck.set(card.deckId, (masteredByDeck.get(card.deckId) ?? 0) + 1);
+            if (nextReview > now) waitingByDeck.set(card.deckId, (waitingByDeck.get(card.deckId) ?? 0) + 1);
         }
-
-        return decks.map((deck) => {
-            const masteredCount = masteredByDeck.get(deck.id) ?? 0;
-            const totalCards = deck._count.cards;
-            return {
-                ...deck,
-                cardCount: totalCards,
-                masteredCount,
-                masteryPercent: totalCards > 0 ? Math.round((masteredCount / totalCards) * 100) : 0,
-            };
-        });
     }
 
-    return decks.map((deck) => ({
-        ...deck,
-        cardCount: deck._count.cards,
-        masteredCount: 0,
-        masteryPercent: 0,
-    }));
+    return decks.map((deck) => {
+        const totalCards = deck._count.cards;
+        const masteredCount = masteredByDeck.get(deck.id) ?? 0;
+        return {
+            id: deck.id,
+            name: deck.name,
+            description: deck.description,
+            category: deck.category,
+            userId: deck.userId,
+            cardCount: totalCards,
+            masteredCount,
+            // New cards and cards whose review date has come
+            dueCount: userId ? totalCards - (waitingByDeck.get(deck.id) ?? 0) : 0,
+            masteryPercent: totalCards > 0 ? Math.round((masteredCount / totalCards) * 100) : 0,
+        };
+    });
 }
 
-// Get single deck with cards
+// Get a deck the user can see, with each card's progress for that user
 export async function getDeckWithCards(deckId: string) {
     const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId) return null;
 
-    const deck = await db.flashcardDeck.findUnique({
-        where: { id: deckId },
-        include: {
+    return db.flashcardDeck.findFirst({
+        where: { id: deckId, ...visibleDecks(userId) },
+        select: {
+            id: true,
+            name: true,
+            description: true,
+            category: true,
+            userId: true,
             cards: {
-                include: {
-                    progress: session?.user?.id
-                        ? { where: { userId: session.user.id } }
-                        : false,
-                },
                 orderBy: { createdAt: "asc" },
+                select: {
+                    id: true,
+                    front: true,
+                    back: true,
+                    progress: { where: { userId }, select: { box: true, nextReview: true } },
+                },
             },
         },
     });
-
-    return deck;
 }
 
 // Get cards due for review (study session)
 export async function getStudyCards(deckId: string) {
     const session = await auth();
-    if (!session?.user?.id) return [];
+    const userId = session?.user?.id;
+    if (!userId) return [];
 
     const now = new Date();
 
-    // Get all cards in deck
     const cards = await db.flashcard.findMany({
-        where: { deckId },
-        include: {
-            progress: {
-                where: { userId: session.user.id },
-            },
+        where: { deckId, deck: visibleDecks(userId) },
+        select: {
+            id: true,
+            front: true,
+            back: true,
+            progress: { where: { userId }, select: { nextReview: true } },
         },
     });
 
-    // Filter to cards due for review
-    const dueCards = cards.filter((card) => {
-        if (card.progress.length === 0) return true; // New card
-        const progress = card.progress[0];
-        return new Date(progress.nextReview) <= now;
-    });
+    // New cards, and cards whose review date has come
+    const dueCards = cards.filter((card) => card.progress.length === 0 || card.progress[0].nextReview <= now);
 
     // Shuffle cards for study
     return dueCards.sort(() => Math.random() - 0.5);
@@ -121,6 +127,10 @@ export async function getStudyCards(deckId: string) {
 export async function updateProgress(cardId: string, known: boolean) {
     const session = await auth();
     if (!session?.user?.id) throw new Error("Unauthorized");
+
+    // Only cards in a deck this user can see (AIIN-133)
+    const visible = await db.flashcard.findFirst({ where: { id: cardId, deck: visibleDecks(session.user.id) }, select: { id: true } });
+    if (!visible) throw new Error("Card not found");
 
     const existing = await db.flashcardProgress.findUnique({
         where: {
@@ -191,10 +201,13 @@ export async function createDeck(name: string, description?: string) {
     const session = await auth();
     if (!session?.user?.id) throw new Error("Unauthorized");
 
+    const cleanName = name.trim().slice(0, 80);
+    if (!cleanName) throw new Error("A deck needs a name");
+
     const deck = await db.flashcardDeck.create({
         data: {
-            name,
-            description,
+            name: cleanName,
+            description: description?.trim().slice(0, 200) || null,
             category: "Custom",
             userId: session.user.id,
             isPublic: false,
@@ -215,15 +228,18 @@ export async function createCard(deckId: string, front: string, back: string) {
         where: { id: deckId },
     });
 
-    if (!deck || (deck.userId !== session.user.id && deck.userId !== null)) {
+    if (!front.trim() || !back.trim()) throw new Error("A card needs a front and a back");
+
+    // Only to your own decks: shared decks are seen by everyone (AIIN-133)
+    if (!deck || deck.userId !== session.user.id) {
         throw new Error("Cannot add cards to this deck");
     }
 
     const card = await db.flashcard.create({
         data: {
             deckId,
-            front,
-            back,
+            front: front.trim(),
+            back: back.trim(),
         },
     });
 

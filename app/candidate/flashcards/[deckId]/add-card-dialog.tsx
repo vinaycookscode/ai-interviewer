@@ -1,28 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Plus, Loader2 } from "lucide-react";
-import { createCard } from "@/actions/flashcards";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Loader2, Plus } from "lucide-react";
+import { toast } from "sonner";
+import { createCard } from "@/actions/flashcards";
+import { Dialog, DialogPanel, DialogTrigger } from "@/components/interviews/sg-dialog";
+import { coralButton } from "@/components/soft-glass/classes";
+import { field, fieldLabel } from "@/components/jobs/employer-ui";
+import { cn } from "@/lib/utils";
 
-export function AddCardDialog({ deckId }: { deckId: string }) {
+export function AddCardDialog({ deckId, triggerClassName }: { deckId: string; triggerClassName: string }) {
+    const t = useTranslations("Flashcards");
+    const router = useRouter();
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [front, setFront] = useState("");
     const [back, setBack] = useState("");
-    const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -31,12 +26,12 @@ export function AddCardDialog({ deckId }: { deckId: string }) {
         setLoading(true);
         try {
             await createCard(deckId, front, back);
-            setOpen(false);
             setFront("");
             setBack("");
+            setOpen(false);
             router.refresh();
-        } catch (error) {
-            console.error("Failed to create card:", error);
+        } catch {
+            toast.error(t("add.failed"));
         } finally {
             setLoading(false);
         }
@@ -44,55 +39,46 @@ export function AddCardDialog({ deckId }: { deckId: string }) {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Add Card
-                </Button>
+            <DialogTrigger className={triggerClassName}>
+                <Plus className="size-4" aria-hidden="true" />
+                {t("add.open")}
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
-                <form onSubmit={handleSubmit}>
-                    <DialogHeader>
-                        <DialogTitle>Add New Card</DialogTitle>
-                        <DialogDescription>
-                            Create a new flashcard with a question and answer.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="front">Front (Question)</Label>
-                            <Textarea
-                                id="front"
-                                placeholder="What is the time complexity of binary search?"
-                                value={front}
-                                onChange={(e) => setFront(e.target.value)}
-                                rows={3}
-                                required
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="back">Back (Answer)</Label>
-                            <Textarea
-                                id="back"
-                                placeholder="O(log n) - Binary search divides the search space in half each step."
-                                value={back}
-                                onChange={(e) => setBack(e.target.value)}
-                                rows={4}
-                                required
-                            />
-                        </div>
+            <DialogPanel title={t("add.title")} closeLabel={t("create.close")} className="max-w-[520px]">
+                <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-2">
+                        <label htmlFor="card-front" className={fieldLabel}>
+                            {t("add.front")} <span className="font-medium text-sg-muted">{t("add.frontHint")}</span>
+                        </label>
+                        <textarea
+                            id="card-front"
+                            rows={3}
+                            value={front}
+                            onChange={(e) => setFront(e.target.value)}
+                            placeholder={t("add.frontPlaceholder")}
+                            required
+                            className={cn(field, "resize-y py-3")}
+                        />
                     </div>
-                    <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                            Cancel
-                        </Button>
-                        <Button type="submit" disabled={loading || !front.trim() || !back.trim()}>
-                            {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                            Add Card
-                        </Button>
-                    </DialogFooter>
+                    <div className="flex flex-col gap-2">
+                        <label htmlFor="card-back" className={fieldLabel}>
+                            {t("add.back")} <span className="font-medium text-sg-muted">{t("add.backHint")}</span>
+                        </label>
+                        <textarea
+                            id="card-back"
+                            rows={4}
+                            value={back}
+                            onChange={(e) => setBack(e.target.value)}
+                            placeholder={t("add.backPlaceholder")}
+                            required
+                            className={cn(field, "resize-y py-3")}
+                        />
+                    </div>
+                    <button type="submit" disabled={loading || !front.trim() || !back.trim()} className={cn(coralButton, "h-12 w-full")}>
+                        {loading && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+                        {loading ? t("add.adding") : t("add.submit")}
+                    </button>
                 </form>
-            </DialogContent>
+            </DialogPanel>
         </Dialog>
     );
 }

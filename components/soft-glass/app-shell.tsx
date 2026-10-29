@@ -54,7 +54,8 @@ interface MoreGroup {
     items: NavItem[];
 }
 
-const FOCUS_ROUTE = /^\/candidate\/practice\/[^/]+$/;
+// Focus pages with their own header: a live practice session and a flashcard study session.
+const FOCUS_ROUTE = /^\/candidate\/(practice\/[^/]+|flashcards\/[^/]+\/study)$/;
 const under = (prefix: string) => (pathname: string) => pathname === prefix || pathname.startsWith(prefix + "/");
 const exactly = (path: string) => (pathname: string) => pathname === path;
 
@@ -221,7 +222,7 @@ export function AppShell({ role, user, showGoPro = false, isAdmin = false, featu
         </div>
     ));
 
-    // A live practice session is a focus page with its own header, so it gets no app chrome.
+    // Focus pages get no app chrome.
     if (isCandidate && FOCUS_ROUTE.test(pathname)) return <>{children}</>;
 
     return (

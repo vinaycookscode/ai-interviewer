@@ -1,199 +1,146 @@
-import { getDeckWithCards } from "@/actions/flashcards";
-import { auth } from "@/auth";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Play, Layers, Clock, CheckCircle2 } from "lucide-react";
-import { PageHeader, Section } from "@/components/layout/page-header";
-import { StatCard } from "@/components/layout/stat-card";
-import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+import { ArrowLeft, ArrowRight, Layers } from "lucide-react";
+import { PlanTier } from "@prisma/client";
+import { auth } from "@/auth";
+import { getDeckWithCards } from "@/actions/flashcards";
+import { getCurrentSubscription } from "@/actions/subscription";
+import { UpgradePrompt } from "@/components/subscription/upgrade-prompt";
+import { coralButton, focusRing } from "@/components/soft-glass/classes";
+import { glassButton, panel, panelTitle } from "@/components/jobs/employer-ui";
+import { cn } from "@/lib/utils";
 import { AddCardDialog } from "./add-card-dialog";
+import { CardList, type DeckCardRow } from "./card-list";
 import { DeleteDeckButton } from "./delete-deck-button";
-import { ProgressExplainer } from "./progress-explainer";
 
-// Force dynamic rendering to get fresh progress data
-export const dynamic = 'force-dynamic';
+// Fresh progress on every visit
+export const dynamic = "force-dynamic";
 
-// Text colours pair a darker light-mode shade with the lighter dark-mode one,
-// so status labels stay readable on both backgrounds.
-const CONFIDENCE = {
-    learning: { label: "Learning", badge: "border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-400", text: "text-red-700 dark:text-red-400" },
-    reviewing: { label: "Reviewing", badge: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400", text: "text-amber-700 dark:text-amber-400" },
-    mastered: { label: "Mastered", badge: "border-brand/30 bg-brand-subtle text-brand", text: "text-brand" },
-} as const;
+const DAY = 24 * 60 * 60 * 1000;
 
-const confidenceFor = (box: number) => (box >= 4 ? CONFIDENCE.mastered : box >= 2 ? CONFIDENCE.reviewing : CONFIDENCE.learning);
-
-export default async function DeckDetailPage({
-    params,
-}: {
-    params: Promise<{ deckId: string }>;
-}) {
+export default async function DeckDetailPage({ params }: { params: Promise<{ deckId: string }> }) {
     const { deckId } = await params;
     const session = await auth();
-    const deck = await getDeckWithCards(deckId);
+    if (!session?.user?.id) redirect("/auth/login");
 
-    if (!deck) {
-        notFound();
+    const t = await getTranslations("Flashcards");
+
+    const subscription = await getCurrentSubscription();
+    const isFreeUser = !subscription || subscription.isFree || subscription.plan?.tier === PlanTier.FREE;
+    if (isFreeUser) {
+        return <UpgradePrompt feature={t("title")} description={t("upgrade")} />;
     }
 
-    const isOwned = deck.userId === session?.user?.id;
-    const dueCards = deck.cards.filter((card) => {
-        if (!card.progress || card.progress.length === 0) return true;
-        return new Date(card.progress[0].nextReview) <= new Date();
-    });
+    const deck = await getDeckWithCards(deckId);
+    if (!deck) notFound();
 
-    const masteredCards = deck.cards.filter((card) => {
-        const progress = card.progress?.[0];
-        return progress && progress.box >= 4;
-    });
+    const isOwned = deck.userId === session.user.id;
+    const rows = cardRows(deck.cards, (key, values) => t(key, values));
 
-    const masteryPercent = deck.cards.length > 0
-        ? Math.round((masteredCards.length / deck.cards.length) * 100)
-        : 0;
-
-    const learningCount = deck.cards.filter((c) => (c.progress?.[0]?.box || 0) < 2).length;
-    const reviewingCount = deck.cards.filter((c) => {
-        const b = c.progress?.[0]?.box || 0;
-        return b >= 2 && b < 4;
-    }).length;
+    const dueCount = rows.filter((r) => r.dueIn <= 0).length;
+    const counts = {
+        learning: rows.filter((r) => r.stage === "learning").length,
+        reviewing: rows.filter((r) => r.stage === "reviewing").length,
+        mastered: rows.filter((r) => r.stage === "mastered").length,
+    };
+    const masteryPercent = rows.length > 0 ? Math.round((counts.mastered / rows.length) * 100) : 0;
     const studyHref = `/candidate/flashcards/${deckId}/study`;
 
     return (
-        <div className="space-y-section">
-            <PageHeader
-                breadcrumb={
-                    <Link
-                        href="/candidate/flashcards"
-                        className="inline-flex items-center gap-1.5 text-body text-muted-foreground transition-colors hover:text-foreground"
-                    >
-                        <ArrowLeft className="size-4" />
-                        Back to decks
+        <div className="flex flex-col gap-6 sm:gap-8">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+                <div className="flex max-w-[680px] flex-col gap-2">
+                    <Link href="/candidate/flashcards" className={cn("inline-flex items-center gap-1.5 self-start rounded-md font-semibold text-sg-muted hover:text-sg-text", focusRing)}>
+                        <ArrowLeft className="size-4" aria-hidden="true" />
+                        {t("deck.back")}
                     </Link>
-                }
-                title={deck.name}
-                subtitle={deck.description || undefined}
-                badge={{ text: deck.category, variant: "outline" }}
-                actions={
-                    <>
+                    <h1 className="font-display sg-soft text-[32px] font-semibold leading-[1.14] tracking-[-0.025em] text-balance sm:text-[44px]">{deck.name}</h1>
+                    {deck.description && <p className="text-lg text-sg-muted">{deck.description}</p>}
+                </div>
+                <span className="inline-flex h-7 items-center rounded-full bg-sg-chip px-2.5 text-sm font-semibold">{isOwned ? t("custom") : deck.category}</span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+                {dueCount > 0 ? (
+                    <Link href={studyHref} className={cn(coralButton, "h-12 px-6 text-base")}>
+                        {t("deck.studyDue", { count: dueCount })}
+                        <ArrowRight className="size-[18px]" aria-hidden="true" />
+                    </Link>
+                ) : (
+                    rows.length > 0 && <span className="font-semibold text-sg-muted">{t("deck.allDone")}</span>
+                )}
+                {isOwned && <AddCardDialog deckId={deckId} triggerClassName={cn(glassButton, "h-12")} />}
+            </div>
+
+            {rows.length === 0 ? (
+                <div className="sg-glass flex flex-col items-center gap-3 rounded-[28px] p-8 text-center">
+                    <Layers className="size-7 text-sg-muted" aria-hidden="true" />
+                    <h2 className={panelTitle}>{t("deck.emptyTitle")}</h2>
+                    <p className="max-w-[380px] text-sg-muted">{isOwned ? t("deck.emptyBody") : t("deck.emptyShared")}</p>
+                </div>
+            ) : (
+                <div className="flex flex-wrap items-start gap-6">
+                    <CardList cards={rows} />
+
+                    <aside aria-label={t("deck.progress")} className="flex min-w-[min(260px,100%)] max-w-full flex-[1_1_300px] flex-col gap-4 lg:max-w-[380px]">
+                        <div className={panel}>
+                            <h2 className={panelTitle}>{t("deck.progress")}</h2>
+                            <div className="flex flex-col gap-2">
+                                <span className="flex justify-between gap-3 text-sm">
+                                    <span className="text-sg-muted">{t("deck.masteredOf", { done: counts.mastered, total: rows.length })}</span>
+                                    <span className="font-bold">{t("stats.percent", { value: masteryPercent })}</span>
+                                </span>
+                                <span
+                                    role="progressbar"
+                                    aria-label={t("masteryLabel", { value: masteryPercent })}
+                                    aria-valuenow={masteryPercent}
+                                    aria-valuemin={0}
+                                    aria-valuemax={100}
+                                    className="h-2 overflow-hidden rounded-full bg-sg-track"
+                                >
+                                    <span className="block h-full rounded-full bg-sg-lavender-ink" style={{ width: `${masteryPercent}%` }} />
+                                </span>
+                            </div>
+                            <ol className="flex flex-col gap-2">
+                                {(["learning", "reviewing", "mastered"] as const).map((stage) => (
+                                    <li key={stage} className="flex items-start gap-3 rounded-[18px] bg-sg-row px-4 py-3">
+                                        <span className="font-display sg-soft min-w-7 text-[22px] leading-7 font-semibold">{counts[stage]}</span>
+                                        <span className="flex flex-col">
+                                            <span className="font-bold">{t(`deck.${stage}`)}</span>
+                                            <span className="text-sm text-sg-muted">{t(`deck.${stage}Body`)}</span>
+                                        </span>
+                                    </li>
+                                ))}
+                            </ol>
+                            <p className="text-[15px] text-sg-muted">{t("deck.rule")}</p>
+                        </div>
                         {isOwned && <DeleteDeckButton deckId={deck.id} />}
-                        <Button asChild>
-                            <Link href={studyHref}>
-                                <Play />
-                                Study now
-                            </Link>
-                        </Button>
-                    </>
-                }
-            />
-
-            <div className="grid max-w-xl grid-cols-3 gap-3">
-                <StatCard label="Total cards" value={deck.cards.length} />
-                <StatCard label="Due today" value={dueCards.length} />
-                <StatCard label="Mastered" value={`${masteryPercent}%`} />
-            </div>
-
-            <div className="flex flex-col gap-section lg:flex-row">
-                <Section
-                    title={`Cards (${deck.cards.length})`}
-                    actions={isOwned ? <AddCardDialog deckId={deckId} /> : undefined}
-                    className="min-w-0 flex-1"
-                >
-                    {deck.cards.length === 0 ? (
-                        <div className="flex flex-col items-center gap-stack rounded-card border border-dashed p-card text-center">
-                            <Layers className="size-8 text-muted-foreground" />
-                            <p className="text-body text-muted-foreground">No cards in this deck yet.</p>
-                            {isOwned && <AddCardDialog deckId={deckId} />}
-                        </div>
-                    ) : (
-                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                            {deck.cards.map((card) => {
-                                const progress = card.progress?.[0];
-                                const box = progress?.box || 0;
-                                const confidence = confidenceFor(box);
-                                const isDue = !progress || new Date(progress.nextReview) <= new Date();
-
-                                return (
-                                    <Card key={card.id} className="gap-0 py-0 transition-colors hover:border-foreground/20">
-                                        <CardContent className="space-y-2 p-4">
-                                            <div className="flex items-start justify-between gap-3">
-                                                <Badge variant="outline" className={confidence.badge}>
-                                                    {confidence.label}
-                                                </Badge>
-                                                {isDue ? (
-                                                    <span className="flex items-center gap-1 text-caption text-amber-700 dark:text-amber-400">
-                                                        <Clock className="size-3" />
-                                                        Due
-                                                    </span>
-                                                ) : box >= 4 ? (
-                                                    <span className="flex items-center gap-1 text-caption text-brand">
-                                                        <CheckCircle2 className="size-3" />
-                                                        Mastered
-                                                    </span>
-                                                ) : null}
-                                            </div>
-                                            <h3 className="line-clamp-2 text-body font-medium">{card.front}</h3>
-                                            <p className="line-clamp-3 text-body text-muted-foreground">{card.back}</p>
-                                        </CardContent>
-                                    </Card>
-                                );
-                            })}
-                        </div>
-                    )}
-                </Section>
-
-                <aside className="shrink-0 lg:w-80">
-                    <div className="space-y-stack lg:sticky lg:top-8">
-                        <Card className="gap-0 py-0">
-                            <CardContent className="space-y-stack p-card">
-                                <h3 className="text-card-title">Your progress</h3>
-                                <div className="space-y-2">
-                                    <div className="flex items-center justify-between text-body">
-                                        <span className="text-muted-foreground">Mastery</span>
-                                        <span className="font-medium tabular-nums">{masteryPercent}%</span>
-                                    </div>
-                                    <Progress value={masteryPercent} className="h-2" />
-                                </div>
-                                <dl className="grid grid-cols-2 gap-3">
-                                    {[
-                                        { label: "Learning", value: learningCount, text: CONFIDENCE.learning.text },
-                                        { label: "Reviewing", value: reviewingCount, text: CONFIDENCE.reviewing.text },
-                                        { label: "Mastered", value: masteredCards.length, text: CONFIDENCE.mastered.text },
-                                        { label: "Due today", value: dueCards.length, text: "text-foreground" },
-                                    ].map((item) => (
-                                        <div key={item.label} className="rounded-control bg-muted/50 p-3">
-                                            <dt className="text-caption text-muted-foreground">{item.label}</dt>
-                                            <dd className={cn("text-section-title tabular-nums", item.text)}>{item.value}</dd>
-                                        </div>
-                                    ))}
-                                </dl>
-                            </CardContent>
-                        </Card>
-
-                        <ProgressExplainer />
-
-                        {dueCards.length > 0 && (
-                            <Card className="gap-0 border-brand/30 bg-brand-subtle py-0">
-                                <CardContent className="space-y-stack p-card text-center">
-                                    <div className="space-y-1">
-                                        <p className="text-card-title">{dueCards.length} cards due</p>
-                                        <p className="text-body text-muted-foreground">Keep your streak going.</p>
-                                    </div>
-                                    <Button asChild className="w-full">
-                                        <Link href={studyHref}>
-                                            <Play />
-                                            Study now
-                                        </Link>
-                                    </Button>
-                                </CardContent>
-                            </Card>
-                        )}
-                    </div>
-                </aside>
-            </div>
+                    </aside>
+                </div>
+            )}
         </div>
     );
+}
+
+type Translate = (key: "deck.dueToday" | "deck.inDays" | "deck.inWeeks", values?: { count: number }) => string;
+
+/** Each card's stage and when it's next due, due first. */
+function cardRows(cards: { id: string; front: string; progress: { box: number; nextReview: Date }[] }[], t: Translate): DeckCardRow[] {
+    const now = Date.now();
+    return cards
+        .map((card) => {
+            const progress = card.progress[0];
+            const box = progress?.box ?? 0;
+            const dueIn = progress ? progress.nextReview.getTime() - now : 0;
+            const days = Math.ceil(dueIn / DAY);
+            return {
+                id: card.id,
+                front: card.front,
+                stage: box >= 4 ? ("mastered" as const) : box >= 2 ? ("reviewing" as const) : ("learning" as const),
+                dueIn,
+                due: dueIn <= 0 ? t("deck.dueToday") : days >= 14 ? t("deck.inWeeks", { count: Math.round(days / 7) }) : t("deck.inDays", { count: days }),
+            };
+        })
+        .sort((a, b) => a.dueIn - b.dueIn);
 }

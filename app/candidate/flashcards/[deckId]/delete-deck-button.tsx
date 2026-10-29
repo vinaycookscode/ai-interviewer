@@ -1,64 +1,48 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Trash2, Loader2 } from "lucide-react";
-import { deleteDeck } from "@/actions/flashcards";
 import { useRouter } from "next/navigation";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { useTranslations } from "next-intl";
+import { Loader2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { deleteDeck } from "@/actions/flashcards";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogPanel, AlertDialogTrigger } from "@/components/interviews/sg-dialog";
+import { focusRing } from "@/components/soft-glass/classes";
+import { dangerButton, outlineButton } from "@/components/jobs/employer-ui";
+import { cn } from "@/lib/utils";
 
 export function DeleteDeckButton({ deckId }: { deckId: string }) {
-    const [loading, setLoading] = useState(false);
+    const t = useTranslations("Flashcards.remove");
     const router = useRouter();
+    const [loading, setLoading] = useState(false);
 
     const handleDelete = async () => {
         setLoading(true);
         try {
             await deleteDeck(deckId);
             router.push("/candidate/flashcards");
-        } catch (error) {
-            console.error("Failed to delete deck:", error);
-        } finally {
+            router.refresh();
+        } catch {
+            toast.error(t("failed"));
             setLoading(false);
         }
     };
 
     return (
         <AlertDialog>
-            <AlertDialogTrigger asChild>
-                <Button variant="outline" size="icon" className="text-destructive hover:text-destructive">
-                    <Trash2 className="h-4 w-4" />
-                </Button>
+            <AlertDialogTrigger
+                disabled={loading}
+                className={cn("inline-flex min-h-10 items-center gap-2 self-start rounded-full px-3 font-semibold text-sg-danger hover:bg-sg-danger/10", focusRing)}
+            >
+                {loading ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Trash2 className="size-4" aria-hidden="true" />}
+                {t("open")}
             </AlertDialogTrigger>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Deck?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        This will permanently delete this deck and all its cards. This action cannot be undone.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                        onClick={handleDelete}
-                        className="bg-destructive hover:bg-destructive/90"
-                        disabled={loading}
-                    >
-                        {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                        Delete
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
+            <AlertDialogPanel title={t("title")} description={t("body")}>
+                <AlertDialogCancel className={cn(outlineButton, "h-12 px-5 text-base")}>{t("cancel")}</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} className={dangerButton}>
+                    {t("confirm")}
+                </AlertDialogAction>
+            </AlertDialogPanel>
         </AlertDialog>
     );
 }
