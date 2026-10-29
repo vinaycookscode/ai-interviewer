@@ -1,13 +1,14 @@
+import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
+import { Lock } from "lucide-react";
+import { PlanTier } from "@prisma/client";
+import { auth } from "@/auth";
+import { db } from "@/lib/db";
 import { checkFeature } from "@/actions/feature-flags";
+import { getCurrentSubscription } from "@/actions/subscription";
 import { FEATURES } from "@/lib/features";
 import { ResumeScreenerView } from "@/components/candidate/resume-screener-view";
-import { getUserProfile } from "@/actions/profile";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Lock } from "lucide-react";
-import { getCurrentSubscription } from "@/actions/subscription";
-import { PlanTier } from "@prisma/client";
 import { UpgradePrompt } from "@/components/subscription/upgrade-prompt";
-import { getTranslations } from "next-intl/server";
 
 export default async function ResumeScreenerPage() {
     const t = await getTranslations("ResumeScreener");
@@ -15,34 +16,31 @@ export default async function ResumeScreenerPage() {
 
     if (!isEnabled) {
         return (
-            <div className="flex h-full items-center justify-center p-6">
-                <Card className="max-w-md text-center">
-                    <CardHeader>
-                        <div className="mx-auto bg-muted p-3 rounded-full mb-4 w-fit">
-                            <Lock className="h-6 w-6 text-muted-foreground" />
-                        </div>
-                        <CardTitle>{t("unavailable.title")}</CardTitle>
-                        <CardDescription>
-                            {t("unavailable.description")}
-                        </CardDescription>
-                    </CardHeader>
-                </Card>
+            <div className="flex flex-1 items-center justify-center py-10">
+                <div className="sg-glass flex w-full max-w-md flex-col items-center gap-4 rounded-[24px] p-6 text-center sm:rounded-[28px] sm:p-8">
+                    <span className="flex size-12 items-center justify-center rounded-full bg-sg-chip text-sg-muted">
+                        <Lock className="size-6" aria-hidden="true" />
+                    </span>
+                    <h1 className="font-display sg-soft text-[28px] font-semibold leading-[34px]">{t("unavailable.title")}</h1>
+                    <p className="text-sg-muted">{t("unavailable.description")}</p>
+                </div>
             </div>
         );
     }
 
-    // Check subscription - block free users
+    const session = await auth();
+    if (!session?.user?.id) redirect("/auth/login");
+
     const subscription = await getCurrentSubscription();
     const isFreeUser = !subscription || subscription.isFree || subscription.plan?.tier === PlanTier.FREE;
-
     if (isFreeUser) {
         return <UpgradePrompt feature={t("title")} />;
     }
 
-    const user = await getUserProfile();
+    const user = await db.user.findUnique({
+        where: { id: session.user.id },
+        select: { resumeUrl: true, resumeName: true },
+    });
 
-    // resumeUrl is on the user object, not candidateProfile
-    return <ResumeScreenerView profileResumeUrl={user?.resumeUrl} profileResumeName={user?.resumeName} />;
+    return <ResumeScreenerView resumeUrl={user?.resumeUrl ?? null} resumeName={user?.resumeName ?? null} />;
 }
-
-

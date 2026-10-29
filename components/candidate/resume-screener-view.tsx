@@ -1,163 +1,138 @@
 "use client";
+
 import { useState, useTransition } from "react";
-import { analyzeResume } from "@/actions/resume-screener";
-import { ResumeAnalysisView } from "@/components/candidate/resume-analysis-view";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Upload, FileText, Loader2, AlertCircle } from "lucide-react";
-import { toast } from "sonner";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { FileText, Upload } from "lucide-react";
+import { toast } from "sonner";
+import { analyzeResume } from "@/actions/resume-screener";
+import { ResumeAnalysisView, type ResumeAnalysis } from "@/components/candidate/resume-analysis-view";
+import { Mascot } from "@/components/soft-glass/mascot";
+import { coralButton, focusRing } from "@/components/soft-glass/classes";
+import { field, glassButton, inkButton, panel, panelTitle } from "@/components/jobs/employer-ui";
+import { cn } from "@/lib/utils";
 
-export function ResumeScreenerView({ profileResumeUrl, profileResumeName }: { profileResumeUrl?: string | null; profileResumeName?: string | null }) {
+interface ResumeScreenerViewProps {
+    resumeUrl: string | null;
+    resumeName: string | null;
+}
+
+export function ResumeScreenerView({ resumeUrl, resumeName }: ResumeScreenerViewProps) {
     const t = useTranslations("ResumeScreener");
-    const tAuth = useTranslations("Auth");
     const [jobDescription, setJobDescription] = useState("");
-    const [analysis, setAnalysis] = useState<any | null>(null);
+    const [analysis, setAnalysis] = useState<ResumeAnalysis | null>(null);
     const [isPending, startTransition] = useTransition();
 
     const handleAnalyze = () => {
-        if (!profileResumeUrl) {
+        if (!resumeUrl) {
             toast.error(t("toast.uploadFirst"));
             return;
         }
 
         startTransition(async () => {
             const formData = new FormData();
-            formData.append("resumeUrl", profileResumeUrl);
-            if (jobDescription.trim()) {
-                formData.append("jobDescription", jobDescription);
-            }
+            formData.append("resumeUrl", resumeUrl);
+            if (jobDescription.trim()) formData.append("jobDescription", jobDescription);
 
             const result = await analyzeResume(formData);
-
             if (result.error) {
                 toast.error(result.error);
             } else if (result.success && result.analysis) {
                 setAnalysis(result.analysis);
-                toast.success(t("toast.success"));
+                toast.success(t("toast.reviewed"));
             }
         });
     };
 
+    // A finished review switches the button to a quieter "Review again"; one coral action per view.
+    const ctaClass = analysis && !isPending ? cn(inkButton, "h-12 w-full") : cn(coralButton, "h-12 w-full");
+
     return (
-        <div className="w-full p-6 h-[calc(100vh-20px)] overflow-hidden">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-                {/* Left Side: Upload & Inputs */}
-                <div className="space-y-4 lg:overflow-y-auto lg:pr-4 h-full scrollbar-none">
-                    <div className="space-y-1">
-                        <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
-                        <p className="text-sm text-muted-foreground">
-                            {t("subtitle")}
-                        </p>
+        <div className="flex flex-col gap-6 sm:gap-9">
+            <div className="flex max-w-[680px] flex-col gap-2">
+                <h1 className="font-display sg-soft text-[32px] font-semibold leading-[1.14] tracking-[-0.025em] text-balance sm:text-[44px]">
+                    {t("title")}
+                </h1>
+                <p className="text-lg text-sg-muted">{t("description")}</p>
+            </div>
+
+            <div className="flex flex-wrap items-start gap-6">
+                <section aria-label={t("resume.title")} className={cn(panel, "max-w-full flex-[1_1_320px] gap-[18px]")}>
+                    <h2 className={panelTitle}>{t("resume.title")}</h2>
+
+                    {resumeUrl ? (
+                        <div className="flex items-center gap-3 rounded-[18px] bg-sg-row px-4 py-3.5">
+                            <span aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center rounded-[14px] bg-sg-lavender-soft text-sg-lavender-ink">
+                                <FileText className="size-5" />
+                            </span>
+                            <span className="flex min-w-0 flex-1 flex-col">
+                                <span className="font-bold [overflow-wrap:anywhere]">{resumeName || t("resume.defaultName")}</span>
+                                <span className="text-[13px] leading-[18px] font-medium text-sg-muted">{t("resume.fromProfile")}</span>
+                            </span>
+                            <Link href="/candidate/profile" aria-label={t("resume.replaceLabel")} className={cn("rounded-lg p-2 font-bold", focusRing)}>
+                                {t("resume.replace")}
+                            </Link>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-start gap-2.5 rounded-[18px] border-2 border-dashed border-sg-field-border p-5">
+                            <span className="font-bold">{t("resume.noneTitle")}</span>
+                            <span className="text-sg-muted">{t("resume.noneBody")}</span>
+                            <Link href="/candidate/profile" className={cn(glassButton, "h-11 text-[15px]")}>
+                                <Upload className="size-4" aria-hidden="true" />
+                                {t("resume.add")}
+                            </Link>
+                        </div>
+                    )}
+
+                    <div className="flex flex-col gap-2">
+                        <label htmlFor="jd" className="text-sm leading-5 font-semibold">
+                            {t("jd.label")} <span className="font-medium text-sg-muted">{t("jd.hint")}</span>
+                        </label>
+                        <textarea
+                            id="jd"
+                            rows={6}
+                            value={jobDescription}
+                            onChange={(e) => setJobDescription(e.target.value)}
+                            disabled={isPending}
+                            placeholder={t("jd.placeholder")}
+                            className={cn(field, "min-h-[150px] resize-y py-3")}
+                        />
                     </div>
 
-                    <Card className="border-2 border-dashed shadow-sm">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-lg">{t("uploadSection")}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid w-full items-center gap-1.5">
-                                <Label>{t("currentResume")}</Label>
-                                {profileResumeUrl ? (
-                                    <div className="border rounded-xl p-6 bg-primary/5 border-primary/10 flex flex-col items-center gap-3 text-center transition-all duration-500 hover:bg-primary/10">
-                                        <div className="p-3 rounded-2xl bg-primary/10 text-primary shadow-lg shadow-primary/5">
-                                            <FileText className="h-8 w-8" />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="font-black tracking-tight">{profileResumeName || t("defaultResumeName")}</p>
-                                            <p className="text-xs text-muted-foreground uppercase tracking-widest font-bold opacity-60">{t("sourcedFromPath")}</p>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="border-2 border-dashed rounded-xl p-8 bg-muted/5 flex flex-col items-center gap-4 text-center">
-                                        <div className="p-4 rounded-full bg-orange-500/10 text-orange-500 shadow-lg shadow-orange-500/5">
-                                            <AlertCircle className="h-8 w-8" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <p className="font-bold">{t("noResumeFound")}</p>
-                                            <p className="text-sm text-muted-foreground max-w-xs">
-                                                {t("wizardIncomplete")}
-                                            </p>
-                                        </div>
-                                        <Button variant="outline" size="sm" asChild className="rounded-full px-6 font-bold tracking-tight">
-                                            <Link href="/candidate/profile">{t("completeWizard")}</Link>
-                                        </Button>
-                                    </div>
-                                )}
-                            </div>
+                    <button type="button" onClick={handleAnalyze} disabled={!resumeUrl || isPending} className={ctaClass}>
+                        {isPending ? t("cta.reviewing") : analysis ? t("cta.again") : t("cta.review")}
+                    </button>
+                </section>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="jd" className="flex items-center gap-2">
-                                    {t("jdLabel")}
-                                    <span className="text-xs text-muted-foreground font-normal">{t("matchScoreInfo")}</span>
-                                </Label>
-                                <Textarea
-                                    id="jd"
-                                    placeholder={t("jdPlaceholder")}
-                                    className="min-h-[120px] resize-none"
-                                    value={jobDescription}
-                                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setJobDescription(e.target.value)}
-                                    disabled={isPending}
-                                />
-                            </div>
-
-                            <Button
-                                onClick={handleAnalyze}
-                                disabled={!profileResumeUrl || isPending}
-                                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-[0_0_20px_rgba(59,130,246,0.2)] rounded-xl h-12 font-black tracking-tight uppercase italic"
-                            >
-                                {isPending ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        {jobDescription.trim() ? t("matching") : t("analyzing")}
-                                    </>
-                                ) : (
-                                    <>
-                                        <Upload className="mr-2 h-4 w-4" />
-                                        {jobDescription.trim() ? t("analyzeAndMatch") : t("analyzeResume")}
-                                    </>
-                                )}
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Right Side: Analysis Results */}
-                <div className="lg:border-l lg:pl-8 h-full lg:overflow-y-auto scrollbar-none">
+                <section aria-label={t("tabs.review")} className="flex min-w-0 flex-[999_1_520px] flex-col gap-5">
                     {isPending ? (
-                        <div className="flex flex-col items-center justify-center h-full space-y-6 text-center p-8 animate-in fade-in duration-500">
-                            <div className="relative">
-                                <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl animate-pulse" />
-                                <div className="relative bg-background p-4 rounded-full shadow-lg border">
-                                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                        <div role="status" className="sg-glass flex min-h-[420px] flex-col gap-5 rounded-[28px] p-6 sm:p-8">
+                            <div className="flex items-center gap-3.5">
+                                <Mascot className="size-12" />
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="text-lg font-bold">{t("analysing.title")}</span>
+                                    <span className="text-sg-muted">{jobDescription.trim() ? t("analysing.withJd") : t("analysing.withoutJd")}</span>
                                 </div>
                             </div>
-                            <div className="space-y-2">
-                                <h3 className="text-xl font-semibold">{t("analyzingProfile")}</h3>
-                                <p className="text-muted-foreground max-w-sm mx-auto">
-                                    {jobDescription.trim()
-                                        ? t("comparingSkills")
-                                        : t("extractingInsights")}
-                                </p>
+                            <div aria-hidden="true" className="flex flex-col gap-3">
+                                <div className="sg-skeleton h-[120px] rounded-[22px]" />
+                                <div className="sg-skeleton h-[18px] w-[70%] rounded-full" />
+                                <div className="sg-skeleton h-[18px] w-[54%] rounded-full" />
+                                <div className="sg-skeleton h-[18px] w-[62%] rounded-full" />
                             </div>
                         </div>
                     ) : analysis ? (
                         <ResumeAnalysisView analysis={analysis} />
                     ) : (
-                        <div className="flex flex-col items-center justify-center h-full space-y-4 text-center p-8 border-2 border-dashed rounded-lg bg-muted/10 text-muted-foreground">
-                            <FileText className="h-16 w-16 opacity-20" />
-                            <div className="space-y-1">
-                                <h3 className="text-lg font-medium text-foreground">{t("noAnalysisTitle")}</h3>
-                                <p className="text-sm max-w-xs mx-auto">
-                                    {t("noAnalysisDesc")}
-                                </p>
-                            </div>
+                        <div className="sg-glass flex min-h-[420px] flex-col items-center justify-center gap-3 rounded-[28px] p-6 text-center sm:p-8">
+                            <span aria-hidden="true" className="flex size-14 items-center justify-center rounded-[14px] bg-sg-chip">
+                                <FileText className="size-6" />
+                            </span>
+                            <h2 className={panelTitle}>{t("ready.title")}</h2>
+                            <p className="max-w-[380px] text-sg-muted">{t("ready.body")}</p>
                         </div>
                     )}
-                </div>
+                </section>
             </div>
         </div>
     );

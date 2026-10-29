@@ -42,8 +42,8 @@ export function handleError(
         ...metadata,
     });
 
-    // Show user-friendly toast
-    if (showToast) {
+    // Show user-friendly toast. Only in the browser: server actions call this too, and toast throws on the server (AIIN-131).
+    if (showToast && typeof window !== "undefined") {
         toast.error(toastMessage ?? "Something went wrong. Please try again.");
     }
 

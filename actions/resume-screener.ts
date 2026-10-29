@@ -7,6 +7,7 @@ import { resumeScreenerService } from "@/lib/services/ai/resume-screener.service
 import { handleError } from "@/lib/error-handler";
 import { getGeminiModelInstance } from "@/lib/gemini";
 import { getGeminiModel } from "@/actions/gemini-config";
+import type { ResumeAnalysis } from "@/types";
 
 // Polyfill for pdf-parse dependencies
 if (typeof Promise.withResolvers === "undefined") {
@@ -148,7 +149,7 @@ export async function generateCoverLetter(resumeText: string, jobDescription: st
     }
 }
 
-export async function rewriteResume(currentText: string, analysis: any, customInstructions?: string) {
+export async function rewriteResume(currentText: string, analysis: ResumeAnalysis, customInstructions?: string) {
     const session = await auth();
 
     if (!session || !session.user) {
@@ -181,8 +182,8 @@ export async function rewriteResume(currentText: string, analysis: any, customIn
             Use the following analysis to guide your improvements:
             - Strengths to highlight: ${JSON.stringify(analysis.strengths)}
             - Weaknesses to fix: ${JSON.stringify(analysis.weaknesses)}
-            - Formatting issues to address (in text structure): ${JSON.stringify(analysis.formattingIssues)}
-            - Specific tips to apply: ${JSON.stringify(analysis.improvementTips)}
+            - Formatting issues to address (in text structure): ${JSON.stringify(analysis.formattingIssues ?? [])}
+            - Specific tips to apply: ${JSON.stringify(analysis.suggestions)}
 
             ${customInstructions ? `USER CUSTOM INSTRUCTIONS (PRIORITIZE THESE): "${customInstructions}"` : ""}
 

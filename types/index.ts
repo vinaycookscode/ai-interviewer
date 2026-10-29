@@ -147,6 +147,8 @@ export interface ResumeAnalysis {
     suggestions: string[];
     keywords: string[];
     atsCompatibility: number;
+    /** Layout and parsing problems; missing from reviews made before AIIN-131. */
+    formattingIssues?: string[];
 }
 
 export interface CoverLetterResult {

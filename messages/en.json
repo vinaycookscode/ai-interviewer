@@ -789,88 +789,95 @@
         "missingBody": "Sign out and sign back in. If it keeps happening, send us feedback."
     },
     "ResumeScreener": {
-        "title": "AI Resume Screener",
-        "subtitle": "Upload your resume and optionally paste a job description.",
-        "uploadSection": "Upload Documents",
-        "currentResume": "Current Resume",
-        "defaultResumeName": "My Professional Resume",
-        "sourcedFromPath": "Sourced from your path",
-        "noResumeFound": "No Resume Found",
-        "wizardIncomplete": "To analyze your resume, please upload it in the \"Level Up Your Journey\" wizard first.",
-        "completeWizard": "Complete Wizard",
-        "jdLabel": "Job Description (Optional)",
-        "matchScoreInfo": "(For Match Score)",
-        "jdPlaceholder": "Paste the job description here...",
-        "analyzeAndMatch": "Analyze & Match",
-        "analyzeResume": "Analyze Resume",
-        "matching": "Matching...",
-        "analyzing": "Analyzing...",
-        "analyzingProfile": "Analyzing your profile...",
-        "comparingSkills": "Comparing your skills and experience against the job requirements.",
-        "extractingInsights": "Extracting key insights, strengths, and potential improvements.",
-        "noAnalysisTitle": "No Analysis Yet",
-        "noAnalysisDesc": "Upload a resume and click analyze to see detailed insights and AI-powered feedback here.",
+        "title": "Resume review",
+        "description": "U reads your resume the way a recruiter would and tells you what to fix. Add a job description to see how well you match it.",
+        "resume": {
+            "title": "Your resume",
+            "fromProfile": "From your profile",
+            "defaultName": "Your resume",
+            "replace": "Replace",
+            "replaceLabel": "Replace your resume on your profile",
+            "noneTitle": "No resume yet",
+            "noneBody": "Add it to your profile once, and U can review it any time.",
+            "add": "Add your resume"
+        },
+        "jd": {
+            "label": "Job description",
+            "hint": "Optional, for a match score",
+            "placeholder": "Paste the job description here"
+        },
+        "cta": {
+            "review": "Review and match",
+            "reviewing": "Reviewing…",
+            "again": "Review again"
+        },
+        "ready": {
+            "title": "Your review will appear here",
+            "body": "You get a score, what works, what to fix first, and missing keywords. With a job description, you also get a match score and a cover letter."
+        },
+        "analysing": {
+            "title": "U is reading your resume",
+            "withJd": "Comparing your experience with the job description. This takes about 20 seconds.",
+            "withoutJd": "Looking at your experience, results and formatting. This takes about 20 seconds."
+        },
+        "score": {
+            "sectionLabel": "Your score",
+            "match": "Match with this job",
+            "resume": "Resume score",
+            "gaugeLabel": "{label}: {score} out of 100",
+            "works": "What works",
+            "strengths": "{count, plural, one {# strength} other {# strengths}}",
+            "toFix": "To fix",
+            "gaps": "{count, plural, one {# gap} other {# gaps}}"
+        },
+        "tabs": {
+            "label": "Review sections",
+            "review": "Review",
+            "coverLetter": "Cover letter",
+            "rewrite": "Rewrite"
+        },
+        "review": {
+            "works": "What works",
+            "fix": "What to fix",
+            "missing": "Missing from your resume",
+            "missingBody": "The job description asks for these. Add the ones you really have.",
+            "formatting": "Formatting",
+            "formattingClean": "No formatting problems found.",
+            "first": "Fix these first"
+        },
+        "letter": {
+            "title": "Cover letter",
+            "needsJd": "Add a job description and review again to get a cover letter written for that job.",
+            "readyBody": "U writes a cover letter from your resume for this job. Read it before you send it.",
+            "write": "Write my cover letter",
+            "writing": "Writing…",
+            "again": "Write it again",
+            "copy": "Copy",
+            "copied": "Copied",
+            "note": "Read it once before you send it, and change anything that doesn’t sound like you."
+        },
+        "rewrite": {
+            "title": "Rewrite with U",
+            "body": "U fixes the formatting, turns duties into results and lines your experience up with this job. Nothing is invented: if a fix needs a fact you haven’t given, U leaves a note instead.",
+            "notesLabel": "Anything to stress?",
+            "notesHint": "Optional",
+            "notesPlaceholder": "For example: keep it to one page, lead with your best project",
+            "submit": "Rewrite my resume",
+            "rewriting": "Rewriting…",
+            "done": "Your rewrite is ready",
+            "expected": "U expects it to score about {score}, up from {from}.",
+            "download": "Download",
+            "preview": "Rewritten resume"
+        },
         "toast": {
-            "uploadFirst": "Please upload your resume in the 'Level Up Your Journey' wizard first.",
-            "success": "Resume analyzed successfully!"
+            "uploadFirst": "Add your resume to your profile first.",
+            "reviewed": "Your review is ready.",
+            "failed": "Something went wrong. Try again.",
+            "copied": "Copied to the clipboard."
         },
         "unavailable": {
             "title": "Feature Unavailable",
             "description": "The Resume Screener feature is currently disabled by the administrator."
-        }
-    },
-    "ResumeAnalysis": {
-        "metrics": {
-            "jdMatchScore": "JD Match Score",
-            "atsScore": "ATS Score",
-            "basedOnJd": "Based on Job Description",
-            "keyFindings": "Key Findings",
-            "strengthsCount": "{count} Strengths",
-            "weaknessesCount": "{count} Weaknesses",
-            "executiveSummary": "Executive Summary"
-        },
-        "tabs": {
-            "analysis": "Detail Analysis",
-            "coverLetter": "Cover Letter",
-            "rewrite": "Resume Fixer"
-        },
-        "missingKeywords": "Missing Keywords from JD",
-        "strengths": "Strengths",
-        "weaknesses": "Weaknesses & Gaps",
-        "formatting": {
-            "title": "Formatting Checks",
-            "noIssues": "No formatting issues found!"
-        },
-        "tips": "Improvement Tips",
-        "coverLetter": {
-            "title": "Tailored Cover Letter",
-            "copy": "Copy to Clipboard",
-            "copied": "Copied",
-            "jdRequired": "Job Description Required",
-            "jdRequiredDesc": "To generate a tailored cover letter, please re-analyze your resume with a job description.",
-            "jdRequiredNote": "Paste the job description in the left panel and click \"Analyze Resume\" again.",
-            "readyTitle": "Ready to Write?",
-            "readyDesc": "Generate a professional cover letter specifically tailored to match your resume with the provided job description.",
-            "generate": "Generate Cover Letter",
-            "writing": "Writing..."
-        },
-        "rewrite": {
-            "title": "AI Resume Fixer",
-            "description": "Use AI to rewrite your resume. We'll fix formatting, improve bullet points, and better align your experience with the target job.",
-            "customPlaceholder": "Optional: Add custom instructions (e.g., 'Emphasize my leadership roles', 'Keep it to 1 page')...",
-            "submit": "Rewrite & Improve Resume",
-            "rewriting": "Rewriting...",
-            "complete": "Rewrite Complete",
-            "predictedScore": "Predicted New Score: {score}",
-            "back": "Back"
-        },
-        "toast": {
-            "missingResume": "Original resume text is missing. Please upload again.",
-            "success": "Resume rewritten successfully!",
-            "error": "An unexpected error occurred.",
-            "clSuccess": "Cover Letter Generated!",
-            "clError": "Failed to generate cover letter.",
-            "copied": "Copied to clipboard"
         }
     },
     "PracticeInterviews": {

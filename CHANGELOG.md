@@ -4,7 +4,9 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-On `develop`, not yet on `main`. Nothing yet.
+On `develop`, not yet on `main`.
+
+- **Resume review in Soft Glass.** One page: your resume and an optional job description, then a score, what works, what to fix first, missing keywords, a cover letter and a rewrite. Reviews used to crash as soon as they came back: the page read fields the AI never returns. Server actions that hit an error now return their message instead of crashing on a browser-only toast (AIIN-131).
 
 ## 2026-10-29, second release
 

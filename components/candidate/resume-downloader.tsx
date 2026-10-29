@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { glassButton } from "@/components/jobs/employer-ui";
+import { cn } from "@/lib/utils";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -17,9 +18,10 @@ import { toast } from "sonner";
 interface ResumeDownloaderProps {
     content: string;
     fileName?: string;
+    label?: string;
 }
 
-export function ResumeDownloader({ content, fileName = "Improved_Resume" }: ResumeDownloaderProps) {
+export function ResumeDownloader({ content, fileName = "Improved_Resume", label = "Download" }: ResumeDownloaderProps) {
     const [isDownloading, setIsDownloading] = useState(false);
 
     // --- PDF Generation ---
@@ -338,24 +340,23 @@ export function ResumeDownloader({ content, fileName = "Improved_Resume" }: Resu
 
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2" disabled={isDownloading}>
-                    <Download className="h-4 w-4" />
-                    Download
-                </Button>
+            <DropdownMenuTrigger disabled={isDownloading} className={cn(glassButton, "h-11 text-[15px]")}>
+                <Download className="size-4" aria-hidden="true" />
+                {label}
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={downloadPdf} disabled={isDownloading}>
-                    <FileIcon className="mr-2 h-4 w-4 text-red-500" />
-                    PDF Document (.pdf)
+            {/* The menu renders in a portal outside the page's .soft-glass root, so it brings its own. */}
+            <DropdownMenuContent align="end" className="soft-glass rounded-2xl border-sg-glass-border bg-sg-bg p-1.5 text-sg-text">
+                <DropdownMenuItem onClick={downloadPdf} disabled={isDownloading} className="min-h-11 rounded-xl px-3 text-[15px]">
+                    <FileIcon className="size-4" aria-hidden="true" />
+                    PDF (.pdf)
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={downloadDocx} disabled={isDownloading}>
-                    <FileText className="mr-2 h-4 w-4 text-blue-500" />
-                    Word Document (.docx)
+                <DropdownMenuItem onClick={downloadDocx} disabled={isDownloading} className="min-h-11 rounded-xl px-3 text-[15px]">
+                    <FileText className="size-4" aria-hidden="true" />
+                    Word (.docx)
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={downloadTxt} disabled={isDownloading}>
-                    <FileText className="mr-2 h-4 w-4 text-gray-500" />
-                    Text File (.txt)
+                <DropdownMenuItem onClick={downloadTxt} disabled={isDownloading} className="min-h-11 rounded-xl px-3 text-[15px]">
+                    <FileText className="size-4" aria-hidden="true" />
+                    Text (.txt)
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>

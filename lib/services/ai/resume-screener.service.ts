@@ -36,7 +36,8 @@ export class ResumeScreenerService {
           "weaknesses": ["List of 3-5 areas where the resume falls short of the JD"],
           "suggestions": ["List of 3-5 actionable tips to tailor the resume for THIS specific job"],
           "keywords": ["List of 5-10 important keywords/skills from the JD that are MISSING from the resume"],
-          "atsCompatibility": number (0-100, similarity score)
+          "atsCompatibility": number (0-100, similarity score),
+          "formattingIssues": ["List of 0-4 layout or parsing problems an ATS or recruiter would hit, e.g. two columns, inconsistent dates; empty if none"]
       }
       `;
         } else {
@@ -50,7 +51,8 @@ export class ResumeScreenerService {
           "weaknesses": ["List of 3-5 areas for improvement"],
           "suggestions": ["List of 3-5 actionable tips to improve the resume"],
           "keywords": [],
-          "atsCompatibility": 0
+          "atsCompatibility": 0,
+          "formattingIssues": ["List of 0-4 layout or parsing problems an ATS or recruiter would hit, e.g. two columns, inconsistent dates; empty if none"]
       }
       `;
         }

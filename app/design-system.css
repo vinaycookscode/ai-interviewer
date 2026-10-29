@@ -226,3 +226,17 @@
 @utility sg-soft {
   font-variation-settings: "SOFT" 100;
 }
+
+/* Quiet loading pulse for skeletons; still under reduced motion. */
+@keyframes sg-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+@utility sg-skeleton {
+  background-color: var(--sg-track);
+  animation: sg-pulse 1.6s ease-in-out infinite;
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
