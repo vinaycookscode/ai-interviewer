@@ -28,6 +28,8 @@ import { Mascot } from "@/components/soft-glass/mascot";
 import { ScoreGauge } from "@/components/soft-glass/score-gauge";
 import { coralButton, focusRing } from "@/components/soft-glass/classes";
 import { liveStreak } from "@/lib/streak";
+import { EmptyState } from "@/components/soft-glass/empty-state";
+import { glassButton } from "@/components/jobs/employer-ui";
 
 export async function generateMetadata() {
     const t = await getTranslations("Today");
@@ -364,7 +366,17 @@ export default async function CandidateDashboardPage({ searchParams }: { searchP
                     {t("list.title")}
                 </h2>
                 {upcoming.length + pastCount === 0 ? (
-                    <p className="text-sg-muted">{t("list.empty")}</p>
+                    <EmptyState
+                        title={t("list.emptyTitle")}
+                        headingLevel="h3"
+                        action={
+                            <Link href="/candidate/practice" className={cn(glassButton, "h-12")}>
+                                {t("list.emptyAction")}
+                            </Link>
+                        }
+                    >
+                        {t("list.empty")}
+                    </EmptyState>
                 ) : (
                     <>
                         <InterviewList title={t("list.upcoming")} items={upcoming} now={now} t={t} />

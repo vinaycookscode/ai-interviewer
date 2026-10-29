@@ -4,7 +4,8 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { CalendarClock, FileText, Gift, Plus } from "lucide-react";
+import { CalendarClock, FileText, Plus } from "lucide-react";
+import { EmptyState } from "@/components/soft-glass/empty-state";
 import { toast } from "sonner";
 import { deleteOffer, updateOfferStatus } from "@/actions/job-offers";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogPanel, AlertDialogTrigger } from "@/components/interviews/sg-dialog";
@@ -84,15 +85,17 @@ export function OffersClient({ offers }: { offers: OfferCard[] }) {
             </div>
 
             {offers.length === 0 ? (
-                <section className="sg-glass flex flex-col items-center gap-3 rounded-[28px] p-8 text-center">
-                    <Gift className="size-8 text-sg-muted" aria-hidden="true" />
-                    <h2 className={sectionTitle}>{t("emptyTitle")}</h2>
-                    <p className="max-w-[440px] text-sg-muted">{t("emptyBody")}</p>
-                    <Link href="/candidate/offers/new" className={cn(inkButton, "mt-1 h-12")}>
-                        <Plus className="size-[18px]" aria-hidden="true" />
-                        {t("emptyAdd")}
-                    </Link>
-                </section>
+                <EmptyState
+                    title={t("emptyTitle")}
+                    action={
+                        <Link href="/candidate/offers/new" className={cn(coralButton, "h-12 px-6")}>
+                            <Plus className="size-[18px]" aria-hidden="true" />
+                            {t("emptyAdd")}
+                        </Link>
+                    }
+                >
+                    {t("emptyBody")}
+                </EmptyState>
             ) : (
                 <>
                     <div className="grid grid-cols-[repeat(auto-fit,minmax(min(340px,100%),1fr))] gap-4">

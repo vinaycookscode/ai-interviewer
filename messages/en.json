@@ -832,7 +832,7 @@
             "title": "Your interviews",
             "upcoming": "Coming up",
             "past": "Done",
-            "empty": "No interviews yet. Invitations from employers show up here.",
+            "empty": "When an employer invites you, the interview shows up here. Until then, practise with U.",
             "invited": "Invited {date}",
             "expires": "Link expires {date}",
             "notStarted": "Not started",
@@ -844,7 +844,9 @@
             "start": "Start",
             "continue": "Continue",
             "showMore": "Show {count} more",
-            "shownOf": "({shown} of {total} shown)"
+            "shownOf": "({shown} of {total} shown)",
+            "emptyTitle": "No interviews yet",
+            "emptyAction": "Start a practice"
         },
         "missingTitle": "We couldn’t find your account",
         "missingBody": "Sign out and sign back in. If it keeps happening, send us feedback."
@@ -1750,6 +1752,30 @@
             "save": "Save offer",
             "saving": "Saving…",
             "failed": "Couldn’t save the offer. Try again."
+        }
+    },
+    "System": {
+        "brand": "Get Back To U",
+        "home": "Get Back To U, home",
+        "dashboard": "Go to your dashboard",
+        "backHome": "Back to home",
+        "error": {
+            "eyebrow": "Something went wrong",
+            "title": "That didn’t work on our side",
+            "body": "It’s not you. Try again, and if it keeps happening, email hello@getbacktou.com with the reference below.",
+            "retry": "Try again",
+            "reference": "Reference {code}"
+        },
+        "notFound": {
+            "eyebrow": "Error 404",
+            "title": "We can’t find that page",
+            "body": "The link may be old or mistyped. Everything else is where you left it."
+        },
+        "loading": "Loading your page",
+        "empty": {
+            "noMatch": "Nothing matches “{query}”",
+            "noMatchBody": "Check the spelling, or try a shorter word.",
+            "clear": "Clear search"
         }
     }
 }

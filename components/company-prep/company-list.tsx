@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ArrowRight, Building2, Search } from "lucide-react";
 import { focusRing } from "@/components/soft-glass/classes";
+import { EmptyState } from "@/components/soft-glass/empty-state";
 import { field, glassButton } from "@/components/jobs/employer-ui";
 import { companyInitial } from "@/lib/company-prep-format";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ const chip = "inline-flex h-7 items-center rounded-full bg-sg-chip px-2.5 text-s
 
 export function CompanyList({ companies }: { companies: CompanyCard[] }) {
     const t = useTranslations("CompanyPrep");
+    const tSystem = useTranslations("System");
     const [query, setQuery] = useState("");
     const [level, setLevel] = useState<Level | "ALL">("ALL");
 
@@ -79,9 +81,30 @@ export function CompanyList({ companies }: { companies: CompanyCard[] }) {
             {companies.length === 0 ? (
                 <p className="sg-glass rounded-[24px] p-8 text-center text-sg-muted">{t("list.empty")}</p>
             ) : matching.length === 0 ? (
-                <p role="status" className="sg-glass rounded-[24px] p-8 text-center text-sg-muted">
-                    {t("list.noMatch", { query: query.trim() || levelName(level) })}
-                </p>
+                <div role="status">
+                    <EmptyState
+                        title={tSystem("empty.noMatch", { query: query.trim() || levelName(level) })}
+                        icon={
+                            <span className="flex size-12 items-center justify-center rounded-2xl bg-sg-lavender-soft text-sg-lavender-ink">
+                                <Search className="size-[22px]" aria-hidden="true" />
+                            </span>
+                        }
+                        action={
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setQuery("");
+                                    setLevel("ALL");
+                                }}
+                                className={cn(glassButton, "h-12")}
+                            >
+                                {tSystem("empty.clear")}
+                            </button>
+                        }
+                    >
+                        {tSystem("empty.noMatchBody")}
+                    </EmptyState>
+                </div>
             ) : (
                 <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(320px,100%),1fr))] gap-4">
                     {matching.map((c) => (

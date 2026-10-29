@@ -21,12 +21,15 @@ interface StatusScreenProps {
     action?: { label: string; href: string };
 }
 
+const fallback = { label: "Go to your dashboard", href: "/dashboard" };
+
 /**
  * Full-screen message for a state the user can't continue past (expired link,
- * not yet scheduled, sign-in needed…), with at most one next step.
+ * not yet scheduled, sign-in needed…), with one next step: the given action, or the dashboard,
+ * so no screen is a dead end (AIIN-137).
  * The icon always sits beside words, so the tone is never the only signal.
  */
-export function StatusScreen({ title, icon: Icon, tone = "neutral", children, action }: StatusScreenProps) {
+export function StatusScreen({ title, icon: Icon, tone = "neutral", children, action = fallback }: StatusScreenProps) {
     return (
         <FocusRoot>
             <header className="flex items-center justify-between gap-3">
@@ -46,11 +49,9 @@ export function StatusScreen({ title, icon: Icon, tone = "neutral", children, ac
                     <h1 className="sg-soft font-display text-[30px] font-semibold leading-9 tracking-[-0.02em] sm:text-[34px] sm:leading-10">{title}</h1>
                     {children && <div className="flex flex-col gap-2 text-base leading-6 text-sg-muted">{children}</div>}
                 </div>
-                {action && (
-                    <Link href={action.href} className={cn(coralButton, "h-12 w-full px-6 sm:w-auto")}>
-                        {action.label}
-                    </Link>
-                )}
+                <Link href={action.href} className={cn(coralButton, "h-12 w-full px-6 sm:w-auto")}>
+                    {action.label}
+                </Link>
             </FocusCard>
         </FocusRoot>
     );
