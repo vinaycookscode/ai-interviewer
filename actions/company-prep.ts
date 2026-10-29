@@ -163,10 +163,11 @@ export async function getUserSolution(questionId: string, language: string) {
 /**
  * Get all solved questions for a user (for showing badges)
  */
-export async function getUserSolvedQuestions(userId?: string) {
+// Only ever the signed-in user's own solutions: server actions are public endpoints (AIIN-132).
+export async function getUserSolvedQuestions() {
     try {
         const session = await auth();
-        const targetUserId = userId || session?.user?.id;
+        const targetUserId = session?.user?.id;
 
         if (!targetUserId) {
             return { success: false, solutions: [] };
