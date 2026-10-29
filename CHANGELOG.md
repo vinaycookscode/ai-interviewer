@@ -6,6 +6,7 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 On `develop`, not yet on `main`.
 
+- **90-day plan in Soft Glass.** Your plan with this week's streak and badges, and each day's tasks and idea. A missed day now shows the streak as 0 straight away (on Today too), and pausing really keeps it. Other users' plan answers can no longer be read, and only you can resume your plan (AIIN-134).
 - **Flashcards in Soft Glass.** Decks with what's due today, each deck's cards by stage, and a focused study mode. Private decks can no longer be opened by anyone with the link, shared decks can no longer be edited by users, and deck and study pages need a paid plan (AIIN-133).
 - **Company prep in Soft Glass.** A searchable company list, each company's rounds, questions and how it hires, and a full-screen problem solver. Run tests appears only for questions with real tests. Your solved questions can no longer be read by other users, and company pages now need a paid plan when opened directly (AIIN-132).
 - **Resume review in Soft Glass.** One page: your resume and an optional job description, then a score, what works, what to fix first, missing keywords, a cover letter and a rewrite. Reviews used to crash as soon as they came back: the page read fields the AI never returns. Server actions that hit an error now return their message instead of crashing on a browser-only toast (AIIN-131).

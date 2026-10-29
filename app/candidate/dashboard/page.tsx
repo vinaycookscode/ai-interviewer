@@ -27,6 +27,7 @@ import { DashboardRefresher } from "@/components/candidate/dashboard-refresher";
 import { Mascot } from "@/components/soft-glass/mascot";
 import { ScoreGauge } from "@/components/soft-glass/score-gauge";
 import { coralButton, focusRing } from "@/components/soft-glass/classes";
+import { liveStreak } from "@/lib/streak";
 
 export async function generateMetadata() {
     const t = await getTranslations("Today");
@@ -101,7 +102,7 @@ export default async function CandidateDashboardPage({ searchParams }: { searchP
         db.interview.findFirst({ where: scoredWhere, orderBy: { createdAt: "desc" }, select: { score: true } }),
         db.programEnrollment.findFirst({
             where: { userId, status: "ACTIVE" },
-            select: { id: true, programId: true, currentDay: true, streak: true, program: { select: { slug: true, durationDays: true } } },
+            select: { id: true, programId: true, currentDay: true, streak: true, lastActiveAt: true, program: { select: { slug: true, durationDays: true } } },
         }),
         getFeatureFlags(),
     ]);
@@ -251,7 +252,7 @@ export default async function CandidateDashboardPage({ searchParams }: { searchP
                         <section aria-labelledby="week-title" className={cn(card, "gap-[18px]")}>
                             <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
                                 <h2 id="week-title" className={cardTitle}>
-                                    {t("week.streak", { count: enrollment.streak })}
+                                    {t("week.streak", { count: liveStreak(enrollment.streak, enrollment.lastActiveAt, false) })}
                                 </h2>
                                 <span className="font-medium text-sg-muted">
                                     {t("week.dayOf", { day: enrollment.currentDay, total: enrollment.program.durationDays })}

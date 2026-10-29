@@ -5,67 +5,14 @@ import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { EnrollmentStatus, TaskType } from "@prisma/client";
 import { generateDayToken } from "@/lib/day-token";
-import { istDay } from "@/lib/ist";
+import { istDay, startOfIstDay } from "@/lib/ist";
 
 // ============================================
 // PROGRAM QUERIES
 // ============================================
 
-export async function getActivePrograms() {
-    return db.placementProgram.findMany({
-        where: { isActive: true },
-        include: {
-            _count: {
-                select: { enrollments: true, modules: true }
-            }
-        },
-        orderBy: { createdAt: "desc" }
-    });
-}
-
-export async function getProgramBySlug(slug: string) {
-    return db.placementProgram.findUnique({
-        where: { slug },
-        include: {
-            modules: {
-                include: {
-                    tasks: {
-                        orderBy: { order: "asc" }
-                    }
-                },
-                orderBy: { dayNumber: "asc" }
-            },
-            _count: {
-                select: { enrollments: true }
-            }
-        }
-    });
-}
-
-export async function getUserEnrollment(programId: string, userId: string) {
-    return db.programEnrollment.findUnique({
-        where: {
-            userId_programId: { userId, programId }
-        },
-        include: {
-            program: true,
-            completions: {
-                include: { task: true }
-            }
-        }
-    });
-}
-
-export async function getUserEnrollments(userId: string) {
-    return db.programEnrollment.findMany({
-        where: { userId },
-        include: {
-            program: true,
-            completions: true
-        },
-        orderBy: { createdAt: "desc" }
-    });
-}
+// Pages read programs and enrollments directly, scoped to the signed-in user (AIIN-134).
+// The old getUserEnrollment(s) actions took a user id from the caller and are gone.
 
 // ============================================
 // ENROLLMENT ACTIONS
@@ -136,9 +83,22 @@ export async function resumeEnrollment(enrollmentId: string) {
         return { error: "Not authenticated" };
     }
 
+    // Only the user's own enrollment (AIIN-134)
+    const enrollment = await db.programEnrollment.findFirst({
+        where: { id: enrollmentId, userId: session.user.id }
+    });
+    if (!enrollment) {
+        return { error: "Enrollment not found" };
+    }
+
+    // A pause keeps the streak: count the plan as last active yesterday at the latest, so today's task continues it.
+    const yesterday = startOfIstDay(istDay(new Date()) - 1);
     await db.programEnrollment.update({
         where: { id: enrollmentId },
-        data: { status: EnrollmentStatus.ACTIVE }
+        data: {
+            status: EnrollmentStatus.ACTIVE,
+            lastActiveAt: enrollment.lastActiveAt > yesterday ? enrollment.lastActiveAt : yesterday
+        }
     });
 
     revalidatePath("/candidate/placement-program");
