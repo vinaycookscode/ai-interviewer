@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import {
     Form,
     FormControl,
+    FormDescription,
     FormField,
     FormItem,
     FormLabel,
@@ -19,7 +20,7 @@ import {
 import { CardWrapper } from "@/components/auth/card-wrapper";
 import { FormError } from "@/components/auth/form-error";
 import { FormSuccess } from "@/components/auth/form-success";
-import { coralButton, fieldError, fieldInput, fieldLabel, focusRing } from "@/components/soft-glass/classes";
+import { coralButton, fieldError, fieldHint, fieldInput, fieldLabel, focusRing } from "@/components/soft-glass/classes";
 import { register } from "@/actions/auth";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
@@ -36,6 +37,7 @@ const PLANS = [
 
 export const RegisterForm = () => {
     const t = useTranslations("Auth.register");
+    const tAuth = useTranslations("Auth");
     const tCommon = useTranslations("Common");
     const tPricing = useTranslations("Pricing");
     const tLanding = useTranslations("Landing.pricing");
@@ -207,6 +209,7 @@ export const RegisterForm = () => {
                                 <FormControl>
                                     <Input {...field} disabled={isPending} type="password" autoComplete="new-password" className={fieldInput} />
                                 </FormControl>
+                                <FormDescription className={fieldHint}>{tAuth("passwordRules")}</FormDescription>
                                 <FormMessage className={fieldError} />
                             </FormItem>
                         )}

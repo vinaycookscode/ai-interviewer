@@ -19,4 +19,5 @@ export const fieldInput =
 
 export const fieldLabel = "text-sm font-semibold text-sg-text data-[error=true]:text-sg-danger";
 
+export const fieldHint = "text-[13px] text-sg-muted";
 export const fieldError = "text-[13px] font-semibold text-sg-danger";

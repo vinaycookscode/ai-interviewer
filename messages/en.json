@@ -503,6 +503,7 @@
             "sending": "Sending link…",
             "sendLink": "Send reset link"
         },
+        "passwordRules": "At least 8 characters, with an uppercase letter, a number and a symbol.",
         "resetPassword": {
             "title": "Choose a new password",
             "invalidTitle": "This reset link doesn't work",

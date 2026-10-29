@@ -3,7 +3,7 @@
 
 
 import * as z from "zod";
-import { LoginSchema, RegisterSchema } from "@/schemas";
+import { LoginSchema, RegisterSchema, ResetPasswordSchema } from "@/schemas";
 import { signIn } from "@/auth";
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
 import { AuthError } from "next-auth";
@@ -211,11 +211,6 @@ const ForgotPasswordSchema = z.object({
     email: z.string().email(),
 });
 
-const ResetPasswordSchema = z.object({
-    token: z.string().min(1),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-});
-
 export const forgotPassword = async (values: z.infer<typeof ForgotPasswordSchema>) => {
     const validatedFields = ForgotPasswordSchema.safeParse(values);
 
@@ -264,7 +259,7 @@ export const resetPassword = async (values: z.infer<typeof ResetPasswordSchema>)
     const validatedFields = ResetPasswordSchema.safeParse(values);
 
     if (!validatedFields.success) {
-        return { error: "Invalid input" };
+        return { error: validatedFields.error.issues[0]?.message ?? "Invalid input" };
     }
 
     const { token, password } = validatedFields.data;

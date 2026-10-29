@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import {
     Form,
     FormControl,
+    FormDescription,
     FormField,
     FormItem,
     FormLabel,
@@ -20,14 +21,15 @@ import {
 import { CardWrapper } from "@/components/auth/card-wrapper";
 import { FormError } from "@/components/auth/form-error";
 import { FormSuccess } from "@/components/auth/form-success";
-import { coralButton, fieldError, fieldInput, fieldLabel } from "@/components/soft-glass/classes";
+import { coralButton, fieldError, fieldHint, fieldInput, fieldLabel } from "@/components/soft-glass/classes";
+import { PasswordSchema } from "@/schemas";
 import { resetPassword } from "@/actions/auth";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 
-const ResetPasswordSchema = z.object({
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
+const ResetPasswordFormSchema = z.object({
+    password: PasswordSchema,
+    confirmPassword: z.string().min(1, "Please confirm your password"),
 }).refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
@@ -43,8 +45,8 @@ export const ResetPasswordForm = () => {
     const [success, setSuccess] = useState<string | undefined>("");
     const [isPending, startTransition] = useTransition();
 
-    const form = useForm<z.infer<typeof ResetPasswordSchema>>({
-        resolver: zodResolver(ResetPasswordSchema),
+    const form = useForm<z.infer<typeof ResetPasswordFormSchema>>({
+        resolver: zodResolver(ResetPasswordFormSchema),
         defaultValues: {
             password: "",
             confirmPassword: "",
@@ -63,7 +65,7 @@ export const ResetPasswordForm = () => {
         );
     }
 
-    const onSubmit = (values: z.infer<typeof ResetPasswordSchema>) => {
+    const onSubmit = (values: z.infer<typeof ResetPasswordFormSchema>) => {
         setError("");
         setSuccess("");
 
@@ -99,6 +101,7 @@ export const ResetPasswordForm = () => {
                                 <FormControl>
                                     <Input {...field} disabled={isPending} type="password" autoComplete="new-password" className={fieldInput} />
                                 </FormControl>
+                                <FormDescription className={fieldHint}>{t("passwordRules")}</FormDescription>
                                 <FormMessage className={fieldError} />
                             </FormItem>
                         )}
