@@ -22,6 +22,7 @@ This directory records significant technical decisions made on this project — 
 | 2026-10-26 | [Send the client only what it needs: never whole user rows](2026-10-26-send-the-client-only-what-it-needs.md) | Accepted · implemented | AIIN-187 |
 | 2026-10-26 | [Talent Match: opt-in, anonymous until applied, a computed match %](2026-10-26-talent-match-consent-and-computed-score.md) | Proposed · not started | AIIN-190, AIIN-206 |
 | 2026-10-28 | [No preview environment for now: check locally, deploy to production](2026-10-28-no-preview-environment.md) | Accepted | AIIN-115 |
+| 2026-10-29 | [The Free plan includes 2 practice interviews a month](2026-10-29-free-plan-includes-practice.md) | Accepted · implemented | AIIN-189 |
 
 Proposals that aren't ADRs yet (Upstash rate limiting, Deepgram and Google TTS) are listed in `docs/audits/2026-10-24-master-decision-index.md`.
 

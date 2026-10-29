@@ -2,8 +2,6 @@ import { checkFeature } from "@/actions/feature-flags";
 import { FEATURES } from "@/lib/features";
 import { PracticeView, type RecentPractice } from "@/components/candidate/practice-view";
 import { Lock } from "lucide-react";
-import { getCurrentSubscription } from "@/actions/subscription";
-import { PlanTier } from "@prisma/client";
 import { UpgradePrompt } from "@/components/subscription/upgrade-prompt";
 import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
@@ -34,14 +32,6 @@ export default async function PracticePage({
         );
     }
 
-    // Check subscription - block free users
-    const subscription = await getCurrentSubscription();
-    const isFreeUser = !subscription || subscription.isFree || subscription.plan?.tier === PlanTier.FREE;
-
-    if (isFreeUser) {
-        return <UpgradePrompt feature={t("title")} />;
-    }
-
     const session = await auth();
     const userId = session?.user?.id;
 
@@ -57,6 +47,11 @@ export default async function PracticePage({
               })
             : Promise.resolve([]),
     ]);
+
+    // Every plan's monthly allowance is enforced by createMockInterview; Free gets 2 (AIIN-189). Only a plan without practice is blocked.
+    if (usage.limit === 0) {
+        return <UpgradePrompt feature={t("title")} />;
+    }
 
     const recent: RecentPractice[] = recentRows.map((row) => ({
         id: row.id,

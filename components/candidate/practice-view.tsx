@@ -68,6 +68,8 @@ export function PracticeView({ allowance, recent, initialRole = "", initialLevel
         });
     };
 
+    // Out of this month's practices: the next step is a plan, not a Start button that fails.
+    const usedUp = allowance?.remaining === 0;
     const isDisabled = !apiStatus?.available || isPending;
     const levelLabel = t(`setup.levels.${difficulty as (typeof LEVELS)[number]}`);
     const cardHeading = "font-display sg-soft text-[22px] font-semibold leading-7";
@@ -125,7 +127,7 @@ export function PracticeView({ allowance, recent, initialRole = "", initialLevel
                             value={role}
                             onChange={(e) => setRole(e.target.value)}
                             placeholder={t("setup.rolePlaceholder")}
-                            disabled={isPending}
+                            disabled={isPending || usedUp}
                             className={fieldInput}
                         />
                         <div role="group" aria-label={t("setup.popularRoles")} className="flex flex-wrap gap-2">
@@ -138,9 +140,9 @@ export function PracticeView({ allowance, recent, initialRole = "", initialLevel
                                         type="button"
                                         aria-pressed={pressed}
                                         onClick={() => setRole(label)}
-                                        disabled={isPending}
+                                        disabled={isPending || usedUp}
                                         className={cn(
-                                            "h-10 rounded-full border-2 px-4 text-sm font-semibold transition-colors",
+                                            "h-10 rounded-full border-2 px-4 text-sm font-semibold transition-colors disabled:pointer-events-none disabled:opacity-50",
                                             pressed
                                                 ? "border-sg-ink bg-sg-ink text-sg-ink-foreground"
                                                 : "border-sg-glass-border bg-sg-row text-sg-text hover:bg-sg-chip",
@@ -172,9 +174,9 @@ export function PracticeView({ allowance, recent, initialRole = "", initialLevel
                                         role="radio"
                                         aria-checked={checked}
                                         onClick={() => setDifficulty(level)}
-                                        disabled={isPending}
+                                        disabled={isPending || usedUp}
                                         className={cn(
-                                            "min-h-16 min-w-0 rounded-[14px] px-3 py-2.5 text-left text-[15px] leading-[22px] transition-colors",
+                                            "min-h-16 min-w-0 rounded-[14px] px-3 py-2.5 text-left text-[15px] leading-[22px] transition-colors disabled:pointer-events-none disabled:opacity-50",
                                             checked
                                                 ? "bg-[var(--sg-glass-strong)] text-sg-text shadow-[var(--sg-shadow)]"
                                                 : "text-sg-muted hover:text-sg-text",
@@ -191,6 +193,14 @@ export function PracticeView({ allowance, recent, initialRole = "", initialLevel
                         </div>
                     </div>
 
+                    {usedUp ? (
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+                            <Link href="/candidate/pricing" className={cn(coralButton, "h-14 w-full px-7 text-[17px] sm:w-auto")}>
+                                {t("setup.seePlans")}
+                            </Link>
+                            <span className="text-sg-muted">{t("setup.usedUp", { limit: allowance.limit })}</span>
+                        </div>
+                    ) : (
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
                         <button
                             type="button"
@@ -211,6 +221,7 @@ export function PracticeView({ allowance, recent, initialRole = "", initialLevel
                                 : t("setup.estimateNoRole")}
                         </span>
                     </div>
+                    )}
                 </section>
 
                 <aside

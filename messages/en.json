@@ -898,6 +898,8 @@
             },
             "start": "Start practice",
             "starting": "Setting up your practice…",
+            "seePlans": "See plans",
+            "usedUp": "You’ve used all {limit} practices this month. They come back on the 1st.",
             "checking": "Checking that U is ready…",
             "estimate": "About 15 minutes · {role}, {level}",
             "estimateNoRole": "About 15 minutes",
