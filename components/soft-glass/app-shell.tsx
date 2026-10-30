@@ -19,6 +19,7 @@ import {
     LayoutGrid,
     Layers,
     LogOut,
+    MessageCircle,
     Mic,
     Plus,
     Route,
@@ -72,6 +73,7 @@ const CANDIDATE_MORE: MoreGroup[] = [
     {
         key: "prepare",
         items: [
+            { key: "coach", href: "/candidate/coach", icon: MessageCircle, match: under("/candidate/coach") },
             { key: "companyPrep", href: "/candidate/company-prep", icon: Building2, feature: FEATURES.COMPANY_PREP, match: under("/candidate/company-prep") },
             { key: "flashcards", href: "/candidate/flashcards", icon: Layers, match: under("/candidate/flashcards") },
         ],

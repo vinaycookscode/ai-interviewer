@@ -115,6 +115,7 @@ model User {
   activityDays       ActivityDay[]
   challengeAnswers   DailyChallengeAnswer[]
   achievements       UserAchievement[]
+  coachConversations CoachConversation[]
   certificates       Certificate[]
   
   // Subscription
@@ -176,6 +177,32 @@ model Certificate {
   issuedAt     DateTime          @default(now())
 
   @@index([userId])
+}
+
+// A chat with Ask U, the coach (AIIN-100). Deleting it deletes its messages.
+model CoachConversation {
+  id        String         @id @default(cuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  messages  CoachMessage[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([userId, updatedAt])
+}
+
+// One message: from the candidate ("user") or from U ("model"). A user message with no reply after it
+// is one U couldn't answer, kept so it can be tried again.
+model CoachMessage {
+  id             String            @id @default(cuid())
+  conversationId String
+  conversation   CoachConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String
+  content        String            @db.Text
+  createdAt      DateTime          @default(now())
+
+  @@index([conversationId, createdAt])
 }
 
 model WeeklyReport {
@@ -914,6 +941,8 @@ model SubscriptionPlan {
   coverLetterLimit        Int   @default(0)
   resumeRewriteLimit      Int   @default(0)
   aiEvaluationEnabled     Boolean @default(false)
+  // Messages to Ask U, the coach, per IST day (AIIN-100)
+  coachMessagesPerDay     Int   @default(10)
   prioritySupport         Boolean @default(false)
   
   // Razorpay Plan IDs

@@ -40,6 +40,7 @@ async function seedSubscriptionPlans() {
             coverLetterLimit: 0,
             resumeRewriteLimit: 0,
             aiEvaluationEnabled: false,
+            coachMessagesPerDay: 10,
             prioritySupport: false,
         },
         {
@@ -53,6 +54,7 @@ async function seedSubscriptionPlans() {
             coverLetterLimit: 5,
             resumeRewriteLimit: 3,
             aiEvaluationEnabled: true,
+            coachMessagesPerDay: 100,
             prioritySupport: false,
         },
         {
@@ -66,6 +68,7 @@ async function seedSubscriptionPlans() {
             coverLetterLimit: -1,
             resumeRewriteLimit: -1,
             aiEvaluationEnabled: true,
+            coachMessagesPerDay: 100,
             prioritySupport: true,
         },
     ];
