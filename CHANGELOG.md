@@ -4,11 +4,15 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-On `develop`, not yet on `main`.
+On `develop`, not yet on `main`. Nothing yet.
+
+## 2026-10-30, second release
+
+In production (`a0bf6ce`). Checked locally on a throwaway database before release. No schema changes.
 
 - **New candidates set up their career path first.** After registering, a candidate lands on a four-step set-up (role, skills, resume, goal) in Soft Glass instead of an empty dashboard. Each step is saved as they go, so "Finish later" keeps their answers, and the profile's "Set up my path" and "Change my path" open the same page. Invited candidates still go straight to their interview, and existing users aren't sent there on sign-in. Skills, goal and role are now limited in length on the server (AIIN-52).
 
-## 2026-10-30
+## 2026-10-30, first release
 
 In production (`f5003ca`). Each change was checked locally on a throwaway database before release. Adds the `Interview.decision`, `decisionAt`, `decisionById` and `completedAt` columns and the `InterviewDecisionEvent` table.
 
