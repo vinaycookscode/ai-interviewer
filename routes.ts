@@ -30,3 +30,9 @@ export const apiAuthPrefix = "/api/auth";
  * @type {string}
  */
 export const DEFAULT_LOGIN_REDIRECT = "/dashboard";
+
+/**
+ * Where a new candidate goes after registering: the career path set-up
+ * @type {string}
+ */
+export const ONBOARDING_REDIRECT = "/candidate/onboarding";

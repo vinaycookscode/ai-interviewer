@@ -54,8 +54,8 @@ interface MoreGroup {
     items: NavItem[];
 }
 
-// Focus pages with their own header: a live practice session and a flashcard study session.
-const FOCUS_ROUTE = /^\/candidate\/(practice\/[^/]+|flashcards\/[^/]+\/study)$/;
+// Focus pages with their own header: a live practice session, a flashcard study session and onboarding.
+const FOCUS_ROUTE = /^\/candidate\/(practice\/[^/]+|flashcards\/[^/]+\/study|onboarding)$/;
 const under = (prefix: string) => (pathname: string) => pathname === prefix || pathname.startsWith(prefix + "/");
 const exactly = (path: string) => (pathname: string) => pathname === path;
 

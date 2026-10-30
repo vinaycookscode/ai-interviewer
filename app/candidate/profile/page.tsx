@@ -1,25 +1,23 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { ArrowLeft, FileText, Pencil, Sparkles } from "lucide-react";
+import { FileText, Pencil, Sparkles } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { documentHref } from "@/lib/document-url";
 import { AccountForm } from "@/components/candidate/profile-form";
 import { IdentityDocuments } from "@/components/candidate/identity-documents";
-import { CareerWizard } from "@/components/candidate/career-wizard";
 import { coralButton, focusRing } from "@/components/soft-glass/classes";
 import { inkButton, outlineButton, panel, panelTitle } from "@/components/jobs/employer-ui";
 import { cn } from "@/lib/utils";
 
 const label = "text-[13px] leading-[18px] font-bold text-sg-muted";
 
-export default async function ProfilePage({ searchParams }: { searchParams: Promise<{ path?: string }> }) {
+export default async function ProfilePage() {
     const session = await auth();
     if (!session?.user?.id) redirect("/auth/login");
 
     const t = await getTranslations("Profile");
-    const { path } = await searchParams;
 
     // Only what the page shows: never the whole user row (it holds the password hash).
     const user = await db.user.findUnique({
@@ -41,28 +39,6 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
     const profile = user.candidateProfile;
     const complete = !!profile?.onboardingComplete;
 
-    // The career path wizard, opened from "Set up my path" or "Change my path"
-    if (path === "edit") {
-        return (
-            <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-                <Link href="/candidate/profile" className={cn("inline-flex items-center gap-1.5 self-start rounded-md font-semibold text-sg-muted hover:text-sg-text", focusRing)}>
-                    <ArrowLeft className="size-4" aria-hidden="true" />
-                    {t("wizardBack")}
-                </Link>
-                <h1 className="font-display sg-soft text-[32px] font-semibold leading-[1.14] tracking-[-0.025em] sm:text-[44px]">{t("wizardTitle")}</h1>
-                <div className="sg-glass overflow-hidden rounded-[24px] sm:rounded-[28px]">
-                    <CareerWizard
-                        initialData={{
-                            resumeUrl: user.resumeUrl,
-                            resumeName: user.resumeName,
-                            candidateProfile: profile ? { primaryRole: profile.primaryRole, skills: profile.skills, careerGoals: profile.careerGoals } : null,
-                        }}
-                    />
-                </div>
-            </div>
-        );
-    }
-
     const resumeHref = documentHref(user.resumeUrl);
 
     return (
@@ -79,7 +55,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
                         <span className="text-lg font-bold">{t("finishTitle")}</span>
                         <span className="text-sg-muted">{t("finishBody")}</span>
                     </div>
-                    <Link href="/candidate/profile?path=edit" className={cn(coralButton, "h-12 px-6 text-base")}>
+                    <Link href="/candidate/onboarding?from=profile" className={cn(coralButton, "h-12 px-6 text-base")}>
                         {t("finish")}
                     </Link>
                 </section>
@@ -145,7 +121,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
                                     </div>
                                 )}
                             </dl>
-                            <Link href="/candidate/profile?path=edit" className={cn(outlineButton, "h-10 self-start text-sm")}>
+                            <Link href="/candidate/onboarding?from=profile" className={cn(outlineButton, "h-10 self-start text-sm")}>
                                 <Pencil className="size-4" aria-hidden="true" />
                                 {t("changePath")}
                             </Link>
@@ -153,7 +129,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
                     ) : (
                         <>
                             <p className="text-sg-muted">{t("pathEmpty")}</p>
-                            <Link href="/candidate/profile?path=edit" className={cn(inkButton, "h-10 self-start px-4 text-sm")}>
+                            <Link href="/candidate/onboarding?from=profile" className={cn(inkButton, "h-10 self-start px-4 text-sm")}>
                                 {t("setupPath")}
                             </Link>
                         </>

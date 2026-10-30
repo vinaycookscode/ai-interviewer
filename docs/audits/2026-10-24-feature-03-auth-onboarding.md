@@ -119,6 +119,8 @@ A new candidate lands on the dashboard with empty states and no guidance. The ca
 
 **Decision:** After registration (or after first login for invited candidates), check `onboardingComplete`. If false, redirect to `/candidate/onboarding`. The wizard sets `onboardingComplete = true` on completion. Middleware should enforce: unauthenticated → login, authenticated + onboarding incomplete → onboarding, authenticated + complete → dashboard.
 
+**Done (AIIN-52, 2026-10-30):** registration now leads to `/candidate/onboarding`. It is not enforced on every request: the approved design has "Finish later", invited candidates must reach their interview, and the profile keeps prompting until the set-up is finished.
+
 ---
 
 ## Finding 5 — Employer Registration Is Silently Disabled (P2)

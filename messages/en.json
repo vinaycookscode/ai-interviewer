@@ -1663,9 +1663,7 @@
         "resumeViewLabel": "View your resume",
         "changePath": "Change my path",
         "pathEmpty": "Not set yet. Four quick questions (role, skills, resume, goal) and U tailors your practice, company prep and 90-day plan.",
-        "setupPath": "Set up my path",
-        "wizardTitle": "Your career path",
-        "wizardBack": "Your profile"
+        "setupPath": "Set up my path"
     },
     "Offers": {
         "title": "Offers",
@@ -1863,5 +1861,73 @@
         "noMatchBody": "Try fewer filters, or clear them to see everyone.",
         "clear": "Clear filters",
         "openReport": "Open {name}’s report"
+    },
+    "Onboarding": {
+        "brand": "Get Back To U",
+        "home": "Get Back To U, home",
+        "finishLater": "Finish later",
+        "steps": "Setup steps",
+        "stepOf": "Step {step} of {total}",
+        "stepNames": {
+            "role": "Role",
+            "skills": "Skills",
+            "resume": "Resume",
+            "goal": "Goal"
+        },
+        "titles": {
+            "role": "What are you preparing for?",
+            "skills": "What do you already know?",
+            "resume": "Add your resume",
+            "goal": "Where do you want to be next?"
+        },
+        "descs": {
+            "role": "Pick the track closest to the jobs you’re applying for. You can change it later.",
+            "skills": "Add the tools and languages you’re comfortable using. U leans on these for questions.",
+            "resume": "U uses it to tailor your practice and to review it when you ask.",
+            "goal": "A sentence or two is enough. It helps U pick companies and practice for you."
+        },
+        "roleGroup": "Role",
+        "roles": {
+            "sde": {
+                "name": "Software Development Engineer",
+                "desc": "Build apps and the systems behind them"
+            },
+            "qa": {
+                "name": "Automation Tester / QA",
+                "desc": "Keep quality high with code and automation"
+            },
+            "data": {
+                "name": "Data Engineer / Scientist",
+                "desc": "Work with data and build ML models"
+            },
+            "devops": {
+                "name": "DevOps Engineer",
+                "desc": "Run cloud infrastructure and pipelines"
+            }
+        },
+        "yourSkills": "Your skills",
+        "noSkills": "Add at least one skill to continue.",
+        "addSkill": "Add a skill",
+        "addSkillPlaceholder": "Add a skill, like Kubernetes",
+        "add": "Add",
+        "removeSkill": "Remove {skill}",
+        "addSuggested": "Add {skill}",
+        "popular": "Popular with {role} candidates",
+        "popularAny": "Popular skills",
+        "resumeNone": "No resume yet",
+        "resumeAdded": "Added to your profile",
+        "resumeHint": "PDF, up to 5 MB. No resume yet? Skip this and add it from your profile later.",
+        "upload": "Upload resume",
+        "replace": "Replace",
+        "uploading": "Uploading…",
+        "uploaded": "Resume uploaded",
+        "uploadFailed": "Couldn’t upload your resume. Try again, or skip and add it later.",
+        "goalLabel": "Your goal",
+        "goalPlaceholder": "For example: join a product company and work on hard engineering problems",
+        "back": "Back",
+        "continue": "Continue",
+        "finish": "Finish",
+        "saving": "Saving…",
+        "saveFailed": "Couldn’t save your profile. Try again."
     }
 }

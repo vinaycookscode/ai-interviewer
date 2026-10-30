@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { userRepository } from "@/lib/repositories/user.repository";
 import { handleError } from "@/lib/error-handler";
+import { GOAL_LIMIT, SKILL_LENGTH, SKILL_LIMIT } from "@/lib/career-path";
 
 export async function updateProfile(data: {
     name?: string;
@@ -53,8 +54,18 @@ export async function updateCandidateProfile(data: {
         return { error: "Unauthorized" };
     }
 
+    // Free text from the client: hold it to what the career path set-up allows (AIIN-52)
+    const skills = data.skills?.map((s) => s.trim()).filter(Boolean);
+    if (
+        (skills && (skills.length > SKILL_LIMIT || skills.some((s) => s.length > SKILL_LENGTH))) ||
+        (data.careerGoals && data.careerGoals.length > GOAL_LIMIT) ||
+        (data.primaryRole && data.primaryRole.length > 100)
+    ) {
+        return { error: "Too long" };
+    }
+
     try {
-        await userRepository.upsertCandidateProfile(session.user.id, data);
+        await userRepository.upsertCandidateProfile(session.user.id, { ...data, skills });
 
         revalidatePath("/candidate/profile");
         revalidatePath("/candidate/dashboard");

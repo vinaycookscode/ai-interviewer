@@ -5,7 +5,7 @@
 import * as z from "zod";
 import { LoginSchema, RegisterSchema, ResetPasswordSchema } from "@/schemas";
 import { signIn } from "@/auth";
-import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
+import { DEFAULT_LOGIN_REDIRECT, ONBOARDING_REDIRECT } from "@/routes";
 import { AuthError } from "next-auth";
 import { db } from "@/lib/db";
 import bcrypt from "bcryptjs";
@@ -178,12 +178,12 @@ export const register = async (
         },
     });
 
-    // Auto-login after registration
+    // Auto-login after registration, then set up the career path (AIIN-52) unless a link sent them somewhere
     try {
         await signIn("credentials", {
             email,
             password,
-            redirectTo: callbackUrl || DEFAULT_LOGIN_REDIRECT,
+            redirectTo: callbackUrl || ONBOARDING_REDIRECT,
         });
     } catch (error) {
         if (error instanceof AuthError) {
