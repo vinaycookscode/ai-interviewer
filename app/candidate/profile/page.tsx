@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { documentHref } from "@/lib/document-url";
 import { AccountForm } from "@/components/candidate/profile-form";
 import { IdentityDocuments } from "@/components/candidate/identity-documents";
+import { WeeklyEmailSwitch } from "@/components/candidate/weekly-email-switch";
 import { coralButton, focusRing } from "@/components/soft-glass/classes";
 import { inkButton, outlineButton, panel, panelTitle } from "@/components/jobs/employer-ui";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ export default async function ProfilePage() {
             panName: true,
             aadhaarUrl: true,
             aadhaarName: true,
+            weeklyReportEmails: true,
             candidateProfile: { select: { primaryRole: true, skills: true, careerGoals: true, onboardingComplete: true } },
         },
     });
@@ -66,6 +68,7 @@ export default async function ProfilePage() {
                     <section aria-label={t("account")} className={panel}>
                         <h2 className={panelTitle}>{t("account")}</h2>
                         <AccountForm name={user.name ?? ""} email={user.email} />
+                        <WeeklyEmailSwitch on={user.weeklyReportEmails} />
                     </section>
                     <section aria-label={t("docs")} className={panel}>
                         <h2 className={panelTitle}>{t("docs")}</h2>

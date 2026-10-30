@@ -88,6 +88,9 @@ model User {
   aadhaarName   String?
   
   features      Json?     // Feature flags for this user (e.g. { "multilingual": true })
+
+  // The Monday report email; off from the unsubscribe link or the profile (AIIN-103)
+  weeklyReportEmails Boolean @default(true)
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -108,9 +111,24 @@ model User {
   mentorships        Mentorship[]  @relation("MenteeRelation")
   jobOffers          JobOffer[]
   companySolutions   UserCompanySolution[]
+  weeklyReports      WeeklyReport[]
   
   // Subscription
   subscription       Subscription?
+}
+
+// One row per weekly report email sent, so a week is never sent twice (AIIN-103)
+model WeeklyReport {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Monday of the reported week (IST)
+  weekStart DateTime @db.Date
+  // "active" or "quiet"
+  kind      String
+  sentAt    DateTime @default(now())
+
+  @@unique([userId, weekStart])
 }
 
 model Account {

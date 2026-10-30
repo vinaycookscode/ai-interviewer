@@ -1663,7 +1663,12 @@
         "resumeViewLabel": "View your resume",
         "changePath": "Change my path",
         "pathEmpty": "Not set yet. Four quick questions (role, skills, resume, goal) and U tailors your practice, company prep and 90-day plan.",
-        "setupPath": "Set up my path"
+        "setupPath": "Set up my path",
+        "weeklyTitle": "Weekly report email",
+        "weeklyHint": "Every Monday: how your week went and one thing to work on",
+        "weeklyOn": "On",
+        "weeklyOff": "Off",
+        "weeklyFailed": "Couldn’t save that. Try again."
     },
     "Offers": {
         "title": "Offers",
@@ -1990,5 +1995,19 @@
             "min": "{m} min",
             "minSec": "{m} min {s} s"
         }
+    },
+    "Unsubscribe": {
+        "brand": "Get Back To U",
+        "home": "Get Back To U, home",
+        "offTitle": "No more weekly emails",
+        "offBody": "You won’t get the Monday report at {email}. Interview invitations and password emails still come through.",
+        "onTitle": "Weekly emails are back on",
+        "onBody": "Your next report arrives on Monday morning.",
+        "turnOn": "Turn them back on",
+        "stopAgain": "Stop them again",
+        "today": "Go to Today",
+        "invalidTitle": "This link doesn’t work",
+        "invalidBody": "It may be incomplete. You can turn weekly emails on or off in your profile.",
+        "profile": "Open your profile"
     }
 }

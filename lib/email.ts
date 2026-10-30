@@ -28,7 +28,7 @@ const getAppUrl = () => {
     return env.APP_URL;
 };
 
-const APP_URL = getAppUrl();
+export const APP_URL = getAppUrl();
 
 export async function sendPasswordResetEmail(email: string, token: string) {
     const resetLink = `${APP_URL}/auth/reset-password?token=${token}`;

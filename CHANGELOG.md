@@ -4,7 +4,20 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-On `develop`, not yet on `main`. Adds the `Interview.startedAt` and integrity columns (migration `integrity_verdict`). **After release, run `npx tsx scripts/compute-integrity.ts` once against production** to compute verdicts for finished interviews (the report also computes them when opened).
+On `develop`, not yet on `main`. Adds `User.weeklyReportEmails` and the `WeeklyReport` table (migration `weekly_report`). **Before releasing, set `CRON_SECRET` (16+ random characters) in Vercel's production environment**: the Monday job refuses to run without it. `vercel.json` schedules it.
+
+- **Weekly report email.** Every Monday at 9:00 IST, candidates who practised in the last four weeks get a short report on the week before:
+  - practice interviews and their average against the week before
+  - days active and plan streak
+  - flashcards reviewed
+  - their best answer and the one to work on
+  - one next step
+  
+  A week with nothing gets a short "We missed you", and after four quiet weeks nothing is sent. A week is never sent twice. "Stop weekly emails" works without signing in, and mail apps get one-click unsubscribe; the profile has an on/off switch. Employers and admins never get it (AIIN-103).
+
+## 2026-10-30, third release
+
+On `main` (`b89ab95`), deploy not yet confirmed. Adds the `Interview.startedAt` and integrity columns (migration `integrity_verdict`). **After release, run `npx tsx scripts/compute-integrity.ts` once against production** to compute verdicts for finished interviews (the report also computes them when opened).
 
 - **Integrity on the employer's report.** Each finished interview shows a verdict (No concerns, Worth a look or Strong concerns) with the reasons behind it, a summary (times away, time away, paste attempts, full-screen exits, developer tools) and a timeline grouped by question with mm:ss times. Only the job's employer sees it: not the candidate, and not the PDF. The interview page now also records when the candidate comes back, tells pastes apart from copying, and notes when the interview started; the server only accepts known event types. Rules: [ADR](docs/architecture/2026-10-30-integrity-verdict-rules.md) (AIIN-177).
 

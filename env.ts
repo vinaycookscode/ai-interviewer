@@ -9,6 +9,8 @@ export const env = createEnv({
         AUTH_SECRET: z.string().min(1).optional(),
         RESEND_API_KEY: z.string().min(1).optional(),
         APP_URL: z.string().url().default("http://localhost:3000"),
+        // Vercel Cron sends it as a bearer token; the cron routes refuse requests without it (AIIN-103)
+        CRON_SECRET: z.string().min(16).optional(),
     },
     client: {
         // NEXT_PUBLIC_CLIENT_VAR: z.string(),
@@ -20,5 +22,6 @@ export const env = createEnv({
         AUTH_SECRET: process.env.AUTH_SECRET,
         RESEND_API_KEY: process.env.RESEND_API_KEY,
         APP_URL: process.env.APP_URL,
+        CRON_SECRET: process.env.CRON_SECRET,
     },
 });
