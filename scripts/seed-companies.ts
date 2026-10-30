@@ -20,9 +20,10 @@ const CODING_QUESTIONS = [
         starterCode: "function reverseList(head) {\n  // Your code here\n}",
         solutionCode: "function reverseList(head) {\n  let prev = null;\n  let current = head;\n  while (current) {\n    let next = current.next;\n    current.next = prev;\n    prev = current;\n    current = next;\n  }\n  return prev;\n}",
         testCases: JSON.stringify([
-            { input: "[1,2,3,4,5]", expected: "[5,4,3,2,1]" },
-            { input: "[1,2]", expected: "[2,1]" },
-            { input: "[]", expected: "[]" }
+            // {"list": [...]} reaches the solution as a linked list's head node (lib/problems/run-js.ts)
+            { input: '{"list":[1,2,3,4,5]}', expected: "[5,4,3,2,1]" },
+            { input: '{"list":[1,2]}', expected: "[2,1]" },
+            { input: '{"list":[]}', expected: "[]" }
         ]),
         language: "javascript"
     },
@@ -52,8 +53,9 @@ const CODING_QUESTIONS = [
         starterCode: "function longestCommonPrefix(strs) {\n  // Your code here\n}",
         solutionCode: "function longestCommonPrefix(strs) {\n  if (!strs.length) return '';\n  let prefix = strs[0];\n  for (let i = 1; i < strs.length; i++) {\n    while (strs[i].indexOf(prefix) !== 0) {\n      prefix = prefix.slice(0, -1);\n      if (!prefix) return '';\n    }\n  }\n  return prefix;\n}",
         testCases: JSON.stringify([
-            { input: '["flower","flow","flight"]', expected: '"fl"' },
-            { input: '["dog","racecar","car"]', expected: '""' }
+            // An array input is spread into arguments, so a single array argument is wrapped
+            { input: '[["flower","flow","flight"]]', expected: '"fl"' },
+            { input: '[["dog","racecar","car"]]', expected: '""' }
         ]),
         language: "javascript"
     },
@@ -83,9 +85,9 @@ const CODING_QUESTIONS = [
         starterCode: "function maxSubArray(nums) {\n  // Your code here\n}",
         solutionCode: "function maxSubArray(nums) {\n  let maxSum = nums[0];\n  let currentSum = nums[0];\n  for (let i = 1; i < nums.length; i++) {\n    currentSum = Math.max(nums[i], currentSum + nums[i]);\n    maxSum = Math.max(maxSum, currentSum);\n  }\n  return maxSum;\n}",
         testCases: JSON.stringify([
-            { input: "[-2,1,-3,4,-1,2,1,-5,4]", expected: "6" },
-            { input: "[1]", expected: "1" },
-            { input: "[5,4,-1,7,8]", expected: "23" }
+            { input: "[[-2,1,-3,4,-1,2,1,-5,4]]", expected: "6" },
+            { input: "[[1]]", expected: "1" },
+            { input: "[[5,4,-1,7,8]]", expected: "23" }
         ]),
         language: "javascript"
     },
@@ -99,7 +101,7 @@ const CODING_QUESTIONS = [
         starterCode: "function mergeTwoLists(l1, l2) {\n  // Your code here\n}",
         solutionCode: "function mergeTwoLists(l1, l2) {\n  const dummy = { next: null };\n  let current = dummy;\n  while (l1 && l2) {\n    if (l1.val <= l2.val) {\n      current.next = l1;\n      l1 = l1.next;\n    } else {\n      current.next = l2;\n      l2 = l2.next;\n    }\n    current = current.next;\n  }\n  current.next = l1 || l2;\n  return dummy.next;\n}",
         testCases: JSON.stringify([
-            { input: "[1,2,4], [1,3,4]", expected: "[1,1,2,3,4,4]" }
+            { input: '[{"list":[1,2,4]},{"list":[1,3,4]}]', expected: "[1,1,2,3,4,4]" }
         ]),
         language: "javascript"
     },

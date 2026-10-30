@@ -75,3 +75,19 @@ test("the shared runner calls and judges a solution", () => {
     assert.equal(fail.error, "Expected 2, got 1");
     assert.deepEqual(parseInput("[2,7,11,15], 9"), { nums: [2, 7, 11, 15], target: 9 });
 });
+
+const runs = (code: string, input: string, expected: string) => judge(new Function("input", callSource(code))(parseInput(input)), expected);
+
+test("a linked list arrives as nodes and comes back as values", () => {
+    const reverse = "function reverseList(head) { let prev = null, cur = head; while (cur) { const next = cur.next; cur.next = prev; prev = cur; cur = next; } return prev; }";
+    assert.ok(runs(reverse, '{"list":[1,2,3,4,5]}', "[5,4,3,2,1]").passed);
+    assert.ok(runs(reverse, '{"list":[]}', "[]").passed);
+    const merge = "function mergeTwoLists(a, b) { const d = { next: null }; let c = d; while (a && b) { if (a.val <= b.val) { c.next = a; a = a.next; } else { c.next = b; b = b.next; } c = c.next; } c.next = a || b; return d.next; }";
+    assert.ok(runs(merge, '[{"list":[1,2,4]},{"list":[1,3,4]}]', "[1,1,2,3,4,4]").passed);
+});
+
+test("a wrapped array is one argument; the old two-argument form still works", () => {
+    assert.ok(runs("function maxSubArray(nums) { let m = nums[0], c = nums[0]; for (let i = 1; i < nums.length; i++) { c = Math.max(nums[i], c + nums[i]); m = Math.max(m, c); } return m; }", "[[-2,1,-3,4,-1,2,1,-5,4]]", "6").passed);
+    assert.ok(runs("function twoSum(nums, target) { return [nums.indexOf(2), nums.indexOf(target - 2)]; }", "[2,7,11,15], 9", "[0,1]").passed);
+});
+
