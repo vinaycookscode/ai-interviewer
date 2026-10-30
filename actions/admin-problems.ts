@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { describeChanges, draftErrors, normalizeDraft, publishBlocks, type ProblemDraft } from "@/lib/problems/rules";
-import { PROBLEM_SELECT, contentHash, fromDraft, runTests, toDraft } from "@/lib/problems/server";
+import { PROBLEM_SELECT, checkSolution, contentHash, fromDraft, toDraft } from "@/lib/problems/server";
 
 // Problems in the admin console (AIIN-107). Every action checks for an admin first: Server Actions are public endpoints.
 
@@ -68,7 +68,9 @@ export async function saveProblem(id: string, raw: Partial<ProblemDraft>) {
     if (current.status === "PUBLISHED" && draft.type === "CODING" && hash !== contentHash(current.draft)) {
         const blocks = publishBlocks(draft, null, hash).filter((b) => b !== "unchecked");
         if (blocks.length) return { error: "unpublishable" as const, blocks };
-        const failed = runTests(draft.solutionCode, draft.tests).find((r) => !r.passed);
+        const results = await checkSolution(who.id, draft);
+        if ("error" in results) return { error: results.error };
+        const failed = results.find((r) => !r.passed);
         if (failed) return { error: "failsCheck" as const, failed: failedTest(failed) };
         checkedHash = hash;
     }
@@ -93,7 +95,8 @@ export async function checkProblem(id: string) {
     if (!draft.solutionCode.trim() || !draft.tests.length) return { error: "unpublishable" as const, blocks: publishBlocks(draft, null, "").filter((b) => b !== "unchecked") };
 
     const started = performance.now();
-    const results = runTests(draft.solutionCode, draft.tests);
+    const results = await checkSolution(who.id, draft);
+    if ("error" in results) return { error: results.error };
     const ms = Math.round(performance.now() - started);
     const passed = results.every((r) => r.passed);
     await db.companyQuestion.update({ where: { id }, data: { checkedHash: passed ? contentHash(draft) : null } });

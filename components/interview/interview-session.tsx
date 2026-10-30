@@ -19,7 +19,7 @@ import {
     X,
 } from "lucide-react";
 import { startInterview, submitAnswer, completeInterview } from "@/actions/interview-session";
-import { runCode } from "@/actions/code-execution";
+import { runInterviewCode } from "@/actions/code-execution";
 import { gradeAnswer } from "@/actions/scoring";
 import { AudioVisualizer } from "./audio-visualizer";
 import { useRouter } from "next/navigation";
@@ -37,6 +37,16 @@ import { coralButton, focusRing } from "@/components/soft-glass/classes";
 import { FocusCard, FocusRoot, SessionHeader, eyebrow, inkButton, outlineButton } from "./session-shell";
 
 // Define strict types for questions
+
+const RUN_ERRORS: Record<"unauthorized" | "notFound" | "language" | "size" | "rateLimited" | "unavailable", string> = {
+    unauthorized: "Sign in again to run your code.",
+    notFound: "Code can only be run while this interview is in progress.",
+    language: "Run works for JavaScript, TypeScript, Python, Java, C++ and C#.",
+    size: "Write some code first (up to 50,000 characters).",
+    rateLimited: "That's 30 runs this minute. Wait a moment, then run it again.",
+    unavailable: "Couldn't run your code right now. Your answer is kept: carry on, and try Run again in a moment.",
+};
+
 interface Question {
     id: string;
     text: string;
@@ -334,15 +344,18 @@ export function InterviewSession({
         setCodeOutput({}); // Clear previous output
 
         try {
-            const result = await runCode(editorLanguage, codeAnswer);
-
-            const hasOutput = result.output && result.output.trim().length > 0;
-
-            setCodeOutput({
-                stdout: hasOutput ? result.output : "Program executed successfully (No output captured).",
-                stderr: result.stderr,
-                error: result.error
-            });
+            // Runs on the judge, for this candidate's own interview only (AIIN-105)
+            const result = await runInterviewCode(interviewId, editorLanguage, codeAnswer);
+            if (result.error) {
+                setCodeOutput({ error: RUN_ERRORS[result.error] });
+            } else if (result.status === "timeLimit") {
+                setCodeOutput({ stdout: result.stdout, error: "Stopped at the 5-second limit. Look for a loop that never ends." });
+            } else {
+                setCodeOutput({
+                    stdout: result.stdout.trim() ? result.stdout : result.status === "ok" ? "Ran without printing anything." : "",
+                    stderr: result.stderr || undefined,
+                });
+            }
         } catch (error) {
             console.error("Execution error:", error);
             setCodeOutput({ error: "An unexpected error occurred while running the code." });
@@ -425,7 +438,7 @@ export function InterviewSession({
 
         if (result.success && result.answerId) {
             const gradeResult = await gradeAnswer(result.answerId);
-            if (gradeResult.isRateLimit) {
+            if ("isRateLimit" in gradeResult && gradeResult.isRateLimit) {
                 setRateLimited(true);
             }
 

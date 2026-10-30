@@ -8,6 +8,10 @@ import { getGeminiModel, markModelRateLimited } from "@/actions/gemini-config";
 import { checkFeature } from "@/actions/feature-flags";
 import { FEATURES } from "@/lib/features";
 import { canRunTests } from "@/lib/code-languages";
+import { judgeConfigured } from "@/lib/judge/client";
+import { isJudgeLanguage } from "@/lib/judge/drivers";
+import { runProblem, underRateLimit } from "@/lib/judge/server";
+import { testsOf } from "@/lib/problems/server";
 
 // ============================================
 // COMPANY QUERIES (Original functions)
@@ -94,8 +98,28 @@ export async function saveUserSolution(
             return { success: false, error: "Not authenticated" };
         }
 
-        // Test counts are only meaningful for languages the browser can run (AIIN-149)
-        if (canRunTests(language)) {
+        if (typeof code !== "string" || code.length > 50_000 || typeof language !== "string") {
+            return { success: false, error: "Invalid solution" };
+        }
+        const question = await db.companyQuestion.findFirst({
+            where: { id: questionId, status: "PUBLISHED" },
+            select: { testCases: true, solutionCode: true, starterCode: true },
+        });
+        if (!question) return { success: false, error: "Question not found" };
+
+        // On the judge, the server runs every test itself and keeps its own counts (AIIN-105)
+        const judged =
+            judgeConfigured() && isJudgeLanguage(language) && (await underRateLimit(session.user.id))
+                ? await runProblem(session.user.id, "practice", language, code, {
+                      tests: testsOf(question.testCases),
+                      nameSource: question.solutionCode || question.starterCode || "",
+                  })
+                : null;
+        if (judged && !("error" in judged)) {
+            totalTests = judged.cases.length;
+            passedTests = judged.cases.filter((c) => c.status === "passed").length;
+        } else if (canRunTests(language)) {
+            // Without the judge, JavaScript's counts come from the browser, as before (AIIN-149)
             totalTests = Math.max(0, Math.floor(totalTests) || 0);
             passedTests = Math.min(totalTests, Math.max(0, Math.floor(passedTests) || 0));
         } else {

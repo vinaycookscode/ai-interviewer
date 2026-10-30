@@ -1,6 +1,6 @@
 # Where candidate code runs: hosting the code execution engine
 **Date:** 2026-10-30  
-**Status:** Proposed. Vinay to choose before AIIN-105 is built.  
+**Status:** Accepted, 2026-10-30: option A, hosted Judge0, behind a Judge0-shaped adapter (built in AIIN-105).  
 **Deciders:** Vinay
 
 ## Context
@@ -54,3 +54,13 @@ Whichever is chosen:
 
 - **Keep running tests in the browser:** only JavaScript, and hidden tests can't stay hidden there. Kept only as an offline fallback for JavaScript.
 - **Run code inside Vercel functions:** no real isolation for untrusted code, and no Java or C++ runtime. Rejected.
+
+## As built (AIIN-105)
+
+- `lib/judge/client.ts` is the only code that talks to Judge0: `JUDGE0_URL` and `JUDGE0_KEY`, with RapidAPI's headers for a RapidAPI URL and `X-Auth-Token` otherwise. Moving to our own Judge0 CE (option B) is a change of those two values.
+- One submission per run. `lib/judge/drivers.ts` wraps the candidate's code in a driver per language (JavaScript, Python, Java, C++). The driver calls their function on every test and prints one tagged JSON line per test, which the server compares with the expected output.
+- Tests are written once, in JSON. Java and C++ need types, so the signature is inferred from the reference solution's names and the first test's values. The same signature gives every language's starter code.
+- The interview's Run button also takes TypeScript and C#, because it only shows output.
+- `CodeRun` records language, time, status and user for each run, never the code, and backs the limit of 30 runs a minute.
+- Without Judge0, practice falls back to JavaScript's visible tests in the browser, and the admin's check to JavaScript only. Hidden tests never reach the browser either way.
+- The privacy policy must say candidate code is sent to the judge's provider. That's still to do.

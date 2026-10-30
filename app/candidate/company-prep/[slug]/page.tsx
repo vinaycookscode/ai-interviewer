@@ -8,6 +8,9 @@ import { getCurrentSubscription } from "@/actions/subscription";
 import { FEATURES } from "@/lib/features";
 import { UpgradePrompt } from "@/components/subscription/upgrade-prompt";
 import { formatSalaryRange } from "@/lib/company-prep-format";
+import { testsOf } from "@/lib/problems/server";
+import { JUDGE_LANGUAGES, inferSignature, starterFor } from "@/lib/judge/drivers";
+import { judgeConfigured } from "@/lib/judge/client";
 import { CompanyDetailClient, type CompanyRound, type CompanyGuide } from "./client";
 
 interface PageProps {
@@ -113,9 +116,19 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                 rounds: asRounds(kit.rounds),
                 guide: asGuide(kit.content),
             }}
-            questions={kit.questions.map((q) => ({ ...q, testCases: Array.isArray(q.testCases) ? q.testCases : [] }))}
+            questions={kit.questions.map((q) => {
+                // Hidden tests stay on the server: the page gets the visible ones and a count (AIIN-105)
+                const tests = testsOf(q.testCases);
+                const signature = inferSignature(q.solutionCode || q.starterCode || "", tests);
+                return {
+                    ...q,
+                    testCases: tests.filter((t) => !t.hidden).map((t) => ({ input: t.input, expected: t.expected })),
+                    hiddenCount: tests.filter((t) => t.hidden).length,
+                    starters: signature ? Object.fromEntries(JUDGE_LANGUAGES.map((l) => [l, starterFor(l, signature, q.starterCode)])) : {},
+                };
+            })}
             solvedIds={solved.map((s) => s.questionId)}
-            featureFlags={{ languageSelector, codePersistence, aiCodeAnalysis }}
+            featureFlags={{ languageSelector, codePersistence, aiCodeAnalysis, serverJudge: judgeConfigured() }}
         />
     );
 }

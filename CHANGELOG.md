@@ -4,11 +4,20 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-On `develop`, not yet on `main`. Adds the `ActivityDay` and `DailyChallengeAnswer` tables (migration `daily_challenge`, which carries over every past day a plan task was done), the `UserAchievement` and `Certificate` tables (migration `achievements`), `PlacementProgram.track` with the checkpoint columns on `MockInterview` (migration `plan_checkpoints`, which marks the existing `90-day-placement-bootcamp` as the SDE plan), the `CoachConversation` and `CoachMessage` tables with `SubscriptionPlan.coachMessagesPerDay` (migration `coach`: 10 on Free, 100 on paid plans), problem status, hints and history (migration `admin_problems`: every existing problem stays published), and a data fix for three seeded problems' tests (migration `fix_seed_problem_tests`). **After release, run `npx tsx scripts/award-achievements.ts` once against production** to give existing candidates the badges and certificates they've already earned.
+On `develop`, not yet on `main`. Adds the `ActivityDay` and `DailyChallengeAnswer` tables (migration `daily_challenge`, which carries over every past day a plan task was done), the `UserAchievement` and `Certificate` tables (migration `achievements`), `PlacementProgram.track` with the checkpoint columns on `MockInterview` (migration `plan_checkpoints`, which marks the existing `90-day-placement-bootcamp` as the SDE plan), the `CoachConversation` and `CoachMessage` tables with `SubscriptionPlan.coachMessagesPerDay` (migration `coach`: 10 on Free, 100 on paid plans), problem status, hints and history (migration `admin_problems`: every existing problem stays published), a data fix for three seeded problems' tests (migration `fix_seed_problem_tests`), and the `CodeRun` table (migration `code_runs`). **Needs `JUDGE0_URL` and `JUDGE0_KEY` in Vercel's production environment** for code to run on the server: a hosted Judge0 account (the ADR's option A). Without them, practice falls back to JavaScript in the browser, and the interview's Run button says it can't run code right now. **After release, run `npx tsx scripts/award-achievements.ts` once against production** to give existing candidates the badges and certificates they've already earned.
 
 - **Daily challenge and one streak.** Each day, candidates get one short aptitude or HR question for their role. It's the same for everyone on a role, all IST day. They answer once; U scores it out of 10 with a line of feedback, then shows the model answer. If U is busy, the answer is saved and scored on the next visit. Today shows the challenge in the streak card.
 
   There is now **one streak**, shared by Today, the plan and the challenge: a plan task or the challenge keeps it, and both on one day count once. A paused plan no longer holds the streak; the daily challenge keeps it going instead (AIIN-99).
+
+- **Code runs on the server, in JavaScript, Python, Java and C++.** A Judge0 adapter (`lib/judge/`) runs candidate code: 5 s of CPU, 256 MB, no network, and output cut at 64 KB.
+  - **Company prep:** every language checks against the tests, hidden ones included. The page never receives hidden tests, and results show them only as passed or not. Starter code in each language matches what the tests call. Submitted solutions are re-checked on the server, so the browser's counts no longer count.
+  - **Live interviews:** the Run button works in JavaScript, TypeScript, Python, Java, C++ and C#. It's only for the candidate's own interview while it's in progress. This replaces the old call to the public Piston service, which had no login check and may already have stopped working.
+  - **Admins:** "Check solution" runs a reference solution written in any of the four languages.
+  - **Limits and logs:** 30 runs a minute per person; each run logs language, time and status, never the code.
+  - **Without the judge:** JavaScript runs its visible tests in the browser.
+  
+  TypeScript is no longer offered in company prep: it never ran there. Decision: [ADR](docs/architecture/2026-10-30-code-execution-hosting.md), now accepted (AIIN-105).
 
 - **The admin console is in Soft Glass.** Each screen follows its approved design:
   - **Frame:** a header with the section pill, the AI model picker, Leave admin and the theme switch.

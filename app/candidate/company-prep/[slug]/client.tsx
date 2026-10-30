@@ -36,7 +36,7 @@ interface CompanyDetailClientProps {
     };
     questions: SolverQuestion[];
     solvedIds: string[];
-    featureFlags: { languageSelector: boolean; codePersistence: boolean; aiCodeAnalysis: boolean };
+    featureFlags: { languageSelector: boolean; codePersistence: boolean; aiCodeAnalysis: boolean; serverJudge: boolean };
 }
 
 const TYPES = ["CODING", "APTITUDE", "HR", "GD"] as const;

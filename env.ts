@@ -11,6 +11,9 @@ export const env = createEnv({
         APP_URL: z.string().url().default("http://localhost:3000"),
         // Vercel Cron sends it as a bearer token; the cron routes refuse requests without it (AIIN-103)
         CRON_SECRET: z.string().min(16).optional(),
+        // The code judge (AIIN-105): Judge0's API, hosted or our own. Without it, code runs only in the browser, in JavaScript
+        JUDGE0_URL: z.string().url().optional(),
+        JUDGE0_KEY: z.string().min(1).optional(),
     },
     client: {
         // NEXT_PUBLIC_CLIENT_VAR: z.string(),
@@ -23,5 +26,7 @@ export const env = createEnv({
         RESEND_API_KEY: process.env.RESEND_API_KEY,
         APP_URL: process.env.APP_URL,
         CRON_SECRET: process.env.CRON_SECRET,
+        JUDGE0_URL: process.env.JUDGE0_URL,
+        JUDGE0_KEY: process.env.JUDGE0_KEY,
     },
 });

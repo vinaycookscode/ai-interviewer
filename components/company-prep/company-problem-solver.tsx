@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, CheckCircle2, Loader2, Play, RotateCcw, Sparkles, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, MinusCircle, Play, RotateCcw, Sparkles, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { saveUserSolution, getUserSolution, analyzeSolution, type CodeAnalysis } from "@/actions/company-prep";
 import { AmbientLight } from "@/components/soft-glass/ambient-light";
@@ -13,6 +13,7 @@ import { ThemeSwitch } from "@/components/soft-glass/theme-switch";
 import { coralButton, focusRing } from "@/components/soft-glass/classes";
 import { field, glassButton, inkButton, outlineButton } from "@/components/jobs/employer-ui";
 import { canRunTests } from "@/lib/code-languages";
+import { runProblemTests } from "@/actions/code-execution";
 import { asError, callSource, judge, parseInput, type TestCase, type TestRun } from "@/lib/problems/run-js";
 import { cn } from "@/lib/utils";
 
@@ -38,17 +39,21 @@ export interface SolverQuestion {
     language: string | null;
     /** Up to 3, written in the admin console (AIIN-107). */
     hints: string[];
+    /** Starter code per language, matching what the tests call (AIIN-105). */
+    starters: Partial<Record<string, string>>;
+    /** Hidden tests run on the server only: the page gets their number, never their content. */
+    hiddenCount: number;
 }
 
 interface CompanyProblemSolverProps {
     question: SolverQuestion;
     companyName: string;
     onClose: () => void;
-    featureFlags?: { languageSelector: boolean; codePersistence: boolean; aiCodeAnalysis: boolean };
+    featureFlags?: { languageSelector: boolean; codePersistence: boolean; aiCodeAnalysis: boolean; serverJudge?: boolean };
 }
 
 interface TestResult {
-    passed: boolean;
+    status: "passed" | "failed" | "error" | "timeLimit" | "notRun";
     /** A hidden test says whether it passed, not what it is (AIIN-107). */
     hidden: boolean;
     input: string;
@@ -58,7 +63,6 @@ interface TestResult {
 
 const LANGUAGES = [
     { id: "javascript", name: "JavaScript" },
-    { id: "typescript", name: "TypeScript" },
     { id: "python", name: "Python" },
     { id: "java", name: "Java" },
     { id: "cpp", name: "C++" },
@@ -73,6 +77,7 @@ const chip = "inline-flex h-7 items-center rounded-full bg-sg-chip px-2.5 text-s
 const asText = (v: unknown) => (typeof v === "string" ? v : JSON.stringify(v));
 
 function starterCode(q: SolverQuestion, lang: string): string {
+    if (q.starters[lang]) return q.starters[lang];
     if (lang === "javascript" && q.starterCode) return q.starterCode;
     const header = (c: string) => `${c} ${q.question}\n`;
     switch (lang) {
@@ -155,13 +160,16 @@ export function CompanyProblemSolver({
     const [language, setLanguage] = useState<string>("javascript");
     const [code, setCode] = useState(() => starterCode(question, "javascript"));
     const [results, setResults] = useState<TestResult[] | null>(null);
+    const [runNote, setRunNote] = useState<string | null>(null);
     const [testedCode, setTestedCode] = useState<string | null>(null);
     const [analysis, setAnalysis] = useState<CodeAnalysis | null>(null);
     const [busy, setBusy] = useState<"run" | "review" | "submit" | null>(null);
 
     const testCases = question.testCases.filter((tc): tc is TestCase => !!tc && typeof tc === "object" && "input" in tc && "expected" in tc);
-    const runnable = canRunTests(language);
-    const canRun = runnable && testCases.length > 0;
+    // On the judge every language runs, hidden tests included; without it, JavaScript runs the visible tests here
+    const serverJudge = featureFlags.serverJudge === true;
+    const runnable = serverJudge || canRunTests(language);
+    const canRun = runnable && testCases.length + (serverJudge ? question.hiddenCount : 0) > 0;
     const starter = starterCode(question, language);
     const storageKey = `company-prep-code-${question.id}-${language}`;
     const languageName = LANGUAGES.find((l) => l.id === language)?.name ?? language;
@@ -214,14 +222,42 @@ export function CompanyProblemSolver({
         setAnalysis(null);
     };
 
-    const run = () => {
+    const runHere = () =>
+        testCases.map((tc): TestResult => {
+            const result = executeCode(code, tc);
+            return { status: result.passed ? "passed" : "failed", hidden: false, input: asText(tc.input), expected: asText(tc.expected), output: result.output };
+        });
+
+    const run = async () => {
         setBusy("run");
-        setResults(
-            testCases.map((tc) => {
-                const result = executeCode(code, tc);
-                return { passed: result.passed, hidden: tc.hidden === true, input: asText(tc.input), expected: asText(tc.expected), output: result.output };
-            })
-        );
+        setRunNote(null);
+        if (!serverJudge) {
+            setResults(runHere());
+        } else {
+            const result = await runProblemTests(question.id, language, code).catch(() => ({ error: "unavailable" as const }));
+            if (result.error || !result.cases) {
+                // The judge is down: JavaScript can still run its visible tests here
+                if (result.error === "unavailable" && canRunTests(language) && testCases.length) {
+                    setResults(runHere());
+                    setRunNote(t("solver.ranHere"));
+                } else {
+                    setResults(null);
+                    setRunNote(t(`solver.runErrors.${result.error ?? "unavailable"}`));
+                }
+            } else {
+                const visible = testCases;
+                let v = 0;
+                setResults(
+                    result.cases.map((c) => {
+                        if (c.hidden) return { status: c.status, hidden: true, input: "", expected: "", output: "" };
+                        const tc = visible[v++];
+                        return { status: c.status, hidden: false, input: tc ? asText(tc.input) : "", expected: c.expected ?? "", output: c.output ?? "" };
+                    })
+                );
+                if (result.status === "compileError") setRunNote(t("solver.compileError", { message: result.message.slice(0, 2000) }));
+                else if (result.status === "timeLimit") setRunNote(t("solver.timeLimitNote"));
+            }
+        }
         setTestedCode(code);
         setBusy(null);
     };
@@ -246,7 +282,8 @@ export function CompanyProblemSolver({
         }
         setBusy("submit");
         // Only results from running this exact code count; languages that can't run save no test counts (AIIN-149)
-        const passed = canRun && results && testedCode === code ? results.filter((r) => r.passed).length : 0;
+        // On the judge the server runs the tests again and keeps its own counts (AIIN-105)
+        const passed = canRun && results && testedCode === code ? results.filter((r) => r.status === "passed").length : 0;
         const total = canRun ? testCases.length : 0;
         const result = await saveUserSolution(question.id, code, language, passed, total).catch(() => null);
         if (result?.success) toast.success(t("solver.submitted"));
@@ -254,7 +291,8 @@ export function CompanyProblemSolver({
         setBusy(null);
     };
 
-    const passedCount = results?.filter((r) => r.passed).length ?? 0;
+    const passedCount = results?.filter((r) => r.status === "passed").length ?? 0;
+    const statusWord = (r: TestResult) => t(`solver.statuses.${r.status}`);
     const allPassed = results !== null && passedCount === results.length;
 
     return (
@@ -388,10 +426,15 @@ export function CompanyProblemSolver({
 
                         {!runnable ? (
                             <p className="text-sg-muted">{t("solver.noRun", { language: languageName })}</p>
-                        ) : testCases.length === 0 ? (
+                        ) : !canRun ? (
                             <p className="text-sg-muted">{t("solver.noTests")}</p>
                         ) : (
-                            !results && <p className="text-sg-muted">{t("solver.runHint", { count: testCases.length })}</p>
+                            !results && !runNote && <p className="text-sg-muted">{t("solver.runHint", { count: testCases.length + (serverJudge ? question.hiddenCount : 0) })}</p>
+                        )}
+                        {runNote && (
+                            <p role="status" className="rounded-[18px] bg-sg-row px-4 py-3 text-sm whitespace-pre-wrap [overflow-wrap:anywhere]">
+                                {runNote}
+                            </p>
                         )}
 
                         {canRun && results && (
@@ -407,20 +450,20 @@ export function CompanyProblemSolver({
                                 <ul className="flex flex-col gap-2">
                                     {results.map((r, i) => (
                                         <li key={i} className="flex items-start gap-3 rounded-[18px] bg-sg-row px-4 py-3">
-                                            {r.passed ? (
+                                            {r.status === "passed" ? (
                                                 <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-sg-success" aria-hidden="true" />
+                                            ) : r.status === "notRun" ? (
+                                                <MinusCircle className="mt-0.5 size-4 shrink-0 text-sg-muted" aria-hidden="true" />
                                             ) : (
                                                 <XCircle className="mt-0.5 size-4 shrink-0 text-sg-danger" aria-hidden="true" />
                                             )}
                                             <span className="flex min-w-0 flex-col">
                                                 <span className="font-semibold">
-                                                    {r.hidden
-                                                        ? t("solver.hiddenTest", { n: i + 1, result: r.passed ? t("solver.passed") : t("solver.failed") })
-                                                        : t("solver.test", { n: i + 1, result: r.passed ? t("solver.passed") : t("solver.failed") })}
+                                                    {r.hidden ? t("solver.hiddenTest", { n: i + 1, result: statusWord(r) }) : t("solver.test", { n: i + 1, result: statusWord(r) })}
                                                 </span>
-                                                {!r.hidden && (
+                                                {!r.hidden && r.status !== "notRun" && (
                                                     <span className="font-mono text-[13px] leading-[18px] text-sg-muted [overflow-wrap:anywhere]">
-                                                        {r.passed
+                                                        {r.status === "passed" || r.status === "timeLimit"
                                                             ? t("solver.expected", { input: r.input, expected: r.expected })
                                                             : t("solver.got", { input: r.input, expected: r.expected, output: r.output })}
                                                     </span>

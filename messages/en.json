@@ -1637,7 +1637,7 @@
             "submitted": "Submitted. Your solution is saved.",
             "submitFailed": "Couldn’t save your solution. Try again.",
             "writeFirst": "Write some code first.",
-            "noRun": "Tests run in your browser for JavaScript and TypeScript. For {language}, ask U to review your code instead.",
+            "noRun": "The checker is offline, so tests run in your browser for JavaScript only. For {language}, ask U to review your code instead.",
             "noTests": "This question has no tests yet. Ask U to review your code instead.",
             "runHint": "Run the tests to check your code against {count, plural, one {# example} other {# examples}}.",
             "summary": "{passed} of {total} tests passed",
@@ -1655,7 +1655,26 @@
             "optimal": "This is already an optimal approach.",
             "improve": "To improve",
             "hintN": "Hint {n}",
-            "hiddenTest": "Test {n} · hidden · {result}"
+            "hiddenTest": "Test {n} · hidden · {result}",
+            "statuses": {
+                "passed": "passed",
+                "failed": "failed",
+                "error": "error",
+                "timeLimit": "time limit",
+                "notRun": "not run"
+            },
+            "ranHere": "The checker couldn’t be reached, so the visible tests ran in your browser. Hidden tests run when it’s back.",
+            "compileError": "Your code didn’t compile:\n{message}",
+            "timeLimitNote": "Stopped at the 5-second limit. Look for a loop that never ends, or a slow approach.",
+            "runErrors": {
+                "unauthorized": "Sign in again to run your code.",
+                "notFound": "This problem isn’t available to run.",
+                "language": "Tests run in JavaScript, Python, Java and C++.",
+                "size": "Write some code first (up to 50,000 characters).",
+                "rateLimited": "That’s 30 runs this minute. Wait a moment, then run the tests again.",
+                "unavailable": "Couldn’t run the tests right now. Try again in a moment.",
+                "noTests": "This question has no tests yet."
+            }
         }
     },
     "Flashcards": {
@@ -2557,7 +2576,7 @@
             "answerHint": "Shown after a candidate answers, and used to score the daily challenge",
             "starter": "Starter code",
             "testsTitle": "Test cases",
-            "testsNote": "Candidates see whether hidden tests pass, not their input or expected output.",
+            "testsNote": "Hidden tests run only on the server: candidates see whether they pass, never what they are.",
             "input": "Input for test {n}",
             "expected": "Expected output for test {n}",
             "inputPlaceholder": "Input",
@@ -2580,12 +2599,12 @@
             "checkTitle": "Check the solution",
             "checkBody": "Runs the reference solution against every test. You can publish only when all pass.",
             "solution": "Reference solution",
-            "language": "Checked in JavaScript. Other languages come with code running on the server.",
+            "language": "Language",
             "check": "Check solution",
             "checking": "Checking…",
             "checkSavesFirst": "Saves your changes first.",
             "allPassed": "All {count} tests passed",
-            "passedMeta": "JavaScript · {ms} ms",
+            "passedMeta": "{language} · {ms} ms",
             "failedTitle": "Test {n} failed",
             "failedHidden": "Test {n} failed (hidden)",
             "failedBody": "expected {expected}, got {output}. Fix the solution or the test, then check again.",
@@ -2614,7 +2633,15 @@
                 "noTests": "Add at least one test.",
                 "unchecked": "Check the solution first: it must pass every test.",
                 "failsCheck": "Not saved: test {n} fails with these changes, and published problems must pass. Expected {expected}, got {output}.",
-                "failed": "Something went wrong. Try again."
+                "failed": "Something went wrong. Try again.",
+                "judgeUnavailable": "The checker isn’t available right now, and only JavaScript can be checked without it. Try again later."
+            },
+            "languageNote": "Checked on the judge, in the language below. Candidates can answer in any of the four.",
+            "languages": {
+                "javascript": "JavaScript",
+                "python": "Python",
+                "java": "Java",
+                "cpp": "C++"
             }
         }
     }

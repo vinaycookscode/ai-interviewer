@@ -61,6 +61,7 @@ Set them in the Vercel dashboard, scoped per environment. The full table, with p
 | AI | `GEMINI_API_KEY` |
 | Email | `RESEND_API_KEY`, `RESEND_FROM_EMAIL` |
 | Scheduled jobs | `CRON_SECRET`: Vercel Cron sends it to `/api/cron/weekly-report` (AIIN-103) |
+| Code judge | `JUDGE0_URL`, `JUDGE0_KEY`: hosted Judge0 runs candidates' code (AIIN-105) |
 | Storage | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL` |
 | Payments | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` (test-mode keys on Preview) |
 | URLs | `NEXT_PUBLIC_APP_URL`, `APP_URL` (optional) |

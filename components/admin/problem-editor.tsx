@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import ReactMarkdown from "react-markdown";
 import { AlertCircle, Archive, ArrowDown, ArrowLeft, ArrowUp, Check, Eye, EyeOff, Loader2, Plus, RotateCcw, Trash2, X } from "lucide-react";
 import { archiveProblem, checkProblem, publishProblem, restoreProblem, saveProblem, type FailedTest } from "@/actions/admin-problems";
-import { DIFFICULTIES, LIMITS, PROBLEM_TYPES, type ProblemDraft, type ProblemTest } from "@/lib/problems/rules";
+import { DIFFICULTIES, LIMITS, PROBLEM_TYPES, SOLUTION_LANGUAGES, type ProblemDraft, type ProblemTest } from "@/lib/problems/rules";
 import { StatusChip } from "@/components/admin/problem-status";
 import { coralButton, fieldInput, focusRing } from "@/components/soft-glass/classes";
 import { iconButton, inkButton, label, outlineButton, panel, panelTitle, row } from "@/components/jobs/employer-ui";
@@ -404,8 +404,20 @@ export function ProblemEditor({ id, initial, status, checked, kits, history }: P
                                 </label>
                                 <textarea id="pe-solution" rows={9} value={draft.solutionCode} maxLength={LIMITS.code} onChange={(ev) => set("solutionCode", ev.target.value)} spellCheck={false} aria-describedby="pe-language" className={cn(area, mono)} />
                                 <span id="pe-language" className="text-[13px] text-sg-muted">
-                                    {e("language")}
+                                    {e("languageNote")}
                                 </span>
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <label htmlFor="pe-lang" className={fieldLabel}>
+                                    {e("language")}
+                                </label>
+                                <select id="pe-lang" value={draft.language} onChange={(ev) => set("language", ev.target.value)} className={selectField}>
+                                    {SOLUTION_LANGUAGES.map((l) => (
+                                        <option key={l} value={l}>
+                                            {e(`languages.${l}`)}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                             <button type="button" onClick={onCheck} disabled={busy !== null} aria-describedby={dirty ? "check-saves" : undefined} className={cn(inkButton, "h-12 self-start px-6")}>
                                 {busy === "check" && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
@@ -421,7 +433,7 @@ export function ProblemEditor({ id, initial, status, checked, kits, history }: P
                                     <p role="status" className={cn(row, "flex flex-wrap items-center gap-2")}>
                                         <Check className="size-[18px] shrink-0" aria-hidden="true" />
                                         <strong>{e("allPassed", { count: check.results.length })}</strong>
-                                        <span className="text-sg-muted">· {e("passedMeta", { ms: check.ms })}</span>
+                                        <span className="text-sg-muted">· {e("passedMeta", { language: e(`languages.${saved.language}`), ms: check.ms })}</span>
                                     </p>
                                 ) : (
                                     check.failed && (

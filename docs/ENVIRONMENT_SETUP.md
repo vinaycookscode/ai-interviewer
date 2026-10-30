@@ -55,6 +55,7 @@ The build refuses to run migrations against the production endpoint unless Verce
 | `RESEND_API_KEY`, `RESEND_FROM_EMAIL` | ✅ | ✅ | Invitation and notification emails |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL` | ✅ | ✅ | File storage (resumes, documents, offer letters) |
 | `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` | live keys | **test-mode** keys (`rzp_test_…`) | Checkout and the payment webhook |
+| `JUDGE0_URL`, `JUDGE0_KEY` | ✅ | optional | The code judge (AIIN-105): Judge0's API URL and key. A RapidAPI URL gets RapidAPI's headers; any other gets `X-Auth-Token`. Without it, practice runs JavaScript's visible tests in the browser, interviews can't run code, and admins can check JavaScript only. See the [ADR](architecture/2026-10-30-code-execution-hosting.md) |
 | `DAY_TOKEN_SECRET` | optional | optional | Signs placement-programme day links; falls back to `AUTH_SECRET` |
 
 Sign-in is email and password only. No OAuth provider is configured, so `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` aren't needed until Google sign-in is added (AIIN-54).

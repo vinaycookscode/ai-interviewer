@@ -8,8 +8,8 @@ export type ProblemStatus = (typeof STATUSES)[number];
 
 export const LIMITS = { title: 200, statement: 20000, code: 20000, answer: 5000, tests: 50, testField: 2000, hints: 3, hint: 300, tags: 10, tag: 40 };
 
-/** Until code runs on the server for every language (AIIN-105), problems are checked in JavaScript. */
-export const CHECK_LANGUAGE = "javascript";
+/** The languages a reference solution can be written and checked in (AIIN-105). */
+export const SOLUTION_LANGUAGES = ["javascript", "python", "java", "cpp"] as const;
 
 export interface ProblemTest {
     input: string;
@@ -27,6 +27,8 @@ export interface ProblemDraft {
     roles: string[];
     starterCode: string;
     solutionCode: string;
+    /** The reference solution's language. */
+    language: string;
     answer: string;
     tests: ProblemTest[];
     hints: string[];
@@ -49,6 +51,7 @@ export function normalizeDraft(raw: Partial<ProblemDraft>): ProblemDraft {
         roles: clean(list(raw.roles), LIMITS.tags, 80),
         starterCode: text(raw.starterCode),
         solutionCode: text(raw.solutionCode),
+        language: (SOLUTION_LANGUAGES as readonly string[]).includes(text(raw.language)) ? text(raw.language) : "javascript",
         answer: text(raw.answer).trim(),
         tests: (Array.isArray(raw.tests) ? raw.tests : [])
             .filter((t): t is ProblemTest => !!t && typeof t === "object")
@@ -94,8 +97,8 @@ export function publishBlocks(d: ProblemDraft, checkedHash: string | null, curre
 }
 
 /** The part of a problem the check covers: change any of it and it must be checked again. */
-export const checkedContent = (d: Pick<ProblemDraft, "solutionCode" | "tests">) =>
-    JSON.stringify({ language: CHECK_LANGUAGE, solution: d.solutionCode, tests: d.tests.map((t) => [t.input, t.expected]) });
+export const checkedContent = (d: Pick<ProblemDraft, "solutionCode" | "tests" | "language">) =>
+    JSON.stringify({ language: d.language, solution: d.solutionCode, tests: d.tests.map((t) => [t.input, t.expected]) });
 
 export function testCounts(tests: { hidden?: boolean }[]) {
     const hidden = tests.filter((t) => t.hidden).length;
@@ -117,6 +120,7 @@ export function describeChanges(before: ProblemDraft, after: ProblemDraft, names
     if (!same(before.tags, after.tags) || !same(before.roles, after.roles)) parts.push("changed the tags or roles");
     if (before.starterCode !== after.starterCode) parts.push("edited the starter code");
     if (before.solutionCode !== after.solutionCode) parts.push("edited the solution");
+    if (before.language !== after.language) parts.push(`wrote the solution in ${after.language}`);
     if (before.answer !== after.answer) parts.push("edited the model answer");
 
     const key = (t: ProblemTest) => `${t.input}\u0000${t.expected}\u0000${t.hidden}`;

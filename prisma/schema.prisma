@@ -116,6 +116,7 @@ model User {
   challengeAnswers   DailyChallengeAnswer[]
   achievements       UserAchievement[]
   coachConversations CoachConversation[]
+  codeRuns           CodeRun[]
   certificates       Certificate[]
   
   // Subscription
@@ -203,6 +204,20 @@ model CoachMessage {
   createdAt      DateTime          @default(now())
 
   @@index([conversationId, createdAt])
+}
+
+// One run of someone's code on the judge (AIIN-105): for the rate limit and the logs. Never the code itself.
+model CodeRun {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind       String   // practice, interview, check
+  language   String
+  status     String
+  durationMs Int
+  createdAt  DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 model WeeklyReport {
