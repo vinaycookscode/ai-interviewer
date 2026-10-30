@@ -75,6 +75,11 @@ export async function getSubscriptionStats() {
         },
     });
 
+    const todayRevenue = await db.payment.aggregate({
+        where: { createdAt: { gte: startOfToday }, status: "captured" },
+        _sum: { amount: true },
+    });
+
     // This month's revenue
     const monthRevenue = await db.payment.aggregate({
         where: {
@@ -95,6 +100,7 @@ export async function getSubscriptionStats() {
         proSubscribers: planCounts.PRO,
         premiumSubscribers: planCounts.PREMIUM,
         todayPurchases,
+        todayRevenue: toRupees(todayRevenue._sum.amount || 0),
         monthRevenue: toRupees(monthRevenue._sum.amount || 0),
         totalRevenue: toRupees(totalRevenue._sum.amount || 0),
     };
@@ -149,13 +155,20 @@ export async function getTodaySubscribers() {
 }
 
 // Get all subscribers with pagination
-export async function getAllSubscribers(page = 1, limit = 20) {
+export async function getAllSubscribers(page = 1, limit = 20, search = "", status?: "ACTIVE" | "PAST_DUE" | "CANCELLED" | "EXPIRED") {
     await checkAdminAccess();
 
     const skip = (page - 1) * limit;
+    const where = {
+        ...(status ? { status } : {}),
+        ...(search
+            ? { user: { OR: [{ name: { contains: search, mode: "insensitive" as const } }, { email: { contains: search, mode: "insensitive" as const } }] } }
+            : {}),
+    };
 
     const [subscriptions, total] = await Promise.all([
         db.subscription.findMany({
+            where,
             include: {
                 user: {
                     select: { id: true, name: true, email: true, image: true },
@@ -170,7 +183,7 @@ export async function getAllSubscribers(page = 1, limit = 20) {
             skip,
             take: limit,
         }),
-        db.subscription.count(),
+        db.subscription.count({ where }),
     ]);
 
     const subscribers = subscriptions.map(sub => {
@@ -247,6 +260,13 @@ export async function updateSubscriptionPlan(
     }
 ) {
     await checkAdminAccess();
+
+    // Whole numbers only: prices in paise from 0, limits from -1 (unlimited) (AIIN-138)
+    const { name, ...numbers } = data;
+    const bad = Object.entries(numbers).some(([key, value]) =>
+        typeof value === "boolean" ? false : value !== undefined && (!Number.isInteger(value) || value < (key.endsWith("Price") ? 0 : -1))
+    );
+    if (bad || (name !== undefined && !name.trim())) return { success: false, error: "Invalid plan values" };
 
     try {
         const updated = await db.subscriptionPlan.update({

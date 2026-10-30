@@ -4,7 +4,6 @@ import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { PROBLEM_SELECT, contentHash, toDraft } from "@/lib/problems/server";
-import { AdminGlass } from "@/components/admin/admin-glass";
 import { ProblemEditor } from "@/components/admin/problem-editor";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -36,8 +35,7 @@ export default async function AdminProblemPage({ params }: { params: Promise<{ i
     const draft = toDraft(problem);
 
     return (
-        <AdminGlass>
-            <ProblemEditor
+        <ProblemEditor
                 key={id}
                 id={id}
                 initial={draft}
@@ -46,6 +44,5 @@ export default async function AdminProblemPage({ params }: { params: Promise<{ i
                 kits={kits}
                 history={problem.changes.map((c) => ({ id: c.id, who: c.authorName, what: c.summary, when: `${when.format(c.createdAt)} IST` }))}
             />
-        </AdminGlass>
     );
 }

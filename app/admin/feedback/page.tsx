@@ -1,50 +1,48 @@
-import { auth } from "@/auth";
-import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
+import { db } from "@/lib/db";
 import { getUserFeedbackList } from "@/actions/user-feedback";
+import { AdminHeading } from "@/components/admin/admin-ui";
 import { FeedbackListClient } from "./client";
-import { Suspense } from "react";
-import { Loader2 } from "lucide-react";
 
-interface PageProps {
-    searchParams: Promise<{ page?: string; status?: string }>;
+export async function generateMetadata(): Promise<Metadata> {
+    const t = await getTranslations("Admin.feedback");
+    return { title: t("metaTitle") };
 }
 
-export default async function AdminFeedbackPage({ searchParams }: PageProps) {
-    const session = await auth();
-    const t = await getTranslations("Feedback.admin");
+const STATUSES = ["NEW", "REVIEWED", "RESOLVED", "DISMISSED"] as const;
+const when = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" });
 
-    if (!session?.user || session.user.role !== "ADMIN") {
-        redirect("/auth/login");
-    }
-
+/** Feedback from the feedback button, by status (AIIN-138). getUserFeedbackList checks for an admin. */
+export default async function AdminFeedbackPage({ searchParams }: { searchParams: Promise<{ page?: string; status?: string }> }) {
+    const t = await getTranslations("Admin.feedback");
     const params = await searchParams;
-    const page = parseInt(params.page || "1");
-    const status = params.status || "ALL";
-
-    const { feedback, totalPages, total } = await getUserFeedbackList(page, 20, status);
+    const status = STATUSES.find((s) => s === params.status) ?? "ALL";
+    const page = Math.max(1, Number(params.page) || 1);
+    const [{ feedback, totalPages }, counts] = await Promise.all([
+        getUserFeedbackList(page, 20, status),
+        db.feedback.groupBy({ by: ["status"], _count: { _all: true } }),
+    ]);
+    const count = (s: string) => counts.find((c) => c.status === s)?._count._all ?? 0;
 
     return (
-        <div className="space-y-6">
-            <div>
-                <h2 className="text-3xl font-bold tracking-tight">{t("title")}</h2>
-                <p className="text-muted-foreground">
-                    {t("subtitle")} ({total} {t("total")})
-                </p>
-            </div>
-
-            <Suspense fallback={
-                <div className="flex items-center justify-center p-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary opacity-20" />
-                </div>
-            }>
-                <FeedbackListClient
-                    feedback={feedback}
-                    totalPages={totalPages}
-                    currentPage={page}
-                    currentStatus={status}
-                />
-            </Suspense>
-        </div>
+        <>
+            <AdminHeading title={t("title")} description={t("description")} />
+            <FeedbackListClient
+                items={feedback.map((f) => ({
+                    id: f.id,
+                    who: f.userName || f.userEmail || null,
+                    content: f.content,
+                    page: f.page,
+                    category: f.category,
+                    status: f.status,
+                    when: when.format(f.createdAt),
+                }))}
+                filters={["ALL", ...STATUSES].map((s) => ({ status: s, count: s === "ALL" ? counts.reduce((sum, c) => sum + c._count._all, 0) : count(s) }))}
+                status={status}
+                page={page}
+                pages={Math.max(1, totalPages)}
+            />
+        </>
     );
 }

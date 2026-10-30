@@ -1,111 +1,83 @@
-import { getVisitorLocationStats, getTotalVisitors } from "@/actions/location";
-import { LocationMap } from "@/components/admin/location-map";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
-import { Globe, MapPin, Eye } from "lucide-react";
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
+import { getTotalVisitors, getVisitorLocationStats } from "@/actions/location";
+import { AdminHeading, StatTile, statGrid, td, th, tr } from "@/components/admin/admin-ui";
+import { panel, panelTitle } from "@/components/jobs/employer-ui";
+import { cn } from "@/lib/utils";
 
-export default async function LocationsPage() {
-    const [locationStats, totals] = await Promise.all([
-        getVisitorLocationStats(),
-        getTotalVisitors(),
-    ]);
+export async function generateMetadata(): Promise<Metadata> {
+    const t = await getTranslations("Admin.visitors");
+    return { title: t("metaTitle") };
+}
+
+const TOP = 10;
+
+/** Where visits come from (AIIN-138). Both actions check for an admin. */
+export default async function AdminVisitorsPage() {
+    const t = await getTranslations("Admin.visitors");
+    const [stats, totals] = await Promise.all([getVisitorLocationStats(), getTotalVisitors()]);
+    const total = totals.totalVisits;
+    const share = (count: number) => (total > 0 ? Math.round((count / total) * 1000) / 10 : 0);
+    const top = stats.slice(0, TOP);
+    const rest = stats.slice(TOP);
+    const restCount = rest.reduce((sum, s) => sum + s.count, 0);
+    const rows = [
+        ...top.map((s, i) => ({ key: s.countryCode, rank: String(i + 1), country: s.country, code: s.countryCode, count: s.count })),
+        ...(rest.length ? [{ key: "other", rank: String(TOP + 1), country: t("other", { count: rest.length }), code: "—", count: restCount }] : []),
+    ];
+    const n = (v: number) => v.toLocaleString("en-IN");
 
     return (
-        <div className="space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Visitor Locations</h1>
-                <p className="text-muted-foreground mt-2">
-                    Geographic distribution of all visitors to your site.
-                </p>
-            </div>
-
-            {/* Stats Cards */}
-            <div className="grid gap-4 md:grid-cols-3">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Visits</CardTitle>
-                        <Eye className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{totals.totalVisits}</div>
-                        <p className="text-xs text-muted-foreground">
-                            From all countries
-                        </p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Countries</CardTitle>
-                        <Globe className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{totals.uniqueCountries}</div>
-                        <p className="text-xs text-muted-foreground">
-                            Unique countries
-                        </p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Top Country</CardTitle>
-                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">
-                            {locationStats[0]?.country || "N/A"}
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                            {locationStats[0]?.count || 0} visits
-                        </p>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Map Visualization */}
-            <LocationMap locationStats={locationStats} />
-
-            {/* Top Countries Table */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Top Countries</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Rank</TableHead>
-                                <TableHead>Country</TableHead>
-                                <TableHead>Code</TableHead>
-                                <TableHead className="text-right">Percentage</TableHead>
-                                <TableHead className="text-right">Visits</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {locationStats.slice(0, 10).map((stat, index) => (
-                                <TableRow key={stat.countryCode}>
-                                    <TableCell className="font-medium">{index + 1}</TableCell>
-                                    <TableCell>{stat.country}</TableCell>
-                                    <TableCell className="font-mono text-xs">{stat.countryCode}</TableCell>
-                                    <TableCell className="text-right">
-                                        {totals.totalVisits > 0
-                                            ? Math.round((stat.count / totals.totalVisits) * 100)
-                                            : 0}%
-                                    </TableCell>
-                                    <TableCell className="text-right">{stat.count}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-
-                    </Table>
-                </CardContent>
-            </Card>
-        </div>
+        <>
+            <AdminHeading title={t("title")} description={t("description")} />
+            <ul className={statGrid}>
+                <StatTile value={n(total)} label={t("visits")} note={t("visitsNote")} />
+                <StatTile value={n(totals.uniqueCountries)} label={t("countries")} note={t("countriesNote")} />
+                <StatTile value={stats[0]?.country ?? "—"} label={t("top")} note={stats[0] ? t("topNote", { share: share(stats[0].count) }) : t("none")} />
+            </ul>
+            <section aria-labelledby="top-title" className={panel}>
+                <h2 id="top-title" className={panelTitle}>
+                    {t("topTitle")}
+                </h2>
+                {rows.length === 0 ? (
+                    <p className="text-sg-muted">{t("empty")}</p>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full min-w-[560px] border-collapse text-[15px]">
+                            <caption className="sr-only">{t("caption")}</caption>
+                            <thead>
+                                <tr>
+                                    <th scope="col" className={th}>{t("rank")}</th>
+                                    <th scope="col" className={th}>{t("country")}</th>
+                                    <th scope="col" className={th}>{t("code")}</th>
+                                    <th scope="col" className={th}>{t("share")}</th>
+                                    <th scope="col" className={cn(th, "text-right")}>{t("colVisits")}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {rows.map((r) => (
+                                    <tr key={r.key} className={tr}>
+                                        <th scope="row" className={cn(td, "font-semibold text-sg-muted")}>{r.rank}</th>
+                                        <td className={td}>{r.country}</td>
+                                        <td className={td}>
+                                            <code className="font-mono text-[13px]">{r.code}</code>
+                                        </td>
+                                        <td className={td}>
+                                            <span className="flex items-center gap-2.5">
+                                                <span aria-hidden="true" className="h-2 w-[min(160px,30vw)] overflow-hidden rounded-full bg-sg-track">
+                                                    <span className="block h-full rounded-full bg-sg-lavender-ink" style={{ width: `${share(r.count)}%` }} />
+                                                </span>
+                                                <span className="text-sm font-semibold tabular-nums">{share(r.count)}%</span>
+                                            </span>
+                                        </td>
+                                        <td className={cn(td, "text-right font-bold tabular-nums")}>{n(r.count)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </section>
+        </>
     );
 }

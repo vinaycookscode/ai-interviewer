@@ -1,139 +1,137 @@
 "use client";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Clock, CheckCircle, AlertCircle } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { AlertCircle, Ban, Check, Clock, Search } from "lucide-react";
+import { chip, filterPill, td, th, tr } from "@/components/admin/admin-ui";
+import { fieldInput, focusRing } from "@/components/soft-glass/classes";
+import { outlineButton, panel, panelTitle } from "@/components/jobs/employer-ui";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
-interface Subscriber {
+interface SubscriberRow {
     id: string;
-    user: {
-        id: string;
-        name: string | null;
-        email: string | null;
-        image: string | null;
-    };
+    name: string | null;
+    email: string | null;
     plan: string;
-    tier: string;
-    billingPeriod: string;
-    status?: string;
-    daysRemaining: number;
-    currentPeriodEnd: Date;
-    amount?: number;
-    totalPaid?: number;
-    createdAt: Date;
+    billing: string;
+    status: string;
+    left: number | null;
+    amount: string;
+    since: string;
 }
 
-interface SubscribersTableProps {
-    subscribers: Subscriber[];
-    showDaysRemaining?: boolean;
-    showStatus?: boolean;
-}
+const STATUSES = ["all", "ACTIVE", "PAST_DUE", "CANCELLED", "EXPIRED"] as const;
+const ICONS = { ACTIVE: Check, PAST_DUE: AlertCircle, CANCELLED: Ban, EXPIRED: Clock } as const;
 
-export function SubscribersTable({ subscribers, showDaysRemaining, showStatus }: SubscribersTableProps) {
-    const t = useTranslations("Admin.subscriptions.table");
-    const tCommon = useTranslations("Common");
-
-    const getTierBadge = (tier: string) => {
-        switch (tier) {
-            case "PRO":
-                return <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20">Pro</Badge>;
-            case "PREMIUM":
-                return <Badge className="bg-purple-500/10 text-purple-500 border-purple-500/20">Premium</Badge>;
-            default:
-                return <Badge variant="outline">{tCommon("unlimited")}</Badge>;
-        }
+/** Everyone who's paid: search and status in the address (AIIN-138). Status is told by icon and word. */
+export function SubscribersTable({ rows, q, status, page, pages }: { rows: SubscriberRow[]; q: string; status: string | null; page: number; pages: number }) {
+    const t = useTranslations("Admin.subscriptions");
+    const router = useRouter();
+    const href = (changes: Record<string, string | null>) => {
+        const next = new URLSearchParams();
+        for (const [k, v] of Object.entries({ q: q || null, status, page: null as string | null, ...changes })) if (v) next.set(k, v);
+        return `/admin/subscriptions${next.size ? `?${next}` : ""}`;
     };
-
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case "ACTIVE":
-                return <Badge className="bg-green-500/10 text-green-500 border-green-500/20"><CheckCircle className="h-3 w-3 mr-1" />{t("statusActive")}</Badge>;
-            case "CANCELLED":
-                return <Badge className="bg-yellow-500/10 text-yellow-500 border-yellow-500/20">{t("statusCancelled")}</Badge>;
-            case "EXPIRED":
-                return <Badge className="bg-red-500/10 text-red-500 border-red-500/20">{t("statusExpired")}</Badge>;
-            case "PAST_DUE":
-                return <Badge className="bg-orange-500/10 text-orange-500 border-orange-500/20"><AlertCircle className="h-3 w-3 mr-1" />{t("statusPastDue")}</Badge>;
-            default:
-                return <Badge variant="outline">{status}</Badge>;
-        }
-    };
-
-    const getDaysRemainingColor = (days: number) => {
-        if (days <= 3) return "text-red-500";
-        if (days <= 7) return "text-yellow-500";
-        return "text-green-500";
-    };
+    const label = (s: string) => (t.has(`statuses.${s}`) ? t(`statuses.${s}`) : s);
 
     return (
-        <div className="rounded-md border">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>{t("user")}</TableHead>
-                        <TableHead>{t("plan")}</TableHead>
-                        <TableHead>{t("billing")}</TableHead>
-                        {showStatus && <TableHead>{t("status")}</TableHead>}
-                        {showDaysRemaining && <TableHead>{t("daysLeft")}</TableHead>}
-                        <TableHead>{t("amount")}</TableHead>
-                        <TableHead>{t("subscribed")}</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {subscribers.length === 0 ? (
-                        <TableRow>
-                            <TableCell colSpan={showStatus ? 7 : 6} className="text-center py-8 text-muted-foreground">
-                                {t("noSubscribers")}
-                            </TableCell>
-                        </TableRow>
+        <section aria-labelledby="subs-title" className={panel}>
+            <h2 id="subs-title" className={panelTitle}>
+                {t("everyone")}
+            </h2>
+            <div className="flex flex-wrap items-center gap-2.5">
+                <form
+                    role="search"
+                    className="relative min-w-[min(260px,100%)] flex-[1_1_280px]"
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        router.push(href({ q: String(new FormData(e.currentTarget).get("q") ?? "").trim() || null }));
+                    }}
+                >
+                    <label htmlFor="as-search" className="sr-only">
+                        {t("search")}
+                    </label>
+                    <Search className="pointer-events-none absolute top-1/2 left-4 size-[18px] -translate-y-1/2 text-sg-muted" aria-hidden="true" />
+                    <Input id="as-search" name="q" type="search" defaultValue={q} placeholder={t("search")} className={cn(fieldInput, "pl-11")} />
+                </form>
+                <div role="group" aria-label={t("status")} className="flex flex-wrap gap-2">
+                    {STATUSES.map((s) => {
+                        const on = (status ?? "all") === s;
+                        return (
+                            <Link key={s} href={href({ status: s === "all" ? null : s })} aria-current={on ? "true" : undefined} className={cn(filterPill(on), focusRing)}>
+                                {label(s)}
+                            </Link>
+                        );
+                    })}
+                </div>
+            </div>
+            {rows.length === 0 ? (
+                <p className="py-6 text-center text-sg-muted">{t("none")}</p>
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="w-full min-w-[820px] border-collapse text-[15px]">
+                        <caption className="sr-only">{t("caption")}</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col" className={th}>{t("colSubscriber")}</th>
+                                <th scope="col" className={th}>{t("colPlan")}</th>
+                                <th scope="col" className={th}>{t("colBilling")}</th>
+                                <th scope="col" className={th}>{t("colStatus")}</th>
+                                <th scope="col" className={cn(th, "text-right")}>{t("colLeft")}</th>
+                                <th scope="col" className={cn(th, "text-right")}>{t("colAmount")}</th>
+                                <th scope="col" className={th}>{t("colSince")}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {rows.map((r) => {
+                                const Icon = ICONS[r.status as keyof typeof ICONS] ?? Clock;
+                                return (
+                                    <tr key={r.id} className={tr}>
+                                        <th scope="row" className={cn(td, "font-semibold")}>
+                                            <span className="flex flex-col">
+                                                <span>{r.name || t("noName")}</span>
+                                                <span className="text-[13px] font-medium text-sg-muted [overflow-wrap:anywhere]">{r.email}</span>
+                                            </span>
+                                        </th>
+                                        <td className={td}>{r.plan}</td>
+                                        <td className={td}>{t.has(`billing.${r.billing}`) ? t(`billing.${r.billing}`) : r.billing}</td>
+                                        <td className={td}>
+                                            <span className={cn(chip, r.status === "ACTIVE" ? "bg-sg-chip" : r.status === "PAST_DUE" ? "bg-sg-danger/10 text-sg-danger" : "border border-dashed border-sg-field-border text-sg-muted")}>
+                                                <Icon className="size-3.5" aria-hidden="true" />
+                                                {label(r.status)}
+                                            </span>
+                                        </td>
+                                        <td className={cn(td, "text-right whitespace-nowrap")}>{r.left === null ? "—" : t("daysLeft", { count: r.left })}</td>
+                                        <td className={cn(td, "text-right font-bold tabular-nums")}>{r.amount}</td>
+                                        <td className={cn(td, "whitespace-nowrap text-sg-muted")}>{r.since}</td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+            {pages > 1 && (
+                <nav aria-label={t("pages")} className="flex items-center justify-between gap-3">
+                    {page > 1 ? (
+                        <Link href={href({ page: String(page - 1) })} className={cn(outlineButton, "h-10 text-sm")}>
+                            {t("prev")}
+                        </Link>
                     ) : (
-                        subscribers.map((sub) => (
-                            <TableRow key={sub.id}>
-                                <TableCell>
-                                    <div className="flex items-center gap-3">
-                                        <Avatar className="h-8 w-8">
-                                            <AvatarImage src={sub.user.image || undefined} />
-                                            <AvatarFallback>
-                                                {sub.user.name?.charAt(0) || sub.user.email?.charAt(0) || "?"}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <p className="font-medium text-sm">{sub.user.name || tCommon("unknown")}</p>
-                                            <p className="text-xs text-muted-foreground">{sub.user.email}</p>
-                                        </div>
-                                    </div>
-                                </TableCell>
-                                <TableCell>{getTierBadge(sub.tier)}</TableCell>
-                                <TableCell>
-                                    <span className="text-xs text-muted-foreground">
-                                        {sub.billingPeriod === "YEARLY" ? t("yearly") : t("monthly")}
-                                    </span>
-                                </TableCell>
-                                {showStatus && <TableCell>{getStatusBadge(sub.status || "ACTIVE")}</TableCell>}
-                                {showDaysRemaining && (
-                                    <TableCell>
-                                        <div className={`flex items-center gap-1 ${getDaysRemainingColor(sub.daysRemaining)}`}>
-                                            <Clock className="h-3 w-3" />
-                                            <span className="font-medium">{sub.daysRemaining}</span>
-                                            <span className="text-xs">{tCommon("days")}</span>
-                                        </div>
-                                    </TableCell>
-                                )}
-                                <TableCell>
-                                    <span className="font-medium">₹{sub.amount || sub.totalPaid || 0}</span>
-                                </TableCell>
-                                <TableCell>
-                                    <span className="text-xs text-muted-foreground">
-                                        {formatDistanceToNow(new Date(sub.createdAt), { addSuffix: true })}
-                                    </span>
-                                </TableCell>
-                            </TableRow>
-                        ))
+                        <span />
                     )}
-                </TableBody>
-            </Table>
-        </div>
+                    <span className="text-sm font-semibold text-sg-muted">{t("page", { page, total: pages })}</span>
+                    {page < pages ? (
+                        <Link href={href({ page: String(page + 1) })} className={cn(outlineButton, "h-10 text-sm")}>
+                            {t("next")}
+                        </Link>
+                    ) : (
+                        <span />
+                    )}
+                </nav>
+            )}
+        </section>
     );
 }

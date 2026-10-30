@@ -1,17 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Crown, Edit, Users, Infinity, Save, Loader2 } from "lucide-react";
-import { updateSubscriptionPlan } from "@/actions/admin-subscription";
-import { toast } from "sonner";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Info, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { updateSubscriptionPlan } from "@/actions/admin-subscription";
+import { Dialog, DialogPanel } from "@/components/interviews/sg-dialog";
+import { fieldInput } from "@/components/soft-glass/classes";
+import { inkButton, label, outlineButton, sectionTitle } from "@/components/jobs/employer-ui";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 interface Plan {
     id: string;
@@ -19,8 +18,6 @@ interface Plan {
     tier: string;
     monthlyPrice: number;
     yearlyPrice: number;
-    monthlyPriceDisplay: number;
-    yearlyPriceDisplay: number;
     mockInterviewLimit: number;
     resumeAnalysisLimit: number;
     questionGenerationLimit: number;
@@ -31,283 +28,142 @@ interface Plan {
     activeSubscribers: number;
 }
 
-interface PlansManagerProps {
-    plans: Plan[];
-}
+const LIMITS = ["mockInterviewLimit", "resumeAnalysisLimit", "questionGenerationLimit", "coverLetterLimit", "resumeRewriteLimit"] as const;
+type LimitKey = (typeof LIMITS)[number];
+const rupees = (paise: number) => (paise / 100).toLocaleString("en-IN");
 
-function PlanCard({ plan, onEdit }: { plan: Plan; onEdit: () => void }) {
-    const tierColors: Record<string, string> = {
-        FREE: "from-gray-500/10 to-slate-500/10 border-gray-500/20",
-        PRO: "from-blue-500/10 to-indigo-500/10 border-blue-500/20",
-        PREMIUM: "from-purple-500/10 to-pink-500/10 border-purple-500/20",
-    };
-
-    const formatLimit = (limit: number) => {
-        if (limit === -1) return <Infinity className="h-4 w-4 text-green-500" />;
-        if (limit === 0) return <span className="text-red-500">Disabled</span>;
-        return limit;
-    };
+/** The plans as cards, each editable in a dialog (AIIN-138). Prices are stored in paise and shown in rupees. */
+export function PlansManager({ plans }: { plans: Plan[] }) {
+    const t = useTranslations("Admin.subscriptions");
+    const [editing, setEditing] = useState<Plan | null>(null);
+    const limit = (n: number) => (n === -1 ? t("unlimited") : n === 0 ? t("off") : n);
 
     return (
-        <Card className={`bg-gradient-to-br ${tierColors[plan.tier] || tierColors.FREE}`}>
-            <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Crown className={`h-5 w-5 ${plan.tier === "PREMIUM" ? "text-purple-500" : plan.tier === "PRO" ? "text-blue-500" : "text-gray-500"}`} />
-                        <CardTitle>{plan.name}</CardTitle>
-                    </div>
-                    <Badge variant="outline" className="flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        {plan.activeSubscribers}
-                    </Badge>
-                </div>
-                <CardDescription>
-                    ₹{plan.monthlyPriceDisplay}/month • ₹{plan.yearlyPriceDisplay}/year
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="flex justify-between">
-                        <span className="text-muted-foreground">Mock Interviews</span>
-                        <span className="font-medium">{formatLimit(plan.mockInterviewLimit)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="text-muted-foreground">Resume Analysis</span>
-                        <span className="font-medium">{formatLimit(plan.resumeAnalysisLimit)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="text-muted-foreground">AI Questions</span>
-                        <span className="font-medium">{formatLimit(plan.questionGenerationLimit)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="text-muted-foreground">Cover Letters</span>
-                        <span className="font-medium">{formatLimit(plan.coverLetterLimit)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="text-muted-foreground">Resume Rewrites</span>
-                        <span className="font-medium">{formatLimit(plan.resumeRewriteLimit)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                        <span className="text-muted-foreground">AI Evaluation</span>
-                        <span className="font-medium">{plan.aiEvaluationEnabled ? "✓" : "✗"}</span>
-                    </div>
-                </div>
-
-                <Button onClick={onEdit} variant="outline" className="w-full">
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit Plan
-                </Button>
-            </CardContent>
-        </Card>
+        <section aria-labelledby="plans-title" className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 id="plans-title" className={sectionTitle}>
+                    {t("plans")}
+                </h2>
+                <span className={label}>{t("plansNote")}</span>
+            </div>
+            <ul className="grid grid-cols-[repeat(auto-fit,minmax(min(280px,100%),1fr))] gap-4">
+                {plans.map((plan) => (
+                    <li key={plan.id} className="sg-glass flex flex-col gap-3.5 rounded-[24px] p-5 sm:p-6">
+                        <div className="flex items-baseline justify-between gap-2">
+                            <span className="text-xl font-bold">{plan.name}</span>
+                            <span className="text-sm text-sg-muted">{t("people", { count: plan.activeSubscribers })}</span>
+                        </div>
+                        <span className="font-display sg-soft text-[22px] font-semibold">
+                            {plan.monthlyPrice === 0 ? t("priceFree") : t("price", { month: rupees(plan.monthlyPrice), year: rupees(plan.yearlyPrice) })}
+                        </span>
+                        <dl className="flex flex-col gap-1.5 text-[15px]">
+                            {LIMITS.map((key) => (
+                                <div key={key} className="flex justify-between gap-3 border-t border-sg-rule pt-1.5">
+                                    <dt className="text-sg-muted">{t(`limits.${key}`)}</dt>
+                                    <dd className="font-semibold">{limit(plan[key])}</dd>
+                                </div>
+                            ))}
+                        </dl>
+                        <button type="button" onClick={() => setEditing(plan)} className={cn(outlineButton, "mt-auto h-10 self-start text-sm")}>
+                            {t("edit")}
+                        </button>
+                    </li>
+                ))}
+            </ul>
+            <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
+                {editing && <EditPlan key={editing.id} plan={editing} onDone={() => setEditing(null)} />}
+            </Dialog>
+        </section>
     );
 }
 
-function EditPlanDialog({ plan, open, onOpenChange }: { plan: Plan; open: boolean; onOpenChange: (open: boolean) => void }) {
+function EditPlan({ plan, onDone }: { plan: Plan; onDone: () => void }) {
+    const t = useTranslations("Admin.subscriptions");
     const router = useRouter();
-    const [isLoading, setIsLoading] = useState(false);
-    const [formData, setFormData] = useState({
-        name: plan.name,
-        monthlyPrice: plan.monthlyPrice / 100, // Convert from paise to rupees
-        yearlyPrice: plan.yearlyPrice / 100,
-        mockInterviewLimit: plan.mockInterviewLimit,
-        resumeAnalysisLimit: plan.resumeAnalysisLimit,
-        questionGenerationLimit: plan.questionGenerationLimit,
-        coverLetterLimit: plan.coverLetterLimit,
-        resumeRewriteLimit: plan.resumeRewriteLimit,
+    const [pending, startTransition] = useTransition();
+    const [form, setForm] = useState({
+        monthly: String(plan.monthlyPrice / 100),
+        yearly: String(plan.yearlyPrice / 100),
+        ...Object.fromEntries(LIMITS.map((k) => [k, String(plan[k])])),
         aiEvaluationEnabled: plan.aiEvaluationEnabled,
         prioritySupport: plan.prioritySupport,
-    });
+    } as { monthly: string; yearly: string; aiEvaluationEnabled: boolean; prioritySupport: boolean } & Record<LimitKey, string>);
 
-    const handleSubmit = async () => {
-        setIsLoading(true);
-        try {
+    const save = (e: React.FormEvent) => {
+        e.preventDefault();
+        startTransition(async () => {
             const result = await updateSubscriptionPlan(plan.id, {
-                name: formData.name,
-                monthlyPrice: Math.round(formData.monthlyPrice * 100), // Convert to paise
-                yearlyPrice: Math.round(formData.yearlyPrice * 100),
-                mockInterviewLimit: formData.mockInterviewLimit,
-                resumeAnalysisLimit: formData.resumeAnalysisLimit,
-                questionGenerationLimit: formData.questionGenerationLimit,
-                coverLetterLimit: formData.coverLetterLimit,
-                resumeRewriteLimit: formData.resumeRewriteLimit,
-                aiEvaluationEnabled: formData.aiEvaluationEnabled,
-                prioritySupport: formData.prioritySupport,
+                monthlyPrice: Math.round(Number(form.monthly) * 100),
+                yearlyPrice: Math.round(Number(form.yearly) * 100),
+                ...Object.fromEntries(LIMITS.map((k) => [k, Number(form[k])])),
+                aiEvaluationEnabled: form.aiEvaluationEnabled,
+                prioritySupport: form.prioritySupport,
             });
-
-            if (result.success) {
-                toast.success("Plan updated successfully!");
-                onOpenChange(false);
-                router.refresh();
-            } else {
-                toast.error(result.error || "Failed to update plan");
+            if (!result.success) {
+                toast.error(t("saveFailed"));
+                return;
             }
-        } catch (error) {
-            toast.error("An error occurred");
-        } finally {
-            setIsLoading(false);
-        }
+            toast.success(t("saved", { name: plan.name }));
+            onDone();
+            router.refresh();
+        });
     };
 
-    return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-md">
-                <DialogHeader>
-                    <DialogTitle>Edit {plan.name} Plan</DialogTitle>
-                    <DialogDescription>
-                        Changes will be reflected immediately on the pricing page.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-4 py-4">
-                    <div className="space-y-2">
-                        <Label>Plan Name</Label>
-                        <Input
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label>Monthly Price (₹)</Label>
-                            <Input
-                                type="number"
-                                value={formData.monthlyPrice}
-                                onChange={(e) => setFormData({ ...formData, monthlyPrice: Number(e.target.value) })}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Yearly Price (₹)</Label>
-                            <Input
-                                type="number"
-                                value={formData.yearlyPrice}
-                                onChange={(e) => setFormData({ ...formData, yearlyPrice: Number(e.target.value) })}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="border-t pt-4">
-                        <p className="text-sm font-medium mb-3">Usage Limits (-1 = Unlimited, 0 = Disabled)</p>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="space-y-2">
-                                <Label className="text-xs">Mock Interviews</Label>
-                                <Input
-                                    type="number"
-                                    value={formData.mockInterviewLimit}
-                                    onChange={(e) => setFormData({ ...formData, mockInterviewLimit: Number(e.target.value) })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-xs">Resume Analysis</Label>
-                                <Input
-                                    type="number"
-                                    value={formData.resumeAnalysisLimit}
-                                    onChange={(e) => setFormData({ ...formData, resumeAnalysisLimit: Number(e.target.value) })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-xs">AI Questions</Label>
-                                <Input
-                                    type="number"
-                                    value={formData.questionGenerationLimit}
-                                    onChange={(e) => setFormData({ ...formData, questionGenerationLimit: Number(e.target.value) })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-xs">Cover Letters</Label>
-                                <Input
-                                    type="number"
-                                    value={formData.coverLetterLimit}
-                                    onChange={(e) => setFormData({ ...formData, coverLetterLimit: Number(e.target.value) })}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-xs">Resume Rewrites</Label>
-                                <Input
-                                    type="number"
-                                    value={formData.resumeRewriteLimit}
-                                    onChange={(e) => setFormData({ ...formData, resumeRewriteLimit: Number(e.target.value) })}
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="border-t pt-4 space-y-3">
-                        <div className="flex items-center justify-between">
-                            <Label>AI Evaluation Enabled</Label>
-                            <Switch
-                                checked={formData.aiEvaluationEnabled}
-                                onCheckedChange={(checked) => setFormData({ ...formData, aiEvaluationEnabled: checked })}
-                            />
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <Label>Priority Support</Label>
-                            <Switch
-                                checked={formData.prioritySupport}
-                                onCheckedChange={(checked) => setFormData({ ...formData, prioritySupport: checked })}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        Cancel
-                    </Button>
-                    <Button onClick={handleSubmit} disabled={isLoading}>
-                        {isLoading ? (
-                            <>
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Saving...
-                            </>
-                        ) : (
-                            <>
-                                <Save className="h-4 w-4 mr-2" />
-                                Save Changes
-                            </>
-                        )}
-                    </Button>
-                </div>
-            </DialogContent>
-        </Dialog>
+    const price = (id: string, key: "monthly" | "yearly", text: string) => (
+        <div className="flex flex-col gap-1.5">
+            <label htmlFor={id} className="text-sm font-semibold">
+                {text}
+            </label>
+            <span className="relative">
+                <span aria-hidden="true" className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 font-semibold text-sg-muted">
+                    ₹
+                </span>
+                <Input id={id} inputMode="decimal" type="number" min={0} step="1" required value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} className={cn(fieldInput, "pl-8")} />
+            </span>
+        </div>
     );
-}
-
-export function PlansManager({ plans }: PlansManagerProps) {
-    const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
 
     return (
-        <>
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Crown className="h-5 w-5 text-primary" />
-                        Subscription Plans
-                    </CardTitle>
-                    <CardDescription>
-                        Edit plan pricing and limits. Changes apply immediately to new subscriptions.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid md:grid-cols-3 gap-4">
-                        {plans.map((plan) => (
-                            <PlanCard
-                                key={plan.id}
-                                plan={plan}
-                                onEdit={() => setEditingPlan(plan)}
-                            />
+        <DialogPanel title={t("editTitle", { name: plan.name })} closeLabel={t("close")} className="max-w-[560px]">
+            <form onSubmit={save} className="flex flex-col gap-4">
+                <p className="flex items-start gap-2.5 rounded-[18px] bg-sg-row px-4 py-3 text-sm">
+                    <Info className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                    <span>{t("editNote")}</span>
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                    {price("ep-m", "monthly", t("monthly"))}
+                    {price("ep-y", "yearly", t("yearly"))}
+                </div>
+                <fieldset className="flex flex-col gap-2.5">
+                    <legend className="text-sm font-semibold">{t("limitsTitle")}</legend>
+                    <span className="text-[13px] text-sg-muted">{t("limitsHint")}</span>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        {LIMITS.map((k) => (
+                            <div key={k} className="flex flex-col gap-1.5">
+                                <label htmlFor={`ep-${k}`} className="text-sm font-semibold">
+                                    {t(`limits.${k}`)}
+                                </label>
+                                <Input id={`ep-${k}`} type="number" min={-1} step="1" required value={form[k]} onChange={(e) => setForm({ ...form, [k]: e.target.value })} className={fieldInput} />
+                            </div>
                         ))}
                     </div>
-                </CardContent>
-            </Card>
-
-            {editingPlan && (
-                <EditPlanDialog
-                    plan={editingPlan}
-                    open={!!editingPlan}
-                    onOpenChange={(open) => !open && setEditingPlan(null)}
-                />
-            )}
-        </>
+                </fieldset>
+                {(["aiEvaluationEnabled", "prioritySupport"] as const).map((k) => (
+                    <label key={k} className="flex items-center gap-2.5 font-semibold">
+                        <input type="checkbox" checked={form[k]} onChange={(e) => setForm({ ...form, [k]: e.target.checked })} className="size-5 accent-[var(--sg-ink)]" />
+                        {k === "aiEvaluationEnabled" ? t("aiScoring") : t("priority")}
+                    </label>
+                ))}
+                <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:justify-end">
+                    <button type="button" onClick={onDone} className={cn(outlineButton, "h-12 px-5 text-base")}>
+                        {t("cancel")}
+                    </button>
+                    <button type="submit" disabled={pending} className={cn(inkButton, "h-12 px-6 text-base")}>
+                        {pending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+                        {pending ? t("saving") : t("save")}
+                    </button>
+                </div>
+            </form>
+        </DialogPanel>
     );
 }

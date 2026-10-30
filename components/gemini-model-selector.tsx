@@ -77,8 +77,8 @@ export function GeminiModelSelector({ currentModel }: GeminiModelSelectorProps) 
                     if (open) fetchModels();
                 }}
             >
-                <SelectTrigger className="w-[220px] h-9 text-xs">
-                    <Sparkles className={`mr-2 h-3.5 w-3.5 ${models.find(m => m.value === model)?.disabled ? 'text-gray-400' : 'text-orange-500'}`} />
+                <SelectTrigger aria-label="AI model" className="h-10 w-[210px] rounded-full border-sg-field-border bg-sg-row text-sm font-semibold shadow-none focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-solid focus-visible:outline-sg-focus">
+                    <Sparkles className={`mr-2 h-3.5 w-3.5 ${models.find(m => m.value === model)?.disabled ? 'text-sg-muted' : 'text-sg-coral'}`} />
                     <SelectValue>
                         {models.find(m => m.value === model)?.label || "Select Model"}
                     </SelectValue>

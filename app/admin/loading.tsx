@@ -1,28 +1,17 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-
+/** Admin pages while they load: the heading and four tiles, in Soft Glass (AIIN-138). */
 export default function AdminLoading() {
     return (
-        <div className="space-y-8">
-            <div>
-                <Skeleton className="h-9 w-64" />
-                <Skeleton className="h-5 w-96 mt-2" />
+        <div aria-busy="true" className="flex flex-col gap-6 sm:gap-8">
+            <div className="flex flex-col gap-2">
+                <span className="sg-skeleton h-11 w-56 rounded-2xl" />
+                <span className="sg-skeleton h-6 w-80 max-w-full rounded-xl" />
             </div>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
                 {[1, 2, 3, 4].map((i) => (
-                    <Card key={i}>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <Skeleton className="h-4 w-24" />
-                            <Skeleton className="h-4 w-4" />
-                        </CardHeader>
-                        <CardContent>
-                            <Skeleton className="h-8 w-16 mb-2" />
-                            <Skeleton className="h-3 w-32" />
-                        </CardContent>
-                    </Card>
+                    <span key={i} className="sg-skeleton h-[104px] rounded-[24px]" />
                 ))}
             </div>
+            <span className="sg-skeleton h-80 rounded-[28px]" />
         </div>
     );
 }

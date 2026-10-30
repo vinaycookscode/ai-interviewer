@@ -1,81 +1,56 @@
+import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { getFeatureFlags } from "@/actions/feature-flags";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { AdminHeading } from "@/components/admin/admin-ui";
 import { GlobalFeatureToggle } from "@/components/admin/global-feature-toggle";
+import { panel } from "@/components/jobs/employer-ui";
 
-interface FeatureFlag {
-    key: string;
-    enabled: boolean;
-    description: string | null;
-    category: string;
-    updatedAt: Date;
+export async function generateMetadata(): Promise<Metadata> {
+    const t = await getTranslations("Admin.features");
+    return { title: t("metaTitle") };
 }
 
-export default async function FeatureManagementPage() {
+const ORDER = ["CANDIDATE", "PLACEMENT", "CODE_EDITOR", "EMPLOYER", "COMMUNITY", "SYSTEM"];
+
+/** Features on or off for everyone, grouped as people use them (AIIN-138). The toggle checks for an admin. */
+export default async function AdminFeaturesPage() {
+    const t = await getTranslations("Admin.features");
     const flags = await getFeatureFlags();
-
-    // Group by category
-    const grouped = flags.reduce((acc: Record<string, FeatureFlag[]>, flag) => {
-        const cat = flag.category || 'SYSTEM';
-        if (!acc[cat]) acc[cat] = [];
-        acc[cat].push(flag);
-        return acc;
-    }, {} as Record<string, FeatureFlag[]>);
-
-    const categories = Object.keys(grouped).sort();
+    const groups = new Map<string, typeof flags>();
+    for (const flag of flags) {
+        const cat = flag.category || "SYSTEM";
+        groups.set(cat, [...(groups.get(cat) ?? []), flag]);
+    }
+    const categories = [...groups.keys()].sort((a, b) => (ORDER.indexOf(a) + 1 || 99) - (ORDER.indexOf(b) + 1 || 99));
+    const nameOf = (key: string) => (t.has(`names.${key}`) ? t(`names.${key}`) : key);
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-end justify-between">
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Global Feature Flags</h2>
-                    <p className="text-muted-foreground">
-                        Manage global availability of application features. Disabling a feature here hides it for ALL users.
-                    </p>
-                </div>
-            </div>
-
-            {categories.map((cat) => (
-                <Card key={cat}>
-                    <CardHeader>
-                        <CardTitle className="capitalize">{cat.toLowerCase()} Features</CardTitle>
-                        <CardDescription>
-                            Toggle features related to {cat.toLowerCase()} functionality.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[300px]">Feature</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead className="text-right">Status</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {grouped[cat].map((flag) => (
-                                    <TableRow key={flag.key}>
-                                        <TableCell className="font-medium">
-                                            {flag.key}
-                                        </TableCell>
-                                        <TableCell className="text-muted-foreground">
-                                            {flag.description || '-'}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <GlobalFeatureToggle
-                                                featureKey={flag.key}
-                                                initialValue={flag.enabled}
-                                            />
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-            ))}
-        </div>
+        <>
+            <AdminHeading title={t("title")} description={t("description")} />
+            <section className={panel + " max-w-[860px]"}>
+                {categories.length === 0 && <p className="text-sg-muted">{t("none")}</p>}
+                {categories.map((cat) => (
+                    <section key={cat} aria-labelledby={`cat-${cat}`} className="flex flex-col gap-1.5">
+                        <h2 id={`cat-${cat}`} className="text-[13px] leading-[18px] font-bold text-sg-muted">
+                            {t.has(`categories.${cat}`) ? t(`categories.${cat}`) : cat}
+                        </h2>
+                        <ul className="flex flex-col gap-1.5">
+                            {groups.get(cat)!.map((flag) => (
+                                <li key={flag.key} className="flex flex-wrap items-center gap-3.5 rounded-[18px] bg-sg-row px-4 py-3.5">
+                                    <span className="flex min-w-0 flex-[1_1_240px] flex-col">
+                                        <span className="font-bold">{nameOf(flag.key)}</span>
+                                        <span className="text-sm text-sg-muted [overflow-wrap:anywhere]">
+                                            {flag.description ? `${flag.description} · ` : ""}
+                                            <code className="font-mono text-[13px]">{flag.key}</code>
+                                        </span>
+                                    </span>
+                                    <GlobalFeatureToggle featureKey={flag.key} name={nameOf(flag.key)} initialValue={flag.enabled} />
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                ))}
+            </section>
+        </>
     );
 }
-

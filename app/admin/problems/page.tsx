@@ -8,11 +8,10 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { DIFFICULTIES, PROBLEM_TYPES, STATUSES, testCounts } from "@/lib/problems/rules";
 import { createProblem } from "@/actions/admin-problems";
-import { AdminGlass } from "@/components/admin/admin-glass";
 import { ProblemFilters } from "@/components/admin/problem-filters";
 import { StatusChip } from "@/components/admin/problem-status";
 import { coralButton, focusRing } from "@/components/soft-glass/classes";
-import { label, outlineButton, row } from "@/components/jobs/employer-ui";
+import { label, outlineButton } from "@/components/jobs/employer-ui";
 import { cn } from "@/lib/utils";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -80,8 +79,7 @@ export default async function AdminProblemsPage({ searchParams }: { searchParams
     const th = cn(label, "px-3 py-2.5 text-left whitespace-nowrap");
 
     return (
-        <AdminGlass>
-            <p className={cn(row, "md:hidden")}>{t("desktopOnly")}</p>
+        <>
             <div className="flex flex-wrap items-end justify-between gap-4">
                 <div className="flex max-w-[680px] flex-col gap-2">
                     <h1 className="font-display sg-soft text-[32px] font-semibold leading-[1.14] tracking-[-0.025em] sm:text-[44px]">{t("title")}</h1>
@@ -175,6 +173,6 @@ export default async function AdminProblemsPage({ searchParams }: { searchParams
                     </nav>
                 )}
             </section>
-        </AdminGlass>
+        </>
     );
 }

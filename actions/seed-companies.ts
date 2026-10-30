@@ -1,4 +1,4 @@
-"use server";
+// Server-only: called from the admin-only /api/seed-placement route. Not a Server Action, so not a public endpoint (AIIN-138).
 
 import { db } from "@/lib/db";
 

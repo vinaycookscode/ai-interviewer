@@ -45,7 +45,7 @@ export async function getPlatformStats() {
     };
 }
 
-export async function getUsers(page = 1, limit = 10, search = "") {
+export async function getUsers(page = 1, limit = 10, search = "", role?: "CANDIDATE" | "EMPLOYER" | "ADMIN") {
     const session = await auth();
 
     if (session?.user?.role !== "ADMIN") {
@@ -54,14 +54,17 @@ export async function getUsers(page = 1, limit = 10, search = "") {
 
     const skip = (page - 1) * limit;
 
-    const where = search
-        ? {
-            OR: [
-                { name: { contains: search, mode: "insensitive" as const } },
-                { email: { contains: search, mode: "insensitive" as const } },
-            ],
-        }
-        : {};
+    const where = {
+        ...(search
+            ? {
+                OR: [
+                    { name: { contains: search, mode: "insensitive" as const } },
+                    { email: { contains: search, mode: "insensitive" as const } },
+                ],
+            }
+            : {}),
+        ...(role ? { role } : {}),
+    };
 
     const [users, total] = await Promise.all([
         db.user.findMany({
@@ -88,7 +91,8 @@ export async function getUsers(page = 1, limit = 10, search = "") {
 
     return {
         users,
-        totalPages: Math.ceil(total / limit),
+        total,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
         currentPage: page,
     };
 }
@@ -98,6 +102,10 @@ export async function deleteUser(userId: string) {
 
     if (session?.user?.role !== "ADMIN") {
         return { error: "Unauthorized" };
+    }
+    // An admin can't remove their own access by accident (AIIN-138)
+    if (userId === session.user.id) {
+        return { error: "self" };
     }
 
     try {

@@ -1,99 +1,63 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, CheckCircle, XCircle } from "lucide-react";
+import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { CheckCircle2, Loader2, XCircle } from "lucide-react";
+import { coralButton } from "@/components/soft-glass/classes";
+import { row, textLink } from "@/components/jobs/employer-ui";
+import { cn } from "@/lib/utils";
 
+/** Runs the admin-only seed route and says how it went (AIIN-138). */
 export function SeedPlacementButton() {
-    const [loading, setLoading] = useState(false);
-    const [result, setResult] = useState<any>(null);
-    const [error, setError] = useState<string | null>(null);
+    const t = useTranslations("Admin.seed");
+    const [state, setState] = useState<"idle" | "running" | "done" | "failed">("idle");
+    const [error, setError] = useState("");
 
-    const handleSeed = async () => {
-        setLoading(true);
-        setError(null);
-        setResult(null);
-
+    const run = async () => {
+        setState("running");
         try {
-            const response = await fetch("/api/seed-placement", {
-                method: "POST",
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || "Seeding failed");
-            }
-
-            setResult(data.results);
-        } catch (err: any) {
-            setError(err.message || "An error occurred");
-        } finally {
-            setLoading(false);
+            const response = await fetch("/api/seed-placement", { method: "POST" });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || response.statusText);
+            setState("done");
+        } catch (err) {
+            setError(err instanceof Error ? err.message : String(err));
+            setState("failed");
         }
     };
 
+    if (state === "done") {
+        return (
+            <>
+                <p role="status" className={cn(row, "flex items-start gap-2.5")}>
+                    <CheckCircle2 className="mt-0.5 size-[18px] shrink-0 text-sg-lavender-ink" aria-hidden="true" />
+                    <span>{t("done")}</span>
+                </p>
+                <span className="flex flex-wrap gap-4">
+                    <Link href="/candidate/placement-program" className={textLink}>
+                        {t("seePlan")}
+                    </Link>
+                    <Link href="/candidate/company-prep" className={textLink}>
+                        {t("seePrep")}
+                    </Link>
+                </span>
+            </>
+        );
+    }
+
     return (
-        <div className="space-y-6">
-            <button
-                onClick={handleSeed}
-                disabled={loading}
-                className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 font-medium"
-            >
-                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                {loading ? "Seeding..." : "Seed Database"}
+        <>
+            <button type="button" onClick={run} disabled={state === "running"} className={cn(coralButton, "h-12 self-start px-6 text-base")}>
+                {state === "running" && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+                {state === "running" ? t("running") : t("run")}
             </button>
-
-            {error && (
-                <div className="flex items-center gap-2 p-4 bg-red-500/10 text-red-500 rounded-lg">
-                    <XCircle className="h-5 w-5" />
-                    <span>{error}</span>
-                </div>
+            {state === "failed" && (
+                <p role="alert" className={cn(row, "flex items-start gap-2.5 text-sg-danger")}>
+                    <XCircle className="mt-0.5 size-[18px] shrink-0" aria-hidden="true" />
+                    <span>{t("failed", { error })}</span>
+                </p>
             )}
-
-            {result && (
-                <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-green-500">
-                        <CheckCircle className="h-5 w-5" />
-                        <span className="font-medium">Seeding Complete!</span>
-                    </div>
-
-                    <div className="bg-card border rounded-lg p-4 space-y-3">
-                        <div>
-                            <h3 className="font-medium">Feature Flags</h3>
-                            <pre className="text-sm text-muted-foreground">
-                                {JSON.stringify(result.flags, null, 2)}
-                            </pre>
-                        </div>
-                        <div>
-                            <h3 className="font-medium">Placement Program</h3>
-                            <pre className="text-sm text-muted-foreground">
-                                {JSON.stringify(result.program, null, 2)}
-                            </pre>
-                        </div>
-                        <div>
-                            <h3 className="font-medium">Company Prep Kits</h3>
-                            <pre className="text-sm text-muted-foreground">
-                                {JSON.stringify(result.companies, null, 2)}
-                            </pre>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-4">
-                        <a
-                            href="/candidate/placement-program"
-                            className="text-primary hover:underline"
-                        >
-                            → View Placement Program
-                        </a>
-                        <a
-                            href="/candidate/company-prep"
-                            className="text-primary hover:underline"
-                        >
-                            → View Company Prep
-                        </a>
-                    </div>
-                </div>
-            )}
-        </div>
+        </>
     );
 }

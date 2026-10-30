@@ -129,7 +129,6 @@ export function ProblemEditor({ id, initial, status, checked, kits, history }: P
 
     return (
         <>
-            <p className={cn(row, "md:hidden")}>{t("desktopOnly")}</p>
             <div className="flex flex-wrap items-end justify-between gap-4">
                 <div className="flex min-w-0 flex-col gap-2">
                     <Link href="/admin/problems" className={cn("inline-flex items-center gap-1.5 self-start rounded-md font-semibold text-sg-muted hover:text-sg-text", focusRing)}>

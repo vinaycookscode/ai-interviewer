@@ -1,93 +1,59 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { ShieldAlert, Loader2, CheckCircle2 } from "lucide-react";
-import { resetNonPayingSubscribers } from "@/actions/admin-subscription";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { resetNonPayingSubscribers } from "@/actions/admin-subscription";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogPanel, AlertDialogTrigger } from "@/components/interviews/sg-dialog";
+import { dangerButton, outlineButton } from "@/components/jobs/employer-ui";
+import { cn } from "@/lib/utils";
 
+/** Moves paid-plan accounts with no valid payment back to Free, after a confirmation (AIIN-138). */
 export function ResetSubscribersButton() {
-    const [isPending, setIsPending] = useState(false);
-    const [result, setResult] = useState<{ resetCount: number; message: string } | null>(null);
+    const t = useTranslations("Admin.subscriptions");
+    const router = useRouter();
+    const [pending, startTransition] = useTransition();
+    const [moved, setMoved] = useState<number | null>(null);
 
-    const handleReset = async () => {
-        setIsPending(true);
-        setResult(null);
-        try {
-            const data = await resetNonPayingSubscribers();
-            if (data.success) {
-                setResult({
-                    resetCount: data.resetCount || 0,
-                    message: data.message || "Reset completed successfully"
-                });
-                toast.success(data.message);
-            } else {
-                toast.error(data.error || "Failed to reset subscribers");
+    const run = () =>
+        startTransition(async () => {
+            try {
+                const result = await resetNonPayingSubscribers();
+                if (!result.success) throw new Error(result.error);
+                setMoved(result.resetCount ?? 0);
+                router.refresh();
+            } catch {
+                toast.error(t("downgradeFailed"));
             }
-        } catch (error) {
-            toast.error("An error occurred");
-        } finally {
-            setIsPending(false);
-        }
-    };
+        });
 
     return (
-        <div className="space-y-4">
+        <section aria-labelledby="downgrade-title" className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-[22px] border border-dashed border-sg-field-border p-4 sm:p-5">
+            <span className="flex min-w-0 flex-[1_1_280px] flex-col">
+                <span id="downgrade-title" className="font-bold">
+                    {t("downgrade")}
+                </span>
+                <span className="text-sm text-sg-muted">{t("downgradeNote")}</span>
+                {moved !== null && (
+                    <span role="status" className="mt-1.5 inline-flex items-center gap-1.5 text-sm font-semibold">
+                        <CheckCircle2 className="size-4 text-sg-lavender-ink" aria-hidden="true" />
+                        {t("downgraded", { count: moved })}
+                    </span>
+                )}
+            </span>
             <AlertDialog>
-                <AlertDialogTrigger asChild>
-                    <Button variant="outline" className="border-red-500/20 text-red-500 hover:bg-red-500/10 hover:text-red-600">
-                        <ShieldAlert className="mr-2 h-4 w-4" />
-                        Reset Non-Paying Pro Users
-                    </Button>
+                <AlertDialogTrigger disabled={pending} className={cn(outlineButton, "h-10 text-sm")}>
+                    {t("check")}
                 </AlertDialogTrigger>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This will scan all subscribers and downgrade any user on a PRO or PREMIUM plan
-                            who doesn't have a valid payment record or active Razorpay subscription.
-                            Existing paying customers will NOT be affected.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleReset}
-                            className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-                        >
-                            Continue Reset
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
+                <AlertDialogPanel title={t("downgradeTitle")} description={t("downgradeBody")}>
+                    <AlertDialogCancel className={cn(outlineButton, "h-12 px-5 text-base")}>{t("cancel")}</AlertDialogCancel>
+                    <AlertDialogAction onClick={run} className={dangerButton}>
+                        {t("confirmDowngrade")}
+                    </AlertDialogAction>
+                </AlertDialogPanel>
             </AlertDialog>
-
-            {result && (
-                <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/20 rounded-xl animate-in fade-in slide-in-from-top-2">
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    <div>
-                        <p className="text-sm font-semibold text-green-700">Scan Complete</p>
-                        <p className="text-xs text-green-600/80">{result.message}</p>
-                    </div>
-                </div>
-            )}
-
-            {isPending && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground ml-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                    Scanning subscribers...
-                </div>
-            )}
-        </div>
+        </section>
     );
 }

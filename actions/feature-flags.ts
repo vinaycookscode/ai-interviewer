@@ -1,5 +1,6 @@
 'use server';
 
+import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { FEATURES } from "@/lib/features";
 import { revalidatePath } from "next/cache";
@@ -10,10 +11,10 @@ export async function getFeatureFlags() {
     });
 }
 
+/** Turns a feature on or off for everyone. Admins only: Server Actions are public endpoints (AIIN-138). */
 export async function toggleFeatureFlag(key: string, enabled: boolean) {
-    // In a real app, add auth check here to ensure user is ADMIN
-    // const session = await auth();
-    // if (session?.user?.role !== 'ADMIN') throw new Error("Unauthorized");
+    const session = await auth();
+    if (session?.user?.role !== "ADMIN") throw new Error("Unauthorized");
 
     await db.featureFlag.upsert({
         where: { key },
@@ -49,6 +50,8 @@ export async function getLatestFlagUpdate(): Promise<number> {
 }
 
 export async function seedFeatureFlags() {
+    const session = await auth();
+    if (session?.user?.role !== "ADMIN") throw new Error("Unauthorized");
     const defaults = [
         { key: FEATURES.RESUME_SCREENER, category: 'CANDIDATE', description: "Upload and analyze resumes" },
         { key: FEATURES.PRACTICE_INTERVIEWS, category: 'CANDIDATE', description: "Mock interview practice area" },

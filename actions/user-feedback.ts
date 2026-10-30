@@ -64,6 +64,9 @@ export async function updateUserFeedbackStatus(id: string, status: string, admin
     if (session?.user?.role !== "ADMIN") {
         return { error: "Unauthorized" };
     }
+    if (!["NEW", "REVIEWED", "RESOLVED", "DISMISSED"].includes(status)) {
+        return { error: "Unknown status" };
+    }
 
     try {
         await db.feedback.update({

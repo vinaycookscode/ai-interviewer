@@ -10,6 +10,23 @@ On `develop`, not yet on `main`. Adds the `ActivityDay` and `DailyChallengeAnswe
 
   There is now **one streak**, shared by Today, the plan and the challenge: a plan task or the challenge keeps it, and both on one day count once. A paused plan no longer holds the streak; the daily challenge keeps it going instead (AIIN-99).
 
+- **The admin console is in Soft Glass.** Each screen follows its approved design:
+  - **Frame:** a header with the section pill, the AI model picker, Leave admin and the theme switch.
+  - **Overview:** tiles, the newest sign-ups, and what needs a look.
+  - **Users:** search and role filters on the server, not just the current page. Deleting an account means typing its email, and an admin can't delete their own account.
+  - **Subscriptions:** revenue tiles, every subscriber with search and status filters, plan cards with an edit dialog, and a confirmed downgrade of unpaid accounts.
+  - **Visitors:** a top-countries table with shares. The map, and the CDN file it loaded, are gone.
+  - **Features:** grouped on/off switches.
+  - **Feedback:** an accordion with status filters and counts. Deleting asks first.
+  - **Sample data:** the seed page.
+  
+  Every screen works by keyboard, in light and dark; under 768 px it says it's made for a computer.
+  
+  **Security fixes:**
+  - Turning a feature off for everyone (`toggleFeatureFlag`) had no auth check, so anyone could call it. It now needs an admin, as does `seedFeatureFlags`.
+  - The seed modules behind `/api/seed-placement` were public Server Actions; they're now plain server modules.
+  - Plan edits and feedback statuses are validated on the server (AIIN-138).
+
 - **Three company prep problems can be solved again.** "Reverse a linked list", "Longest common prefix" and "Maximum subarray" failed their own tests in every kit, even with the reference solution. A single array argument is now written wrapped (`[[1,2,3]]`), and a linked list as `{"list":[1,2,3]}`, which reaches the solution as nodes and is compared as values. The migration fixes existing rows that still hold the original seed tests. `scripts/check-problems.ts` lists any published coding problem whose solution fails (AIIN-219).
 
 - **Problems in the admin console.** Admins can list, search and filter every company prep and daily challenge problem at `/admin/problems`, and create or edit them:
