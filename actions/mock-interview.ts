@@ -3,6 +3,9 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { awardAchievements } from "@/lib/achievements/server";
+import { checkpointMetric } from "@/lib/achievements/rules";
+import { markPlanActive } from "@/lib/plan/server";
+import { revalidatePath } from "next/cache";
 import { getGeminiModelInstance, MAX_RATE_LIMIT_RETRIES } from "@/lib/gemini";
 // import { GoogleGenerativeAI } from "@google/generative-ai"; // Removed
 import { getGeminiModel } from "@/actions/gemini-config";
@@ -107,14 +110,14 @@ export async function getMockQuestions(mockInterviewId: string): Promise<MockSes
     const where = { id: mockInterviewId, userId: session.user.id };
     const mockInterview = await db.mockInterview.findFirst({
         where,
-        select: { role: true, difficulty: true, questions: true },
+        select: { role: true, difficulty: true, questions: true, topics: true },
     });
     if (!mockInterview) return { error: "Mock interview not found" };
 
     let questions = mockInterview.questions;
     let generated: MockQuestionsResult | null = null;
     if (questions.length === 0) {
-        generated = await generateMockQuestionsWithRetry(mockInterview.role, mockInterview.difficulty, 0);
+        generated = await generateMockQuestionsWithRetry(mockInterview.role, mockInterview.difficulty, mockInterview.topics, 0);
         if (!generated.questions?.length) return { error: generated.error || "Failed to generate questions" };
         // Only the first writer wins; a second tab that raced us reads back the stored set.
         await db.mockInterview.updateMany({ where: { ...where, questions: { isEmpty: true } }, data: { questions: generated.questions } });
@@ -141,11 +144,13 @@ export async function getMockQuestions(mockInterviewId: string): Promise<MockSes
 }
 
 // Not exported: the retry counter must not be client-controllable.
-async function generateMockQuestionsWithRetry(role: string, difficulty: string, attempt: number): Promise<MockQuestionsResult> {
+async function generateMockQuestionsWithRetry(role: string, difficulty: string, topics: string[], attempt: number): Promise<MockQuestionsResult> {
     const model = await getGeminiModelInstance();
 
 
-    const prompt = `Generate 5 interview questions for a ${difficulty} ${role} position. 
+    // A plan checkpoint asks about the phase it closes (AIIN-101)
+    const covering = topics.length ? ` Cover these topics from the candidate's study plan: ${topics.join("; ")}.` : "";
+    const prompt = `Generate 5 interview questions for a ${difficulty} ${role} position.${covering}
   Return ONLY a JSON array of strings, like this: ["Question 1", "Question 2", ...]. 
   Do not include any markdown formatting or explanations.`;
 
@@ -170,7 +175,7 @@ async function generateMockQuestionsWithRetry(role: string, difficulty: string, 
 
             if (result.switched && attempt < MAX_RATE_LIMIT_RETRIES) {
                 // Retry with new model
-                const retryResult = await generateMockQuestionsWithRetry(role, difficulty, attempt + 1);
+                const retryResult = await generateMockQuestionsWithRetry(role, difficulty, topics, attempt + 1);
                 return {
                     ...retryResult,
                     _switchInfo: {
@@ -313,7 +318,7 @@ export async function completeMockInterview(mockInterviewId: string) {
 
     const mockInterview = await db.mockInterview.findFirst({
         where: { id: mockInterviewId, userId: session.user.id },
-        select: { id: true },
+        select: { id: true, score: true, enrollmentId: true, checkpointDay: true },
     });
 
     if (!mockInterview) {
@@ -369,7 +374,13 @@ export async function completeMockInterview(mockInterviewId: string) {
                 feedback: feedback,
             },
         });
-        await awardAchievements(session.user.id, ["practice", "bestScore"]);
+        // A plan checkpoint counts as the day's task for the streak (AIIN-101), once
+        if (mockInterview.enrollmentId && mockInterview.checkpointDay && mockInterview.score === null) {
+            await markPlanActive(session.user.id, mockInterview.enrollmentId);
+            revalidatePath("/candidate/placement-program");
+        }
+        const checkpoint = checkpointMetric(mockInterview.checkpointDay ?? 0);
+        await awardAchievements(session.user.id, checkpoint ? ["practice", "bestScore", checkpoint] : ["practice", "bestScore"]);
 
         return { success: "Interview completed", score: averageScore, feedback };
     } catch (error: any) {

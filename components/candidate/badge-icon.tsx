@@ -1,5 +1,5 @@
 // One icon per badge (AIIN-102). A plain module, so server and client components can both use it.
-import { Award, Code, Flame, Layers, Mic, Sparkles, Star, type LucideIcon } from "lucide-react";
+import { Award, Code, Flame, Layers, Mic, Sparkles, Star, Target, type LucideIcon } from "lucide-react";
 import type { AchievementKey } from "@/lib/achievements/rules";
 
 const ICONS: Record<AchievementKey, LucideIcon> = {
@@ -10,6 +10,9 @@ const ICONS: Record<AchievementKey, LucideIcon> = {
     fivePractice: Mic,
     firstEight: Star,
     challenges7: Sparkles,
+    checkpoint30: Target,
+    checkpoint60: Target,
+    checkpoint90: Target,
     problems25: Code,
     flashcards100: Layers,
 };

@@ -1,8 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { ACHIEVEMENTS, CERTIFICATE_CODE, certificateCode, earnedKeys, isAchievementKey, longestRun, progressOf, type Stats } from "./rules.ts";
+import { ACHIEVEMENTS, CERTIFICATE_CODE, certificateCode, checkpointMetric, earnedKeys, isAchievementKey, longestRun, progressOf, type Stats } from "./rules.ts";
 
-const none: Stats = { streak: 0, practice: 0, bestScore: 0, challenges: 0, problems: 0, flashcards: 0 };
+const none: Stats = { streak: 0, practice: 0, bestScore: 0, challenges: 0, checkpoint30: 0, checkpoint60: 0, checkpoint90: 0, problems: 0, flashcards: 0 };
 
 test("a first practice interview scored 8.2 earns both first badges", () => {
     assert.deepEqual(earnedKeys({ practice: 1, bestScore: 8.2 }), ["firstPractice", "firstEight"]);
@@ -14,6 +14,12 @@ test("a score just under 8 doesn't earn First 8+", () => {
 
 test("only the metrics given are judged", () => {
     assert.deepEqual(earnedKeys({ flashcards: 100 }), ["flashcards100"]);
+});
+
+test("each checkpoint badge is earned by its own checkpoint only", () => {
+    assert.deepEqual(earnedKeys({ checkpoint30: 0, checkpoint60: 1 }), ["checkpoint60"]);
+    assert.equal(checkpointMetric(60), "checkpoint60");
+    assert.equal(checkpointMetric(45), null);
 });
 
 test("streak badges come from the longest run, not today's streak", () => {

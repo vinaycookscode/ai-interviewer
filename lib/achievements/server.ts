@@ -17,6 +17,9 @@ import {
     type Stats,
 } from "@/lib/achievements/rules";
 
+const checkpointDone = (userId: string, day: number) =>
+    db.mockInterview.count({ where: { userId, checkpointDay: day, score: { not: null } } }).then((n) => Math.min(n, 1));
+
 const LOADERS: Record<Metric, (userId: string) => Promise<number>> = {
     // The longest run of active days, or the plan's own record from before there was one streak
     async streak(userId) {
@@ -32,6 +35,10 @@ const LOADERS: Record<Metric, (userId: string) => Promise<number>> = {
         return best._max.score ?? 0;
     },
     challenges: (userId) => db.dailyChallengeAnswer.count({ where: { userId } }),
+    // Each plan checkpoint, once finished (AIIN-101)
+    checkpoint30: (userId) => checkpointDone(userId, 30),
+    checkpoint60: (userId) => checkpointDone(userId, 60),
+    checkpoint90: (userId) => checkpointDone(userId, 90),
     // Problems where every test passed, in any language
     async problems(userId) {
         const solutions = await db.userCompanySolution.findMany({

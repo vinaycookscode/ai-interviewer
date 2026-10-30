@@ -7,6 +7,7 @@ import { ScoreGauge } from "@/components/soft-glass/score-gauge";
 import { CoachBubble } from "@/components/soft-glass/coach-bubble";
 import { coralButton, focusRing } from "@/components/soft-glass/classes";
 import { cn } from "@/lib/utils";
+import { generateDayToken } from "@/lib/day-token";
 import { AnswerList } from "./answer-list";
 
 export default async function PracticeResultPage({ params }: { params: Promise<{ id: string }> }) {
@@ -24,6 +25,7 @@ export default async function PracticeResultPage({ params }: { params: Promise<{
         },
         include: {
             answers: { orderBy: { createdAt: "asc" } },
+            enrollment: { select: { id: true, program: { select: { slug: true } } } },
         },
     });
 
@@ -40,41 +42,55 @@ export default async function PracticeResultPage({ params }: { params: Promise<{
 
     const date = mockInterview.createdAt.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
     const again = new URLSearchParams({ role: mockInterview.role, level: mockInterview.difficulty }).toString();
+    // A plan checkpoint leads back to its day (AIIN-101)
+    const checkpoint =
+        mockInterview.enrollment && mockInterview.checkpointDay
+            ? {
+                  day: mockInterview.checkpointDay,
+                  href: `/candidate/placement-program/${mockInterview.enrollment.program.slug}?d=${generateDayToken(mockInterview.enrollment.id, mockInterview.checkpointDay)}`,
+              }
+            : null;
 
     return (
         <div className="flex flex-col gap-6 sm:gap-9">
             <div className="flex flex-wrap items-end justify-between gap-4">
                 <div className="flex flex-col gap-2">
                     <Link
-                        href="/candidate/practice"
+                        href={checkpoint?.href ?? "/candidate/practice"}
                         className={cn(
                             "inline-flex items-center gap-1.5 self-start rounded-full font-semibold text-sg-muted hover:text-sg-text",
                             focusRing
                         )}
                     >
                         <ArrowLeft className="size-4" aria-hidden="true" />
-                        All practice
+                        {checkpoint ? `Day ${checkpoint.day}` : "All practice"}
                     </Link>
                     <h1 className="font-display sg-soft text-[32px] font-semibold leading-[1.14] tracking-[-0.025em] text-balance sm:text-[44px]">
-                        Practice complete
+                        {checkpoint ? `Day ${checkpoint.day} checkpoint complete` : "Practice complete"}
                     </h1>
                     <span className="font-medium text-sg-muted">
                         {mockInterview.role} · {mockInterview.difficulty} · {answers.length}{" "}
                         {answers.length === 1 ? "question" : "questions"} · {date}
                     </span>
                 </div>
-                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-                    <Link
-                        href="/candidate/practice"
-                        className={cn("sg-glass inline-flex h-12 items-center justify-center rounded-full px-[22px] font-bold", focusRing)}
-                    >
-                        Try a different role
+                {checkpoint ? (
+                    <Link href={checkpoint.href} className={cn(coralButton, "h-12 px-6")}>
+                        Back to day {checkpoint.day}
                     </Link>
-                    <Link href={`/candidate/practice?${again}`} className={cn(coralButton, "h-12 px-6")}>
-                        <RotateCw className="size-4" aria-hidden="true" />
-                        Practise again
-                    </Link>
-                </div>
+                ) : (
+                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                        <Link
+                            href="/candidate/practice"
+                            className={cn("sg-glass inline-flex h-12 items-center justify-center rounded-full px-[22px] font-bold", focusRing)}
+                        >
+                            Try a different role
+                        </Link>
+                        <Link href={`/candidate/practice?${again}`} className={cn(coralButton, "h-12 px-6")}>
+                            <RotateCw className="size-4" aria-hidden="true" />
+                            Practise again
+                        </Link>
+                    </div>
+                )}
             </div>
 
             <section

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { CalendarDays, Flame, LineChart } from "lucide-react";
+import { CalendarDays, Flame, LineChart, Target } from "lucide-react";
 import { PlanTier } from "@prisma/client";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
@@ -10,6 +10,11 @@ import { getCurrentSubscription } from "@/actions/subscription";
 import { FEATURES } from "@/lib/features";
 import { istDay, planWeek } from "@/lib/daily-challenge/logic";
 import { loadStreak } from "@/lib/daily-challenge/server";
+import { roleFromName } from "@/lib/career-path";
+import { generateDayToken } from "@/lib/day-token";
+import { checkpointDays, recommendedFirst, timeline } from "@/lib/plan/checkpoints";
+import { loadCheckpoints } from "@/lib/plan/server";
+import { CheckpointTimeline } from "@/components/placement/checkpoint-timeline";
 import { UpgradePrompt } from "@/components/subscription/upgrade-prompt";
 import { WeekStreak } from "@/components/placement/week-streak";
 import { EnrollButton } from "@/components/placement/enroll-button";
@@ -34,11 +39,11 @@ export default async function PlacementProgramPage() {
         return <UpgradePrompt feature={t("title")} description={t("upgrade")} />;
     }
 
-    const [programs, enrollments] = await Promise.all([
+    const [allPrograms, enrollments, profile] = await Promise.all([
         db.placementProgram.findMany({
             where: { isActive: true },
             orderBy: [{ durationDays: "desc" }, { createdAt: "asc" }],
-            select: { id: true, slug: true, name: true, description: true, durationDays: true },
+            select: { id: true, slug: true, name: true, description: true, durationDays: true, track: true },
         }),
         db.programEnrollment.findMany({
             where: { userId },
@@ -52,10 +57,16 @@ export default async function PlacementProgramPage() {
                 longestStreak: true,
                 lastActiveAt: true,
                 startDate: true,
-                program: { select: { slug: true, name: true, durationDays: true } },
+                program: { select: { slug: true, name: true, durationDays: true, track: true } },
             },
         }),
+        db.candidateProfile.findUnique({ where: { userId }, select: { primaryRole: true } }),
     ]);
+
+    // The plan built for the candidate's role comes first (AIIN-101); no career path, no change
+    const role = roleFromName(profile?.primaryRole);
+    const programs = recommendedFirst(allPrograms, role);
+    const forRole = (track: string) => (role && track === role ? t("forRole", { role: t(`roles.${role}`) }) : null);
 
     const enrolledIn = new Map(enrollments.map((e) => [e.programId, e]));
     const current = enrollments.find((e) => e.status === "ACTIVE" || e.status === "PAUSED") ?? null;
@@ -74,6 +85,10 @@ export default async function PlacementProgramPage() {
         // The one streak, shared with the daily challenge (AIIN-99)
         week = planWeek(shared.week, istDay(new Date()), istDay(current.startDate));
     }
+    const cpDays = current ? checkpointDays(current.program.durationDays) : [];
+    const checkpoints = current && cpDays.length ? timeline(cpDays, await loadCheckpoints(current.id), current.currentDay) : null;
+    const currentForRole = current && forRole(current.program.track);
+    const featuredForRole = featured && forRole(featured.track);
 
     return (
         <div className="flex flex-col gap-6 sm:gap-9">
@@ -88,8 +103,11 @@ export default async function PlacementProgramPage() {
                     className="sg-glass sg-shadow-lg grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] items-start gap-6 rounded-[24px] p-5 sm:rounded-[32px] sm:p-8"
                 >
                     <div className="flex flex-col gap-4">
-                        <span className="inline-flex h-7 items-center self-start rounded-full bg-sg-lavender-soft px-2.5 text-sm font-bold text-sg-lavender-ink">
-                            {t("dayOf", { day: current.currentDay, total: current.program.durationDays })}
+                        <span className="flex flex-wrap items-center gap-2">
+                            <span className="inline-flex h-7 items-center rounded-full bg-sg-lavender-soft px-2.5 text-sm font-bold text-sg-lavender-ink">
+                                {t("dayOf", { day: current.currentDay, total: current.program.durationDays })}
+                            </span>
+                            {currentForRole && <RoleChip label={currentForRole} />}
                         </span>
                         <div className="flex flex-col gap-1.5">
                             <h2 className={sectionTitle}>{current.program.name}</h2>
@@ -125,11 +143,20 @@ export default async function PlacementProgramPage() {
                 </section>
             )}
 
+            {current && checkpoints && (
+                <CheckpointTimeline
+                    items={checkpoints}
+                    dayHref={(day) => `/candidate/placement-program/${current.program.slug}?d=${generateDayToken(current.id, day)}`}
+                />
+            )}
+
             {featured && (
                 <section aria-label={featured.name} className="sg-glass sg-shadow-lg flex flex-col gap-6 rounded-[24px] p-5 sm:rounded-[32px] sm:p-8">
                     <div className="flex flex-col gap-2">
+                        {featuredForRole && <RoleChip label={featuredForRole} />}
                         <h2 className={sectionTitle}>{featured.name}</h2>
                         <p className="max-w-[620px] whitespace-pre-line text-sg-muted">{featured.description.split("\n\n")[0]}</p>
+                        {featuredForRole && <p className="max-w-[620px] text-sg-muted">{t("skillNote")}</p>}
                     </div>
                     <div className="grid grid-cols-[repeat(auto-fit,minmax(min(200px,100%),1fr))] gap-3">
                         {[
@@ -217,5 +244,14 @@ function PlanProgress({ day, total, t }: { day: number; total: number; t: Awaite
                 <span className="block h-full rounded-full bg-sg-lavender-ink" style={{ width: `${percent}%` }} />
             </span>
         </div>
+    );
+}
+
+function RoleChip({ label }: { label: string }) {
+    return (
+        <span className="inline-flex h-7 items-center gap-1.5 self-start rounded-full bg-sg-lavender-soft px-2.5 text-sm font-bold text-sg-lavender-ink">
+            <Target className="size-3.5" aria-hidden="true" />
+            {label}
+        </span>
     );
 }

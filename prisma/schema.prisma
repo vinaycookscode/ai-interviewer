@@ -378,6 +378,13 @@ model MockInterview {
   difficulty  String   // "Junior", "Mid", "Senior"
   // Written once on the first visit and kept, so a refresh shows the same questions (AIIN-47)
   questions   String[] @default([])
+  // What the questions should cover, if given (a plan checkpoint's topics)
+  topics      String[] @default([])
+
+  // A 90-day plan checkpoint on day 30, 60 or 90: one per plan and day (AIIN-101)
+  enrollmentId  String?
+  enrollment    ProgramEnrollment? @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+  checkpointDay Int?
   
   // Results
   score       Float?
@@ -386,6 +393,8 @@ model MockInterview {
   createdAt   DateTime @default(now())
   
   answers     MockAnswer[]
+
+  @@unique([enrollmentId, checkpointDay])
 }
 
 model MockAnswer {
@@ -480,6 +489,8 @@ model PlacementProgram {
   description  String   @db.Text
   durationDays Int      @default(90)
   isActive     Boolean  @default(true)
+  // The career path it's built for (sde, qa, data, devops or general); shown first to that role (AIIN-101)
+  track        String   @default("general")
   
   modules      ProgramModule[]
   enrollments  ProgramEnrollment[]
@@ -538,6 +549,7 @@ model ProgramEnrollment {
   
   completions   TaskCompletion[]
   certificate   Certificate?
+  checkpoints   MockInterview[]
   
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

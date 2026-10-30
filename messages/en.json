@@ -1571,7 +1571,7 @@
             "start": "Start day 1",
             "starting": "Starting…"
         },
-        "shorter": "Shorter plans",
+        "shorter": "Other plans",
         "more": "More plans",
         "days": "{count} days",
         "start": "Start",
@@ -1626,7 +1626,48 @@
             "mockStart": "Start a practice interview",
             "mockDone": "Mark as done",
             "unknownTask": "This task can’t be shown here.",
-            "markDone": "Mark as done"
+            "markDone": "Mark as done",
+            "alsoToday": "Also today",
+            "checkpointKicker": "Day {day} of {total} · Checkpoint",
+            "checkpointTitle": "Day {day} checkpoint",
+            "checkpointMeta": "5 questions on what you’ve covered since day {from} · about 20 minutes",
+            "checkpointBody": "A short practice interview on what you’ve covered so far. Your score goes on the checkpoint timeline, so you can see how far you’ve moved. It counts as today’s task for your streak.",
+            "checkpointStart": "Start the checkpoint",
+            "checkpointContinue": "Continue the checkpoint",
+            "checkpointStarting": "Opening…",
+            "checkpointFailed": "Couldn’t open the checkpoint. Try again.",
+            "checkpointScore": "{score} out of 10",
+            "checkpointDone": "Done. Your score is on the checkpoint timeline.",
+            "checkpointSee": "See the feedback",
+            "skillNew": "New for you · {skill}",
+            "skillRevision": "Revision · {skill}",
+            "skillNote": "New for you marks skills you didn’t list in your career path; Revision, the ones you did. Nothing is hidden or skipped.",
+            "checkpointHeading": "How far you’ve come"
+        },
+        "forRole": "Built for your role · {role}",
+        "roles": {
+            "sde": "SDE",
+            "qa": "QA",
+            "data": "Data",
+            "devops": "DevOps"
+        },
+        "skillNote": "Skills you didn’t list are marked New for you; the ones you did, Revision.",
+        "checkpoints": {
+            "title": "Checkpoints",
+            "body": "A short practice interview on days 30, 60 and 90, on that phase’s topics. It counts as the day’s task.",
+            "label": "Day {day} checkpoint",
+            "outOf": "out of 10",
+            "done": "Done {date}",
+            "up": "Up {change} · done {date}",
+            "down": "Down {change} · done {date}",
+            "same": "Same as before · done {date}",
+            "ready": "Ready to take",
+            "open": "Open day {day}",
+            "later": "{days, plural, one {Tomorrow} other {In # days}}",
+            "summaryUp": "Up {change} since day {day}",
+            "summaryDown": "Down {change} since day {day}",
+            "summarySame": "Same as day {day}",
+            "summaryCount": "{done} of {total} done"
         }
     },
     "Profile": {
@@ -2072,7 +2113,7 @@
         "noneEarned": "Nothing yet. Your first practice interview earns your first badge.",
         "locked": "Still to earn",
         "lockedHow": "Locked · {how}",
-        "allEarned": "You’ve earned every badge. More are coming with the plan’s checkpoints.",
+        "allEarned": "You’ve earned every badge.",
         "certTitle": "Certificate",
         "certNone": "Finish the 90-day plan to get a certificate you can add to LinkedIn.",
         "certDay": "Finish the 90-day plan to get a certificate you can add to LinkedIn. Day {day} of {total}.",
@@ -2120,6 +2161,21 @@
                 "how": "answer 7 daily challenges",
                 "progress": "{count} of {target} answered",
                 "earned": "You’ve answered 7 daily challenges."
+            },
+            "checkpoint30": {
+                "name": "Day 30 checkpoint",
+                "how": "finish the day 30 checkpoint in the 90-day plan",
+                "earned": "You finished the day 30 checkpoint."
+            },
+            "checkpoint60": {
+                "name": "Day 60 checkpoint",
+                "how": "finish the day 60 checkpoint in the 90-day plan",
+                "earned": "You finished the day 60 checkpoint."
+            },
+            "checkpoint90": {
+                "name": "Day 90 checkpoint",
+                "how": "finish the day 90 checkpoint in the 90-day plan",
+                "earned": "You finished the day 90 checkpoint."
             },
             "problems25": {
                 "name": "25 problems solved",

@@ -1,13 +1,15 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { awardAchievements, issueCertificate } from "@/lib/achievements/server";
+import { issueCertificate } from "@/lib/achievements/server";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { EnrollmentStatus, TaskType } from "@prisma/client";
 import { generateDayToken } from "@/lib/day-token";
 import { istDay, startOfIstDay } from "@/lib/ist";
-import { recordActivity } from "@/lib/daily-challenge/server";
+import { checkpointTopics, markPlanActive } from "@/lib/plan/server";
+import { isCheckpointDay } from "@/lib/plan/checkpoints";
+import { ROLE_NAMES } from "@/lib/career-path";
 
 // ============================================
 // PROGRAM QUERIES
@@ -212,52 +214,10 @@ export async function completeTask(enrollmentId: string, taskId: string, score?:
         }
     });
 
-    // Update streak logic
-    await updateStreak(enrollmentId);
-    // The app-wide streak counts plan tasks and the daily challenge alike (AIIN-99)
-    await recordActivity(session.user.id);
-    await awardAchievements(session.user.id, ["streak"]);
+    await markPlanActive(session.user.id, enrollmentId);
 
     revalidatePath("/candidate/placement-program");
     return { success: true, completion };
-}
-
-async function updateStreak(enrollmentId: string) {
-    const enrollment = await db.programEnrollment.findUnique({
-        where: { id: enrollmentId }
-    });
-
-    if (!enrollment) return;
-
-    // Days are counted in IST, so 11:30 PM one evening and 9 AM the next morning are consecutive days (AIIN-67)
-    const now = new Date();
-    const daysSinceLastActive = istDay(now) - istDay(enrollment.lastActiveAt);
-
-    let newStreak = enrollment.streak;
-
-    if (enrollment.streak === 0) {
-        // First completed task starts the streak, even on the day of enrolling
-        newStreak = 1;
-    } else if (daysSinceLastActive === 0) {
-        // Same day, no streak change
-    } else if (daysSinceLastActive === 1) {
-        // Consecutive day, increment streak
-        newStreak = enrollment.streak + 1;
-    } else {
-        // Streak broken
-        newStreak = 1;
-    }
-
-    const newLongestStreak = Math.max(newStreak, enrollment.longestStreak);
-
-    await db.programEnrollment.update({
-        where: { id: enrollmentId },
-        data: {
-            streak: newStreak,
-            longestStreak: newLongestStreak,
-            lastActiveAt: now
-        }
-    });
 }
 
 // ============================================
@@ -436,4 +396,50 @@ export async function advanceToNextDay(enrollmentId: string) {
 
     revalidatePath("/candidate/placement-program");
     return { success: true, newDay, newDayToken };
+}
+
+// ============================================
+// CHECKPOINTS (AIIN-101)
+// ============================================
+
+/**
+ * Opens the day 30, 60 or 90 checkpoint: a practice interview on that phase's topics, one per plan and day.
+ * Returns the same interview if it's already started, so it can be continued. Doesn't count towards the practice limit.
+ */
+export async function startCheckpoint(enrollmentId: string, day: number) {
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId) return { error: "unauthorized" as const };
+
+    const enrollment = await db.programEnrollment.findFirst({
+        where: { id: enrollmentId, userId },
+        select: { status: true, currentDay: true, programId: true, program: { select: { durationDays: true } } },
+    });
+    if (!enrollment || !Number.isInteger(day) || !isCheckpointDay(day, enrollment.program.durationDays) || day > enrollment.currentDay) {
+        return { error: "notFound" as const };
+    }
+
+    const existing = await db.mockInterview.findUnique({ where: { enrollmentId_checkpointDay: { enrollmentId, checkpointDay: day } }, select: { id: true } });
+    if (existing) return { mockInterviewId: existing.id };
+    if (enrollment.status === "PAUSED") return { error: "paused" as const };
+
+    const profile = await db.candidateProfile.findUnique({ where: { userId }, select: { primaryRole: true } });
+    try {
+        const created = await db.mockInterview.create({
+            data: {
+                userId,
+                role: profile?.primaryRole || ROLE_NAMES.sde,
+                difficulty: "Junior",
+                topics: await checkpointTopics(enrollment.programId, day),
+                enrollmentId,
+                checkpointDay: day,
+            },
+            select: { id: true },
+        });
+        return { mockInterviewId: created.id };
+    } catch {
+        // Started in another tab at the same moment: use that one
+        const raced = await db.mockInterview.findUnique({ where: { enrollmentId_checkpointDay: { enrollmentId, checkpointDay: day } }, select: { id: true } });
+        return raced ? { mockInterviewId: raced.id } : { error: "failed" as const };
+    }
 }

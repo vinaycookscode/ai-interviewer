@@ -9,8 +9,9 @@ import { FEATURES } from "@/lib/features";
 import { generateDayToken, validateDayToken } from "@/lib/day-token";
 import { istDay, planWeek } from "@/lib/daily-challenge/logic";
 import { loadStreak } from "@/lib/daily-challenge/server";
+import { isCheckpointDay, phaseStart, skillLabel } from "@/lib/plan/checkpoints";
 import { UpgradePrompt } from "@/components/subscription/upgrade-prompt";
-import { ProgramDayClient, type DayIdea, type DayTask } from "./client";
+import { ProgramDayClient, type DayCheckpoint, type DayIdea, type DayTask } from "./client";
 
 interface PageProps {
     params: Promise<{ slug: string }>;
@@ -76,11 +77,11 @@ export default async function ProgramDayPage({ params, searchParams }: PageProps
                 content: true,
                 tasks: {
                     orderBy: { order: "asc" },
-                    select: { id: true, title: true, type: true, duration: true, content: true, role: true },
+                    select: { id: true, title: true, type: true, duration: true, content: true, role: true, skills: true },
                 },
             },
         }),
-        db.candidateProfile.findUnique({ where: { userId }, select: { primaryRole: true } }),
+        db.candidateProfile.findUnique({ where: { userId }, select: { primaryRole: true, skills: true, onboardingComplete: true } }),
         db.taskCompletion.findMany({
             where: { enrollmentId: enrollment.id },
             select: { taskId: true, completedAt: true, metadata: true },
@@ -90,6 +91,8 @@ export default async function ProgramDayPage({ params, searchParams }: PageProps
     const byTask = new Map(completions.map((c) => [c.taskId, c]));
     // Tasks for everyone, plus those for the candidate's role (all of them before a role is set)
     const role = profile?.primaryRole;
+    // "New for you" or "Revision" by the skills in the career path; none without one (AIIN-101)
+    const candidateSkills = profile?.onboardingComplete ? profile.skills : null;
     const tasks: DayTask[] = (module?.tasks ?? [])
         .filter((task) => !task.role || !role || task.role === role)
         .map((task) => {
@@ -102,12 +105,23 @@ export default async function ProgramDayPage({ params, searchParams }: PageProps
                 content: task.content,
                 isStarted: !!completion,
                 isCompleted: !!completion?.completedAt,
+                skill: skillLabel(task.skills, candidateSkills),
                 savedCode:
                     completion?.metadata && typeof completion.metadata === "object" && "code" in completion.metadata && typeof completion.metadata.code === "string"
                         ? completion.metadata.code
                         : null,
             };
         });
+
+    // Days 30, 60 and 90: a checkpoint interview is the day's task (AIIN-101)
+    let checkpoint: DayCheckpoint | null = null;
+    if (isCheckpointDay(viewDay, program.durationDays)) {
+        const mock = await db.mockInterview.findUnique({
+            where: { enrollmentId_checkpointDay: { enrollmentId: enrollment.id, checkpointDay: viewDay } },
+            select: { id: true, score: true },
+        });
+        checkpoint = { day: viewDay, from: phaseStart(viewDay), started: !!mock, score: mock?.score ?? null, resultHref: mock && mock.score !== null ? `/candidate/practice/${mock.id}/result` : null };
+    }
 
     const paused = enrollment.status === "PAUSED";
     const shared = await loadStreak(userId);
@@ -128,6 +142,7 @@ export default async function ProgramDayPage({ params, searchParams }: PageProps
             }}
             day={{ number: viewDay, title: module?.title ?? null, idea: asIdea(module?.content) }}
             tasks={tasks}
+            checkpoint={checkpoint}
             week={planWeek(shared.week, istDay(new Date()), istDay(enrollment.startDate))}
             nav={{
                 prev: viewDay > 1 ? dayHref(viewDay - 1) : null,

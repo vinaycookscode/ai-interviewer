@@ -1,9 +1,13 @@
 // Badges for real milestones (AIIN-102): one list, each a measure and the number that earns it.
-// Pure functions (no database, no "@/" imports), tested with `npm test`. The day 30, 60 and 90 checkpoint
-// badges join with the checkpoints themselves (AIIN-101).
+// Pure functions (no database, no "@/" imports), tested with `npm test`.
 
 /** What a badge is measured by. Each is loaded on its own, so an action only counts what it changed. */
-export type Metric = "streak" | "practice" | "bestScore" | "challenges" | "problems" | "flashcards";
+export type Metric = "streak" | "practice" | "bestScore" | "challenges" | CheckpointMetric | "problems" | "flashcards";
+
+/** Each plan checkpoint is its own: 1 once that day's checkpoint interview is finished (AIIN-101). */
+export type CheckpointMetric = "checkpoint30" | "checkpoint60" | "checkpoint90";
+export const checkpointMetric = (day: number): CheckpointMetric | null =>
+    day === 30 || day === 60 || day === 90 ? `checkpoint${day}` : null;
 
 export type Stats = Record<Metric, number>;
 
@@ -21,6 +25,9 @@ export const ACHIEVEMENTS = [
     { key: "fivePractice", metric: "practice", target: 5 },
     { key: "firstEight", metric: "bestScore", target: 8 },
     { key: "challenges7", metric: "challenges", target: 7 },
+    { key: "checkpoint30", metric: "checkpoint30", target: 1 },
+    { key: "checkpoint60", metric: "checkpoint60", target: 1 },
+    { key: "checkpoint90", metric: "checkpoint90", target: 1 },
     { key: "problems25", metric: "problems", target: 25 },
     { key: "flashcards100", metric: "flashcards", target: 100 },
 ] as const satisfies readonly Achievement[];
@@ -52,9 +59,9 @@ export function longestRun(days: number[]): number {
     return best;
 }
 
-/** How far a locked counting badge has got, for "9 of 25 solved". Streaks and scores aren't counts. */
+/** How far a locked counting badge has got, for "9 of 25 solved". Streaks, scores and checkpoints aren't counts. */
 export function progressOf(a: Achievement, stats: Stats): number | null {
-    if (a.metric === "streak" || a.metric === "bestScore") return null;
+    if (a.metric === "streak" || a.metric === "bestScore" || a.target === 1) return null;
     const value = Math.min(stats[a.metric], a.target);
     return value > 0 ? value : null;
 }

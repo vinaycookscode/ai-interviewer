@@ -21,16 +21,19 @@ import {
     PlayCircle,
     Sparkles,
     Calculator,
+    Check,
+    Target,
     type LucideIcon,
 } from "lucide-react";
 import type { TaskType } from "@prisma/client";
-import { advanceToNextDay, completeTask, pauseEnrollment, resumeEnrollment, startTask } from "@/actions/placement-program";
+import { advanceToNextDay, completeTask, pauseEnrollment, resumeEnrollment, startCheckpoint, startTask } from "@/actions/placement-program";
 import { TaskModal } from "@/components/placement/task-modal";
 import { WeekStreak } from "@/components/placement/week-streak";
 import { Mascot } from "@/components/soft-glass/mascot";
 import { coralButton, focusRing } from "@/components/soft-glass/classes";
 import { iconButton, inkButton, outlineButton, panel, panelTitle, sectionTitle } from "@/components/jobs/employer-ui";
 import type { WeekDay } from "@/lib/streak";
+import type { SkillLabel } from "@/lib/plan/checkpoints";
 import { cn } from "@/lib/utils";
 
 export interface DayTask {
@@ -43,6 +46,18 @@ export interface DayTask {
     isCompleted: boolean;
     /** Code saved from an earlier attempt at a problem task. */
     savedCode: string | null;
+    /** "New for you" or "Revision", by the career path's skills (AIIN-101). */
+    skill: SkillLabel;
+}
+
+/** The day 30, 60 or 90 checkpoint interview (AIIN-101). */
+export interface DayCheckpoint {
+    day: number;
+    /** The first day it covers. */
+    from: number;
+    started: boolean;
+    score: number | null;
+    resultHref: string | null;
 }
 
 export interface DayIdea {
@@ -65,6 +80,7 @@ interface ProgramDayClientProps {
     };
     day: { number: number; title: string | null; idea: DayIdea | null };
     tasks: DayTask[];
+    checkpoint: DayCheckpoint | null;
     week: WeekDay[];
     nav: { prev: string | null; next: string | null; today: string | null };
 }
@@ -81,15 +97,19 @@ const TASK_ICONS: Record<TaskType, LucideIcon> = {
 
 const markdown = "flex flex-col gap-3 [&_h3]:font-bold [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_code]:rounded [&_code]:bg-sg-chip [&_code]:px-1";
 
-export function ProgramDayClient({ program, enrollment, day, tasks, week, nav }: ProgramDayClientProps) {
+export function ProgramDayClient({ program, enrollment, day, tasks, checkpoint, week, nav }: ProgramDayClientProps) {
     const t = useTranslations("Placement");
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [openTask, setOpenTask] = useState<DayTask | null>(null);
+    const [checkpointError, setCheckpointError] = useState(false);
+    const [openingCheckpoint, startOpeningCheckpoint] = useTransition();
 
     const isToday = day.number === enrollment.currentDay;
     const doneCount = tasks.filter((task) => task.isCompleted).length;
-    const allDone = tasks.length > 0 && doneCount === tasks.length;
+    const checkpointDone = !checkpoint || checkpoint.score !== null;
+    // On a checkpoint day, the checkpoint is the day's task; the others still count
+    const allDone = (tasks.length > 0 || !!checkpoint) && doneCount === tasks.length && checkpointDone;
     const minutesLeft = tasks.filter((task) => !task.isCompleted).reduce((sum, task) => sum + task.duration, 0);
     const nextTask = tasks.find((task) => !task.isCompleted) ?? null;
     const quickest = tasks.filter((task) => !task.isCompleted).sort((a, b) => a.duration - b.duration)[0];
@@ -117,6 +137,14 @@ export function ProgramDayClient({ program, enrollment, day, tasks, week, nav }:
             router.refresh();
         });
 
+    const openCheckpoint = () =>
+        startOpeningCheckpoint(async () => {
+            setCheckpointError(false);
+            const result = await startCheckpoint(enrollment.id, day.number);
+            if ("mockInterviewId" in result && result.mockInterviewId) router.push(`/candidate/practice/${result.mockInterviewId}`);
+            else setCheckpointError(true);
+        });
+
     const togglePause = () =>
         startTransition(async () => {
             await (enrollment.paused ? resumeEnrollment(enrollment.id) : pauseEnrollment(enrollment.id));
@@ -131,8 +159,15 @@ export function ProgramDayClient({ program, enrollment, day, tasks, week, nav }:
                         <ArrowLeft className="size-4" aria-hidden="true" />
                         {t("day.back")}
                     </Link>
+                    {checkpoint && (
+                        <span className="text-[13px] leading-[18px] font-bold text-sg-muted">{t("day.checkpointKicker", { day: day.number, total: program.durationDays })}</span>
+                    )}
                     <h1 className="font-display sg-soft text-[32px] font-semibold leading-[1.14] tracking-[-0.025em] text-balance sm:text-[44px]">
-                        {day.title ? t("day.title", { day: day.number, topic: day.title }) : t("day.titleNoTopic", { day: day.number })}
+                        {checkpoint
+                            ? t("day.checkpointHeading")
+                            : day.title
+                              ? t("day.title", { day: day.number, topic: day.title })
+                              : t("day.titleNoTopic", { day: day.number })}
                     </h1>
                 </div>
                 <span className="font-semibold text-sg-muted">{t("day.week", { week: Math.ceil(day.number / 7), program: program.name })}</span>
@@ -169,10 +204,55 @@ export function ProgramDayClient({ program, enrollment, day, tasks, week, nav }:
 
             <div className="flex flex-wrap items-start gap-6">
                 <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-6">
+                    {checkpoint && (
+                        <section aria-labelledby="check-title" className={cn(panel, "sg-shadow-lg")}>
+                            <div className="flex items-center gap-3">
+                                <span aria-hidden="true" className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-sg-lavender-soft text-sg-lavender-ink">
+                                    <Target className="size-[22px]" />
+                                </span>
+                                <span className="flex min-w-0 flex-col">
+                                    <h2 id="check-title" className={panelTitle}>
+                                        {t("day.checkpointTitle", { day: checkpoint.day })}
+                                    </h2>
+                                    <span className="text-sg-muted">{t("day.checkpointMeta", { from: checkpoint.from })}</span>
+                                </span>
+                            </div>
+                            {checkpoint.score === null ? (
+                                <>
+                                    <p>{t("day.checkpointBody")}</p>
+                                    <button type="button" onClick={openCheckpoint} disabled={openingCheckpoint || enrollment.paused} className={cn(coralButton, "h-12 self-start px-6 text-base")}>
+                                        {openingCheckpoint ? <Loader2 className="size-[18px] animate-spin" aria-hidden="true" /> : <Mic className="size-[18px]" aria-hidden="true" />}
+                                        {openingCheckpoint ? t("day.checkpointStarting") : checkpoint.started ? t("day.checkpointContinue") : t("day.checkpointStart")}
+                                    </button>
+                                    {checkpointError && (
+                                        <p role="alert" className="text-sm font-semibold text-sg-danger">
+                                            {t("day.checkpointFailed")}
+                                        </p>
+                                    )}
+                                </>
+                            ) : (
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5">
+                                    <span className="flex flex-col">
+                                        <span className="font-display sg-soft text-[30px] leading-9 font-semibold">{t("day.checkpointScore", { score: checkpoint.score.toFixed(1) })}</span>
+                                        <span className="inline-flex items-center gap-1.5 text-sm font-semibold">
+                                            <CheckCircle2 className="size-4 shrink-0 text-sg-lavender-ink" aria-hidden="true" />
+                                            {t("day.checkpointDone")}
+                                        </span>
+                                    </span>
+                                    {checkpoint.resultHref && (
+                                        <Link href={checkpoint.resultHref} className={cn(outlineButton, "h-10 text-sm")}>
+                                            {t("day.checkpointSee")}
+                                        </Link>
+                                    )}
+                                </div>
+                            )}
+                        </section>
+                    )}
+
                     <section aria-label={isToday ? t("day.today") : t("day.viewing", { day: day.number })} className="flex flex-col gap-4">
                         <div className="flex flex-col gap-1">
                             <div className="flex items-center justify-between gap-3">
-                                <h2 className={sectionTitle}>{isToday ? t("day.today") : t("day.viewing", { day: day.number })}</h2>
+                                <h2 className={sectionTitle}>{checkpoint ? t("day.alsoToday") : isToday ? t("day.today") : t("day.viewing", { day: day.number })}</h2>
                                 <span className="flex shrink-0 items-center gap-1">
                                     {nav.prev ? (
                                         <Link href={nav.prev} aria-label={t("day.prev")} className={iconButton}>
@@ -196,7 +276,7 @@ export function ProgramDayClient({ program, enrollment, day, tasks, week, nav }:
                             </div>
                             {tasks.length > 0 && (
                                 <span className="font-semibold text-sg-muted">
-                                    {allDone ? t("day.doneOf", { done: doneCount, total: tasks.length }) : t("day.doneLeft", { done: doneCount, total: tasks.length, minutes: minutesLeft })}
+                                    {doneCount === tasks.length ? t("day.doneOf", { done: doneCount, total: tasks.length }) : t("day.doneLeft", { done: doneCount, total: tasks.length, minutes: minutesLeft })}
                                 </span>
                             )}
                         </div>
@@ -208,7 +288,7 @@ export function ProgramDayClient({ program, enrollment, day, tasks, week, nav }:
                         )}
 
                         {tasks.length === 0 ? (
-                            <p className="sg-glass rounded-[22px] p-6 text-sg-muted">{t("day.noTasks")}</p>
+                            !checkpoint && <p className="sg-glass rounded-[22px] p-6 text-sg-muted">{t("day.noTasks")}</p>
                         ) : (
                             <ul className="flex flex-col gap-2.5">
                                 {tasks.map((task) => {
@@ -231,6 +311,17 @@ export function ProgramDayClient({ program, enrollment, day, tasks, week, nav }:
                                                     {t("day.taskMeta", { type: typeName(task.type), minutes: task.duration })}
                                                 </span>
                                             </span>
+                                            {task.skill && (
+                                                <span
+                                                    className={cn(
+                                                        "inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-bold",
+                                                        task.skill.kind === "new" ? "bg-sg-lavender-soft text-sg-lavender-ink" : "bg-sg-chip"
+                                                    )}
+                                                >
+                                                    {task.skill.kind === "new" ? <Sparkles className="size-3.5" aria-hidden="true" /> : <Check className="size-3.5" aria-hidden="true" />}
+                                                    {task.skill.kind === "new" ? t("day.skillNew", { skill: task.skill.skill }) : t("day.skillRevision", { skill: task.skill.skill })}
+                                                </span>
+                                            )}
                                             {task.isCompleted ? (
                                                 <span className="inline-flex items-center gap-1.5 px-2 font-semibold text-sg-lavender-ink">
                                                     <CheckCircle2 className="size-[18px]" aria-hidden="true" />
@@ -252,6 +343,8 @@ export function ProgramDayClient({ program, enrollment, day, tasks, week, nav }:
                                 })}
                             </ul>
                         )}
+
+                        {tasks.some((task) => task.skill) && <p className="text-sm text-sg-muted">{t("day.skillNote")}</p>}
 
                         {allDone && isToday && !enrollment.finished && (
                             <div role="status" className="sg-glass sg-shadow-lg flex flex-wrap items-center gap-4 rounded-[24px] p-5">
