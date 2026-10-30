@@ -24,6 +24,7 @@ This directory records significant technical decisions made on this project — 
 | 2026-10-28 | [No preview environment for now: check locally, deploy to production](2026-10-28-no-preview-environment.md) | Accepted | AIIN-115 |
 | 2026-10-29 | [The Free plan includes 2 practice interviews a month](2026-10-29-free-plan-includes-practice.md) | Accepted · implemented | AIIN-189 |
 | 2026-10-30 | [The integrity verdict: plain rules over the events we already capture](2026-10-30-integrity-verdict-rules.md) | Accepted · implemented | AIIN-177 |
+| 2026-10-30 | [Where candidate code runs: hosting the code execution engine](2026-10-30-code-execution-hosting.md) | Proposed | AIIN-105 |
 
 Proposals that aren't ADRs yet (Upstash rate limiting, Deepgram and Google TTS) are listed in `docs/audits/2026-10-24-master-decision-index.md`.
 
