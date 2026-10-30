@@ -112,9 +112,40 @@ model User {
   jobOffers          JobOffer[]
   companySolutions   UserCompanySolution[]
   weeklyReports      WeeklyReport[]
+  activityDays       ActivityDay[]
+  challengeAnswers   DailyChallengeAnswer[]
   
   // Subscription
   subscription       Subscription?
+}
+
+// A day the candidate did something that keeps their streak: a plan task or the daily challenge (AIIN-99).
+// One streak for the whole app is counted from these, in IST days.
+model ActivityDay {
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // The IST calendar day
+  day    DateTime @db.Date
+
+  @@id([userId, day])
+}
+
+// A candidate's answer to the daily challenge: one per IST day (AIIN-99)
+model DailyChallengeAnswer {
+  id         String          @id @default(cuid())
+  userId     String
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  day        DateTime        @db.Date
+  track      String
+  questionId String
+  question   CompanyQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answer     String          @db.Text
+  // 1 to 10 from U; null until graded (grading is retried if Gemini was busy)
+  score      Int?
+  feedback   String?         @db.Text
+  createdAt  DateTime        @default(now())
+
+  @@unique([userId, day])
 }
 
 // One row per weekly report email sent, so a week is never sent twice (AIIN-103)
@@ -554,6 +585,7 @@ model CompanyQuestion {
   createdAt   DateTime @default(now())
   
   userSolutions UserCompanySolution[]
+  challengeAnswers DailyChallengeAnswer[]
 }
 
 model CompanyResource {

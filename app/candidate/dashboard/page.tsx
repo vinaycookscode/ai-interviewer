@@ -12,6 +12,7 @@ import {
     FileUp,
     Hourglass,
     ListChecks,
+    Sparkles,
     Mic,
     TriangleAlert,
     type LucideIcon,
@@ -27,7 +28,8 @@ import { DashboardRefresher } from "@/components/candidate/dashboard-refresher";
 import { Mascot } from "@/components/soft-glass/mascot";
 import { ScoreGauge } from "@/components/soft-glass/score-gauge";
 import { coralButton, focusRing } from "@/components/soft-glass/classes";
-import { liveStreak } from "@/lib/streak";
+import { loadStreak, todaysQuestion } from "@/lib/daily-challenge/server";
+import { dayDate } from "@/lib/daily-challenge/logic";
 import { EmptyState } from "@/components/soft-glass/empty-state";
 import { glassButton } from "@/components/jobs/employer-ui";
 
@@ -123,25 +125,24 @@ export default async function CandidateDashboardPage({ searchParams }: { searchP
     const now = new Date();
     const today = istDay(now);
 
-    // ---- The program: this week's practice and today's tasks ----
-    const weekStart = today - ((istDay(now) + 3) % 7); // Monday (1970-01-01 was a Thursday)
-    const [weekCompletions, todayModule] = enrollment
-        ? await Promise.all([
-              db.taskCompletion.findMany({
-                  where: { enrollmentId: enrollment.id, completedAt: { gte: new Date(weekStart * DAY_MS - IST_OFFSET_MS) } },
-                  select: { completedAt: true },
-              }),
-              db.programModule.findUnique({
-                  where: { programId_dayNumber: { programId: enrollment.programId, dayNumber: enrollment.currentDay } },
-                  select: {
-                      title: true,
-                      tasks: { select: { role: true, completions: { where: { enrollmentId: enrollment.id }, select: { completedAt: true } } } },
-                  },
-              }),
-          ])
-        : [[], null];
+    // ---- The program: today's tasks ----
+    const todayModule = enrollment
+        ? await db.programModule.findUnique({
+              where: { programId_dayNumber: { programId: enrollment.programId, dayNumber: enrollment.currentDay } },
+              select: {
+                  title: true,
+                  tasks: { select: { role: true, completions: { where: { enrollmentId: enrollment.id }, select: { completedAt: true } } } },
+              },
+          })
+        : null;
 
-    const practisedDays = new Set(weekCompletions.flatMap((c) => (c.completedAt ? [istDay(c.completedAt)] : [])));
+    // The streak and today's challenge (AIIN-99)
+    const [streak, challenge, challengeAnswer] = await Promise.all([
+        loadStreak(userId, now),
+        todaysQuestion(userId, now),
+        db.dailyChallengeAnswer.findUnique({ where: { userId_day: { userId, day: dayDate(today) } }, select: { score: true } }),
+    ]);
+
     const primaryRole = candidate.candidateProfile?.primaryRole;
     // Same rule as the program page: common tasks, plus the ones for the candidate's role.
     const todayTasks = (todayModule?.tasks ?? []).filter((task) => !task.role || !primaryRole || task.role === primaryRole);
@@ -248,45 +249,70 @@ export default async function CandidateDashboardPage({ searchParams }: { searchP
                 </section>
             )}
 
-            {(showPlan || average !== null || showPractice) && (
+            {(
                 <div className="grid gap-5 [grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr))]">
-                    {enrollment ? (
-                        <section aria-labelledby="week-title" className={cn(card, "gap-[18px]")}>
-                            <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
-                                <h2 id="week-title" className={cardTitle}>
-                                    {t("week.streak", { count: liveStreak(enrollment.streak, enrollment.lastActiveAt, false) })}
-                                </h2>
-                                <span className="font-medium text-sg-muted">
-                                    {t("week.dayOf", { day: enrollment.currentDay, total: enrollment.program.durationDays })}
+                    {/* One streak: a plan task or the daily challenge keeps it (AIIN-99) */}
+                    <section aria-labelledby="week-title" className={cn(card, "gap-4")}>
+                        <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
+                            <h2 id="week-title" className={cardTitle}>
+                                {t("week.streak", { count: streak.streak })}
+                            </h2>
+                            <span className="text-sm font-medium text-sg-muted">{t("week.keepsIt")}</span>
+                        </div>
+                        <ol aria-label={t("week.days")} className="grid grid-cols-7 gap-1.5">
+                            {streak.week.map(({ day, done, isToday }) => {
+                                const date = new Date(day * DAY_MS + DAY_MS / 2);
+                                return (
+                                    <li key={day} className="flex flex-col items-center gap-1.5">
+                                        <span
+                                            aria-hidden="true"
+                                            className={cn(
+                                                "flex size-[34px] items-center justify-center rounded-full",
+                                                done ? "bg-sg-coral text-sg-coral-ink" : "border-2 border-dashed border-sg-field-border",
+                                                isToday && !done && "border-solid border-sg-text"
+                                            )}
+                                        >
+                                            {done && <Check className="size-4" strokeWidth={3} />}
+                                        </span>
+                                        <span className="text-[13px] font-semibold leading-4 text-sg-muted">
+                                            <span aria-hidden="true">{weekdayShort.format(date).charAt(0)}</span>
+                                            <span className="sr-only">
+                                                {weekdayLong.format(date)}, {done ? t("week.practised") : t("week.notYet")}
+                                            </span>
+                                        </span>
+                                    </li>
+                                );
+                            })}
+                        </ol>
+                        {challenge && (
+                            <div className="flex flex-col gap-2.5 rounded-[18px] bg-sg-row px-4 py-3.5">
+                                <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                                    <span className="inline-flex items-center gap-1.5 text-[13px] font-bold leading-[18px] text-sg-muted">
+                                        <Sparkles className="size-3.5" aria-hidden="true" />
+                                        {t("challenge.label")}
+                                    </span>
+                                    <span className="text-[13px] text-sg-muted">{t("challenge.meta", { type: challenge.type })}</span>
                                 </span>
+                                <span className="line-clamp-3 font-bold">{challenge.question}</span>
+                                {challengeAnswer ? (
+                                    <span className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                                        <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-sg-chip px-3 text-sm font-semibold">
+                                            <Check className="size-3.5" aria-hidden="true" />
+                                            {challengeAnswer.score === null ? t("challenge.donePending") : t("challenge.done", { score: challengeAnswer.score })}
+                                        </span>
+                                        <Link href="/candidate/challenge" className={cn("rounded-md font-semibold underline underline-offset-[3px]", focusRing)}>
+                                            {t("challenge.see")}
+                                        </Link>
+                                    </span>
+                                ) : (
+                                    <Link href="/candidate/challenge" className={cn(inkButton, "h-11 self-start px-5 text-[15px]")}>
+                                        {t("challenge.answer")}
+                                        <ArrowRight className="size-4" aria-hidden="true" />
+                                    </Link>
+                                )}
                             </div>
-                            <ol aria-label={t("week.days")} className="grid grid-cols-7 gap-1.5">
-                                {Array.from({ length: 7 }, (_, i) => {
-                                    const day = weekStart + i;
-                                    const done = practisedDays.has(day);
-                                    const date = new Date(day * DAY_MS + DAY_MS / 2);
-                                    return (
-                                        <li key={day} className="flex flex-col items-center gap-1.5">
-                                            <span
-                                                aria-hidden="true"
-                                                className={cn(
-                                                    "flex size-[34px] items-center justify-center rounded-full",
-                                                    done ? "bg-sg-coral text-sg-coral-ink" : "border-2 border-dashed border-sg-field-border",
-                                                    day === today && !done && "border-solid border-sg-text"
-                                                )}
-                                            >
-                                                {done && <Check className="size-4" strokeWidth={3} />}
-                                            </span>
-                                            <span className="text-[13px] font-semibold leading-4 text-sg-muted">
-                                                <span aria-hidden="true">{weekdayShort.format(date).charAt(0)}</span>
-                                                <span className="sr-only">
-                                                    {weekdayLong.format(date)}, {done ? t("week.practised") : t("week.notYet")}
-                                                </span>
-                                            </span>
-                                        </li>
-                                    );
-                                })}
-                            </ol>
+                        )}
+                        {enrollment ? (
                             <Link
                                 href={`/candidate/placement-program/${enrollment.program.slug}`}
                                 className={cn("mt-auto flex min-h-12 items-center justify-between gap-2 rounded-2xl bg-sg-row px-4 py-2 font-semibold", focusRing)}
@@ -300,24 +326,18 @@ export default async function CandidateDashboardPage({ searchParams }: { searchP
                                 </span>
                                 <ArrowRight className="size-[18px] shrink-0" aria-hidden="true" />
                             </Link>
-                        </section>
-                    ) : (
-                        showPlan && (
-                            <section aria-labelledby="plan-title" className={cn(card, "gap-3")}>
-                                <h2 id="plan-title" className={cardTitle}>
-                                    {t("week.joinTitle")}
-                                </h2>
-                                <p className="text-sg-muted">{t("week.joinBody")}</p>
+                        ) : (
+                            showPlan && (
                                 <Link
                                     href="/candidate/placement-program"
-                                    className={cn("mt-auto flex min-h-12 items-center justify-between gap-2 rounded-2xl bg-sg-row px-4 font-semibold", focusRing)}
+                                    className={cn("mt-auto flex min-h-12 items-center justify-between gap-2 rounded-2xl bg-sg-row px-4 py-2 font-semibold", focusRing)}
                                 >
                                     {t("week.joinCta")}
                                     <ArrowRight className="size-[18px] shrink-0" aria-hidden="true" />
                                 </Link>
-                            </section>
-                        )
-                    )}
+                            )
+                        )}
+                    </section>
 
                     <section aria-labelledby="score-title" className={cn(card, "items-center gap-1.5 text-center")}>
                         <h2 id="score-title" className={cn(cardTitle, "self-stretch text-left")}>

@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { EnrollmentStatus, TaskType } from "@prisma/client";
 import { generateDayToken } from "@/lib/day-token";
 import { istDay, startOfIstDay } from "@/lib/ist";
+import { recordActivity } from "@/lib/daily-challenge/server";
 
 // ============================================
 // PROGRAM QUERIES
@@ -212,6 +213,8 @@ export async function completeTask(enrollmentId: string, taskId: string, score?:
 
     // Update streak logic
     await updateStreak(enrollmentId);
+    // The app-wide streak counts plan tasks and the daily challenge alike (AIIN-99)
+    await recordActivity(session.user.id);
 
     revalidatePath("/candidate/placement-program");
     return { success: true, completion };

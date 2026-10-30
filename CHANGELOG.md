@@ -4,7 +4,15 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-On `develop`, not yet on `main`. Adds `User.weeklyReportEmails` and the `WeeklyReport` table (migration `weekly_report`). **Before releasing, set `CRON_SECRET` (16+ random characters) in Vercel's production environment**: the Monday job refuses to run without it. `vercel.json` schedules it.
+On `develop`, not yet on `main`. Adds the `ActivityDay` and `DailyChallengeAnswer` tables (migration `daily_challenge`, which carries over every past day a plan task was done).
+
+- **Daily challenge and one streak.** Each day, candidates get one short aptitude or HR question for their role. It's the same for everyone on a role, all IST day. They answer once; U scores it out of 10 with a line of feedback, then shows the model answer. If U is busy, the answer is saved and scored on the next visit. Today shows the challenge in the streak card.
+
+  There is now **one streak**, shared by Today, the plan and the challenge: a plan task or the challenge keeps it, and both on one day count once. A paused plan no longer holds the streak; the daily challenge keeps it going instead (AIIN-99).
+
+## 2026-10-30, fourth release
+
+On `main` (`001afee`), deploy not yet confirmed. Adds `User.weeklyReportEmails` and the `WeeklyReport` table (migration `weekly_report`). Needs `CRON_SECRET` (16+ random characters) in Vercel's production environment: the Monday job refuses to run without it. `vercel.json` schedules it.
 
 - **Weekly report email.** Every Monday at 9:00 IST, candidates who practised in the last four weeks get a short report on the week before:
   - practice interviews and their average against the week before

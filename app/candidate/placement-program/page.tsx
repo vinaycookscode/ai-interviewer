@@ -8,7 +8,8 @@ import { db } from "@/lib/db";
 import { checkFeature } from "@/actions/feature-flags";
 import { getCurrentSubscription } from "@/actions/subscription";
 import { FEATURES } from "@/lib/features";
-import { liveStreak, weekRow } from "@/lib/streak";
+import { istDay, planWeek } from "@/lib/daily-challenge/logic";
+import { loadStreak } from "@/lib/daily-challenge/server";
 import { UpgradePrompt } from "@/components/subscription/upgrade-prompt";
 import { WeekStreak } from "@/components/placement/week-streak";
 import { EnrollButton } from "@/components/placement/enroll-button";
@@ -68,20 +69,16 @@ export default async function PlacementProgramPage() {
     const others = programs.filter((p) => p.id !== (current?.programId ?? featured?.id));
 
     let today: { title: string; tasks: number; minutes: number } | null = null;
-    let week: ReturnType<typeof weekRow> = [];
+    let week: ReturnType<typeof planWeek> = [];
+    const shared = await loadStreak(userId);
     if (current) {
-        const [module, completions] = await Promise.all([
-            db.programModule.findUnique({
-                where: { programId_dayNumber: { programId: current.programId, dayNumber: current.currentDay } },
-                select: { title: true, tasks: { select: { duration: true } } },
-            }),
-            db.taskCompletion.findMany({
-                where: { enrollmentId: current.id, completedAt: { gte: eightDaysAgo() } },
-                select: { completedAt: true },
-            }),
-        ]);
-        if (module) today = { title: module.title, tasks: module.tasks.length, minutes: module.tasks.reduce((sum, task) => sum + task.duration, 0) };
-        week = weekRow(completions.flatMap((c) => (c.completedAt ? [c.completedAt] : [])), current.startDate);
+        const dayModule = await db.programModule.findUnique({
+            where: { programId_dayNumber: { programId: current.programId, dayNumber: current.currentDay } },
+            select: { title: true, tasks: { select: { duration: true } } },
+        });
+        if (dayModule) today = { title: dayModule.title, tasks: dayModule.tasks.length, minutes: dayModule.tasks.reduce((sum, task) => sum + task.duration, 0) };
+        // The one streak, shared with the daily challenge (AIIN-99)
+        week = planWeek(shared.week, istDay(new Date()), istDay(current.startDate));
     }
 
     return (
@@ -122,9 +119,9 @@ export default async function PlacementProgramPage() {
                                     <Flame aria-hidden="true" className="size-6 text-sg-coral" />
                                     <span className="flex items-baseline gap-1.5">
                                         <span className="font-display sg-soft text-[28px] leading-[34px] font-semibold">
-                                            {liveStreak(current.streak, current.lastActiveAt, current.status === "PAUSED")}
+                                            {shared.streak}
                                         </span>
-                                        <span className="font-semibold">{t("streak", { count: current.streak })}</span>
+                                        <span className="font-semibold">{t("streak", { count: shared.streak })}</span>
                                     </span>
                                 </span>
                                 <span className="text-[13px] leading-[18px] font-medium text-sg-muted">{t("best", { count: current.longestStreak })}</span>
@@ -252,9 +249,4 @@ function PlanProgress({ day, total, t }: { day: number; total: number; t: Awaite
             </span>
         </div>
     );
-}
-
-/** Enough history to fill this week's row, whatever day it is. */
-function eightDaysAgo(): Date {
-    return new Date(Date.now() - 8 * 24 * 60 * 60 * 1000);
 }

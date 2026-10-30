@@ -7,7 +7,8 @@ import { checkFeature } from "@/actions/feature-flags";
 import { getCurrentSubscription } from "@/actions/subscription";
 import { FEATURES } from "@/lib/features";
 import { generateDayToken, validateDayToken } from "@/lib/day-token";
-import { liveStreak, streakAtRisk, weekRow } from "@/lib/streak";
+import { istDay, planWeek } from "@/lib/daily-challenge/logic";
+import { loadStreak } from "@/lib/daily-challenge/server";
 import { UpgradePrompt } from "@/components/subscription/upgrade-prompt";
 import { ProgramDayClient, type DayIdea, type DayTask } from "./client";
 
@@ -109,6 +110,7 @@ export default async function ProgramDayPage({ params, searchParams }: PageProps
         });
 
     const paused = enrollment.status === "PAUSED";
+    const shared = await loadStreak(userId);
     const dayHref = (day: number) => `/candidate/placement-program/${slug}?d=${generateDayToken(enrollment.id, day)}`;
 
     return (
@@ -119,13 +121,14 @@ export default async function ProgramDayPage({ params, searchParams }: PageProps
                 paused,
                 finished: enrollment.status === "COMPLETED",
                 currentDay: enrollment.currentDay,
-                streak: liveStreak(enrollment.streak, enrollment.lastActiveAt, paused),
+                // The one streak, shared with the daily challenge (AIIN-99)
+                streak: shared.streak,
                 longestStreak: enrollment.longestStreak,
-                atRisk: streakAtRisk(enrollment.streak, enrollment.lastActiveAt, paused),
+                atRisk: !paused && shared.streak > 0 && !shared.doneToday,
             }}
             day={{ number: viewDay, title: module?.title ?? null, idea: asIdea(module?.content) }}
             tasks={tasks}
-            week={weekRow(completions.flatMap((c) => (c.completedAt ? [c.completedAt] : [])), enrollment.startDate)}
+            week={planWeek(shared.week, istDay(new Date()), istDay(enrollment.startDate))}
             nav={{
                 prev: viewDay > 1 ? dayHref(viewDay - 1) : null,
                 next: viewDay < enrollment.currentDay ? dayHref(viewDay + 1) : null,

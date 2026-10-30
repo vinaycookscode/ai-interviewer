@@ -813,7 +813,8 @@
             "openPlan": "Open today’s plan",
             "joinTitle": "Your 90-day plan",
             "joinBody": "One short task a day, built around the role you want.",
-            "joinCta": "See the plan"
+            "joinCta": "See the plan",
+            "keepsIt": "A plan task or the challenge keeps it"
         },
         "score": {
             "title": "Average score",
@@ -849,7 +850,15 @@
             "emptyAction": "Start a practice"
         },
         "missingTitle": "We couldn’t find your account",
-        "missingBody": "Sign out and sign back in. If it keeps happening, send us feedback."
+        "missingBody": "Sign out and sign back in. If it keeps happening, send us feedback.",
+        "challenge": {
+            "label": "Today’s challenge",
+            "meta": "{type, select, APTITUDE {Aptitude} HR {HR} other {Challenge}} · about 5 min",
+            "answer": "Answer it",
+            "done": "Done · {score} out of 10",
+            "donePending": "Done · U is scoring it",
+            "see": "See U’s answer"
+        }
     },
     "ResumeScreener": {
         "title": "Resume review",
@@ -1581,8 +1590,8 @@
             "titleNoTopic": "Day {day}",
             "week": "Week {week} · {program}",
             "paused": "Your plan is paused.",
-            "pausedStreak": "Your {count}-day streak is safe until you resume.",
-            "pausedNoStreak": "Resume when you’re ready.",
+            "pausedStreak": "The daily challenge keeps your {count}-day streak going while the plan is paused.",
+            "pausedNoStreak": "Resume when you’re ready. The daily challenge counts for your streak meanwhile.",
             "resume": "Resume the plan",
             "atRisk": "Finish one task today to keep your {count}-day streak.",
             "atRiskTask": "{task} takes {minutes} minutes.",
@@ -2009,5 +2018,48 @@
         "invalidTitle": "This link doesn’t work",
         "invalidBody": "It may be incomplete. You can turn weekly emails on or off in your profile.",
         "profile": "Open your profile"
+    },
+    "Challenge": {
+        "metaTitle": "Daily challenge",
+        "back": "Today",
+        "eyebrow": "Daily challenge · {date} · {type, select, APTITUDE {Aptitude} HR {HR} other {Challenge}} · about 5 min",
+        "questionHeading": "The question",
+        "yourAnswer": "Your answer",
+        "placeholderAptitude": "Work it through in a few lines",
+        "placeholderHr": "Answer as you would in the interview",
+        "counter": "{count} of {limit} characters",
+        "submit": "Submit answer",
+        "submitting": "Sending…",
+        "oneADay": "One answer a day. U scores it, then shows a model answer.",
+        "errors": {
+            "empty": "Write your answer first.",
+            "tooLong": "Keep it under {limit} characters.",
+            "alreadyAnswered": "You’ve already answered today’s challenge.",
+            "noQuestion": "There’s no challenge today. Try again later.",
+            "unauthorized": "Sign in as a candidate to answer.",
+            "failed": "Couldn’t send your answer. Try again."
+        },
+        "scoreUnit": "out of 10",
+        "verdict": {
+            "strong": "Strong answer",
+            "good": "Good start",
+            "again": "Worth another look"
+        },
+        "modelAnswer": "Model answer",
+        "next": "The next challenge opens at midnight, in {hours} h {minutes} min.",
+        "pendingTitle": "Your answer is saved, and today counts for your streak",
+        "pendingBody": "U is busy right now and will score it shortly. Come back any time today.",
+        "streak": "{count, plural, =0 {No streak yet} other {#-day streak}}",
+        "streakHelp": "A plan task or the daily challenge keeps your streak going. Both on one day count once.",
+        "days": "Days practised this week",
+        "practised": "practised",
+        "notYet": "not yet",
+        "history": "Last 7 days",
+        "historyEmpty": "Your past challenges show here.",
+        "historyItem": "{type, select, APTITUDE {Aptitude} HR {HR} other {Challenge}} · {topic}",
+        "historyScore": "{score} / 10",
+        "historyPending": "Scoring",
+        "noneTitle": "No challenge today",
+        "noneBody": "There are no questions to choose from yet. Check back tomorrow."
     }
 }
