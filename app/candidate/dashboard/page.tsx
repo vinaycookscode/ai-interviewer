@@ -29,6 +29,8 @@ import { Mascot } from "@/components/soft-glass/mascot";
 import { ScoreGauge } from "@/components/soft-glass/score-gauge";
 import { coralButton, focusRing } from "@/components/soft-glass/classes";
 import { loadStreak, todaysQuestion } from "@/lib/daily-challenge/server";
+import { latestBadge } from "@/lib/achievements/server";
+import { BadgeIcon } from "@/components/candidate/badge-icon";
 import { dayDate } from "@/lib/daily-challenge/logic";
 import { EmptyState } from "@/components/soft-glass/empty-state";
 import { glassButton } from "@/components/jobs/employer-ui";
@@ -137,11 +139,13 @@ export default async function CandidateDashboardPage({ searchParams }: { searchP
         : null;
 
     // The streak and today's challenge (AIIN-99)
-    const [streak, challenge, challengeAnswer] = await Promise.all([
+    const [streak, challenge, challengeAnswer, badge] = await Promise.all([
         loadStreak(userId, now),
         todaysQuestion(userId, now),
         db.dailyChallengeAnswer.findUnique({ where: { userId_day: { userId, day: dayDate(today) } }, select: { score: true } }),
+        latestBadge(userId),
     ]);
+    const tBadges = await getTranslations("Badges");
 
     const primaryRole = candidate.candidateProfile?.primaryRole;
     // Same rule as the program page: common tasks, plus the ones for the candidate's role.
@@ -311,6 +315,20 @@ export default async function CandidateDashboardPage({ searchParams }: { searchP
                                     </Link>
                                 )}
                             </div>
+                        )}
+                        {/* The latest badge (AIIN-102) */}
+                        {badge && (
+                            <Link
+                                href="/candidate/badges"
+                                aria-label={t("week.latestBadgeLabel", { name: tBadges(`items.${badge.key}.name`) })}
+                                className={cn("flex min-h-12 items-center gap-3 rounded-2xl bg-sg-row px-3 py-2 font-semibold", focusRing)}
+                            >
+                                <span className="flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-sg-coral text-sg-coral-ink">
+                                    <BadgeIcon badge={badge.key} className="size-4" />
+                                </span>
+                                <span className="min-w-0 flex-1">{t("week.latestBadge", { name: tBadges(`items.${badge.key}.name`) })}</span>
+                                <ArrowRight className="size-[18px] shrink-0" aria-hidden="true" />
+                            </Link>
                         )}
                         {enrollment ? (
                             <Link

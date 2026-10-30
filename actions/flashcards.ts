@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { awardAchievements } from "@/lib/achievements/server";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { istDay, startOfIstDay } from "@/lib/ist";
@@ -186,6 +187,8 @@ export async function updateProgress(cardId: string, known: boolean) {
             incorrectCount: known ? 0 : 1,
         },
     });
+
+    await awardAchievements(session.user.id, ["flashcards"]);
 
     // Revalidate paths to update mastery stats
     if (card?.deckId) {

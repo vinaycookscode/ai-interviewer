@@ -1,6 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
+import { awardAchievements, issueCertificate } from "@/lib/achievements/server";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { EnrollmentStatus, TaskType } from "@prisma/client";
@@ -215,6 +216,7 @@ export async function completeTask(enrollmentId: string, taskId: string, score?:
     await updateStreak(enrollmentId);
     // The app-wide streak counts plan tasks and the daily challenge alike (AIIN-99)
     await recordActivity(session.user.id);
+    await awardAchievements(session.user.id, ["streak"]);
 
     revalidatePath("/candidate/placement-program");
     return { success: true, completion };
@@ -420,6 +422,7 @@ export async function advanceToNextDay(enrollmentId: string) {
             where: { id: enrollmentId },
             data: { status: EnrollmentStatus.COMPLETED }
         });
+        await issueCertificate(enrollmentId);
         return { success: true, completed: true };
     }
 

@@ -8,6 +8,7 @@ import { softGlassFonts } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 import { AmbientLight } from "@/components/soft-glass/ambient-light";
 import { AppShell } from "@/components/soft-glass/app-shell";
+import { BadgeToast } from "@/components/candidate/badge-toast";
 
 export default async function CandidateLayout({
     children,
@@ -47,6 +48,8 @@ export default async function CandidateLayout({
             >
                 {children}
             </AppShell>
+
+            <BadgeToast />
 
             {/* Floating Feedback Button */}
             <FeedbackButton />

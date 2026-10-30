@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { Award, CalendarDays, Flame, LineChart } from "lucide-react";
+import { CalendarDays, Flame, LineChart } from "lucide-react";
 import { PlanTier } from "@prisma/client";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
@@ -16,12 +16,6 @@ import { EnrollButton } from "@/components/placement/enroll-button";
 import { coralButton } from "@/components/soft-glass/classes";
 import { glassButton, sectionTitle } from "@/components/jobs/employer-ui";
 import { cn } from "@/lib/utils";
-
-const BADGES = [
-    { key: "week", days: 7 },
-    { key: "fortnight", days: 14 },
-    { key: "month", days: 30 },
-] as const;
 
 export default async function PlacementProgramPage() {
     const session = await auth();
@@ -89,71 +83,46 @@ export default async function PlacementProgramPage() {
             </div>
 
             {current && (
-                <>
-                    <section
-                        aria-label={current.program.name}
-                        className="sg-glass sg-shadow-lg grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] items-start gap-6 rounded-[24px] p-5 sm:rounded-[32px] sm:p-8"
-                    >
-                        <div className="flex flex-col gap-4">
-                            <span className="inline-flex h-7 items-center self-start rounded-full bg-sg-lavender-soft px-2.5 text-sm font-bold text-sg-lavender-ink">
-                                {t("dayOf", { day: current.currentDay, total: current.program.durationDays })}
-                            </span>
-                            <div className="flex flex-col gap-1.5">
-                                <h2 className={sectionTitle}>{current.program.name}</h2>
-                                {today && (
-                                    <p className="text-sg-muted">
-                                        {today.title
-                                            ? t("today", { topic: today.title, tasks: today.tasks, minutes: today.minutes })
-                                            : t("todayNoTopic", { tasks: today.tasks, minutes: today.minutes })}
-                                    </p>
-                                )}
-                            </div>
-                            <PlanProgress day={current.currentDay} total={current.program.durationDays} t={t} />
-                            <Link href={`/candidate/placement-program/${current.program.slug}`} className={cn(coralButton, "h-12 self-start px-6 text-base")}>
-                                {t("continue", { day: current.currentDay })}
-                            </Link>
+                <section
+                    aria-label={current.program.name}
+                    className="sg-glass sg-shadow-lg grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] items-start gap-6 rounded-[24px] p-5 sm:rounded-[32px] sm:p-8"
+                >
+                    <div className="flex flex-col gap-4">
+                        <span className="inline-flex h-7 items-center self-start rounded-full bg-sg-lavender-soft px-2.5 text-sm font-bold text-sg-lavender-ink">
+                            {t("dayOf", { day: current.currentDay, total: current.program.durationDays })}
+                        </span>
+                        <div className="flex flex-col gap-1.5">
+                            <h2 className={sectionTitle}>{current.program.name}</h2>
+                            {today && (
+                                <p className="text-sg-muted">
+                                    {today.title
+                                        ? t("today", { topic: today.title, tasks: today.tasks, minutes: today.minutes })
+                                        : t("todayNoTopic", { tasks: today.tasks, minutes: today.minutes })}
+                                </p>
+                            )}
                         </div>
-                        <div className="flex flex-col gap-4 rounded-[22px] bg-sg-row p-4 sm:p-5">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                                <span className="flex items-center gap-2.5">
-                                    <Flame aria-hidden="true" className="size-6 text-sg-coral" />
-                                    <span className="flex items-baseline gap-1.5">
-                                        <span className="font-display sg-soft text-[28px] leading-[34px] font-semibold">
-                                            {shared.streak}
-                                        </span>
-                                        <span className="font-semibold">{t("streak", { count: shared.streak })}</span>
+                        <PlanProgress day={current.currentDay} total={current.program.durationDays} t={t} />
+                        <Link href={`/candidate/placement-program/${current.program.slug}`} className={cn(coralButton, "h-12 self-start px-6 text-base")}>
+                            {t("continue", { day: current.currentDay })}
+                        </Link>
+                    </div>
+                    <div className="flex flex-col gap-4 rounded-[22px] bg-sg-row p-4 sm:p-5">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="flex items-center gap-2.5">
+                                <Flame aria-hidden="true" className="size-6 text-sg-coral" />
+                                <span className="flex items-baseline gap-1.5">
+                                    <span className="font-display sg-soft text-[28px] leading-[34px] font-semibold">
+                                        {shared.streak}
                                     </span>
+                                    <span className="font-semibold">{t("streak", { count: shared.streak })}</span>
                                 </span>
-                                <span className="text-[13px] leading-[18px] font-medium text-sg-muted">{t("best", { count: current.longestStreak })}</span>
-                            </div>
-                            <WeekStreak days={week} />
-                            <p className="text-sm text-sg-muted">{t("streakNote")}</p>
+                            </span>
+                            <span className="text-[13px] leading-[18px] font-medium text-sg-muted">{t("best", { count: current.longestStreak })}</span>
                         </div>
-                    </section>
-
-                    <section aria-label={t("badges")} className="flex flex-col gap-4">
-                        <h2 className={sectionTitle}>{t("badges")}</h2>
-                        <ul className="grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-3">
-                            {BADGES.map((badge) => {
-                                const earned = current.longestStreak >= badge.days;
-                                return (
-                                    <li key={badge.key} className="flex items-center gap-3 rounded-[18px] bg-sg-row px-4 py-3.5">
-                                        <span
-                                            aria-hidden="true"
-                                            className={cn("flex size-11 shrink-0 items-center justify-center rounded-[14px]", earned ? "bg-sg-lavender-soft text-sg-lavender-ink" : "bg-sg-chip text-sg-muted")}
-                                        >
-                                            <Award className="size-5" />
-                                        </span>
-                                        <span className="flex flex-col">
-                                            <span className="font-bold">{t(`badge.${badge.key}`)}</span>
-                                            <span className="text-sm text-sg-muted">{earned ? t("badge.earned") : t("badge.goal", { count: badge.days })}</span>
-                                        </span>
-                                    </li>
-                                );
-                            })}
-                        </ul>
-                    </section>
-                </>
+                        <WeekStreak days={week} />
+                        <p className="text-sm text-sg-muted">{t("streakNote")}</p>
+                    </div>
+                </section>
             )}
 
             {featured && (

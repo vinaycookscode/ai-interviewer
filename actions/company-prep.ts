@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { awardAchievements } from "@/lib/achievements/server";
 import { getGeminiModelInstance } from "@/lib/gemini";
 import { getGeminiModel, markModelRateLimited } from "@/actions/gemini-config";
 import { checkFeature } from "@/actions/feature-flags";
@@ -125,6 +126,8 @@ export async function saveUserSolution(
                 totalTests
             }
         });
+
+        if (totalTests > 0 && passedTests === totalTests) await awardAchievements(session.user.id, ["problems"]);
 
         return { success: true, solution };
     } catch (error) {

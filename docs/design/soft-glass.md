@@ -25,6 +25,7 @@ How to move a screen to Soft Glass, the product's design language. Why we chose 
 - Profile, offers, plans and subscription: `app/candidate/{profile,offers,pricing,settings}/**` (AIIN-135)
 - Career path set-up (onboarding): `app/candidate/onboarding`, `components/candidate/career-wizard.tsx` (AIIN-52)
 - Daily challenge: `app/candidate/challenge`, the streak card on Today (AIIN-99)
+- Badges: `app/candidate/badges`, the badges panel on the profile, the "New badge" toast, the public certificate `app/certificate/[id]` (AIIN-102)
 - Weekly report email and unsubscribe: `lib/weekly-report/email.ts`, `app/unsubscribe` (AIIN-103)
 
 **Still to build:** AIIN-136 to AIIN-138. Their artboards are in canvas batches 4 and 6.

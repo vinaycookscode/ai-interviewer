@@ -4,11 +4,13 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-On `develop`, not yet on `main`. Adds the `ActivityDay` and `DailyChallengeAnswer` tables (migration `daily_challenge`, which carries over every past day a plan task was done).
+On `develop`, not yet on `main`. Adds the `ActivityDay` and `DailyChallengeAnswer` tables (migration `daily_challenge`, which carries over every past day a plan task was done), and the `UserAchievement` and `Certificate` tables (migration `achievements`). **After release, run `npx tsx scripts/award-achievements.ts` once against production** to give existing candidates the badges and certificates they've already earned.
 
 - **Daily challenge and one streak.** Each day, candidates get one short aptitude or HR question for their role. It's the same for everyone on a role, all IST day. They answer once; U scores it out of 10 with a line of feedback, then shows the model answer. If U is busy, the answer is saved and scored on the next visit. Today shows the challenge in the streak card.
 
   There is now **one streak**, shared by Today, the plan and the challenge: a plan task or the challenge keeps it, and both on one day count once. A paused plan no longer holds the streak; the daily challenge keeps it going instead (AIIN-99).
+
+- **Badges and the 90-day certificate.** Nine badges for real milestones: 7, 14 and 30-day streaks, a first practice interview, five of them, a first score of 8 or more, 7 daily challenges, 25 company problems solved and 100 flashcards reviewed. Each is stored once and kept, even after the streak behind it ends. A "New badge" toast shows on the next page after one is earned (not during a practice session). "Your badges" (from the profile) lists what's earned with dates and what's left with how to earn it. Today shows the latest one. The plan page's old badge grid is gone. Finishing the 90-day plan gives a public certificate at `/certificate/<code>`, showing only name, plan, date and verification code, with Add to LinkedIn and Copy link. It's kept out of search results, and a wrong code is not found. Badges given by the one-off script show the day it ran as their date. The day 30, 60 and 90 checkpoint badges come with the checkpoints (AIIN-101) (AIIN-102).
 
 ## 2026-10-30, fourth release
 

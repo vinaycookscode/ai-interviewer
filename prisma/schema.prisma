@@ -114,6 +114,8 @@ model User {
   weeklyReports      WeeklyReport[]
   activityDays       ActivityDay[]
   challengeAnswers   DailyChallengeAnswer[]
+  achievements       UserAchievement[]
+  certificates       Certificate[]
   
   // Subscription
   subscription       Subscription?
@@ -149,6 +151,33 @@ model DailyChallengeAnswer {
 }
 
 // One row per weekly report email sent, so a week is never sent twice (AIIN-103)
+// A badge the candidate earned, kept for good even after the streak behind it ends (AIIN-102).
+// The rules are in lib/achievements/rules.ts; seenAt is set once the "New badge" toast has shown.
+model UserAchievement {
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key      String
+  earnedAt DateTime @default(now())
+  seenAt   DateTime?
+
+  @@id([userId, key])
+}
+
+// The certificate for finishing the 90-day plan (AIIN-102), public at /certificate/[id].
+// The id is the verification code. Name and plan are copied at issue, so it never changes afterwards.
+model Certificate {
+  id           String            @id
+  userId       String
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enrollmentId String            @unique
+  enrollment   ProgramEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  name         String
+  planName     String
+  issuedAt     DateTime          @default(now())
+
+  @@index([userId])
+}
+
 model WeeklyReport {
   id        String   @id @default(cuid())
   userId    String
@@ -508,6 +537,7 @@ model ProgramEnrollment {
   lastActiveAt  DateTime @default(now())
   
   completions   TaskCompletion[]
+  certificate   Certificate?
   
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

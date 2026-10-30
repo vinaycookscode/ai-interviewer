@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { awardAchievements } from "@/lib/achievements/server";
 import { dayDate, istDay } from "@/lib/daily-challenge/logic";
 import { ANSWER_LIMIT, gradeChallenge, recordActivity, todaysQuestion } from "@/lib/daily-challenge/server";
 
@@ -34,6 +35,7 @@ export async function submitDailyChallenge(answer: string) {
     }
     // The streak counts as soon as the answer is saved, even if grading has to wait
     await recordActivity(userId, now);
+    await awardAchievements(userId, ["challenges", "streak"]);
     await gradeChallenge(created.id);
 
     revalidatePath("/candidate/challenge");

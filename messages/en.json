@@ -814,7 +814,9 @@
             "joinTitle": "Your 90-day plan",
             "joinBody": "One short task a day, built around the role you want.",
             "joinCta": "See the plan",
-            "keepsIt": "A plan task or the challenge keeps it"
+            "keepsIt": "A plan task or the challenge keeps it",
+            "latestBadge": "Latest badge: {name}",
+            "latestBadgeLabel": "Latest badge: {name}. See all your badges"
         },
         "score": {
             "title": "Average score",
@@ -1559,14 +1561,6 @@
             "before": ", before your plan started"
         },
         "streakNote": "Finish one task a day to keep your streak. Pausing the plan keeps it safe.",
-        "badges": "Badges",
-        "badge": {
-            "week": "First week",
-            "fortnight": "Fortnight",
-            "month": "Month strong",
-            "earned": "Earned",
-            "goal": "Reach a {count}-day streak"
-        },
         "intro": {
             "planTile": "A plan for each day",
             "planBody": "Reading, a problem, a quiz. Nothing to plan yourself.",
@@ -1677,7 +1671,11 @@
         "weeklyHint": "Every Monday: how your week went and one thing to work on",
         "weeklyOn": "On",
         "weeklyOff": "Off",
-        "weeklyFailed": "Couldn’t save that. Try again."
+        "weeklyFailed": "Couldn’t save that. Try again.",
+        "badges": "Badges",
+        "badgesCount": "{earned} of {total} earned",
+        "badgesNone": "Your first practice interview earns your first badge.",
+        "badgesSee": "See your badges"
     },
     "Offers": {
         "title": "Offers",
@@ -2061,5 +2059,98 @@
         "historyPending": "Scoring",
         "noneTitle": "No challenge today",
         "noneBody": "There are no questions to choose from yet. Check back tomorrow."
+    },
+    "Badges": {
+        "metaTitle": "Your badges",
+        "back": "Your profile",
+        "title": "Your badges",
+        "description": "Earned for real milestones, and yours to keep, even if a streak ends.",
+        "earned": "Earned",
+        "count": "{earned} of {total}",
+        "earnedOn": "Earned {date}",
+        "earnedToday": "Earned today",
+        "noneEarned": "Nothing yet. Your first practice interview earns your first badge.",
+        "locked": "Still to earn",
+        "lockedHow": "Locked · {how}",
+        "allEarned": "You’ve earned every badge. More are coming with the plan’s checkpoints.",
+        "certTitle": "Certificate",
+        "certNone": "Finish the 90-day plan to get a certificate you can add to LinkedIn.",
+        "certDay": "Finish the 90-day plan to get a certificate you can add to LinkedIn. Day {day} of {total}.",
+        "certDone": "You finished the {plan} on {date}.",
+        "certOpen": "Open your certificate",
+        "certPlan": "See the plan",
+        "toastOne": "New badge: {name}",
+        "toastMany": "{count} new badges",
+        "toastSee": "See your badges",
+        "close": "Close",
+        "items": {
+            "streak7": {
+                "name": "7-day streak",
+                "how": "reach a 7-day streak",
+                "earned": "You kept going 7 days in a row."
+            },
+            "streak14": {
+                "name": "14-day streak",
+                "how": "reach a 14-day streak",
+                "earned": "You kept going 14 days in a row."
+            },
+            "streak30": {
+                "name": "30-day streak",
+                "how": "reach a 30-day streak",
+                "earned": "You kept going 30 days in a row."
+            },
+            "firstPractice": {
+                "name": "First practice interview",
+                "how": "finish a practice interview",
+                "earned": "You finished your first practice interview."
+            },
+            "fivePractice": {
+                "name": "5 practice interviews",
+                "how": "finish 5 practice interviews",
+                "progress": "{left} more to go",
+                "earned": "You’ve finished 5 practice interviews."
+            },
+            "firstEight": {
+                "name": "First 8+",
+                "how": "score 8 or more in a practice interview",
+                "earned": "You scored 8 or more in a practice interview."
+            },
+            "challenges7": {
+                "name": "7 daily challenges",
+                "how": "answer 7 daily challenges",
+                "progress": "{count} of {target} answered",
+                "earned": "You’ve answered 7 daily challenges."
+            },
+            "problems25": {
+                "name": "25 problems solved",
+                "how": "pass every test on 25 company problems",
+                "progress": "{count} of {target} solved",
+                "earned": "You’ve solved 25 company problems."
+            },
+            "flashcards100": {
+                "name": "100 flashcards",
+                "how": "review 100 flashcards",
+                "progress": "{count} of {target} reviewed",
+                "earned": "You’ve reviewed 100 flashcards."
+            }
+        }
+    },
+    "Certificate": {
+        "brand": "Get Back To U",
+        "home": "Get Back To U home",
+        "metaTitle": "Certificate · {plan}",
+        "kicker": "Certificate of completion",
+        "finished": "finished the",
+        "completed": "Completed",
+        "verification": "Verification",
+        "linkedin": "Add to LinkedIn",
+        "copy": "Copy link",
+        "copied": "Link copied",
+        "copyFailed": "Couldn’t copy. Copy the address bar instead.",
+        "issuer": "Issued by Get Back To U. Anyone with this link can check it’s real.",
+        "notFoundMeta": "Certificate not found",
+        "notFoundTitle": "We can’t find this certificate",
+        "notFoundBody": "Check the link or the verification code. Certificates are never deleted, so a real one always opens.",
+        "notFoundHome": "Go to Get Back To U"
     }
 }

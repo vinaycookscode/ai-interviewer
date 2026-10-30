@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { awardAchievements } from "@/lib/achievements/server";
 import { getGeminiModelInstance, MAX_RATE_LIMIT_RETRIES } from "@/lib/gemini";
 // import { GoogleGenerativeAI } from "@google/generative-ai"; // Removed
 import { getGeminiModel } from "@/actions/gemini-config";
@@ -368,6 +369,7 @@ export async function completeMockInterview(mockInterviewId: string) {
                 feedback: feedback,
             },
         });
+        await awardAchievements(session.user.id, ["practice", "bestScore"]);
 
         return { success: "Interview completed", score: averageScore, feedback };
     } catch (error: any) {
