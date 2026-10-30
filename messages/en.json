@@ -1929,5 +1929,66 @@
         "finish": "Finish",
         "saving": "Saving…",
         "saveFailed": "Couldn’t save your profile. Try again."
+    },
+    "Integrity": {
+        "title": "Integrity",
+        "teamOnly": "Only your team sees this",
+        "notFinished": "The interview isn’t finished yet. The integrity summary appears when it is.",
+        "noEventsTitle": "Nothing unusual happened during this interview",
+        "noEventsBody": "They stayed in the interview, in full screen, with no paste attempts.",
+        "verdict": "Verdict",
+        "verdicts": {
+            "NO_CONCERNS": "No concerns",
+            "WORTH_A_LOOK": "Worth a look",
+            "STRONG_CONCERNS": "Strong concerns"
+        },
+        "nothingMajor": "No time away, paste attempts or developer tools",
+        "reasons": {
+            "timesAway": "Left the interview {count, plural, =1 {once} other {# times}}",
+            "timesAwayFor": "Left the interview {count, plural, =1 {once} other {# times}} ({duration})",
+            "awayTotal": "{duration} away in total",
+            "fullscreen": "Out of full screen for {duration} at once",
+            "pastes": "Tried to paste {count, plural, =1 {once} other {# times}}",
+            "devTools": "Tried to open browser developer tools"
+        },
+        "how": {
+            "title": "How we decide",
+            "none": "<b>No concerns:</b> left the interview at most twice, 30 seconds or less in all, and no paste attempts or developer tools.",
+            "worth": "<b>Worth a look:</b> left 3 to 5 times, or more than 30 seconds away in all, or out of full screen for more than 10 seconds at once, or 1 to 2 paste attempts.",
+            "strong": "<b>Strong concerns:</b> left more than 5 times, or more than 2 minutes away in all, or tried to open developer tools, or more than 2 paste attempts.",
+            "note": "These are prompts to look closer, not a judgement. A notification or a slow connection can cause a time away."
+        },
+        "summary": {
+            "label": "Summary",
+            "timesAway": "Times away",
+            "timeAway": "Time away",
+            "pastes": "Paste attempts",
+            "fullscreen": "Full-screen exits",
+            "devTools": "Developer tools",
+            "yes": "Yes",
+            "no": "No",
+            "none": "None",
+            "notRecorded": "Not recorded",
+            "atLeast": "At least {duration}"
+        },
+        "timeline": "Timeline, by question",
+        "question": "Question {n}",
+        "beforeQuestions": "Before the first question",
+        "events": {
+            "away": "Left the interview",
+            "awayFor": "Left the interview for {duration}",
+            "fullscreen": "Left full screen",
+            "fullscreenFor": "Left full screen for {duration}",
+            "paste": "Tried to paste text into the answer (blocked)",
+            "copy": "Tried to copy, cut or right-click (blocked)",
+            "shortcut": "Used a blocked keyboard shortcut",
+            "devTools": "Tried to open browser developer tools (blocked)",
+            "multiScreen": "A second screen was connected"
+        },
+        "duration": {
+            "sec": "{s} s",
+            "min": "{m} min",
+            "minSec": "{m} min {s} s"
+        }
     }
 }

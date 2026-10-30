@@ -7,6 +7,7 @@ import { InterviewStatus } from "@prisma/client";
 import { generateFollowUp } from "@/lib/ai-context";
 import { generatePersonalityProfile } from "@/lib/ai/personality";
 import { escapeHtml } from "@/lib/utils";
+import { storeIntegrity } from "@/lib/integrity/compute";
 
 /** The caller's own interview, or null. Every action here acts only on it. */
 async function findOwnInterview(interviewId: string) {
@@ -29,6 +30,8 @@ export async function startInterview(interviewId: string) {
             where: { id: interviewId },
             data: { status: "IN_PROGRESS" },
         });
+        // The first start only: the integrity timeline counts mm:ss from here (AIIN-177)
+        await db.interview.updateMany({ where: { id: interviewId, startedAt: null }, data: { startedAt: new Date() } });
         return { success: true };
     } catch (error) {
         console.error("Failed to start interview:", error);
@@ -160,6 +163,13 @@ export async function completeInterview(interviewId: string) {
                 candidate: true
             }
         });
+
+        // The integrity verdict, stored so lists can filter by it (AIIN-177)
+        try {
+            await storeIntegrity(interviewId);
+        } catch (integrityError) {
+            console.error("Failed to compute the integrity verdict:", integrityError);
+        }
 
         // Generate Personality Profile
         try {

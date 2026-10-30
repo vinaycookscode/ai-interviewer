@@ -26,6 +26,13 @@ enum HiringDecision {
   REJECTED
 }
 
+// How an interview's proctoring events read, for the employer (AIIN-177)
+enum IntegrityVerdict {
+  NO_CONCERNS
+  WORTH_A_LOOK
+  STRONG_CONCERNS
+}
+
 enum DecisionSource {
   MANUAL
   BULK
@@ -216,8 +223,16 @@ model Interview {
   language  String   @default("en") // Interview language (en, hi, mr, etc.)
   createdAt DateTime @default(now())
 
+  // When the candidate first started; the integrity timeline counts from here (AIIN-177)
+  startedAt   DateTime?
   // When the candidate finished; ranks ties on the candidate list (AIIN-158)
   completedAt DateTime?
+
+  // Integrity verdict from the proctoring events, computed on completion (AIIN-177; rules in lib/integrity/verdict.ts)
+  integrityVerdict      IntegrityVerdict?
+  integrityReasons      Json?
+  integrityComputedAt   DateTime?
+  integrityRulesVersion Int?
 
   // Hiring decision (AIIN-157); history in InterviewDecisionEvent
   decision     HiringDecision @default(UNDECIDED)
@@ -232,6 +247,7 @@ model Interview {
   @@index([candidateId])
   @@index([jobId])
   @@index([jobId, score])
+  @@index([jobId, integrityVerdict])
   @@index([scheduledTime])
   @@index([status])
 }
@@ -345,6 +361,8 @@ model ProctoringEvent {
   type        String   // "TAB_SWITCH", "WINDOW_BLUR", "FULLSCREEN_EXIT"
   timestamp   DateTime @default(now())
   details     String?  // Optional context
+
+  @@index([interviewId, timestamp])
 }
 
 model FeatureFlag {

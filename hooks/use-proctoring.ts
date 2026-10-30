@@ -32,8 +32,21 @@ export function useProctoring(interviewId: string) {
         }
     };
 
+    // Coming back is logged too, so the report can say how long they were away (AIIN-177).
+    // It isn't a warning: it must not count towards ending the interview.
+    const logReturn = useCallback((type: "TAB_RETURN" | "WINDOW_FOCUS" | "FULLSCREEN_ENTER") => {
+        void logProctoringEvent(interviewId, type);
+    }, [interviewId]);
+
     useEffect(() => {
+        let blurred = false;
+        let leftFullScreen = false;
+
         const handleVisibilityChange = async () => {
+            if (!document.hidden) {
+                logReturn("TAB_RETURN");
+                return;
+            }
             if (document.hidden) {
                 toast.warning("Warning: Tab switching is monitored.", {
                     description: "Please stay on this tab to avoid disqualification.",
@@ -45,6 +58,7 @@ export function useProctoring(interviewId: string) {
 
         const handleBlur = async () => {
             if (document.hidden) return;
+            blurred = true;
 
             toast.warning("Warning: Window focus lost.", {
                 description: "Please keep the interview window in focus.",
@@ -53,8 +67,19 @@ export function useProctoring(interviewId: string) {
             await addWarning("Window focus lost", "WINDOW_BLUR");
         };
 
+        const handleFocus = () => {
+            if (!blurred) return;
+            blurred = false;
+            logReturn("WINDOW_FOCUS");
+        };
+
         const handleFullScreenChange = async () => {
+            if (document.fullscreenElement && leftFullScreen) {
+                leftFullScreen = false;
+                logReturn("FULLSCREEN_ENTER");
+            }
             if (!document.fullscreenElement) {
+                leftFullScreen = true;
                 toast.warning("Warning: Full-screen mode exited.", {
                     description: "Please return to full-screen mode immediately.",
                     duration: 5000,
@@ -65,14 +90,16 @@ export function useProctoring(interviewId: string) {
 
         document.addEventListener("visibilitychange", handleVisibilityChange);
         window.addEventListener("blur", handleBlur);
+        window.addEventListener("focus", handleFocus);
         document.addEventListener("fullscreenchange", handleFullScreenChange);
 
         return () => {
             document.removeEventListener("visibilitychange", handleVisibilityChange);
             window.removeEventListener("blur", handleBlur);
+            window.removeEventListener("focus", handleFocus);
             document.removeEventListener("fullscreenchange", handleFullScreenChange);
         };
-    }, [addWarning]);
+    }, [addWarning, logReturn]);
 
     return {
         warnings,

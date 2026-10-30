@@ -4,7 +4,9 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-On `develop`, not yet on `main`. Nothing yet.
+On `develop`, not yet on `main`. Adds the `Interview.startedAt` and integrity columns (migration `integrity_verdict`). **After release, run `npx tsx scripts/compute-integrity.ts` once against production** to compute verdicts for finished interviews (the report also computes them when opened).
+
+- **Integrity on the employer's report.** Each finished interview shows a verdict (No concerns, Worth a look or Strong concerns) with the reasons behind it, a summary (times away, time away, paste attempts, full-screen exits, developer tools) and a timeline grouped by question with mm:ss times. Only the job's employer sees it: not the candidate, and not the PDF. The interview page now also records when the candidate comes back, tells pastes apart from copying, and notes when the interview started; the server only accepts known event types. Rules: [ADR](docs/architecture/2026-10-30-integrity-verdict-rules.md) (AIIN-177).
 
 ## 2026-10-30, second release
 

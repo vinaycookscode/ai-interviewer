@@ -17,7 +17,8 @@ export function useCopyPastePrevention(
                 id: "copy-paste-warning", // Prevent duplicate toasts
                 duration: 2000,
             });
-            if (onWarning) onWarning(message, "COPY_PASTE");
+            // A paste is told apart from copy, cut and right-click: the integrity verdict counts pastes (AIIN-177)
+            if (onWarning) onWarning(message, e.type === "paste" ? "PASTE" : "COPY_PASTE");
         };
 
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -32,7 +33,7 @@ export function useCopyPastePrevention(
                     id: "shortcut-warning",
                     duration: 2000,
                 });
-                if (onWarning) onWarning(message, "KEYBOARD_SHORTCUT");
+                if (onWarning) onWarning(message, e.key === "v" ? "PASTE" : "KEYBOARD_SHORTCUT");
             }
 
             // Prevent F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U (View Source)

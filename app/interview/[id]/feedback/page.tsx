@@ -9,6 +9,9 @@ import { AppShell } from "@/components/soft-glass/app-shell";
 import { getFeatureFlags } from "@/actions/feature-flags";
 import { FeedbackReport } from "@/components/feedback/feedback-report";
 import { DecisionPanel } from "@/components/feedback/decision-panel";
+import { IntegritySection, type IntegrityGroup, type IntegrityProps } from "@/components/feedback/integrity-section";
+import { loadIntegrity, storeIntegrity } from "@/lib/integrity/compute";
+import { RULES_VERSION } from "@/lib/integrity/verdict";
 import { db } from "@/lib/db";
 
 const istTime = (d: Date) =>
@@ -49,6 +52,7 @@ export default async function FeedbackPage({
                   where: { id, job: { employerId: user.id } },
                   select: {
                       status: true,
+                      integrityRulesVersion: true,
                       decision: true,
                       decisionEvents: {
                           orderBy: { createdAt: "desc" },
@@ -57,6 +61,29 @@ export default async function FeedbackPage({
                   },
               })
             : null;
+
+    // Integrity: the same owning employer only (AIIN-177). A verdict from older rules is recomputed and stored.
+    let integrity: IntegrityProps | null = null;
+    if (decision) {
+        if (decision.status !== "COMPLETED") {
+            integrity = { state: "notFinished" };
+        } else {
+            const report = decision.integrityRulesVersion === RULES_VERSION ? await loadIntegrity(id) : await storeIntegrity(id);
+            if (report && report.events.length === 0) integrity = { state: "noEvents" };
+            else if (report) {
+                const groups: IntegrityGroup[] = [];
+                for (const e of report.events) {
+                    let group = groups.find((g) => g.n === e.question);
+                    if (!group) {
+                        group = { n: e.question, text: report.questions.find((q) => q.n === e.question)?.text ?? null, events: [] };
+                        groups.push(group);
+                    }
+                    group.events.push({ offset: e.offset, kind: e.kind, seconds: e.seconds });
+                }
+                integrity = { state: "ready", verdict: report.verdict, reasons: report.reasons, summary: report.summary, groups };
+            }
+        }
+    }
 
     const flags = await getFeatureFlags();
     const flagMap = flags.reduce<Record<string, boolean>>((acc, f) => ({ ...acc, [f.key]: f.enabled }), {});
@@ -76,6 +103,7 @@ export default async function FeedbackPage({
                     averageScore={averageScore ?? null}
                     viewer={viewer}
                     back={back}
+                    integrity={integrity && <IntegritySection {...integrity} />}
                     aside={
                         decision && (
                             <DecisionPanel
