@@ -32,7 +32,7 @@ export async function todaysQuestion(userId: string, now = new Date()) {
     const profile = await db.candidateProfile.findUnique({ where: { userId }, select: { primaryRole: true } });
     const track: Track = trackFor(profile?.primaryRole);
     const pool = await db.companyQuestion.findMany({
-        where: { type: { in: [...CHALLENGE_TYPES] }, difficulty: { in: ["EASY", "MEDIUM"] }, answer: { not: null } },
+        where: { type: { in: [...CHALLENGE_TYPES] }, difficulty: { in: ["EASY", "MEDIUM"] }, answer: { not: null }, status: "PUBLISHED" },
         select: { id: true, type: true, question: true, roles: true },
     });
     const picked = pickQuestion(istDay(now), track, pool);

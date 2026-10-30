@@ -650,11 +650,34 @@ model CompanyQuestion {
   solutionCode  String?  @db.Text  // Reference solution
   testCases     Json?              // [{input, expected, hidden}]
   language      String?            // javascript, python, java, cpp
+  hints         String[] @default([]) // Up to 3, shown one at a time (AIIN-107)
+
+  // Managed in /admin/problems (AIIN-107). Only PUBLISHED reaches candidates; ARCHIVED keeps the solutions saved for it.
+  status        String   @default("PUBLISHED") // DRAFT, PUBLISHED, ARCHIVED
+  // The content the reference solution last passed every test with; a coding problem publishes only when it matches
+  checkedHash   String?
   
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
   
   userSolutions UserCompanySolution[]
   challengeAnswers DailyChallengeAnswer[]
+  changes     ProblemChange[]
+
+  @@index([status])
+}
+
+// Who changed a problem, what and when (AIIN-107). The name is copied, so the history outlives the account.
+model ProblemChange {
+  id         String          @id @default(cuid())
+  questionId String
+  question   CompanyQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  authorId   String
+  authorName String
+  summary    String
+  createdAt  DateTime        @default(now())
+
+  @@index([questionId, createdAt])
 }
 
 model CompanyResource {

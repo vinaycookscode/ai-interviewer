@@ -4,11 +4,20 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-On `develop`, not yet on `main`. Adds the `ActivityDay` and `DailyChallengeAnswer` tables (migration `daily_challenge`, which carries over every past day a plan task was done), the `UserAchievement` and `Certificate` tables (migration `achievements`), `PlacementProgram.track` with the checkpoint columns on `MockInterview` (migration `plan_checkpoints`, which marks the existing `90-day-placement-bootcamp` as the SDE plan), and the `CoachConversation` and `CoachMessage` tables with `SubscriptionPlan.coachMessagesPerDay` (migration `coach`: 10 on Free, 100 on paid plans). **After release, run `npx tsx scripts/award-achievements.ts` once against production** to give existing candidates the badges and certificates they've already earned.
+On `develop`, not yet on `main`. Adds the `ActivityDay` and `DailyChallengeAnswer` tables (migration `daily_challenge`, which carries over every past day a plan task was done), the `UserAchievement` and `Certificate` tables (migration `achievements`), `PlacementProgram.track` with the checkpoint columns on `MockInterview` (migration `plan_checkpoints`, which marks the existing `90-day-placement-bootcamp` as the SDE plan), the `CoachConversation` and `CoachMessage` tables with `SubscriptionPlan.coachMessagesPerDay` (migration `coach`: 10 on Free, 100 on paid plans), and problem status, hints and history (migration `admin_problems`: every existing problem stays published). **After release, run `npx tsx scripts/award-achievements.ts` once against production** to give existing candidates the badges and certificates they've already earned.
 
 - **Daily challenge and one streak.** Each day, candidates get one short aptitude or HR question for their role. It's the same for everyone on a role, all IST day. They answer once; U scores it out of 10 with a line of feedback, then shows the model answer. If U is busy, the answer is saved and scored on the next visit. Today shows the challenge in the streak card.
 
   There is now **one streak**, shared by Today, the plan and the challenge: a plan task or the challenge keeps it, and both on one day count once. A paused plan no longer holds the streak; the daily challenge keeps it going instead (AIIN-99).
+
+- **Problems in the admin console.** Admins can list, search and filter every company prep and daily challenge problem at `/admin/problems`, and create or edit them:
+  - statement in Markdown with a preview
+  - company kit, type, difficulty, tags and roles
+  - starter code and a reference solution
+  - test cases (visible or hidden, reorder, remove)
+  - up to 3 hints, or a model answer for aptitude and HR
+  
+  "Check solution" runs the reference solution against every test on the server, in JavaScript until AIIN-105 adds other languages. A coding problem can only be published when its current version passes; a failing case is named, and a change to a published problem that would fail isn't saved. Archived problems leave candidate pages and the daily challenge, and solutions saved for them stay. Every change is in the problem's history with the admin and time. Candidates now see hidden tests as pass or fail only, and the admin's hints one at a time. Every action checks for an admin. The pages are Soft Glass inside the current admin layout; the console itself moves with AIIN-138 (AIIN-107).
 
 - **Ask U, the coach.** A chat with U at `/candidate/coach` (under More). It knows the candidate's career path, their last three practice and interview scores with their strongest and weakest answers, and their plan day and streak, and nothing else: no contact details, documents, employer details or other users. Replies stream in with Markdown, and screen readers hear each one when it's finished. Chats are kept: "New chat" starts fresh, and past ones are listed and can be deleted with their messages. The last 20 messages go back as context. Free accounts get 10 messages a day and paid plans 100, counted on the server per IST day. Deleting a chat doesn't give messages back. At the limit, the box shows when it resets. U stays on careers and interviews, and won't answer questions from an interview in progress. If U can't answer, the message is kept with "Try again", which doesn't use another message (AIIN-100).
 

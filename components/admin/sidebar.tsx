@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { LayoutDashboard, Users, Settings, Shield, MapPin, Menu, ToggleLeft, MessageSquare, Crown } from "lucide-react";
+import { LayoutDashboard, Users, Settings, Shield, MapPin, Menu, ToggleLeft, MessageSquare, Crown, Code2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -54,6 +54,14 @@ const NavLinks = ({ onLinkClick }: { onLinkClick?: () => void }) => {
             >
                 <ToggleLeft size={20} className="group-hover:scale-110 transition-transform" />
                 <span>{t("features")}</span>
+            </Link>
+            <Link
+                href="/admin/problems"
+                onClick={onLinkClick}
+                className="flex items-center gap-3 px-4 py-3 text-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-all font-medium group"
+            >
+                <Code2 size={20} className="group-hover:scale-110 transition-transform" />
+                <span>{t("problems")}</span>
             </Link>
             <Link
                 href="/admin/feedback"

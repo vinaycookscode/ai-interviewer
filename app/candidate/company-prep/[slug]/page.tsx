@@ -71,6 +71,8 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                 salaryRange: true,
                 content: true,
                 questions: {
+                    // Drafts and archived problems stay in the admin console (AIIN-107)
+                    where: { status: "PUBLISHED" },
                     orderBy: [{ frequency: "desc" }, { createdAt: "desc" }],
                     select: {
                         id: true,
@@ -86,6 +88,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                         solutionCode: true,
                         testCases: true,
                         language: true,
+                        hints: true,
                     },
                 },
             },

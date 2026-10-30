@@ -13,6 +13,7 @@ import { ThemeSwitch } from "@/components/soft-glass/theme-switch";
 import { coralButton, focusRing } from "@/components/soft-glass/classes";
 import { field, glassButton, inkButton, outlineButton } from "@/components/jobs/employer-ui";
 import { canRunTests } from "@/lib/code-languages";
+import { asError, callSource, judge, parseInput, type TestCase, type TestRun } from "@/lib/problems/run-js";
 import { cn } from "@/lib/utils";
 
 const Editor = dynamic(() => import("@monaco-editor/react"), {
@@ -35,6 +36,8 @@ export interface SolverQuestion {
     solutionCode: string | null;
     testCases: unknown[];
     language: string | null;
+    /** Up to 3, written in the admin console (AIIN-107). */
+    hints: string[];
 }
 
 interface CompanyProblemSolverProps {
@@ -44,13 +47,10 @@ interface CompanyProblemSolverProps {
     featureFlags?: { languageSelector: boolean; codePersistence: boolean; aiCodeAnalysis: boolean };
 }
 
-interface TestCase {
-    input: unknown;
-    expected: unknown;
-}
-
 interface TestResult {
     passed: boolean;
+    /** A hidden test says whether it passed, not what it is (AIIN-107). */
+    hidden: boolean;
     input: string;
     expected: string;
     output: string;
@@ -131,93 +131,14 @@ function getProblemDescription(q: SolverQuestion): string {
     return `Solve the following problem efficiently. Consider the time and space complexity of your solution. Make sure to handle edge cases appropriately.`;
 }
 
-// Runs JavaScript or TypeScript in the browser; other languages never reach here (see canRunTests)
-const executeCode = (userCode: string, testCase: TestCase): { passed: boolean; output: string; error?: string } => {
+// Runs JavaScript or TypeScript in the browser; other languages never reach here (see canRunTests).
+// The calling and judging rules are shared with the admin's "Check solution" (lib/problems/run-js.ts).
+const executeCode = (userCode: string, testCase: TestCase): TestRun => {
     try {
-        // Try to find a function definition in user's code
-        const funcMatch = userCode.match(/function\s+(\w+)\s*\(/);
-        const arrowMatch = userCode.match(/(?:const|let|var)\s+(\w+)\s*=\s*(?:\([^)]*\)|[^=])\s*=>/);
-        const funcName = funcMatch?.[1] || arrowMatch?.[1] || 'solution';
-
-        // Parse input for execution
-        let inputArg: unknown;
-        if (typeof testCase.input === 'object') {
-            inputArg = testCase.input;
-        } else if (typeof testCase.input === 'string') {
-            try {
-                // Handle format like "[2,7,11,15], 9" (array, value)
-                if (testCase.input.includes(',') && testCase.input.includes('[')) {
-                    const parts = testCase.input.split('],');
-                    if (parts.length === 2) {
-                        const nums = JSON.parse(parts[0] + ']');
-                        const target = parseInt(parts[1].trim());
-                        inputArg = { nums, target };
-                    } else {
-                        inputArg = JSON.parse(testCase.input);
-                    }
-                } else {
-                    inputArg = JSON.parse(testCase.input);
-                }
-            } catch {
-                inputArg = testCase.input;
-            }
-        } else {
-            inputArg = testCase.input;
-        }
-
-        // Wrap user code and execute
-        const wrappedCode = `
-            ${userCode}
-            
-            // Try to call the function
-            if (typeof ${funcName} === 'function') {
-                if (typeof input === 'object' && input !== null) {
-                    if (input.nums && input.target !== undefined) {
-                        return ${funcName}(input.nums, input.target);
-                    } else if (Array.isArray(input)) {
-                        return ${funcName}(...input);
-                    }
-                    return ${funcName}(input);
-                }
-                return ${funcName}(input);
-            }
-            throw new Error('Function ${funcName} not defined');
-        `;
-
-        const func = new Function('input', wrappedCode);
-        const result = func(inputArg);
-
-        // Compare result with expected
-        const resultStr = JSON.stringify(result);
-        let expectedStr: string;
-        if (typeof testCase.expected === 'string') {
-            try {
-                expectedStr = JSON.stringify(JSON.parse(testCase.expected));
-            } catch {
-                expectedStr = testCase.expected;
-            }
-        } else {
-            expectedStr = JSON.stringify(testCase.expected);
-        }
-
-        // Check if passed
-        const expected = testCase.expected;
-        const passed = resultStr === expectedStr ||
-            (Array.isArray(result) && Array.isArray(expected) &&
-                result.length === expected.length &&
-                result.every((v: unknown, i: number) => v === expected[i]));
-
-        return {
-            passed,
-            output: resultStr || 'undefined',
-            error: passed ? undefined : `Expected ${expectedStr}, got ${resultStr}`
-        };
+        const func = new Function("input", callSource(userCode));
+        return judge(func(parseInput(testCase.input)), testCase.expected);
     } catch (err) {
-        return {
-            passed: false,
-            output: 'Error',
-            error: (err instanceof Error && err.message) || 'Execution error'
-        };
+        return asError(err);
     }
 };
 
@@ -247,7 +168,7 @@ export function CompanyProblemSolver({
     const levelName = (LEVELS as readonly string[]).includes(question.difficulty) ? t(`levels.${question.difficulty as (typeof LEVELS)[number]}`) : question.difficulty;
     const typeName = (TYPES as readonly string[]).includes(question.type) ? t(`types.${question.type as (typeof TYPES)[number]}`) : question.type;
     const hint = question.tips || (question.answer ? `${question.answer.split(".")[0]}.` : null);
-    const example = testCases[0];
+    const example = testCases.find((tc) => !tc.hidden);
 
     // Focus the back button when the solver opens, and let Escape close it.
     useEffect(() => {
@@ -298,7 +219,7 @@ export function CompanyProblemSolver({
         setResults(
             testCases.map((tc) => {
                 const result = executeCode(code, tc);
-                return { passed: result.passed, input: asText(tc.input), expected: asText(tc.expected), output: result.output };
+                return { passed: result.passed, hidden: tc.hidden === true, input: asText(tc.input), expected: asText(tc.expected), output: result.output };
             })
         );
         setTestedCode(code);
@@ -387,12 +308,19 @@ export function CompanyProblemSolver({
                                 <span>{t("solver.output", { value: asText(example.expected) })}</span>
                             </div>
                         )}
-                        {hint && (
-                            <details className="group rounded-[18px] bg-sg-row px-4 py-3">
-                                <summary className={cn("cursor-pointer rounded-md font-bold", focusRing)}>{t("solver.hint")}</summary>
-                                <p className="mt-2 text-sg-muted">{hint}</p>
-                            </details>
-                        )}
+                        {question.hints.length > 0
+                            ? question.hints.map((h, i) => (
+                                  <details key={i} className="group rounded-[18px] bg-sg-row px-4 py-3">
+                                      <summary className={cn("cursor-pointer rounded-md font-bold", focusRing)}>{t("solver.hintN", { n: i + 1 })}</summary>
+                                      <p className="mt-2 text-sg-muted">{h}</p>
+                                  </details>
+                              ))
+                            : hint && (
+                                  <details className="group rounded-[18px] bg-sg-row px-4 py-3">
+                                      <summary className={cn("cursor-pointer rounded-md font-bold", focusRing)}>{t("solver.hint")}</summary>
+                                      <p className="mt-2 text-sg-muted">{hint}</p>
+                                  </details>
+                              )}
                         {question.solutionCode && (
                             <details className="rounded-[18px] bg-sg-row px-4 py-3">
                                 <summary className={cn("cursor-pointer rounded-md font-bold", focusRing)}>{t("solver.solution")}</summary>
@@ -485,12 +413,18 @@ export function CompanyProblemSolver({
                                                 <XCircle className="mt-0.5 size-4 shrink-0 text-sg-danger" aria-hidden="true" />
                                             )}
                                             <span className="flex min-w-0 flex-col">
-                                                <span className="font-semibold">{t("solver.test", { n: i + 1, result: r.passed ? t("solver.passed") : t("solver.failed") })}</span>
-                                                <span className="font-mono text-[13px] leading-[18px] text-sg-muted [overflow-wrap:anywhere]">
-                                                    {r.passed
-                                                        ? t("solver.expected", { input: r.input, expected: r.expected })
-                                                        : t("solver.got", { input: r.input, expected: r.expected, output: r.output })}
+                                                <span className="font-semibold">
+                                                    {r.hidden
+                                                        ? t("solver.hiddenTest", { n: i + 1, result: r.passed ? t("solver.passed") : t("solver.failed") })
+                                                        : t("solver.test", { n: i + 1, result: r.passed ? t("solver.passed") : t("solver.failed") })}
                                                 </span>
+                                                {!r.hidden && (
+                                                    <span className="font-mono text-[13px] leading-[18px] text-sg-muted [overflow-wrap:anywhere]">
+                                                        {r.passed
+                                                            ? t("solver.expected", { input: r.input, expected: r.expected })
+                                                            : t("solver.got", { input: r.input, expected: r.expected, output: r.output })}
+                                                    </span>
+                                                )}
                                             </span>
                                         </li>
                                     ))}

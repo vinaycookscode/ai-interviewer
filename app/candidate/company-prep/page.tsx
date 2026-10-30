@@ -35,7 +35,8 @@ export default async function CompanyPrepPage() {
             difficulty: true,
             rounds: true,
             salaryRange: true,
-            _count: { select: { questions: true } },
+            // Only published problems count (AIIN-107)
+            _count: { select: { questions: { where: { status: "PUBLISHED" } } } },
         },
     });
 

@@ -29,6 +29,7 @@ export async function getCompanyKitBySlug(slug: string) {
         where: { slug },
         include: {
             questions: {
+                where: { status: "PUBLISHED" },
                 orderBy: [
                     { frequency: "desc" },
                     { createdAt: "desc" }
@@ -49,7 +50,7 @@ export async function getCompanyQuestions(
         search?: string;
     }
 ) {
-    const where: any = { kitId };
+    const where: any = { kitId, status: "PUBLISHED" };
 
     if (filters?.type) {
         where.type = filters.type;

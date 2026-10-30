@@ -28,6 +28,7 @@ How to move a screen to Soft Glass, the product's design language. Why we chose 
 - Badges: `app/candidate/badges`, the badges panel on the profile, the "New badge" toast, the public certificate `app/certificate/[id]` (AIIN-102)
 - Plan checkpoints: the timeline on `app/candidate/placement-program`, the checkpoint card and skill labels on the plan day (AIIN-101)
 - Ask U: `app/candidate/coach` (AIIN-100)
+- Admin problems: `app/admin/problems` and the editor, in `AdminGlass` inside the old admin layout until AIIN-138 (AIIN-107)
 - Weekly report email and unsubscribe: `lib/weekly-report/email.ts`, `app/unsubscribe` (AIIN-103)
 
 **Still to build:** AIIN-136 to AIIN-138. Their artboards are in canvas batches 4 and 6.
