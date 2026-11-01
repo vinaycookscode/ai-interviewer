@@ -2,9 +2,9 @@
 
 Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning behind larger changes is in `docs/architecture/`.
 
-## Unreleased
+## 2026-11-01, third release
 
-On `develop`, not yet on `main`. Adds the `InterviewConsent` table and `Interview.consentDeclinedAt` (migration `interview_consent`), and a daily cron, `/api/cron/retention`, which needs `CRON_SECRET` (already set).
+Adds the `InterviewConsent` table and `Interview.consentDeclinedAt` (migration `interview_consent`), and a daily cron, `/api/cron/retention`, which needs `CRON_SECRET` (already set).
 
 - **Candidates agree to the integrity checks before an interview starts (AIIN-176).** After the documents step and before the camera is asked for, a notice says exactly what's checked: tab and window, full screen, copy and paste with shortcuts and developer tools, a second screen, and face presence on the device, with no video, audio or photo recorded. It says why, what's kept and for how long, and who sees it, in English, Hindi or Marathi.
   - "I agree and start" and "I don't agree" are equally prominent. Agreeing records the notice version, the checks, the language, the time, the IP and the browser.
