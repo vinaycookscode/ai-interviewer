@@ -2,9 +2,7 @@
 
 Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning behind larger changes is in `docs/architecture/`.
 
-## Unreleased
-
-On `develop`, not yet on `main`.
+## 2026-11-01, second release
 
 - **Company prep remembers where you left off (AIIN-220).** A problem now reopens in the language you last saved, with your code, instead of always in JavaScript, which made a saved Python solution look lost. Each problem says **Solved** (every test passed) or **Attempted**, with an icon and a word, in the list and in the solver, and it updates as soon as you submit. Only solved problems count towards "done". The reference solution says which language it's written in. The save and load actions return only the counts and the code, not the database row.
 
