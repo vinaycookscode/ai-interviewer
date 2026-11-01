@@ -13,3 +13,10 @@ export function formatSalaryRange(value: unknown): string | null {
 export function companyInitial(name: string): string {
     return name.trim().charAt(0).toUpperCase() || "?";
 }
+
+/** Where a candidate stands on a problem: solved once every test passed in some language; otherwise attempted (AIIN-220). */
+export interface ProblemProgress {
+    status: "solved" | "attempted";
+    /** The language last saved in, which the solver opens with. */
+    language: string;
+}

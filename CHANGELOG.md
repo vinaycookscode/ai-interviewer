@@ -2,6 +2,12 @@
 
 Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning behind larger changes is in `docs/architecture/`.
 
+## Unreleased
+
+On `develop`, not yet on `main`.
+
+- **Company prep remembers where you left off (AIIN-220).** A problem now reopens in the language you last saved, with your code, instead of always in JavaScript, which made a saved Python solution look lost. Each problem says **Solved** (every test passed) or **Attempted**, with an icon and a word, in the list and in the solver, and it updates as soon as you submit. Only solved problems count towards "done". The reference solution says which language it's written in. The save and load actions return only the counts and the code, not the database row.
+
 ## 2026-11-01, release
 
 Adds the `ActivityDay` and `DailyChallengeAnswer` tables (migration `daily_challenge`, which carries over every past day a plan task was done), the `UserAchievement` and `Certificate` tables (migration `achievements`), `PlacementProgram.track` with the checkpoint columns on `MockInterview` (migration `plan_checkpoints`, which marks the existing `90-day-placement-bootcamp` as the SDE plan), the `CoachConversation` and `CoachMessage` tables with `SubscriptionPlan.coachMessagesPerDay` (migration `coach`: 10 on Free, 100 on paid plans), problem status, hints and history (migration `admin_problems`: every existing problem stays published), a data fix for three seeded problems' tests (migration `fix_seed_problem_tests`), and the `CodeRun` table (migration `code_runs`). **Needs `RUNNER_URL` and `RUNNER_TOKEN` in Vercel's production environment** for code to run on the server: our Piston server on Oracle Cloud's free tier (`docs/CODE_RUNNER_SETUP.md`; the values are in the local `.env.local`). Without them, practice falls back to JavaScript in the browser, and the interview's Run button says it can't run code right now. **After release, run `npx tsx scripts/award-achievements.ts` once against production** to give existing candidates the badges and certificates they've already earned.

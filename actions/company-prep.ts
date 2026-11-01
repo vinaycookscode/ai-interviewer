@@ -128,7 +128,7 @@ export async function saveUserSolution(
         }
 
         // Upsert the solution (update if exists, create if not)
-        const solution = await db.userCompanySolution.upsert({
+        await db.userCompanySolution.upsert({
             where: {
                 userId_questionId_language: {
                     userId: session.user.id,
@@ -154,7 +154,8 @@ export async function saveUserSolution(
 
         if (totalTests > 0 && passedTests === totalTests) await awardAchievements(session.user.id, ["problems"]);
 
-        return { success: true, solution };
+        // Only the counts go back, never the row (AIIN-220)
+        return { success: true, passedTests, totalTests };
     } catch (error) {
         console.error("Error saving solution:", error);
         return { success: false, error: "Failed to save solution" };
@@ -178,7 +179,8 @@ export async function getUserSolution(questionId: string, language: string) {
                     questionId,
                     language
                 }
-            }
+            },
+            select: { code: true, passedTests: true, totalTests: true },
         });
 
         return { success: true, solution };

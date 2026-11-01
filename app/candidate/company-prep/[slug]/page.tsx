@@ -7,7 +7,7 @@ import { checkFeature } from "@/actions/feature-flags";
 import { getCurrentSubscription } from "@/actions/subscription";
 import { FEATURES } from "@/lib/features";
 import { UpgradePrompt } from "@/components/subscription/upgrade-prompt";
-import { formatSalaryRange } from "@/lib/company-prep-format";
+import { formatSalaryRange, type ProblemProgress } from "@/lib/company-prep-format";
 import { testsOf } from "@/lib/problems/server";
 import { JUDGE_LANGUAGES, inferSignature, starterFor } from "@/lib/judge/drivers";
 import { judgeConfigured } from "@/lib/judge/client";
@@ -100,11 +100,19 @@ export default async function CompanyDetailPage({ params }: PageProps) {
 
     if (!kit) notFound();
 
-    const solved = await db.userCompanySolution.findMany({
+    // Newest first, so a problem reopens in the language last saved (AIIN-220)
+    const saved = await db.userCompanySolution.findMany({
         where: { userId: session.user.id, questionId: { in: kit.questions.map((q) => q.id) } },
-        select: { questionId: true },
-        distinct: ["questionId"],
+        select: { questionId: true, language: true, passedTests: true, totalTests: true },
+        orderBy: { updatedAt: "desc" },
     });
+    const progress: Record<string, ProblemProgress> = {};
+    for (const s of saved) {
+        const solved = s.totalTests > 0 && s.passedTests === s.totalTests;
+        const known = progress[s.questionId];
+        if (!known) progress[s.questionId] = { status: solved ? "solved" : "attempted", language: s.language };
+        else if (solved) known.status = "solved";
+    }
 
     return (
         <CompanyDetailClient
@@ -127,7 +135,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                     starters: signature ? Object.fromEntries(JUDGE_LANGUAGES.map((l) => [l, starterFor(l, signature, q.starterCode)])) : {},
                 };
             })}
-            solvedIds={solved.map((s) => s.questionId)}
+            progress={progress}
             featureFlags={{ languageSelector, codePersistence, aiCodeAnalysis, serverJudge: judgeConfigured() }}
         />
     );

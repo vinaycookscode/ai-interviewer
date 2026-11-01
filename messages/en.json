@@ -1596,7 +1596,6 @@
             "difficulty": "Difficulty",
             "anyDifficulty": "Any difficulty",
             "often": "Asked often",
-            "done": "Done",
             "goodAnswer": "A good answer",
             "showAnswer": "Show a good answer",
             "hideAnswer": "Hide the answer",
@@ -1665,7 +1664,7 @@
             },
             "ranHere": "The checker couldn’t be reached, so the visible tests ran in your browser. Hidden tests run when it’s back.",
             "compileError": "Your code didn’t compile:\n{message}",
-            "timeLimitNote": "Stopped at the 5-second limit. Look for a loop that never ends, or a slow approach.",
+            "timeLimitNote": "Stopped at the 10-second limit. Look for a loop that never ends, or a slow approach.",
             "runErrors": {
                 "unauthorized": "Sign in again to run your code.",
                 "notFound": "This problem isn’t available to run.",
@@ -1674,7 +1673,14 @@
                 "rateLimited": "That’s 30 runs this minute. Wait a moment, then run the tests again.",
                 "unavailable": "Couldn’t run the tests right now. Try again in a moment.",
                 "noTests": "This question has no tests yet."
-            }
+            },
+            "submittedSolved": "Solved. Every test passed, and your solution is saved.",
+            "solutionIn": "Show the solution · {language}",
+            "solutionOtherLanguage": "Written in {language}. Your code is in another language, so use it for the approach."
+        },
+        "progress": {
+            "solved": "Solved",
+            "attempted": "Attempted"
         }
     },
     "Flashcards": {

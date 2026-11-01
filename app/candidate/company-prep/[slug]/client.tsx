@@ -1,14 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ArrowLeft, CheckCircle2, ChevronDown, Code2, Lightbulb } from "lucide-react";
 import { CoachBubble } from "@/components/soft-glass/coach-bubble";
 import { focusRing } from "@/components/soft-glass/classes";
 import { field, panel, panelTitle, sectionTitle } from "@/components/jobs/employer-ui";
-import { CompanyProblemSolver, type SolverQuestion } from "@/components/company-prep/company-problem-solver";
-import { companyInitial } from "@/lib/company-prep-format";
+import { CompanyProblemSolver, ProgressChip, type SolverQuestion } from "@/components/company-prep/company-problem-solver";
+import { companyInitial, type ProblemProgress } from "@/lib/company-prep-format";
 import { cn } from "@/lib/utils";
 
 export interface CompanyRound {
@@ -35,7 +35,8 @@ interface CompanyDetailClientProps {
         guide: CompanyGuide | null;
     };
     questions: SolverQuestion[];
-    solvedIds: string[];
+    /** Per problem the candidate has saved code for (AIIN-220). */
+    progress: Record<string, ProblemProgress>;
     featureFlags: { languageSelector: boolean; codePersistence: boolean; aiCodeAnalysis: boolean; serverJudge: boolean };
 }
 
@@ -47,21 +48,22 @@ const OFTEN = 8;
 const chip = "inline-flex h-7 items-center gap-1 rounded-full bg-sg-chip px-2.5 text-sm font-semibold";
 const smallChip = "inline-flex h-6 items-center gap-1 rounded-full bg-sg-chip px-2 text-[13px] font-semibold";
 
-export function CompanyDetailClient({ company, questions, solvedIds, featureFlags }: CompanyDetailClientProps) {
+export function CompanyDetailClient({ company, questions, progress: initialProgress, featureFlags }: CompanyDetailClientProps) {
     const t = useTranslations("CompanyPrep");
     const [kind, setKind] = useState<string>("ALL");
     const [level, setLevel] = useState<string>("ALL");
     const [openId, setOpenId] = useState<string | null>(questions[0]?.id ?? null);
     const [shownAnswers, setShownAnswers] = useState<Set<string>>(new Set());
     const [solving, setSolving] = useState<SolverQuestion | null>(null);
-    const solved = useMemo(() => new Set(solvedIds), [solvedIds]);
+    // Kept here so a submit shows at once, without reloading the page
+    const [progress, setProgress] = useState(initialProgress);
 
     const typeName = (type: string) => ((TYPES as readonly string[]).includes(type) ? t(`types.${type as (typeof TYPES)[number]}`) : type);
     const levelName = (l: string) => ((LEVELS as readonly string[]).includes(l) ? t(`levels.${l as (typeof LEVELS)[number]}`) : l);
 
     const presentTypes = TYPES.filter((type) => questions.some((q) => q.type === type));
     const shown = questions.filter((q) => (kind === "ALL" || q.type === kind) && (level === "ALL" || q.difficulty === level));
-    const doneCount = questions.filter((q) => solved.has(q.id)).length;
+    const doneCount = questions.filter((q) => progress[q.id]?.status === "solved").length;
 
     const toggleAnswer = (id: string) =>
         setShownAnswers((prev) => {
@@ -76,6 +78,13 @@ export function CompanyDetailClient({ company, questions, solvedIds, featureFlag
             <CompanyProblemSolver
                 question={solving}
                 companyName={company.name}
+                progress={progress[solving.id] ?? null}
+                onSaved={(saved) =>
+                    setProgress((prev) => ({
+                        ...prev,
+                        [solving.id]: { language: saved.language, status: saved.solved || prev[solving.id]?.status === "solved" ? "solved" : "attempted" },
+                    }))
+                }
                 onClose={() => setSolving(null)}
                 featureFlags={featureFlags}
             />
@@ -210,12 +219,7 @@ export function CompanyDetailClient({ company, questions, solvedIds, featureFlag
                                                     {q.frequency >= OFTEN && (
                                                         <span className={cn(smallChip, "bg-sg-lavender-soft text-sg-lavender-ink")}>{t("detail.often")}</span>
                                                     )}
-                                                    {solved.has(q.id) && (
-                                                        <span className={smallChip}>
-                                                            <CheckCircle2 className="size-3.5" aria-hidden="true" />
-                                                            {t("detail.done")}
-                                                        </span>
-                                                    )}
+                                                    {progress[q.id] && <ProgressChip status={progress[q.id].status} className={smallChip} />}
                                                 </span>
                                             </span>
                                             <ChevronDown aria-hidden="true" className={cn("mt-0.5 size-5 shrink-0 transition-transform", open && "rotate-180")} />

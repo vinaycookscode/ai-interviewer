@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, CheckCircle2, Loader2, MinusCircle, Play, RotateCcw, Sparkles, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CircleDashed, Loader2, MinusCircle, Play, RotateCcw, Sparkles, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { saveUserSolution, getUserSolution, analyzeSolution, type CodeAnalysis } from "@/actions/company-prep";
 import { AmbientLight } from "@/components/soft-glass/ambient-light";
@@ -13,6 +13,7 @@ import { ThemeSwitch } from "@/components/soft-glass/theme-switch";
 import { coralButton, focusRing } from "@/components/soft-glass/classes";
 import { field, glassButton, inkButton, outlineButton } from "@/components/jobs/employer-ui";
 import { canRunTests } from "@/lib/code-languages";
+import type { ProblemProgress } from "@/lib/company-prep-format";
 import { runProblemTests } from "@/actions/code-execution";
 import { asError, callSource, judge, parseInput, type TestCase, type TestRun } from "@/lib/problems/run-js";
 import { cn } from "@/lib/utils";
@@ -49,6 +50,9 @@ interface CompanyProblemSolverProps {
     question: SolverQuestion;
     companyName: string;
     onClose: () => void;
+    /** Null when nothing is saved yet. The solver opens in the language last saved (AIIN-220). */
+    progress?: ProblemProgress | null;
+    onSaved?: (saved: { language: string; solved: boolean }) => void;
     featureFlags?: { languageSelector: boolean; codePersistence: boolean; aiCodeAnalysis: boolean; serverJudge?: boolean };
 }
 
@@ -74,6 +78,20 @@ const TYPES = ["CODING", "APTITUDE", "HR", "GD"] as const;
 const OFTEN = 8;
 
 const chip = "inline-flex h-7 items-center rounded-full bg-sg-chip px-2.5 text-sm font-semibold";
+
+const languageName = (id: string | null) => LANGUAGES.find((l) => l.id === id)?.name ?? id ?? "";
+
+/** Solved or attempted, told by icon and word (AIIN-220). */
+export function ProgressChip({ status, className }: { status: ProblemProgress["status"]; className?: string }) {
+    const t = useTranslations("CompanyPrep.progress");
+    const Icon = status === "solved" ? CheckCircle2 : CircleDashed;
+    return (
+        <span className={cn(className, "gap-1", status === "solved" && "text-sg-success")}>
+            <Icon className="size-3.5" aria-hidden="true" />
+            {t(status)}
+        </span>
+    );
+}
 const asText = (v: unknown) => (typeof v === "string" ? v : JSON.stringify(v));
 
 function starterCode(q: SolverQuestion, lang: string): string {
@@ -151,14 +169,18 @@ export function CompanyProblemSolver({
     question,
     companyName,
     onClose,
+    progress = null,
+    onSaved,
     featureFlags = { languageSelector: true, codePersistence: true, aiCodeAnalysis: true },
 }: CompanyProblemSolverProps) {
     const t = useTranslations("CompanyPrep");
     const { resolvedTheme } = useTheme();
     const backRef = useRef<HTMLButtonElement>(null);
 
-    const [language, setLanguage] = useState<string>("javascript");
-    const [code, setCode] = useState(() => starterCode(question, "javascript"));
+    const openIn = LANGUAGES.some((l) => l.id === progress?.language) ? progress!.language : "javascript";
+    const [language, setLanguage] = useState<string>(openIn);
+    const [code, setCode] = useState(() => starterCode(question, openIn));
+    const [status, setStatus] = useState(progress?.status ?? null);
     const [results, setResults] = useState<TestResult[] | null>(null);
     const [runNote, setRunNote] = useState<string | null>(null);
     const [testedCode, setTestedCode] = useState<string | null>(null);
@@ -172,7 +194,6 @@ export function CompanyProblemSolver({
     const canRun = runnable && testCases.length + (serverJudge ? question.hiddenCount : 0) > 0;
     const starter = starterCode(question, language);
     const storageKey = `company-prep-code-${question.id}-${language}`;
-    const languageName = LANGUAGES.find((l) => l.id === language)?.name ?? language;
     const levelName = (LEVELS as readonly string[]).includes(question.difficulty) ? t(`levels.${question.difficulty as (typeof LEVELS)[number]}`) : question.difficulty;
     const typeName = (TYPES as readonly string[]).includes(question.type) ? t(`types.${question.type as (typeof TYPES)[number]}`) : question.type;
     const hint = question.tips || (question.answer ? `${question.answer.split(".")[0]}.` : null);
@@ -286,8 +307,12 @@ export function CompanyProblemSolver({
         const passed = canRun && results && testedCode === code ? results.filter((r) => r.status === "passed").length : 0;
         const total = canRun ? testCases.length : 0;
         const result = await saveUserSolution(question.id, code, language, passed, total).catch(() => null);
-        if (result?.success) toast.success(t("solver.submitted"));
-        else toast.error(t("solver.submitFailed"));
+        if (result?.success) {
+            const solved = !!result.totalTests && result.passedTests === result.totalTests;
+            setStatus((prev) => (solved || prev === "solved" ? "solved" : "attempted"));
+            onSaved?.({ language, solved });
+            toast.success(t(solved ? "solver.submittedSolved" : "solver.submitted"));
+        } else toast.error(t("solver.submitFailed"));
         setBusy(null);
     };
 
@@ -327,6 +352,7 @@ export function CompanyProblemSolver({
                         <div className="flex flex-col gap-3">
                             <h1 className="font-display sg-soft text-[28px] font-semibold leading-[1.18] tracking-[-0.02em] sm:text-[34px]">{question.question}</h1>
                             <span className="flex flex-wrap gap-1.5">
+                                {status && <ProgressChip status={status} className={chip} />}
                                 <span className={chip}>{levelName}</span>
                                 {question.tags.map((tag) => (
                                     <span key={tag} className={chip}>
@@ -361,7 +387,12 @@ export function CompanyProblemSolver({
                               )}
                         {question.solutionCode && (
                             <details className="rounded-[18px] bg-sg-row px-4 py-3">
-                                <summary className={cn("cursor-pointer rounded-md font-bold", focusRing)}>{t("solver.solution")}</summary>
+                                <summary className={cn("cursor-pointer rounded-md font-bold", focusRing)}>
+                                    {question.language ? t("solver.solutionIn", { language: languageName(question.language) }) : t("solver.solution")}
+                                </summary>
+                                {question.language && question.language !== language && (
+                                    <p className="mt-2 text-sm text-sg-muted">{t("solver.solutionOtherLanguage", { language: languageName(question.language) })}</p>
+                                )}
                                 <pre className="mt-3 overflow-x-auto rounded-xl bg-sg-chip p-3 font-mono text-sm leading-6">{question.solutionCode}</pre>
                             </details>
                         )}
@@ -425,7 +456,7 @@ export function CompanyProblemSolver({
                         </div>
 
                         {!runnable ? (
-                            <p className="text-sg-muted">{t("solver.noRun", { language: languageName })}</p>
+                            <p className="text-sg-muted">{t("solver.noRun", { language: languageName(language) })}</p>
                         ) : !canRun ? (
                             <p className="text-sg-muted">{t("solver.noTests")}</p>
                         ) : (
