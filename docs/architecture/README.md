@@ -24,7 +24,13 @@ This directory records significant technical decisions made on this project — 
 | 2026-10-28 | [No preview environment for now: check locally, deploy to production](2026-10-28-no-preview-environment.md) | Accepted | AIIN-115 |
 | 2026-10-29 | [The Free plan includes 2 practice interviews a month](2026-10-29-free-plan-includes-practice.md) | Accepted · implemented | AIIN-189 |
 | 2026-10-30 | [The integrity verdict: plain rules over the events we already capture](2026-10-30-integrity-verdict-rules.md) | Accepted · implemented | AIIN-177 |
-| 2026-10-30 | [Where candidate code runs: hosting the code execution engine](2026-10-30-code-execution-hosting.md) | Accepted (our own Piston, Oracle free tier) | AIIN-105 |
+| 2026-10-30 | [Where candidate code runs: hosting the code execution engine](2026-10-30-code-execution-hosting.md) | Accepted · implemented (our own Piston, Oracle free tier; revised 2026-11-01) | AIIN-105 |
+| 2026-10-30 | [One streak for the whole app, counted in IST days](2026-10-30-one-streak-in-ist-days.md) | Accepted · implemented | AIIN-99, AIIN-67 |
+| 2026-10-30 | [Badges are stored once earned; the certificate is a public, unguessable page](2026-10-30-badges-and-public-certificates.md) | Accepted · implemented | AIIN-102, AIIN-101 |
+| 2026-10-30 | [Ask U: a narrow context, stored chats, a daily limit checked before Gemini](2026-10-30-ai-coach-context-and-quota.md) | Accepted · implemented | AIIN-100 |
+| 2026-10-30 | [A coding problem is published only when its solution passes every test](2026-10-30-publish-only-checked-problems.md) | Accepted · implemented | AIIN-107, 219, 220 |
+| 2026-10-30 | [The weekly report: Vercel Cron, behind a secret, never sent twice](2026-10-30-weekly-email-via-vercel-cron.md) | Accepted · implemented, first send 2026-11-02 | AIIN-103 |
+| 2026-11-01 | [Neon is the only database; no unused integrations on the Vercel project](2026-11-01-neon-is-the-only-database.md) | Accepted · implemented | — |
 
 Proposals that aren't ADRs yet (Upstash rate limiting, Deepgram and Google TTS) are listed in `docs/audits/2026-10-24-master-decision-index.md`.
 
