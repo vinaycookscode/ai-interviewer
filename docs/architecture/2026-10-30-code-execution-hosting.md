@@ -1,6 +1,6 @@
 # Where candidate code runs: hosting the code execution engine
 **Date:** 2026-10-30  
-**Status:** Accepted, 2026-10-30: option A, hosted Judge0, behind a Judge0-shaped adapter (built in AIIN-105).  
+**Status:** Accepted, 2026-11-01: option C, our own Piston on Oracle Cloud's free tier (built in AIIN-105). First accepted on 2026-10-30 as option A, hosted Judge0; changed before release, see "Revised".  
 **Deciders:** Vinay
 
 ## Context
@@ -55,12 +55,22 @@ Whichever is chosen:
 - **Keep running tests in the browser:** only JavaScript, and hidden tests can't stay hidden there. Kept only as an offline fallback for JavaScript.
 - **Run code inside Vercel functions:** no real isolation for untrusted code, and no Java or C++ runtime. Rejected.
 
+## Revised, 2026-11-01: our own Piston, for $0
+
+Hosted Judge0's free plan allows 50 runs a day, and its paid plans start at about €27 a month: too much before we have paying users. The public Piston service the old code used has been whitelist-only since 15 Feb 2026, for non-commercial projects only.
+
+So we host Piston (option C) on Oracle Cloud's Always Free tier:
+- **Why Piston, not Judge0 CE:** both publish images for Intel/AMD only, so Oracle's free Arm servers are out. The free AMD server has 1 GB of memory. Judge0 CE needs Postgres, Redis and cgroup v1; Piston is one container on cgroup v2, and fits.
+- **How it's reached:** Piston listens only on the server. Caddy serves HTTPS on an `sslip.io` name and passes on only `/api/v2/execute`, only with the `X-Auth-Token`; everything else gets 401.
+- **Limits** are set on the server (10 s and 10 s of CPU, 256 MB, 64 KB of output, no network, two runs at a time) and sent with every run. 10 s, not the 5 s planned, because Java compiles inside its run on a small CPU. Measured: Python and JavaScript under 1 s, Java and C++ 2–4 s, TypeScript about 10 s.
+- **Trade-offs:** a server to look after (`docs/CODE_RUNNER_SETUP.md`), and a small one: fine for a handful of candidates at once, with Java and C++ taking a few seconds to compile. Moving to a bigger server is the same setup and a new `RUNNER_URL`.
+- Candidate code stays on a server we run, so the privacy policy needs no third-party judge.
+
 ## As built (AIIN-105)
 
-- `lib/judge/client.ts` is the only code that talks to Judge0: `JUDGE0_URL` and `JUDGE0_KEY`, with RapidAPI's headers for a RapidAPI URL and `X-Auth-Token` otherwise. Moving to our own Judge0 CE (option B) is a change of those two values.
+- `lib/judge/client.ts` is the only code that talks to the runner: `RUNNER_URL` and `RUNNER_TOKEN`. Piston's Java runs the first class in the file, so the drivers put the class with `main` first.
 - One submission per run. `lib/judge/drivers.ts` wraps the candidate's code in a driver per language (JavaScript, Python, Java, C++). The driver calls their function on every test and prints one tagged JSON line per test, which the server compares with the expected output.
 - Tests are written once, in JSON. Java and C++ need types, so the signature is inferred from the reference solution's names and the first test's values. The same signature gives every language's starter code.
 - The interview's Run button also takes TypeScript and C#, because it only shows output.
 - `CodeRun` records language, time, status and user for each run, never the code, and backs the limit of 30 runs a minute.
-- Without Judge0, practice falls back to JavaScript's visible tests in the browser, and the admin's check to JavaScript only. Hidden tests never reach the browser either way.
-- The privacy policy must say candidate code is sent to the judge's provider. That's still to do.
+- Without the runner, practice falls back to JavaScript's visible tests in the browser, and the admin's check to JavaScript only. Hidden tests never reach the browser either way.

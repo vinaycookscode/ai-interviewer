@@ -244,8 +244,16 @@ for __i, __args in enumerate(__json.loads(${JSON.stringify(JSON.stringify(allArg
                     return `        try { Object r = new Solution().${signature.name}(${values}); System.out.println(TAG + ${i} + " " + Judge.json(r)); } catch (Throwable e) { System.out.println(TAG + ${i} + " !" + Judge.str(String.valueOf(e.getMessage() == null ? e.toString() : e.getMessage()))); }`;
                 })
                 .join("\n");
+            // Java runs the first class in the file, so Main comes first
             return `import java.util.*;
 ${imports.join("\n")}
+
+public class Main {
+    static final String TAG = ${javaString(tag)};
+    public static void main(String[] args) {
+${calls}
+    }
+}
 
 class ListNode {
     int val; ListNode next;
@@ -273,13 +281,6 @@ class Judge {
         if (o instanceof Collection) { StringBuilder b = new StringBuilder("["); boolean f = true; for (Object x : (Collection<?>) o) { if (!f) b.append(","); f = false; b.append(json(x)); } return b.append("]").toString(); }
         if (o.getClass().isArray()) { StringBuilder b = new StringBuilder("["); int n = java.lang.reflect.Array.getLength(o); for (int i = 0; i < n; i++) { if (i > 0) b.append(","); b.append(json(java.lang.reflect.Array.get(o, i))); } return b.append("]").toString(); }
         return str(o.toString());
-    }
-}
-
-public class Main {
-    static final String TAG = ${javaString(tag)};
-    public static void main(String[] args) {
-${calls}
     }
 }
 `;
@@ -398,12 +399,12 @@ export function runnableProgram(language: RunLanguage, code: string): string {
         return `${code}\n\nclass Program {\n    static void Main() {\n        System.Console.WriteLine("Compiled. Add a Main method to print output.");\n    }\n}\n`;
     }
     if (language === "java") {
-        if (/public\s+static\s+void\s+main\s*\(/.test(code)) {
-            // Judge0 runs Main: rename the class that holds main
-            const holder = code.match(/public\s+class\s+(\w+)/)?.[1];
-            return holder && holder !== "Main" ? code.replace(new RegExp(`\\b${holder}\\b`, "g"), "Main") : code;
-        }
-        return `${code.replace(/public\s+class/g, "class")}\n\npublic class Main {\n    public static void main(String[] args) {\n        System.out.println("Compiled. Add a main method to print output.");\n    }\n}\n`;
+        // Java runs the first class in the file: a launcher goes first, after the imports, and calls the candidate's main
+        const imports = code.match(/^\s*import\s+[\w.*]+\s*;\s*$/gm) ?? [];
+        const body = code.replace(/^\s*import\s+[\w.*]+\s*;\s*$/gm, "").replace(/public\s+class/g, "class");
+        const holder = /public\s+static\s+void\s+main\s*\(/.test(code) ? (code.match(/public\s+class\s+(\w+)/) ?? code.match(/\bclass\s+(\w+)/))?.[1] : null;
+        const launch = holder ? `${holder}.main(args);` : `System.out.println("Compiled. Add a main method to print output.");`;
+        return `${imports.join("\n")}\n\nclass Launcher {\n    public static void main(String[] args) throws Exception {\n        ${launch}\n    }\n}\n${body}\n`;
     }
     if (language === "cpp" && !/\bint\s+main\s*\(/.test(code)) {
         return `#include <iostream>\n${code}\n\nint main() {\n    std::cout << "Compiled. Add a main() to print output." << std::endl;\n    return 0;\n}\n`;

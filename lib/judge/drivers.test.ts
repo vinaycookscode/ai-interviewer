@@ -56,7 +56,7 @@ test("Java programs get typed literals and keep imports first", () => {
     assert.ok(program.startsWith("import java.util.*;\nimport java.util.HashMap;"));
     assert.match(program, /new Solution\(\)\.twoSum\(new int\[\]\{2,7,11,15\}, 9\)/);
     assert.doesNotMatch(program, /public class Solution/);
-    assert.match(program, /public class Main/);
+    assert.ok(program.indexOf("public class Main") < program.indexOf("class ListNode"), "Main comes first");
 });
 
 test("C++ programs get typed literals", () => {
@@ -79,9 +79,11 @@ test("printing that looks like a result but lacks the tag is ignored", () => {
     assert.equal(results[0].status, "error");
 });
 
-test("interview code is made runnable: Java gets Main, C++ gets main()", () => {
-    assert.match(runnableProgram("java", "class Solution {}"), /public class Main/);
-    assert.match(runnableProgram("java", "public class Hello { public static void main(String[] a) {} }"), /public class Main \{ public static void main/);
+test("interview code is made runnable: Java gets a launcher first, C++ gets main()", () => {
+    assert.match(runnableProgram("java", "class Solution {}"), /^\s*class Launcher[\s\S]*Add a main method[\s\S]*class Solution/);
+    const hello = runnableProgram("java", "import java.util.List;\nclass Helper {}\npublic class Hello { public static void main(String[] a) {} }");
+    assert.match(hello, /^import java\.util\.List;\s*class Launcher[\s\S]*Hello\.main\(args\)/);
+    assert.doesNotMatch(hello, /public class/);
     assert.match(runnableProgram("cpp", "int add(int a, int b) { return a + b; }"), /int main\(\)/);
     assert.equal(runnableProgram("python", "print(1)"), "print(1)");
 });
