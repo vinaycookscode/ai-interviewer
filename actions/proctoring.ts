@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { PROCTORING_EVENT_TYPES } from "@/lib/integrity/verdict";
+import { EVENT_CHECK } from "@/lib/integrity/notice";
 
 export const logProctoringEvent = async (
     interviewId: string,
@@ -37,6 +38,15 @@ export const logProctoringEvent = async (
         // Nothing is recorded once the interview is over
         if (interview.status === "COMPLETED") {
             return { error: "Interview finished" };
+        }
+
+        // Only what the candidate agreed to be checked on (AIIN-176)
+        const consented = await db.interviewConsent.findFirst({
+            where: { interviewId, checks: { has: EVENT_CHECK[type] } },
+            select: { id: true },
+        });
+        if (!consented) {
+            return { error: "No consent for this check" };
         }
 
         await db.proctoringEvent.create({

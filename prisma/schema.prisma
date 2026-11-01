@@ -354,6 +354,9 @@ model Interview {
   integrityComputedAt   DateTime?
   integrityRulesVersion Int?
 
+  // The candidate said no to the integrity checks (AIIN-176); cleared if they agree later. Consent itself is InterviewConsent.
+  consentDeclinedAt DateTime?
+
   // Hiring decision (AIIN-157); history in InterviewDecisionEvent
   decision     HiringDecision @default(UNDECIDED)
   decisionAt   DateTime?
@@ -363,6 +366,7 @@ model Interview {
   decisionEvents InterviewDecisionEvent[]
   personalityProfile PersonalityProfile?
   proctoringEvents ProctoringEvent[]
+  consents InterviewConsent[]
 
   @@index([candidateId])
   @@index([jobId])
@@ -481,6 +485,24 @@ model RateLimit {
   createdAt   DateTime @default(now())
   
   @@unique([identifier])
+}
+
+// Agreement to the integrity checks before an interview (AIIN-176). One row per interview and notice version;
+// the notice text is versioned in lib/integrity/notice.ts. The employer sees that and when, never the IP or user agent.
+model InterviewConsent {
+  id            String    @id @default(uuid())
+  interviewId   String
+  interview     Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  noticeVersion String
+  // The checks the notice listed, e.g. focus, fullscreen, paste, camera
+  checks        String[]
+  // The language the notice was read in
+  language      String
+  acceptedAt    DateTime  @default(now())
+  ipAddress     String?
+  userAgent     String?
+
+  @@unique([interviewId, noticeVersion])
 }
 
 model ProctoringEvent {

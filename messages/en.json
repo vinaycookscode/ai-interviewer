@@ -2306,6 +2306,11 @@
             "sec": "{s} s",
             "min": "{m} min",
             "minSec": "{m} min {s} s"
+        },
+        "consent": {
+            "agreed": "Agreed to the integrity checks on {when}",
+            "declined": "Didn’t agree to the integrity checks on {when}, so the interview didn’t start",
+            "none": "No agreement to the integrity checks on record. Interviews before 1 November 2026 didn’t ask for one."
         }
     },
     "Unsubscribe": {

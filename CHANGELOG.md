@@ -2,6 +2,18 @@
 
 Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning behind larger changes is in `docs/architecture/`.
 
+## Unreleased
+
+On `develop`, not yet on `main`. Adds the `InterviewConsent` table and `Interview.consentDeclinedAt` (migration `interview_consent`), and a daily cron, `/api/cron/retention`, which needs `CRON_SECRET` (already set).
+
+- **Candidates agree to the integrity checks before an interview starts (AIIN-176).** After the documents step and before the camera is asked for, a notice says exactly what's checked: tab and window, full screen, copy and paste with shortcuts and developer tools, a second screen, and face presence on the device, with no video, audio or photo recorded. It says why, what's kept and for how long, and who sees it, in English, Hindi or Marathi.
+  - "I agree and start" and "I don't agree" are equally prominent. Agreeing records the notice version, the checks, the language, the time, the IP and the browser.
+  - Declining starts nothing and lets the employer see it. The candidate can change their mind until the link expires.
+  - The server refuses to start an interview, or store any integrity event, the candidate hasn't agreed to. A new notice version asks again, but never halfway through an interview.
+  - The employer's integrity section says whether and when the candidate agreed, never the IP or browser.
+  - Integrity events are now deleted after a year, as the notice says.
+  - ADR: [Integrity checks and candidate data](docs/architecture/2026-11-01-integrity-checks-and-candidate-data.md).
+
 ## 2026-11-01, second release
 
 - **Company prep remembers where you left off (AIIN-220).** A problem now reopens in the language you last saved, with your code, instead of always in JavaScript, which made a saved Python solution look lost. Each problem says **Solved** (every test passed) or **Attempted**, with an icon and a word, in the list and in the solver, and it updates as soon as you submit. Only solved problems count towards "done". The reference solution says which language it's written in. The save and load actions return only the counts and the code, not the database row.

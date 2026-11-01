@@ -4,6 +4,7 @@ import { InterviewClientPage } from "./client-page";
 import { auth } from "@/auth";
 import { StatusScreen } from "@/components/layout/status-screen";
 import { CalendarClock, CheckCircle2, FileText, LinkIcon, LockKeyhole, TimerOff } from "lucide-react";
+import { consentNeeded } from "@/lib/integrity/notice";
 
 export default async function InterviewPage({
     params,
@@ -28,6 +29,7 @@ export default async function InterviewPage({
         include: {
             job: {
                 include: {
+                    employer: { select: { name: true } },
                     questions: {
                         where: { archived: false },
                         orderBy: { createdAt: 'asc' }
@@ -36,6 +38,7 @@ export default async function InterviewPage({
             },
             // Only what this page needs: never the whole User row (it holds the password hash).
             candidate: { select: { id: true, email: true, resumeUrl: true, panUrl: true, aadhaarUrl: true } },
+            consents: { select: { noticeVersion: true } },
         },
     });
 
@@ -187,10 +190,23 @@ export default async function InterviewPage({
         );
     }
 
-    // All checks passed - show interview
+    // All checks passed - show interview. The integrity notice comes first when it hasn't been agreed to (AIIN-176).
+    const notice = consentNeeded(
+        interview.consents.map((c) => c.noticeVersion),
+        interview.startedAt !== null
+    )
+        ? {
+              company: interview.job.employer.name?.trim() || null,
+              expires: interview.expiresAt
+                  ? interview.expiresAt.toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" })
+                  : null,
+          }
+        : null;
+
     return (
         <InterviewClientPage
             interview={{ id: interview.id, language: interview.language, job: { title: interview.job.title } }}
+            notice={notice}
             questions={interview.job.questions}
             userDocuments={{
                 resumeUrl: interview.candidate.resumeUrl,

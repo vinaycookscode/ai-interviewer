@@ -24,6 +24,10 @@ export async function startInterview(interviewId: string) {
     if (!interview || interview.status === "COMPLETED") {
         return { success: false, error: "Interview not found" };
     }
+    // Nothing starts before the candidate agreed to the integrity checks (AIIN-176)
+    if (!(await db.interviewConsent.findFirst({ where: { interviewId }, select: { id: true } }))) {
+        return { success: false, error: "Consent needed" };
+    }
 
     try {
         await db.interview.update({

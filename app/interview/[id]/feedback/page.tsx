@@ -9,7 +9,7 @@ import { AppShell } from "@/components/soft-glass/app-shell";
 import { getFeatureFlags } from "@/actions/feature-flags";
 import { FeedbackReport } from "@/components/feedback/feedback-report";
 import { DecisionPanel } from "@/components/feedback/decision-panel";
-import { IntegritySection, type IntegrityGroup, type IntegrityProps } from "@/components/feedback/integrity-section";
+import { IntegritySection, type IntegrityConsent, type IntegrityGroup, type IntegrityProps } from "@/components/feedback/integrity-section";
 import { loadIntegrity, storeIntegrity } from "@/lib/integrity/compute";
 import { RULES_VERSION } from "@/lib/integrity/verdict";
 import { db } from "@/lib/db";
@@ -53,6 +53,9 @@ export default async function FeedbackPage({
                   select: {
                       status: true,
                       integrityRulesVersion: true,
+                      consentDeclinedAt: true,
+                      // That and when, for the employer: never the IP or user agent (AIIN-176)
+                      consents: { select: { acceptedAt: true }, orderBy: { acceptedAt: "desc" }, take: 1 },
                       decision: true,
                       decisionEvents: {
                           orderBy: { createdAt: "desc" },
@@ -85,6 +88,13 @@ export default async function FeedbackPage({
         }
     }
 
+    const consent: IntegrityConsent | null = decision
+        ? {
+              agreedAt: decision.consents[0] ? istTime(decision.consents[0].acceptedAt) : null,
+              declinedAt: decision.consentDeclinedAt ? istTime(decision.consentDeclinedAt) : null,
+          }
+        : null;
+
     const flags = await getFeatureFlags();
     const flagMap = flags.reduce<Record<string, boolean>>((acc, f) => ({ ...acc, [f.key]: f.enabled }), {});
 
@@ -103,7 +113,7 @@ export default async function FeedbackPage({
                     averageScore={averageScore ?? null}
                     viewer={viewer}
                     back={back}
-                    integrity={integrity && <IntegritySection {...integrity} />}
+                    integrity={integrity && consent && <IntegritySection {...integrity} consent={consent} />}
                     aside={
                         decision && (
                             <DecisionPanel

@@ -31,6 +31,7 @@ This directory records significant technical decisions made on this project — 
 | 2026-10-30 | [A coding problem is published only when its solution passes every test](2026-10-30-publish-only-checked-problems.md) | Accepted · implemented | AIIN-107, 219, 220 |
 | 2026-10-30 | [The weekly report: Vercel Cron, behind a secret, never sent twice](2026-10-30-weekly-email-via-vercel-cron.md) | Accepted · implemented, first send 2026-11-02 | AIIN-103 |
 | 2026-11-01 | [Neon is the only database; no unused integrations on the Vercel project](2026-11-01-neon-is-the-only-database.md) | Accepted · implemented | — |
+| 2026-11-01 | [Integrity checks and candidate data: agreement first, only what was agreed, kept for a year](2026-11-01-integrity-checks-and-candidate-data.md) | Accepted · implemented | AIIN-176 |
 
 Proposals that aren't ADRs yet (Upstash rate limiting, Deepgram and Google TTS) are listed in `docs/audits/2026-10-24-master-decision-index.md`.
 

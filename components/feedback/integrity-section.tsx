@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import { ClipboardPaste, Clock, Code, Copy, Eye, Keyboard, LogOut, Minimize, Monitor, OctagonAlert, ShieldCheck } from "lucide-react";
+import { Ban, ClipboardPaste, Clock, Code, Copy, Eye, Keyboard, LogOut, Minimize, Monitor, OctagonAlert, ShieldCheck, ShieldQuestion } from "lucide-react";
 import type { EventKind, IntegritySummary, Reason, Verdict } from "@/lib/integrity/verdict";
 import { Mascot } from "@/components/soft-glass/mascot";
 import { focusRing } from "@/components/soft-glass/classes";
@@ -16,6 +16,12 @@ export type IntegrityProps =
     | { state: "notFinished" }
     | { state: "noEvents" }
     | { state: "ready"; verdict: Verdict; reasons: Reason[]; summary: IntegritySummary; groups: IntegrityGroup[] };
+
+/** Whether the candidate agreed to the checks, and when, already formatted (AIIN-176). Never their IP or browser. */
+export interface IntegrityConsent {
+    agreedAt: string | null;
+    declinedAt: string | null;
+}
 
 type T = ReturnType<typeof useTranslations<"Integrity">>;
 
@@ -75,8 +81,13 @@ function timeAway(t: T, s: IntegritySummary) {
 }
 
 /** What happened during the interview, for the employer only (AIIN-177). Kept out of the PDF and anything shared. */
-export function IntegritySection(props: IntegrityProps) {
+export function IntegritySection({ consent, ...props }: IntegrityProps & { consent: IntegrityConsent }) {
     const t = useTranslations("Integrity");
+    const [ConsentIcon, consentText] = consent.agreedAt
+        ? [ShieldCheck, t("consent.agreed", { when: consent.agreedAt })]
+        : consent.declinedAt
+          ? [Ban, t("consent.declined", { when: consent.declinedAt })]
+          : [ShieldQuestion, t("consent.none")];
 
     return (
         <section aria-labelledby="int-title" className="sg-glass sg-shadow-lg flex flex-col gap-4 rounded-[24px] p-5 sm:rounded-[28px] sm:p-7">
@@ -86,6 +97,11 @@ export function IntegritySection(props: IntegrityProps) {
                 </h2>
                 <span className="text-[13px] font-medium leading-[18px] text-sg-muted">{t("teamOnly")}</span>
             </div>
+
+            <p className={cn(row, "flex items-start gap-2.5")}>
+                <ConsentIcon className={cn("mt-0.5 size-[18px] shrink-0", consent.agreedAt && "text-sg-success")} aria-hidden="true" />
+                {consentText}
+            </p>
 
             {props.state === "notFinished" && (
                 <p className={cn(row, "flex items-start gap-2.5")}>
