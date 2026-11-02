@@ -435,6 +435,8 @@ model MockInterview {
   difficulty  String   // "Junior", "Mid", "Senior"
   // Written once on the first visit and kept, so a refresh shows the same questions (AIIN-47)
   questions   String[] @default([])
+  // For each question, the CompanyQuestion it came from, or "" when Gemini wrote it (AIIN-208)
+  bankQuestionIds String[] @default([])
   // What the questions should cover, if given (a plan checkpoint's topics)
   topics      String[] @default([])
 
@@ -458,6 +460,9 @@ model MockAnswer {
   id              String        @id @default(uuid())
   mockInterviewId String
   mockInterview   MockInterview @relation(fields: [mockInterviewId], references: [id])
+  // The bank question this answers, when it came from the bank: graded against its model answer (AIIN-208)
+  companyQuestionId String?
+  companyQuestion   CompanyQuestion? @relation(fields: [companyQuestionId], references: [id], onDelete: SetNull)
   
   question        String        // Store question text directly as it's dynamic
   transcript      String
@@ -731,6 +736,7 @@ model CompanyQuestion {
   changes     ProblemChange[]
 
   @@index([status])
+  mockAnswers MockAnswer[]
 }
 
 // Who changed a problem, what and when (AIIN-107). The name is copied, so the history outlives the account.

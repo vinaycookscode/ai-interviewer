@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
+import { bankIdFor, gradingPrompt, mergeBankQuestion, type BankQuestion } from "@/lib/mock/questions";
 import { db } from "@/lib/db";
 import { awardAchievements } from "@/lib/achievements/server";
 import { checkpointMetric } from "@/lib/achievements/rules";
@@ -119,9 +120,13 @@ export async function getMockQuestions(mockInterviewId: string): Promise<MockSes
     if (questions.length === 0) {
         generated = await generateMockQuestionsWithRetry(mockInterview.role, mockInterview.difficulty, mockInterview.topics, 0);
         if (!generated.questions?.length) return { error: generated.error || "Failed to generate questions" };
+        // One behavioural question from the bank, so it's graded against a model answer (AIIN-208). A plan
+        // checkpoint keeps to its topics.
+        const bank = mockInterview.topics.length ? null : await pickBankQuestion(session.user.id);
+        const merged = mergeBankQuestion(generated.questions, bank);
         // Only the first writer wins; a second tab that raced us reads back the stored set.
-        await db.mockInterview.updateMany({ where: { ...where, questions: { isEmpty: true } }, data: { questions: generated.questions } });
-        questions = (await db.mockInterview.findFirst({ where, select: { questions: true } }))?.questions ?? generated.questions;
+        await db.mockInterview.updateMany({ where: { ...where, questions: { isEmpty: true } }, data: merged });
+        questions = (await db.mockInterview.findFirst({ where, select: { questions: true } }))?.questions ?? merged.questions;
     }
 
     const answered = await db.mockAnswer.findMany({
@@ -141,6 +146,23 @@ export async function getMockQuestions(mockInterviewId: string): Promise<MockSes
         allModelsExhausted: generated?.allModelsExhausted,
         error: generated?.isFallback ? generated.error : undefined,
     };
+}
+
+/** A published HR question with a model answer that this candidate hasn't practised yet, at random; or null. */
+async function pickBankQuestion(userId: string): Promise<BankQuestion | null> {
+    const used = await db.mockAnswer.findMany({
+        where: { mockInterview: { userId }, companyQuestionId: { not: null } },
+        select: { companyQuestionId: true },
+    });
+    const where = {
+        type: "HR",
+        status: "PUBLISHED",
+        answer: { not: null },
+        id: { notIn: used.flatMap((u) => (u.companyQuestionId ? [u.companyQuestionId] : [])) },
+    };
+    const count = await db.companyQuestion.count({ where });
+    if (!count) return null;
+    return db.companyQuestion.findFirst({ where, orderBy: { id: "asc" }, skip: Math.floor(Math.random() * count), select: { id: true, question: true } });
 }
 
 // Not exported: the retry counter must not be client-controllable.
@@ -235,7 +257,7 @@ export async function saveMockAnswer(
 
     const mockInterview = await db.mockInterview.findFirst({
         where: { id: mockInterviewId, userId: session.user.id },
-        select: { role: true, questions: true, answers: { select: { question: true } } },
+        select: { role: true, questions: true, bankQuestionIds: true, answers: { select: { question: true } } },
     });
 
     if (!mockInterview) {
@@ -251,22 +273,17 @@ export async function saveMockAnswer(
     }
 
     let evaluation = { score: 0, feedback: "" };
+    // A bank question is graded against its model answer and tips (AIIN-208)
+    const companyQuestionId = bankIdFor(mockInterview.questions, mockInterview.bankQuestionIds, question);
+    const reference = companyQuestionId
+        ? await db.companyQuestion.findUnique({ where: { id: companyQuestionId }, select: { answer: true, tips: true } })
+        : null;
 
     try {
         // Generate immediate feedback for this answer
         const model = await getGeminiModelInstance();
 
-        const prompt = `
-      Question: ${question}
-      Candidate Answer: ${transcript}
-
-      Evaluate this answer for a ${mockInterview.role} role.
-      Provide a JSON response with:
-      - score (1-10 number)
-      - feedback (concise string, max 2 sentences)
-      
-      Return ONLY valid JSON.
-    `;
+        const prompt = gradingPrompt(question, transcript, mockInterview.role, reference);
 
         const result = await model.generateContent(prompt);
         const response = await result.response;
@@ -297,6 +314,7 @@ export async function saveMockAnswer(
                 question,
                 transcript,
                 audioUrl,
+                companyQuestionId,
                 score: evaluation.score,
                 feedback: evaluation.feedback,
             },
