@@ -2,6 +2,13 @@
 
 Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning behind larger changes is in `docs/architecture/`.
 
+## Unreleased
+
+On `develop`, not yet on `main`. Migration `hide_study_squad_and_mentors` turns both flags off.
+
+- **Study Squad and Mentors are hidden until they work (AIIN-75).** Neither had a way for people to actually work together: no messages, no verified mentors. Their flags are now off (a missing flag used to count as on), they're gone from the menu, and a direct link finds nothing. Every action behind them needs the flag and a signed-in user. "My squads" and "my mentorships" now return only your own, and a mentor's email is no longer sent to the browser.
+- **The landing page claims nothing that isn't true (AIIN-80).** The made-up numbers ("10,000+ interviews", "95% success", "500+ companies", "#1 AI interview platform", "join thousands") were no longer shown, and are now deleted so they can't come back. The privacy note no longer promises self-service account deletion, which doesn't exist yet (AIIN-58). It says to write to us, and that AI features send answers and documents to Gemini. The footer year is current.
+
 ## 2026-11-01, third release
 
 Adds the `InterviewConsent` table and `Interview.consentDeclinedAt` (migration `interview_consent`), and a daily cron, `/api/cron/retention`, which needs `CRON_SECRET` (already set).

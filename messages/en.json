@@ -1294,89 +1294,10 @@
         }
     },
     "Home": {
-        "nav": {
-            "features": "Features",
-            "pricing": "Pricing",
-            "contact": "Contact",
-            "login": "Login"
-        },
-        "hero": {
-            "badge": "#1 AI Interview Platform",
-            "title": "Ace Your",
-            "titleAccent": "AI Interview",
-            "subtitle": "Experience the most realistic AI mock interviews, get instant feedback, and follow our 90-day placement program to land your dream job.",
-            "ctaPrimary": "Start AI Interview",
-            "ctaSecondary": "Watch Demo",
-            "trust": {
-                "noCreditCard": "No credit card required",
-                "freeForever": "Free forever plan",
-                "cancelAnytime": "Cancel anytime"
-            }
-        },
-        "stats": {
-            "practice": {
-                "value": "10,000+",
-                "label": "Practice Sessions"
-            },
-            "success": {
-                "value": "95%",
-                "label": "Success Rate"
-            },
-            "companies": {
-                "value": "500+",
-                "label": "Companies Covered"
-            },
-            "available": {
-                "value": "24/7",
-                "label": "AI Available"
-            }
-        },
-        "features": {
-            "badge": "Everything You Need",
-            "title": "Powerful Features",
-            "subtitle": "Everything you need to prepare, practice, and land your dream job",
-            "learnMore": "Learn more",
-            "items": {
-                "aiPractice": {
-                    "title": "AI Practice Interviews",
-                    "description": "Practice with our AI interviewer anytime. Get instant feedback and improve your interview skills."
-                },
-                "placement": {
-                    "title": "90-Day Placement Program",
-                    "description": "Structured 90-day roadmap to land your dream job with daily tasks and milestone tracking."
-                },
-                "companyPrep": {
-                    "title": "Company Prep",
-                    "description": "Company-specific interview preparation with tailored questions and insights."
-                },
-                "resumeScreener": {
-                    "title": "Resume Screener",
-                    "description": "AI-powered resume analysis, JD matching, and cover letter generation."
-                },
-                "studySquad": {
-                    "title": "Study Squad",
-                    "description": "Join collaborative learning groups and prepare together with peers."
-                },
-                "mentors": {
-                    "title": "Find Mentors",
-                    "description": "Connect with industry mentors who can guide your career journey."
-                },
-                "offerTracker": {
-                    "title": "Offer Tracker",
-                    "description": "Manage and compare multiple job offers with our smart comparison tool."
-                }
-            }
-        },
-        "cta": {
-            "title": "Ready to {accent} Your Career?",
-            "titleAccent": "Transform",
-            "subtitle": "Join thousands of job seekers who have accelerated their career with our AI-powered platform.",
-            "button": "Get Started Free"
-        },
         "legal": {
             "privacy": {
                 "title": "Privacy Policy",
-                "content": "We collect only essential information to provide our services. Your data is encrypted, never sold, and you can delete your account anytime. AI processing is done securely with your consent."
+                "content": "We collect only what the service needs, never sell it, and keep it encrypted in transit and at rest. AI features send your answers and documents to Google Gemini to score them. Interview integrity checks need your agreement first. To delete your account and its data, write to us and we’ll do it."
             },
             "terms": {
                 "title": "Terms of Service",
@@ -1391,7 +1312,7 @@
             "privacy": "Privacy",
             "terms": "Terms",
             "contact": "Contact",
-            "rights": "© 2025 Get Back To U. All rights reserved."
+            "rights": "© {year} Get Back To U. All rights reserved."
         }
     },
     "Landing": {

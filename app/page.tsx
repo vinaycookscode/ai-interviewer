@@ -280,7 +280,7 @@ export default async function HomePage() {
                 <footer className="flex flex-wrap items-center justify-between gap-4 border-t border-sg-rule pb-9 pt-7 text-sm text-sg-muted">
                     <div className="flex items-center gap-2.5">
                         <UMark className="size-6" />
-                        <span>{tHome("footer.rights")}</span>
+                        <span>{tHome("footer.rights", { year: new Date().getFullYear() })}</span>
                     </div>
                     <nav aria-label={t("footer.label")} className="flex flex-wrap gap-5">
                         <a href="#privacy" className="hover:text-sg-text">{tHome("footer.privacy")}</a>
