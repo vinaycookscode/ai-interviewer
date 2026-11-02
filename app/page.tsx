@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
+import { CONTACT_EMAIL } from "@/lib/legal";
 import { softGlassFonts } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 import { AmbientLight } from "@/components/soft-glass/ambient-light";
@@ -10,7 +11,6 @@ import { LandingMenu } from "@/components/soft-glass/landing-menu";
 import { coralButton as coralBase, focusRing } from "@/components/soft-glass/classes";
 import { LandingPricing } from "@/components/home/landing-pricing";
 
-const CONTACT_EMAIL = "hello@getbacktou.com";
 const CONTACT_PHONE = "+91 8600137191";
 
 export async function generateMetadata() {
@@ -283,7 +283,7 @@ export default async function HomePage() {
                         <span>{tHome("footer.rights", { year: new Date().getFullYear() })}</span>
                     </div>
                     <nav aria-label={t("footer.label")} className="flex flex-wrap gap-5">
-                        <a href="#privacy" className="hover:text-sg-text">{tHome("footer.privacy")}</a>
+                        <Link href="/privacy" className="hover:text-sg-text">{tHome("footer.privacy")}</Link>
                         <a href="#terms" className="hover:text-sg-text">{tHome("footer.terms")}</a>
                         <a href="#contact" className="hover:text-sg-text">{tHome("footer.contact")}</a>
                     </nav>

@@ -143,6 +143,9 @@ export function ConsentNotice({ interviewId, jobTitle, company, expires, languag
                             </button>
                         </div>
                         <p className="text-[15px] leading-[23px] text-sg-muted">{sentence(c.means(employer))}</p>
+                        <Link href="/privacy" target="_blank" className={cn("self-start rounded text-[15px] font-bold underline-offset-4 hover:underline", focusRing)}>
+                            {c.privacy}
+                        </Link>
                     </section>
                 ) : (
                     <section role="status" className="sg-glass sg-shadow-lg flex w-full max-w-[560px] flex-col items-center gap-3.5 rounded-[32px] p-6 text-center sm:p-9">

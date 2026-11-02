@@ -69,6 +69,8 @@ export interface NoticeCopy {
     failed: string;
     /** Used when the employer has no name on their account. */
     theEmployer: string;
+    /** The link to the privacy page (AIIN-222). */
+    privacy: string;
 }
 
 export const NOTICE: Record<NoticeLanguage, NoticeCopy> = {
@@ -106,6 +108,7 @@ export const NOTICE: Record<NoticeLanguage, NoticeCopy> = {
         language: "Language",
         failed: "Couldn’t save your answer. Try again.",
         theEmployer: "the employer",
+        privacy: "Read the full privacy page",
     },
     hi: {
         label: "हिन्दी",
@@ -141,6 +144,7 @@ export const NOTICE: Record<NoticeLanguage, NoticeCopy> = {
         language: "भाषा",
         failed: "आपका जवाब सहेजा नहीं जा सका। फिर से कोशिश करें।",
         theEmployer: "कंपनी",
+        privacy: "पूरा गोपनीयता पेज पढ़ें",
     },
     mr: {
         label: "मराठी",
@@ -176,5 +180,6 @@ export const NOTICE: Record<NoticeLanguage, NoticeCopy> = {
         language: "भाषा",
         failed: "तुमचे उत्तर जतन करता आले नाही. पुन्हा प्रयत्न करा.",
         theEmployer: "कंपनी",
+        privacy: "संपूर्ण गोपनीयता पृष्ठ वाचा",
     },
 };

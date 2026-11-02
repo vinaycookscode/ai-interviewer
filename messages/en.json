@@ -757,7 +757,8 @@
             "alreadyHaveAccount": "Already have an account?",
             "signIn": "Sign in",
             "employerQuestion": "Hiring? Employer accounts are invite-only.",
-            "employerContact": "Contact us"
+            "employerContact": "Contact us",
+            "privacy": "By creating an account you agree to how we handle your data, set out on our <link>privacy page</link>."
         },
         "forgotPassword": {
             "title": "Forgot your password?",
@@ -2682,5 +2683,199 @@
             "body": "Everything in it is gone, and you’re signed out. Interviews you did for employers stay with them without your name or details. Thanks for practising with us.",
             "home": "Go to the home page"
         }
+    },
+    "Privacy": {
+        "updated": "2 November 2026",
+        "title": "Privacy",
+        "lead": "What we collect, why, who helps us run the service, how long we keep it, and how to have it changed or deleted.",
+        "short": [
+            "We collect what the service needs to work, and nothing to sell. We never sell your data.",
+            "Your answers, your resume and your coach chats go to Google Gemini to score and review them.",
+            "Interview integrity checks need your agreement first, and no video, audio or photo is recorded.",
+            "You can delete your account and everything in it from your profile, at any time."
+        ],
+        "sections": [
+            {
+                "id": "who",
+                "title": "Who we are",
+                "body": [
+                    "Get Back To U is run by {operator}, who is responsible for your data. Write to {email} about anything on this page."
+                ]
+            },
+            {
+                "id": "collect",
+                "title": "What we collect, and why",
+                "table": {
+                    "head": [
+                        "What",
+                        "When",
+                        "Why"
+                    ],
+                    "rows": [
+                        [
+                            "Your name, email and a scrambled form of your password",
+                            "When you sign up",
+                            "To run your account and sign you in"
+                        ],
+                        [
+                            "Your IP address and approximate location (country and city)",
+                            "When you sign up, looked up through ipapi.co or ip-api.com",
+                            "To protect accounts from abuse and see where visitors come from"
+                        ],
+                        [
+                            "Your resume, and Aadhaar or PAN if an employer asks for them",
+                            "When you upload them",
+                            "To review your resume, and to show employers the documents they asked for"
+                        ],
+                        [
+                            "Practice and interview answers, their transcripts, scores and feedback",
+                            "When you answer",
+                            "To score your answers and show your progress"
+                        ],
+                        [
+                            "Coach chats, your 90-day plan, flashcards, offers and saved solutions",
+                            "When you use those features",
+                            "To run them for you"
+                        ],
+                        [
+                            "The language, time and result of code you run, never the code itself",
+                            "When you run code",
+                            "To limit runs to 30 a minute and keep the runner healthy"
+                        ],
+                        [
+                            "Interview integrity events, and your agreement to the checks",
+                            "During an employer’s interview, after you agree",
+                            "So the employer can trust the answers are your own"
+                        ],
+                        [
+                            "Payment records: amount, status and Razorpay’s reference, never card details",
+                            "When you buy a plan",
+                            "To run your subscription and keep receipts"
+                        ],
+                        [
+                            "Anonymous page visits",
+                            "As you browse",
+                            "To see which pages work, through Vercel Analytics"
+                        ]
+                    ]
+                }
+            },
+            {
+                "id": "processors",
+                "title": "Who helps us run it",
+                "body": [
+                    "These companies process data for us, only to provide their part of the service. Our database is in the United States."
+                ],
+                "table": {
+                    "head": [
+                        "Who",
+                        "What they handle"
+                    ],
+                    "rows": [
+                        [
+                            "Google (Gemini)",
+                            "Your answers, your resume and your coach chats, to score, review and reply. Never your Aadhaar or PAN."
+                        ],
+                        [
+                            "Your browser’s speech service (Google, in Chrome)",
+                            "Your voice while you answer out loud, to turn it into text"
+                        ],
+                        [
+                            "Vercel",
+                            "Hosting the app, and anonymous page visits"
+                        ],
+                        [
+                            "Neon",
+                            "Our database"
+                        ],
+                        [
+                            "Cloudflare R2",
+                            "Files you upload"
+                        ],
+                        [
+                            "Resend",
+                            "Emails we send you"
+                        ],
+                        [
+                            "Razorpay",
+                            "Payments; card details go to them, never to us"
+                        ],
+                        [
+                            "Our own code runner (Oracle Cloud)",
+                            "Code you run, which is run and not stored"
+                        ]
+                    ]
+                }
+            },
+            {
+                "id": "integrity",
+                "title": "Interview integrity checks",
+                "body": [
+                    "Before an employer’s interview starts, we tell you exactly what is checked and ask you to agree. If you don’t agree, the interview doesn’t start. The checks are whether you leave the tab or full screen, try to copy or paste, use shortcuts or developer tools, connect a second screen, and whether a face is in front of the camera.",
+                    "The face check runs on your device. No video, audio or photo is recorded. Only the hiring team for that job sees what was flagged, never other employers."
+                ]
+            },
+            {
+                "id": "keep",
+                "title": "How long we keep it",
+                "table": {
+                    "head": [
+                        "What",
+                        "How long"
+                    ],
+                    "rows": [
+                        [
+                            "Your account and everything in it",
+                            "Until you delete your account, then deleted at once"
+                        ],
+                        [
+                            "Interview integrity events",
+                            "1 year, then deleted"
+                        ],
+                        [
+                            "Interviews you did for employers",
+                            "Kept by the employer after you delete your account, as “Deleted candidate”, without your name, email, answers or documents"
+                        ],
+                        [
+                            "Backups held by our database provider",
+                            "Removed as their backups roll over, within days"
+                        ]
+                    ]
+                }
+            },
+            {
+                "id": "rights",
+                "title": "Your rights",
+                "list": [
+                    "See the data we hold about you, and get a copy: write to us.",
+                    "Correct it: change your name on your profile, or write to us for anything else.",
+                    "Delete it: delete your account from your profile, or ask us to.",
+                    "Say no to interview integrity checks: the interview won’t start, and the employer can offer you another way.",
+                    "Complain: write to hello@getbacktou.com first. If you aren’t satisfied, you can go to the Data Protection Board of India."
+                ],
+                "body": [
+                    "We reply within 30 days."
+                ]
+            },
+            {
+                "id": "security",
+                "title": "Keeping it safe",
+                "body": [
+                    "Data is encrypted in transit and at rest. Passwords are stored scrambled, never as typed. Documents are only shown to you and to the employers you sent them to, through a link that checks who’s asking."
+                ]
+            },
+            {
+                "id": "changes",
+                "title": "Changes",
+                "body": [
+                    "If we change this page in a way that matters, we’ll say so in the app before the change applies. The date at the top shows the last change."
+                ]
+            }
+        ],
+        "metaTitle": "Privacy",
+        "metaDescription": "What Get Back To U collects, why, who helps run it, how long it's kept, and your rights.",
+        "onThisPage": "On this page",
+        "inShort": "In short",
+        "updatedLabel": "Last updated {date}"
     }
 }

@@ -27,6 +27,7 @@ import { Loader2 } from "lucide-react";
 
 import { planSelectionQuery, readPlanSelection } from "@/lib/plan-selection";
 
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 const PLANS = [
@@ -220,6 +221,15 @@ export const RegisterForm = () => {
                         {isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
                         {isPending ? t("submitting") : t("submit")}
                     </button>
+                    <p className="text-center text-[13px] text-sg-muted">
+                        {t.rich("privacy", {
+                            link: (chunks) => (
+                                <Link href="/privacy" className={cn("rounded font-bold text-sg-text underline-offset-4 hover:underline", focusRing)}>
+                                    {chunks}
+                                </Link>
+                            ),
+                        })}
+                    </p>
                     {/* Employer sign-up is invite-only; don't let employers silently become candidates */}
                     {!isInterviewInvitation && (
                         <p className="text-center text-sm text-sg-muted">
