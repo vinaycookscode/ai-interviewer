@@ -6,13 +6,19 @@ import { db } from "@/lib/db";
 import { requireEmployerInterview } from "@/lib/employer-access";
 import { NOTE_LIMIT } from "@/lib/decision";
 
-type Result = { success: true } | { error: string; field?: "note" };
+type Result = { success: true } | { error: string; field?: "note" } | { confirm: "strongConcerns" };
 
 /**
  * Records the employer's hiring decision on a finished interview, with an optional note,
  * and adds it to the interview's history in the same transaction (AIIN-157).
+ * Shortlisting an interview with "Strong concerns" asks for confirmation first, and the history records it (AIIN-178).
  */
-export async function setInterviewDecision(interviewId: string, decision: HiringDecision, note?: string): Promise<Result> {
+export async function setInterviewDecision(
+    interviewId: string,
+    decision: HiringDecision,
+    note?: string,
+    confirmedConcerns = false
+): Promise<Result> {
     if (!Object.values(HiringDecision).includes(decision)) return { error: "Choose a decision." };
 
     const cleanNote = note?.trim() || null;
@@ -25,13 +31,24 @@ export async function setInterviewDecision(interviewId: string, decision: Hiring
     if (interview.status !== "COMPLETED") return { error: "You can decide once the interview is finished." };
     if (interview.decision === decision && !cleanNote) return { success: true };
 
+    const concerns = decision === "SHORTLISTED" && interview.integrityVerdict === "STRONG_CONCERNS";
+    if (concerns && confirmedConcerns !== true) return { confirm: "strongConcerns" };
+
     await db.$transaction([
         db.interview.update({
             where: { id: interview.id },
             data: { decision, decisionAt: new Date(), decisionById: userId },
         }),
         db.interviewDecisionEvent.create({
-            data: { interviewId: interview.id, from: interview.decision, to: decision, note: cleanNote, byUserId: userId, source: "MANUAL" },
+            data: {
+                interviewId: interview.id,
+                from: interview.decision,
+                to: decision,
+                note: cleanNote,
+                byUserId: userId,
+                source: "MANUAL",
+                confirmedConcerns: concerns,
+            },
         }),
     ]);
 

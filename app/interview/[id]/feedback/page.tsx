@@ -59,7 +59,7 @@ export default async function FeedbackPage({
                       decision: true,
                       decisionEvents: {
                           orderBy: { createdAt: "desc" },
-                          select: { id: true, to: true, note: true, createdAt: true, byUser: { select: { name: true, email: true } } },
+                          select: { id: true, to: true, note: true, createdAt: true, confirmedConcerns: true, byUser: { select: { name: true, email: true } } },
                       },
                   },
               })
@@ -126,6 +126,7 @@ export default async function FeedbackPage({
                                     note: e.note,
                                     by: e.byUser ? e.byUser.name || e.byUser.email : null,
                                     when: istTime(e.createdAt),
+                                    confirmedConcerns: e.confirmedConcerns,
                                 }))}
                             />
                         )

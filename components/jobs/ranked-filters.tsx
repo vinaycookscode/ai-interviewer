@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Search } from "lucide-react";
 import type { HiringDecision } from "@prisma/client";
-import { FINISHED_WITHIN, MIN_SCORES, STATUSES, filtersQuery, type RankingFilters } from "@/lib/candidate-filters";
+import { FINISHED_WITHIN, MIN_SCORES, STATUSES, VERDICTS, filtersQuery, type RankingFilters } from "@/lib/candidate-filters";
 import { DECISIONS } from "@/lib/decision";
 import { focusRing } from "@/components/soft-glass/classes";
 import { field } from "@/components/jobs/employer-ui";
@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 /** Search and filters for the ranked list. Every change goes into the URL, so a view can be bookmarked (AIIN-158). */
 export function RankedFilters({ filters }: { filters: RankingFilters }) {
     const t = useTranslations("Shortlist");
+    const tIntegrity = useTranslations("Integrity");
     const router = useRouter();
     const pathname = usePathname();
     const [q, setQ] = useState(filters.q);
@@ -84,6 +85,21 @@ export function RankedFilters({ filters }: { filters: RankingFilters }) {
                         {STATUSES.map((s) => (
                             <option key={s} value={s}>
                                 {t(`statuses.${s}`)}
+                            </option>
+                        ))}
+                    </select>
+                </label>
+                <label className="flex flex-col gap-1 text-[13px] font-bold text-sg-muted">
+                    {t("integrity")}
+                    <select
+                        value={filters.integrity ?? ""}
+                        onChange={(e) => go({ integrity: (e.target.value || null) as RankingFilters["integrity"] })}
+                        className={select}
+                    >
+                        <option value="">{t("anyIntegrity")}</option>
+                        {VERDICTS.map((v) => (
+                            <option key={v} value={v}>
+                                {tIntegrity(`verdicts.${v}`)}
                             </option>
                         ))}
                     </select>

@@ -3,13 +3,14 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, OctagonAlert } from "lucide-react";
 import { toast } from "sonner";
 import type { HiringDecision } from "@prisma/client";
 import { setInterviewDecision } from "@/actions/decision";
 import { DECISIONS, DECISION_ICONS, NOTE_LIMIT } from "@/lib/decision";
 import { focusRing } from "@/components/soft-glass/classes";
-import { field, inkButton, panelTitle } from "@/components/jobs/employer-ui";
+import { field, inkButton, outlineButton, panelTitle } from "@/components/jobs/employer-ui";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogPanel } from "@/components/interviews/sg-dialog";
 import { cn } from "@/lib/utils";
 
 export interface DecisionEvent {
@@ -20,6 +21,8 @@ export interface DecisionEvent {
     by: string | null;
     /** Already formatted in IST */
     when: string;
+    /** Shortlisted after confirming "Strong concerns" (AIIN-178) */
+    confirmedConcerns: boolean;
 }
 
 interface DecisionPanelProps {
@@ -37,6 +40,7 @@ export function DecisionPanel({ interviewId, current, finished, history }: Decis
     const [note, setNote] = useState("");
     const [noteError, setNoteError] = useState(false);
     const [isPending, startTransition] = useTransition();
+    const [confirming, setConfirming] = useState(false);
     const radios = useRef<(HTMLButtonElement | null)[]>([]);
 
     const tooLong = note.trim().length > NOTE_LIMIT;
@@ -52,14 +56,19 @@ export function DecisionPanel({ interviewId, current, finished, history }: Decis
         radios.current[next]?.focus();
     };
 
-    const save = () => {
+    const save = (confirmed = false) => {
         if (tooLong) {
             setNoteError(true);
             document.getElementById("dc-note")?.focus();
             return;
         }
         startTransition(async () => {
-            const result = await setInterviewDecision(interviewId, choice, note);
+            const result = await setInterviewDecision(interviewId, choice, note, confirmed);
+            // Shortlisting with "Strong concerns" needs a confirmation first (AIIN-178)
+            if ("confirm" in result) {
+                setConfirming(true);
+                return;
+            }
             if ("error" in result) {
                 if (result.field === "note") setNoteError(true);
                 toast.error(result.error ?? t("failed"));
@@ -135,7 +144,7 @@ export function DecisionPanel({ interviewId, current, finished, history }: Decis
                 </span>
             </div>
 
-            <button type="button" onClick={save} disabled={!finished || isPending || unchanged} className={cn(inkButton, "h-12 self-start")}>
+            <button type="button" onClick={() => save()} disabled={!finished || isPending || unchanged} className={cn(inkButton, "h-12 self-start")}>
                 {isPending ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Check className="size-4" aria-hidden="true" />}
                 {isPending ? t("saving") : t("save")}
             </button>
@@ -157,6 +166,12 @@ export function DecisionPanel({ interviewId, current, finished, history }: Decis
                                             <span className="font-medium text-sg-muted">{e.by ? t("by", { name: e.by }) : t("system")}</span>
                                         </span>
                                         <span className="text-[13px] leading-[18px] text-sg-muted">{e.when}</span>
+                                        {e.confirmedConcerns && (
+                                            <span className="mt-1 flex items-start gap-1.5 text-[13px] leading-[18px] font-semibold text-sg-danger">
+                                                <OctagonAlert className="mt-px size-3.5 shrink-0" aria-hidden="true" />
+                                                {t("confirmedConcerns")}
+                                            </span>
+                                        )}
                                         {e.note && <span className="mt-1 text-[15px] [overflow-wrap:anywhere]">“{e.note}”</span>}
                                     </span>
                                 </li>
@@ -165,6 +180,15 @@ export function DecisionPanel({ interviewId, current, finished, history }: Decis
                     </ol>
                 )}
             </div>
+
+            <AlertDialog open={confirming} onOpenChange={setConfirming}>
+                <AlertDialogPanel title={t("confirmTitle")} description={t("confirmBody")}>
+                    <AlertDialogCancel className={cn(outlineButton, "h-12")}>{t("confirmCancel")}</AlertDialogCancel>
+                    <AlertDialogAction className={cn(inkButton, "h-12 px-5")} onClick={() => save(true)}>
+                        {t("confirmShortlist")}
+                    </AlertDialogAction>
+                </AlertDialogPanel>
+            </AlertDialog>
         </section>
     );
 }

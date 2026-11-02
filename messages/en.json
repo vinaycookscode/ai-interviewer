@@ -2041,7 +2041,12 @@
         "history": "History",
         "by": "by {name}",
         "system": "by Get Back To U",
-        "noHistory": "No decision yet."
+        "noHistory": "No decision yet.",
+        "confirmTitle": "Shortlist despite strong concerns?",
+        "confirmBody": "This interview’s integrity verdict is Strong concerns. Look at the timeline in the integrity section first. If you shortlist anyway, the history notes that you confirmed it.",
+        "confirmCancel": "Go back",
+        "confirmShortlist": "Shortlist anyway",
+        "confirmedConcerns": "Confirmed despite strong integrity concerns"
     },
     "Shortlist": {
         "summary": {
@@ -2098,7 +2103,11 @@
         "noMatchTitle": "No one matches these filters",
         "noMatchBody": "Try fewer filters, or clear them to see everyone.",
         "clear": "Clear filters",
-        "openReport": "Open {name}’s report"
+        "openReport": "Open {name}’s report",
+        "integrityCol": "Integrity",
+        "integrity": "Integrity",
+        "anyIntegrity": "Any verdict",
+        "noVerdict": "Not checked"
     },
     "Onboarding": {
         "brand": "Get Back To U",

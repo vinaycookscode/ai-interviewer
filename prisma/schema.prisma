@@ -1091,6 +1091,8 @@ model InterviewDecisionEvent {
   byUserId    String?
   byUser      User?          @relation(fields: [byUserId], references: [id], onDelete: SetNull)
   source      DecisionSource @default(MANUAL)
+  // Shortlisted after confirming the interview's "Strong concerns" integrity verdict (AIIN-178)
+  confirmedConcerns Boolean @default(false)
   createdAt   DateTime       @default(now())
 
   @@index([interviewId])

@@ -7,6 +7,7 @@ import type { RankedRow } from "@/lib/candidate-ranking";
 import { DECISION_ICONS } from "@/lib/decision";
 import { focusRing } from "@/components/soft-glass/classes";
 import { formatShortDate, outlineButton } from "@/components/jobs/employer-ui";
+import { VerdictChip } from "@/components/feedback/verdict-chip";
 import { cn } from "@/lib/utils";
 
 interface RankedCandidatesProps {
@@ -38,6 +39,9 @@ function DecisionChip({ decision, label }: { decision: HiringDecision; label: st
 /** A table from 640px, and a list on phones with rank, name, score and decision (AIIN-158). */
 export function RankedCandidates({ jobId, rows, total, filters }: RankedCandidatesProps) {
     const t = useTranslations("Shortlist");
+    const tIntegrity = useTranslations("Integrity");
+    // A verdict in words; a finished interview without one yet says so (AIIN-178)
+    const verdict = (r: RankedRow) => (r.integrity ? tIntegrity(`verdicts.${r.integrity}`) : t("noVerdict"));
     const here = `/dashboard/jobs/${jobId}`;
     const query = filtersQuery(filters);
     // The report's back link returns to this exact view
@@ -85,6 +89,9 @@ export function RankedCandidates({ jobId, rows, total, filters }: RankedCandidat
                                 {t("skills")}
                             </th>
                             <th scope="col" className={th}>
+                                {t("integrityCol")}
+                            </th>
+                            <th scope="col" className={th}>
                                 {t("decisionCol")}
                             </th>
                             {sortHeader("finished", t("finishedCol"), "descending")}
@@ -112,6 +119,9 @@ export function RankedCandidates({ jobId, rows, total, filters }: RankedCandidat
                                     </span>
                                 </td>
                                 <td className="px-3 py-3">
+                                    <VerdictChip verdict={r.integrity} label={verdict(r)} />
+                                </td>
+                                <td className="px-3 py-3">
                                     <DecisionChip decision={r.decision} label={t(`decisions.${r.decision}`)} />
                                 </td>
                                 <td className="px-3 py-3 whitespace-nowrap text-sg-muted">{r.completedAt ? formatShortDate(r.completedAt) : t("none")}</td>
@@ -124,11 +134,19 @@ export function RankedCandidates({ jobId, rows, total, filters }: RankedCandidat
             <ul className="flex flex-col gap-2 sm:hidden">
                 {rows.map((r) => (
                     <li key={r.id}>
-                        <Link href={reportHref(r.id)} aria-label={t("openReport", { name: r.name || r.email })} className={cn("flex items-center gap-3 rounded-[18px] bg-sg-row px-3.5 py-3", focusRing)}>
+                        <Link
+                            href={reportHref(r.id)}
+                            aria-label={t("openReport", { name: r.name || r.email })}
+                            className={cn("flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[18px] bg-sg-row px-3.5 py-3", focusRing)}
+                        >
                             <span className="w-9 shrink-0 font-bold tabular-nums text-sg-muted">{t("rankShort", { rank: r.rank })}</span>
                             <span className="min-w-0 flex-1 truncate font-bold">{r.name || r.email}</span>
                             <span className="font-display sg-soft text-lg font-semibold tabular-nums">{one(r.score) ?? t("none")}</span>
-                            <DecisionChip decision={r.decision} label={t(`decisions.${r.decision}`)} />
+                            {/* On phones the chips wrap under the name (AIIN-178) */}
+                            <span className="flex basis-full flex-wrap gap-1.5 pl-12">
+                                <VerdictChip verdict={r.integrity} label={verdict(r)} />
+                                <DecisionChip decision={r.decision} label={t(`decisions.${r.decision}`)} />
+                            </span>
                         </Link>
                     </li>
                 ))}
