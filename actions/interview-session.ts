@@ -1,10 +1,10 @@
 "use server";
 
+import { after } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { gradeAnswerById } from "@/lib/grading";
 import { InterviewStatus } from "@prisma/client";
-import { generateFollowUp } from "@/lib/ai-context";
 import { generatePersonalityProfile } from "@/lib/ai/personality";
 import { escapeHtml } from "@/lib/utils";
 import { storeIntegrity } from "@/lib/integrity/compute";
@@ -49,6 +49,8 @@ export async function submitAnswer(data: {
     transcript: string;
     audioUrl?: string;
     videoUrl?: string;
+    /** The last question: completeInterview grades it, so it isn't graded twice. */
+    last?: boolean;
 }) {
     const interview = await findOwnInterview(data.interviewId);
     if (!interview || interview.status === "COMPLETED") {
@@ -72,49 +74,18 @@ export async function submitAnswer(data: {
                 audioUrl: data.audioUrl,
                 videoUrl: data.videoUrl,
             },
+            select: { id: true },
         });
 
-        // Generate Follow-up Logic
-        let followUpQuestion = null;
-        if (data.transcript && data.transcript.length > 50) {
-            // Get context for AI
-            const interview = await db.interview.findUnique({
-                where: { id: data.interviewId },
-                include: { job: true, answers: true },
+        // Graded after the response, so the next question shows at once (AIIN-38). Anything still ungraded,
+        // because grading failed or was slow, is graded by completeInterview.
+        if (!data.last) {
+            after(async () => {
+                await gradeAnswerById(answer.id);
             });
-
-            const question = await db.question.findUnique({
-                where: { id: data.questionId },
-            });
-
-            // Only generate follow-up if we haven't asked too many questions already
-            // and if it's not already a follow-up (simple check: prevent infinite loop)
-            // For now, limit total questions or just check probability
-            // Follow-up generation disabled per user request to improve latency
-            /*
-            if (interview && question && interview.answers.length < 15) {
-                const generatedText = await generateFollowUp(
-                    question.text,
-                    data.transcript,
-                    interview.job.title
-                );
-
-                if (generatedText) {
-                    // Save new question to DB
-                    const newQuestion = await db.question.create({
-                        data: {
-                            text: generatedText,
-                            jobId: interview.jobId,
-                            // Mark as follow-up? We don't have a field yet, but we can just add it
-                        },
-                    });
-                    followUpQuestion = newQuestion;
-                }
-            }
-            */
         }
 
-        return { success: true, answerId: answer.id, followUp: followUpQuestion };
+        return { success: true, answerId: answer.id };
     } catch (error) {
         console.error("Failed to submit answer:", error);
         return { success: false, error: "Failed to submit answer" };

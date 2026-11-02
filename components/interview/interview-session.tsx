@@ -20,7 +20,6 @@ import {
 } from "lucide-react";
 import { startInterview, submitAnswer, completeInterview } from "@/actions/interview-session";
 import { runInterviewCode } from "@/actions/code-execution";
-import { gradeAnswer } from "@/actions/scoring";
 import { AudioVisualizer } from "./audio-visualizer";
 import { useRouter } from "next/navigation";
 import { useProctoring } from "@/hooks/use-proctoring";
@@ -30,7 +29,6 @@ import { CodeEditor } from "@/components/ui/code-editor";
 import { cn } from "@/lib/utils";
 import { LANGUAGE_CODES, InterviewLanguage } from "@/lib/constants";
 import { useCopyPastePrevention } from "@/hooks/use-copy-paste-prevention";
-import { useLimit } from "@/components/providers/limit-provider";
 import { documentHref } from "@/lib/document-url";
 import { CoachBubble } from "@/components/soft-glass/coach-bubble";
 import { coralButton, focusRing } from "@/components/soft-glass/classes";
@@ -120,7 +118,6 @@ export function InterviewSession({
     const [isRunning, setIsRunning] = useState(false);
     const [editorLanguage, setEditorLanguage] = useState("javascript");
     const [codeOutput, setCodeOutput] = useState<{ stdout?: string; stderr?: string; error?: string }>({});
-    const { setRateLimited } = useLimit();
 
     // Sync ref
     useEffect(() => {
@@ -430,28 +427,14 @@ export function InterviewSession({
             fullTranscript = `[CODE SUBMISSION ONLY]\n${codeAnswer}`;
         }
 
-        const result = await submitAnswer({
+        // The answer is saved and graded on the server afterwards: the next question doesn't wait for the score (AIIN-38)
+        const last = currentIndex >= questionsState.length - 1;
+        await submitAnswer({
             interviewId,
             questionId: currentQuestion.id,
             transcript: fullTranscript || "(No answer provided)",
+            last,
         });
-
-        if (result.success && result.answerId) {
-            const gradeResult = await gradeAnswer(result.answerId);
-            if ("isRateLimit" in gradeResult && gradeResult.isRateLimit) {
-                setRateLimited(true);
-            }
-
-            // Follow-up logic if enabled later
-            /* 
-            if (result.followUp) {
-                const newQuestions = [...questionsState];
-                const followUpWithType = { ...result.followUp, type: result.followUp.type || "TEXT" };
-                newQuestions.splice(currentIndex + 1, 0, followUpWithType as Question);
-                setQuestionsState(newQuestions);
-            }
-            */
-        }
 
         if (currentIndex < questionsState.length - 1) {
             setCurrentIndex((prev) => prev + 1);
