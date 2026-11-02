@@ -14,6 +14,7 @@ const NAV = [
     { key: "users", href: "/admin/users" },
     { key: "subscriptions", href: "/admin/subscriptions" },
     { key: "problems", href: "/admin/problems" },
+    { key: "integrity", href: "/admin/integrity" },
     { key: "visitors", href: "/admin/locations" },
     { key: "features", href: "/admin/features" },
     { key: "feedback", href: "/admin/feedback" },

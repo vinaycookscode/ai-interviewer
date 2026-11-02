@@ -488,7 +488,8 @@
             "feedback": "Feedback",
             "leave": "Leave admin",
             "model": "AI model",
-            "desktopOnly": "The admin console is made for a computer. Open it on a wider screen to work comfortably."
+            "desktopOnly": "The admin console is made for a computer. Open it on a wider screen to work comfortably.",
+            "integrity": "Integrity"
         },
         "roles": {
             "CANDIDATE": "Candidate",
@@ -673,6 +674,31 @@
             "failed": "Couldn’t add the sample data: {error}",
             "seePlan": "See the 90-day plan",
             "seePrep": "See company prep"
+        },
+        "integrity": {
+            "metaTitle": "Integrity reviews · Admin",
+            "title": "Integrity reviews",
+            "description": "How employers review flagged interviews, rule by rule, so the thresholds can be tuned. Counts only: no one is named.",
+            "flagged": "Flagged interviews",
+            "flaggedNote": "Worth a look or strong concerns",
+            "unreviewed": "Not reviewed",
+            "noIssue": "Reviewed: no issue",
+            "confirmed": "Confirmed concern",
+            "rulesTitle": "By the rule that flagged it",
+            "rulesNote": "Each interview's current review, counted once for every rule that fired. A rule that's mostly “No issue” is too strict.",
+            "caption": "Reviews by rule and outcome",
+            "rule": "Rule",
+            "colNoIssue": "No issue",
+            "colConfirmed": "Confirmed",
+            "colFalseAlarms": "No issue share",
+            "percent": "{value}%",
+            "rules": {
+                "timesAway": "Left the interview too often",
+                "awayTotal": "Too long away in total",
+                "fullscreen": "Out of full screen too long",
+                "pastes": "Tried to paste",
+                "devTools": "Opened developer tools"
+            }
         }
     },
     "Feedback": {
@@ -2107,7 +2133,11 @@
         "integrityCol": "Integrity",
         "integrity": "Integrity",
         "anyIntegrity": "Any verdict",
-        "noVerdict": "Not checked"
+        "noVerdict": "Not checked",
+        "reviewed": {
+            "NO_ISSUE": "Reviewed: no issue",
+            "CONFIRMED": "Confirmed concern"
+        }
     },
     "Onboarding": {
         "brand": "Get Back To U",
@@ -2241,6 +2271,35 @@
             "agreed": "Agreed to the integrity checks on {when}",
             "declined": "Didn’t agree to the integrity checks on {when}, so the interview didn’t start",
             "none": "No agreement to the integrity checks on record. Interviews before 1 November 2026 didn’t ask for one."
+        },
+        "review": {
+            "notReviewed": "Not reviewed yet",
+            "current": {
+                "NO_ISSUE": "Reviewed: no issue",
+                "CONFIRMED": "Confirmed concern"
+            },
+            "byWhen": "{name} · {when}",
+            "by": "by {name}",
+            "open": "Review",
+            "change": "Change review",
+            "title": "Review this verdict",
+            "close": "Close",
+            "verdict": "Verdict",
+            "group": "Your review",
+            "options": {
+                "NO_ISSUE": "No issue",
+                "CONFIRMED": "Confirmed"
+            },
+            "note": "Note",
+            "noteRequired": "(needed: say what you confirmed; only your team sees it)",
+            "noteOptional": "(optional; only your team sees it)",
+            "noteNeeded": "Add a note saying what you confirmed.",
+            "tooLong": "Keep the note to {limit} characters.",
+            "save": "Save review",
+            "cancel": "Cancel",
+            "saved": "Review saved",
+            "history": "History",
+            "noHistory": "Not reviewed yet."
         }
     },
     "Unsubscribe": {

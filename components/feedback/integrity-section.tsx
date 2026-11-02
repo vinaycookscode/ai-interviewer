@@ -4,6 +4,7 @@ import type { EventKind, IntegritySummary, Reason, Verdict } from "@/lib/integri
 import { Mascot } from "@/components/soft-glass/mascot";
 import { focusRing } from "@/components/soft-glass/classes";
 import { cn } from "@/lib/utils";
+import { IntegrityReview, type ReviewEntry } from "@/components/feedback/integrity-review";
 
 export interface IntegrityGroup {
     /** The question's position, or null for events before the first question. */
@@ -18,6 +19,12 @@ export type IntegrityProps =
     | { state: "ready"; verdict: Verdict; reasons: Reason[]; summary: IntegritySummary; groups: IntegrityGroup[] };
 
 /** Whether the candidate agreed to the checks, and when, already formatted (AIIN-176). Never their IP or browser. */
+/** For a flagged verdict: the interview to review and its review history, newest first (AIIN-179). */
+export interface IntegrityReviewState {
+    interviewId: string;
+    history: ReviewEntry[];
+}
+
 export interface IntegrityConsent {
     agreedAt: string | null;
     declinedAt: string | null;
@@ -81,7 +88,7 @@ function timeAway(t: T, s: IntegritySummary) {
 }
 
 /** What happened during the interview, for the employer only (AIIN-177). Kept out of the PDF and anything shared. */
-export function IntegritySection({ consent, ...props }: IntegrityProps & { consent: IntegrityConsent }) {
+export function IntegritySection({ consent, review, ...props }: IntegrityProps & { consent: IntegrityConsent; review: IntegrityReviewState | null }) {
     const t = useTranslations("Integrity");
     const [ConsentIcon, consentText] = consent.agreedAt
         ? [ShieldCheck, t("consent.agreed", { when: consent.agreedAt })]
@@ -121,6 +128,15 @@ export function IntegritySection({ consent, ...props }: IntegrityProps & { conse
             )}
 
             {props.state === "ready" && <Details t={t} {...props} />}
+
+            {props.state === "ready" && review && props.verdict !== "NO_CONCERNS" && (
+                <IntegrityReview
+                    interviewId={review.interviewId}
+                    verdict={t(`verdicts.${props.verdict}`)}
+                    reasons={props.reasons.map((r) => reasonText(t, r))}
+                    history={review.history}
+                />
+            )}
         </section>
     );
 }

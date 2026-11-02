@@ -1,5 +1,5 @@
 // A job's candidates ranked by score, with filters and paging from the URL (AIIN-158).
-import type { HiringDecision, IntegrityVerdict, Prisma } from "@prisma/client";
+import type { HiringDecision, IntegrityReviewOutcome, IntegrityVerdict, Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { PAGE_SIZE, type RankingFilters, type Sort } from "@/lib/candidate-filters";
 
@@ -33,6 +33,8 @@ export interface RankedRow {
     decision: HiringDecision;
     /** Null until the verdict is computed on completion (AIIN-177, AIIN-178). */
     integrity: IntegrityVerdict | null;
+    /** The employer's latest review of the verdict (AIIN-179) */
+    review: IntegrityReviewOutcome | null;
     completedAt: Date | null;
 }
 
@@ -63,6 +65,7 @@ export async function loadRanking(jobId: string, f: RankingFilters) {
                 score: true,
                 decision: true,
                 integrityVerdict: true,
+                integrityReviewOutcome: true,
                 completedAt: true,
                 candidate: { select: { name: true, email: true } },
                 personalityProfile: { select: { strengths: true, weaknesses: true } },
@@ -98,6 +101,7 @@ export async function loadRanking(jobId: string, f: RankingFilters) {
         weakest: r.personalityProfile?.weaknesses[0] ?? null,
         decision: r.decision,
         integrity: r.integrityVerdict,
+        review: r.integrityReviewOutcome,
         completedAt: r.completedAt,
     }));
 

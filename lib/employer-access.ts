@@ -12,7 +12,7 @@ export async function requireEmployerInterview(interviewId: string) {
 
     const interview = await db.interview.findFirst({
         where: { id: interviewId, job: { employerId: user.id } },
-        select: { id: true, status: true, decision: true, jobId: true, integrityVerdict: true },
+        select: { id: true, status: true, decision: true, jobId: true, integrityVerdict: true, integrityReviewOutcome: true },
     });
     return interview ? { interview, userId: user.id } : null;
 }

@@ -33,6 +33,12 @@ enum IntegrityVerdict {
   STRONG_CONCERNS
 }
 
+// The employer's review of an integrity verdict (AIIN-179)
+enum IntegrityReviewOutcome {
+  NO_ISSUE
+  CONFIRMED
+}
+
 enum DecisionSource {
   MANUAL
   BULK
@@ -101,6 +107,7 @@ model User {
   jobs          Job[]       @relation("EmployerJobs")
   interviews    Interview[]
   decisionEvents InterviewDecisionEvent[]
+  integrityReviews IntegrityReview[] @relation("IntegrityReviews")
   mockInterviews MockInterview[]
   
   // Placement Platform Relations
@@ -354,6 +361,9 @@ model Interview {
   integrityComputedAt   DateTime?
   integrityRulesVersion Int?
 
+  // The latest employer review of the verdict, for lists; history in IntegrityReview (AIIN-179)
+  integrityReviewOutcome IntegrityReviewOutcome?
+
   // The candidate said no to the integrity checks (AIIN-176); cleared if they agree later. Consent itself is InterviewConsent.
   consentDeclinedAt DateTime?
 
@@ -367,6 +377,7 @@ model Interview {
   personalityProfile PersonalityProfile?
   proctoringEvents ProctoringEvent[]
   consents InterviewConsent[]
+  integrityReviews IntegrityReview[]
 
   @@index([candidateId])
   @@index([jobId])
@@ -485,6 +496,24 @@ model RateLimit {
   createdAt   DateTime @default(now())
   
   @@unique([identifier])
+}
+
+// An employer's review of an interview's integrity verdict (AIIN-179). Every review is kept; the latest is current
+// and copied to Interview.integrityReviewOutcome. reasonCodes snapshots the rules that fired, to tune thresholds.
+model IntegrityReview {
+  id          String                 @id @default(cuid())
+  interviewId String
+  interview   Interview              @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  outcome     IntegrityReviewOutcome
+  // Required for CONFIRMED; only the employer's team sees it, never the candidate
+  note        String?                @db.Text
+  verdict     IntegrityVerdict
+  reasonCodes String[]
+  byUserId    String?
+  byUser      User?                  @relation("IntegrityReviews", fields: [byUserId], references: [id], onDelete: SetNull)
+  createdAt   DateTime               @default(now())
+
+  @@index([interviewId, createdAt])
 }
 
 // Agreement to the integrity checks before an interview (AIIN-176). One row per interview and notice version;

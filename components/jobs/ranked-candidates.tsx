@@ -41,7 +41,14 @@ export function RankedCandidates({ jobId, rows, total, filters }: RankedCandidat
     const t = useTranslations("Shortlist");
     const tIntegrity = useTranslations("Integrity");
     // A verdict in words; a finished interview without one yet says so (AIIN-178)
-    const verdict = (r: RankedRow) => (r.integrity ? tIntegrity(`verdicts.${r.integrity}`) : t("noVerdict"));
+    // Once reviewed, the review is what the employer needs to see (AIIN-179)
+    const verdict = (r: RankedRow) =>
+        r.review && r.integrity && r.integrity !== "NO_CONCERNS"
+            ? t(`reviewed.${r.review}`)
+            : r.integrity
+              ? tIntegrity(`verdicts.${r.integrity}`)
+              : t("noVerdict");
+    const reviewOf = (r: RankedRow) => (r.integrity && r.integrity !== "NO_CONCERNS" ? r.review : null);
     const here = `/dashboard/jobs/${jobId}`;
     const query = filtersQuery(filters);
     // The report's back link returns to this exact view
@@ -119,7 +126,7 @@ export function RankedCandidates({ jobId, rows, total, filters }: RankedCandidat
                                     </span>
                                 </td>
                                 <td className="px-3 py-3">
-                                    <VerdictChip verdict={r.integrity} label={verdict(r)} />
+                                    <VerdictChip verdict={r.integrity} review={reviewOf(r)} label={verdict(r)} />
                                 </td>
                                 <td className="px-3 py-3">
                                     <DecisionChip decision={r.decision} label={t(`decisions.${r.decision}`)} />
@@ -144,7 +151,7 @@ export function RankedCandidates({ jobId, rows, total, filters }: RankedCandidat
                             <span className="font-display sg-soft text-lg font-semibold tabular-nums">{one(r.score) ?? t("none")}</span>
                             {/* On phones the chips wrap under the name (AIIN-178) */}
                             <span className="flex basis-full flex-wrap gap-1.5 pl-12">
-                                <VerdictChip verdict={r.integrity} label={verdict(r)} />
+                                <VerdictChip verdict={r.integrity} review={reviewOf(r)} label={verdict(r)} />
                                 <DecisionChip decision={r.decision} label={t(`decisions.${r.decision}`)} />
                             </span>
                         </Link>

@@ -31,7 +31,8 @@ export async function setInterviewDecision(
     if (interview.status !== "COMPLETED") return { error: "You can decide once the interview is finished." };
     if (interview.decision === decision && !cleanNote) return { success: true };
 
-    const concerns = decision === "SHORTLISTED" && interview.integrityVerdict === "STRONG_CONCERNS";
+    // Reviewed as "No issue" (AIIN-179): nothing left to confirm
+    const concerns = decision === "SHORTLISTED" && interview.integrityVerdict === "STRONG_CONCERNS" && interview.integrityReviewOutcome !== "NO_ISSUE";
     if (concerns && confirmedConcerns !== true) return { confirm: "strongConcerns" };
 
     await db.$transaction([

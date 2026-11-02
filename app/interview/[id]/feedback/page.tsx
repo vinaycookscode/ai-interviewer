@@ -9,7 +9,7 @@ import { AppShell } from "@/components/soft-glass/app-shell";
 import { getFeatureFlags } from "@/actions/feature-flags";
 import { FeedbackReport } from "@/components/feedback/feedback-report";
 import { DecisionPanel } from "@/components/feedback/decision-panel";
-import { IntegritySection, type IntegrityConsent, type IntegrityGroup, type IntegrityProps } from "@/components/feedback/integrity-section";
+import { IntegritySection, type IntegrityConsent, type IntegrityGroup, type IntegrityProps, type IntegrityReviewState } from "@/components/feedback/integrity-section";
 import { loadIntegrity, storeIntegrity } from "@/lib/integrity/compute";
 import { RULES_VERSION } from "@/lib/integrity/verdict";
 import { db } from "@/lib/db";
@@ -56,6 +56,11 @@ export default async function FeedbackPage({
                       consentDeclinedAt: true,
                       // That and when, for the employer: never the IP or user agent (AIIN-176)
                       consents: { select: { acceptedAt: true }, orderBy: { acceptedAt: "desc" }, take: 1 },
+                      // The employer's reviews of the verdict, newest first (AIIN-179)
+                      integrityReviews: {
+                          orderBy: { createdAt: "desc" },
+                          select: { id: true, outcome: true, note: true, createdAt: true, byUser: { select: { name: true, email: true } } },
+                      },
                       decision: true,
                       decisionEvents: {
                           orderBy: { createdAt: "desc" },
@@ -95,6 +100,19 @@ export default async function FeedbackPage({
           }
         : null;
 
+    const review: IntegrityReviewState | null = decision
+        ? {
+              interviewId: id,
+              history: decision.integrityReviews.map((r) => ({
+                  id: r.id,
+                  outcome: r.outcome,
+                  note: r.note,
+                  by: r.byUser ? r.byUser.name || r.byUser.email : null,
+                  when: istTime(r.createdAt),
+              })),
+          }
+        : null;
+
     const flags = await getFeatureFlags();
     const flagMap = flags.reduce<Record<string, boolean>>((acc, f) => ({ ...acc, [f.key]: f.enabled }), {});
 
@@ -113,7 +131,7 @@ export default async function FeedbackPage({
                     averageScore={averageScore ?? null}
                     viewer={viewer}
                     back={back}
-                    integrity={integrity && consent && <IntegritySection {...integrity} consent={consent} />}
+                    integrity={integrity && consent && <IntegritySection {...integrity} consent={consent} review={review} />}
                     aside={
                         decision && (
                             <DecisionPanel
