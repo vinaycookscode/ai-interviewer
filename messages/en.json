@@ -1569,7 +1569,6 @@
             "input": "Input: {value}",
             "output": "Output: {value}",
             "hint": "Need a hint?",
-            "solution": "Show the solution",
             "yourSolution": "Your solution",
             "language": "Language",
             "code": "Your code",
@@ -1621,13 +1620,28 @@
                 "unavailable": "Couldn’t run the tests right now. Try again in a moment.",
                 "noTests": "This question has no tests yet."
             },
-            "submittedSolved": "Solved. Every test passed, and your solution is saved.",
-            "solutionIn": "Show the solution · {language}",
-            "solutionOtherLanguage": "Written in {language}. Your code is in another language, so use it for the approach."
+            "submittedSolved": "Solved. Every test passed, and your solution is saved."
         },
         "progress": {
             "solved": "Solved",
             "attempted": "Attempted"
+        },
+        "solutions": {
+            "title": "Best solutions",
+            "locked": "Submit an attempt to see two or three ways to solve it, from brute force to optimal, with their time and space.",
+            "language": "Language",
+            "approaches": "Approaches",
+            "loading": "U is writing the solutions and running them against the tests. The first time takes up to a minute.",
+            "time": "Time",
+            "space": "Space",
+            "passes": "Passes every test",
+            "note": "Written by U and checked against this problem’s tests before it was shown.",
+            "retry": "Try again",
+            "errors": {
+                "unavailable": "Couldn’t prepare the solutions right now. Try again in a moment.",
+                "none": "No solution passed every test this time, so there’s nothing to show yet.",
+                "notFound": "Solutions aren’t available for this problem."
+            }
         }
     },
     "Flashcards": {

@@ -503,6 +503,25 @@ model RateLimit {
   @@unique([identifier])
 }
 
+// Two or three ways to solve a coding problem, shown after a submit (AIIN-221). Written by Gemini, then run against every
+// test; code is kept only for the languages that passed them all. testsHash is the tests they passed: stale when they change.
+model ProblemSolution {
+  id              String          @id @default(cuid())
+  questionId      String
+  question        CompanyQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  position        Int
+  name            String
+  timeComplexity  String
+  spaceComplexity String
+  explanation     String          @db.Text
+  // { javascript?, python?, java?, cpp? }: only languages that passed every test
+  code            Json
+  testsHash       String
+  createdAt       DateTime        @default(now())
+
+  @@index([questionId, position])
+}
+
 // An employer's review of an interview's integrity verdict (AIIN-179). Every review is kept; the latest is current
 // and copied to Interview.integrityReviewOutcome. reasonCodes snapshots the rules that fired, to tune thresholds.
 model IntegrityReview {
@@ -737,6 +756,7 @@ model CompanyQuestion {
 
   @@index([status])
   mockAnswers MockAnswer[]
+  bestSolutions ProblemSolution[]
 }
 
 // Who changed a problem, what and when (AIIN-107). The name is copied, so the history outlives the account.

@@ -124,12 +124,14 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                 rounds: asRounds(kit.rounds),
                 guide: asGuide(kit.content),
             }}
-            questions={kit.questions.map((q) => {
+            questions={kit.questions.map(({ solutionCode, ...q }) => {
                 // Hidden tests stay on the server: the page gets the visible ones and a count (AIIN-105)
                 const tests = testsOf(q.testCases);
-                const signature = inferSignature(q.solutionCode || q.starterCode || "", tests);
+                const signature = inferSignature(solutionCode || q.starterCode || "", tests);
                 return {
                     ...q,
+                    // The reference solution never reaches the browser: best solutions come after a submit (AIIN-221)
+                    solutionCode: null,
                     testCases: tests.filter((t) => !t.hidden).map((t) => ({ input: t.input, expected: t.expected })),
                     hiddenCount: tests.filter((t) => t.hidden).length,
                     starters: signature ? Object.fromEntries(JUDGE_LANGUAGES.map((l) => [l, starterFor(l, signature, q.starterCode)])) : {},

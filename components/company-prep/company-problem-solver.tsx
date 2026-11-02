@@ -14,6 +14,7 @@ import { coralButton, focusRing } from "@/components/soft-glass/classes";
 import { field, glassButton, inkButton, outlineButton } from "@/components/jobs/employer-ui";
 import { canRunTests } from "@/lib/code-languages";
 import type { ProblemProgress } from "@/lib/company-prep-format";
+import { BestSolutions } from "@/components/company-prep/best-solutions";
 import { runProblemTests } from "@/actions/code-execution";
 import { asError, callSource, judge, parseInput, type TestCase, type TestRun } from "@/lib/problems/run-js";
 import { cn } from "@/lib/utils";
@@ -385,17 +386,8 @@ export function CompanyProblemSolver({
                                       <p className="mt-2 text-sg-muted">{hint}</p>
                                   </details>
                               )}
-                        {question.solutionCode && (
-                            <details className="rounded-[18px] bg-sg-row px-4 py-3">
-                                <summary className={cn("cursor-pointer rounded-md font-bold", focusRing)}>
-                                    {question.language ? t("solver.solutionIn", { language: languageName(question.language) }) : t("solver.solution")}
-                                </summary>
-                                {question.language && question.language !== language && (
-                                    <p className="mt-2 text-sm text-sg-muted">{t("solver.solutionOtherLanguage", { language: languageName(question.language) })}</p>
-                                )}
-                                <pre className="mt-3 overflow-x-auto rounded-xl bg-sg-chip p-3 font-mono text-sm leading-6">{question.solutionCode}</pre>
-                            </details>
-                        )}
+                        {/* Hidden until they've submitted an attempt, then 2–3 test-checked approaches (AIIN-221) */}
+                        <BestSolutions questionId={question.id} unlocked={status !== null} language={language} />
                     </section>
 
                     <section aria-label={t("solver.yourSolution")} className="sg-glass sg-shadow-lg flex min-w-0 flex-[999_1_520px] flex-col gap-4 rounded-[24px] p-4 sm:rounded-[28px] sm:p-6">

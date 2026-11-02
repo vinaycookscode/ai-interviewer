@@ -44,7 +44,9 @@ export async function runProblem(
     kind: Kind,
     language: JudgeLanguage,
     code: string,
-    problem: ProblemTests
+    problem: ProblemTests,
+    // Checking generated solutions isn't the candidate's run: it isn't logged or counted against them (AIIN-221)
+    { log = true }: { log?: boolean } = {}
 ): Promise<ProblemRun | { error: "unavailable" | "noTests" }> {
     const signature = signatureFor(problem);
     if (!signature || !problem.tests.length) return { error: "noTests" };
@@ -59,7 +61,7 @@ export async function runProblem(
         expected: problem.tests[i].expected,
     }));
     const status = result.status;
-    await logRun(userId, kind, language, status, result.ms);
+    if (log) await logRun(userId, kind, language, status, result.ms);
     return { status, message: status === "ok" ? "" : result.stderr, cases, ms: result.ms };
 }
 
