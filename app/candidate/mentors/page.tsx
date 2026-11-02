@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { checkFeature } from "@/actions/feature-flags";
 import { FEATURES } from "@/lib/features";
 import { UserCheck, Search, Filter, Briefcase, GraduationCap } from "lucide-react";
@@ -8,14 +8,8 @@ export default async function MentorsPage() {
     const session = await auth();
     if (!session?.user) redirect("/auth/login");
 
-    const isEnabled = await checkFeature(FEATURES.MENTOR_MATCHING);
-    if (!isEnabled) {
-        return (
-            <div className="flex items-center justify-center h-[60vh]">
-                <p className="text-muted-foreground">This feature is coming soon!</p>
-            </div>
-        );
-    }
+    // Hidden until it's ready (AIIN-75): a direct link finds nothing, like any page that isn't there
+    if (!(await checkFeature(FEATURES.MENTOR_MATCHING))) notFound();
 
     return (
         <div className="space-y-8">

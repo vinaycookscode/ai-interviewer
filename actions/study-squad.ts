@@ -3,12 +3,22 @@
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { checkFeature } from "@/actions/feature-flags";
+import { FEATURES } from "@/lib/features";
+
+/** Study Squad is hidden until it has a real way to work together (AIIN-75): every action here needs the flag and a signed-in user. */
+async function squadUserId(): Promise<string | null> {
+    const session = await auth();
+    if (!session?.user?.id) return null;
+    return (await checkFeature(FEATURES.STUDY_SQUAD)) ? session.user.id : null;
+}
 
 // ============================================
 // SQUAD QUERIES
 // ============================================
 
 export async function getPublicSquads() {
+    if (!(await squadUserId())) return [];
     return db.studySquad.findMany({
         where: { isPublic: true },
         include: {
@@ -22,7 +32,10 @@ export async function getPublicSquads() {
     });
 }
 
-export async function getUserSquads(userId: string) {
+// Only ever the signed-in user's own squads, whatever is passed (AIIN-75)
+export async function getUserSquads(_userId?: string) {
+    const userId = await squadUserId();
+    if (!userId) return [];
     return db.squadMember.findMany({
         where: { userId },
         include: {
@@ -36,6 +49,7 @@ export async function getUserSquads(userId: string) {
 }
 
 export async function getSquadBySlug(slug: string) {
+    if (!(await squadUserId())) return null;
     return db.studySquad.findUnique({
         where: { slug },
         include: {
@@ -62,10 +76,11 @@ export async function createSquad(data: {
     targetRole?: string;
     isPublic?: boolean;
 }) {
-    const session = await auth();
-    if (!session?.user?.id) {
-        return { error: "Not authenticated" };
+    const userId = await squadUserId();
+    if (!userId) {
+        return { error: "Not available" };
     }
+    const session = { user: { id: userId } };
 
     // Generate slug
     const slug = data.name.toLowerCase()
@@ -96,10 +111,11 @@ export async function createSquad(data: {
 }
 
 export async function joinSquad(squadId: string) {
-    const session = await auth();
-    if (!session?.user?.id) {
-        return { error: "Not authenticated" };
+    const userId = await squadUserId();
+    if (!userId) {
+        return { error: "Not available" };
     }
+    const session = { user: { id: userId } };
 
     // Check if squad exists and is public
     const squad = await db.studySquad.findUnique({
@@ -153,10 +169,11 @@ export async function joinSquad(squadId: string) {
 }
 
 export async function leaveSquad(squadId: string) {
-    const session = await auth();
-    if (!session?.user?.id) {
-        return { error: "Not authenticated" };
+    const userId = await squadUserId();
+    if (!userId) {
+        return { error: "Not available" };
     }
+    const session = { user: { id: userId } };
 
     await db.squadMember.delete({
         where: { squadId_userId: { squadId, userId: session.user.id } }
@@ -176,10 +193,11 @@ export async function logSquadActivity(
     description: string,
     points: number = 0
 ) {
-    const session = await auth();
-    if (!session?.user?.id) {
-        return { error: "Not authenticated" };
+    const userId = await squadUserId();
+    if (!userId) {
+        return { error: "Not available" };
     }
+    const session = { user: { id: userId } };
 
     // Create activity
     await db.squadActivity.create({
@@ -205,6 +223,7 @@ export async function logSquadActivity(
 }
 
 export async function getLeaderboard(squadId: string) {
+    if (!(await squadUserId())) return [];
     return db.squadMember.findMany({
         where: { squadId },
         include: { user: { select: { id: true, name: true, image: true } } },

@@ -3,12 +3,22 @@
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { checkFeature } from "@/actions/feature-flags";
+import { FEATURES } from "@/lib/features";
+
+/** Mentors is hidden until mentors are verified and can talk to mentees (AIIN-75): every action here needs the flag and a signed-in user. */
+async function mentorUserId(): Promise<string | null> {
+    const session = await auth();
+    if (!session?.user?.id) return null;
+    return (await checkFeature(FEATURES.MENTOR_MATCHING)) ? session.user.id : null;
+}
 
 // ============================================
 // MENTOR QUERIES
 // ============================================
 
 export async function getAvailableMentors() {
+    if (!(await mentorUserId())) return [];
     return db.mentorProfile.findMany({
         where: { isAvailable: true },
         include: {
@@ -20,10 +30,12 @@ export async function getAvailableMentors() {
 }
 
 export async function getMentorById(mentorId: string) {
+    if (!(await mentorUserId())) return null;
     return db.mentorProfile.findUnique({
         where: { id: mentorId },
         include: {
-            user: { select: { id: true, name: true, image: true, email: true } },
+            // Never the mentor's email: it isn't theirs to give out by default (AIIN-75)
+            user: { select: { id: true, name: true, image: true } },
             mentorships: {
                 where: { status: "ACTIVE" },
                 include: { mentee: { select: { id: true, name: true } } }
@@ -32,7 +44,10 @@ export async function getMentorById(mentorId: string) {
     });
 }
 
-export async function getUserMentorships(userId: string) {
+// Only ever the signed-in user's own mentorships, whatever is passed (AIIN-75)
+export async function getUserMentorships(_userId?: string) {
+    const userId = await mentorUserId();
+    if (!userId) return [];
     return db.mentorship.findMany({
         where: { menteeId: userId },
         include: {
@@ -58,10 +73,11 @@ export async function createMentorProfile(data: {
     skills: string[];
     companies: string[];
 }) {
-    const session = await auth();
-    if (!session?.user?.id) {
-        return { error: "Not authenticated" };
+    const userId = await mentorUserId();
+    if (!userId) {
+        return { error: "Not available" };
     }
+    const session = { user: { id: userId } };
 
     // Check if already a mentor
     const existing = await db.mentorProfile.findUnique({
@@ -84,10 +100,11 @@ export async function createMentorProfile(data: {
 }
 
 export async function requestMentorship(mentorId: string) {
-    const session = await auth();
-    if (!session?.user?.id) {
-        return { error: "Not authenticated" };
+    const userId = await mentorUserId();
+    if (!userId) {
+        return { error: "Not available" };
     }
+    const session = { user: { id: userId } };
 
     // Check if mentor exists and is available
     const mentor = await db.mentorProfile.findUnique({
@@ -130,10 +147,11 @@ export async function requestMentorship(mentorId: string) {
 }
 
 export async function respondToMentorship(mentorshipId: string, accept: boolean) {
-    const session = await auth();
-    if (!session?.user?.id) {
-        return { error: "Not authenticated" };
+    const userId = await mentorUserId();
+    if (!userId) {
+        return { error: "Not available" };
     }
+    const session = { user: { id: userId } };
 
     // Verify user is the mentor
     const mentorship = await db.mentorship.findUnique({

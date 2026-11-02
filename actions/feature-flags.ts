@@ -69,6 +69,9 @@ export async function seedFeatureFlags() {
         // Placement Platform Features
         { key: FEATURES.COMPANY_PREP, category: 'PLACEMENT', description: "Company-specific interview preparation kits" },
         { key: FEATURES.PLACEMENT_PROGRAM, category: 'PLACEMENT', description: "90-day placement bootcamp program" },
+        // Off until they work end to end (AIIN-75)
+        { key: FEATURES.STUDY_SQUAD, category: 'CANDIDATE', description: "Study groups (hidden until members can work together)", enabled: false },
+        { key: FEATURES.MENTOR_MATCHING, category: 'CANDIDATE', description: "Mentor directory (hidden until mentors are verified and can talk to mentees)", enabled: false },
     ];
 
     for (const feat of defaults) {
@@ -80,7 +83,7 @@ export async function seedFeatureFlags() {
             },
             create: {
                 key: feat.key,
-                enabled: true,
+                enabled: feat.enabled ?? true,
                 category: feat.category,
                 description: feat.description
             }
