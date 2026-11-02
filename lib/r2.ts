@@ -1,4 +1,4 @@
-import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectsCommand, GetObjectCommand, ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 
 // Initialize S3 Client for Cloudflare R2
@@ -64,4 +64,25 @@ export async function getFromR2(key: string): Promise<{ body: Uint8Array; conten
         if ((error as { name?: string }).name === "NoSuchKey") return null;
         throw error;
     }
+}
+
+/** Deletes every object under a prefix, e.g. "profiles/<userId>/" (AIIN-58). Returns how many were deleted. */
+export async function deleteR2Prefix(prefix: string): Promise<number> {
+    const bucketName = process.env.R2_BUCKET_NAME;
+    if (!bucketName) throw new Error("R2 configuration missing (R2_BUCKET_NAME)");
+    // Never the whole bucket, or a sibling folder sharing the start of the name
+    if (!/^[a-z]+\/[^/]+\/$/.test(prefix)) throw new Error(`Refusing to delete prefix "${prefix}"`);
+
+    let deleted = 0;
+    let token: string | undefined;
+    do {
+        const page = await R2.send(new ListObjectsV2Command({ Bucket: bucketName, Prefix: prefix, ContinuationToken: token }));
+        const keys = (page.Contents ?? []).flatMap((o) => (o.Key ? [{ Key: o.Key }] : []));
+        if (keys.length) {
+            await R2.send(new DeleteObjectsCommand({ Bucket: bucketName, Delete: { Objects: keys, Quiet: true } }));
+            deleted += keys.length;
+        }
+        token = page.IsTruncated ? page.NextContinuationToken : undefined;
+    } while (token);
+    return deleted;
 }

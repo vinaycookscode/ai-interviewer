@@ -8,6 +8,7 @@ import { documentHref } from "@/lib/document-url";
 import { AccountForm } from "@/components/candidate/profile-form";
 import { IdentityDocuments } from "@/components/candidate/identity-documents";
 import { WeeklyEmailSwitch } from "@/components/candidate/weekly-email-switch";
+import { DeleteAccount } from "@/components/candidate/delete-account";
 import { BadgeIcon } from "@/components/candidate/badge-icon";
 import { ACHIEVEMENTS, isAchievementKey } from "@/lib/achievements/rules";
 import { coralButton, focusRing } from "@/components/soft-glass/classes";
@@ -83,6 +84,7 @@ export default async function ProfilePage() {
                             aadhaar={user.aadhaarUrl ? { href: documentHref(user.aadhaarUrl) ?? null, name: user.aadhaarName } : null}
                         />
                     </section>
+                    <DeleteAccount email={user.email} />
                 </div>
 
                 <div className="flex min-w-[min(260px,100%)] max-w-full flex-[1_1_300px] flex-col gap-6 lg:max-w-[420px]">

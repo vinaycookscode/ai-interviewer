@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { deleteAccount } from "@/lib/account-deletion";
 import { revalidatePath } from "next/cache";
 
 export async function getPlatformStats() {
@@ -109,9 +110,11 @@ export async function deleteUser(userId: string) {
     }
 
     try {
-        await db.user.delete({
-            where: { id: userId }
-        });
+        // Candidates go through the same deletion as their own (AIIN-58): interviews and mock interviews blocked a
+        // plain delete, and their files stayed in storage. Others (employers, admins) are deleted as before.
+        const target = await db.user.findUnique({ where: { id: userId }, select: { role: true } });
+        if (target?.role === "CANDIDATE") await deleteAccount(userId);
+        else await db.user.delete({ where: { id: userId } });
         revalidatePath("/admin/users");
         return { success: "User deleted" };
     } catch (error) {
