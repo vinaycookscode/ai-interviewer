@@ -39,6 +39,7 @@ export default async function BankQuestionPage({ params }: PageProps) {
             source: true,
             companyName: true,
             notes: true,
+            aiAnswer: true,
             companyQuestionId: true,
             companyQuestion: { select: { answer: true } },
             mockAnswer: { select: { id: true, transcript: true, score: true, feedback: true, createdAt: true, mockInterview: { select: { role: true } } } },
@@ -55,7 +56,11 @@ export default async function BankQuestionPage({ params }: PageProps) {
           ? [item.mockAnswer]
           : [];
     const latest = item.mockAnswer;
-    const strong = item.companyQuestion?.answer;
+    // Company prep's own answer, or one Gemini wrote for a question the candidate added (AIIN-211)
+    const strong = item.companyQuestion?.answer ?? item.aiAnswer;
+    const strongFrom = item.companyQuestion?.answer
+        ? item.companyName && t("detail.fromCompany", { company: item.companyName })
+        : t("detail.aiWritten");
 
     return (
         <div className="flex flex-col gap-6 sm:gap-8">
@@ -118,7 +123,7 @@ export default async function BankQuestionPage({ params }: PageProps) {
                                 {t("detail.strongAnswer")}
                             </summary>
                             <div className="flex flex-col gap-1 px-5 pb-5">
-                                {item.companyName && <span className="text-[13px] leading-[18px] font-bold text-sg-muted">{t("detail.fromCompany", { company: item.companyName })}</span>}
+                                {strongFrom && <span className="text-[13px] leading-[18px] font-bold text-sg-muted">{strongFrom}</span>}
                                 <p className="whitespace-pre-line">{strong}</p>
                             </div>
                         </details>

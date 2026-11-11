@@ -34,7 +34,7 @@ This directory records significant technical decisions made on this project — 
 | 2026-11-01 | [Integrity checks and candidate data: agreement first, only what was agreed, kept for a year](2026-11-01-integrity-checks-and-candidate-data.md) | Accepted · implemented | AIIN-176 |
 | 2026-11-02 | [Deleting an account: at once, everything of the candidate's, employer records kept anonymised](2026-11-02-deleting-an-account.md) | Accepted · implemented | AIIN-58 |
 | 2026-11-02 | [Best solutions: written by AI, shown only if they pass every test, after the candidate has tried](2026-11-02-best-solutions-checked-before-shown.md) | Accepted · implemented | AIIN-221 |
-| 2026-11-11 | [The Question Bank: one item per question, filled by what the candidate already does](2026-11-11-one-bank-item-per-question.md) | Accepted · implemented | AIIN-209, AIIN-210 |
+| 2026-11-11 | [The Question Bank: one item per question, filled by what the candidate already does](2026-11-11-one-bank-item-per-question.md) | Accepted · implemented | AIIN-209–211 |
 
 Proposals that aren't ADRs yet (Upstash rate limiting, Deepgram and Google TTS) are listed in `docs/audits/2026-10-24-master-decision-index.md`.
 

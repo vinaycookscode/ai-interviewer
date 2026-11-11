@@ -2931,7 +2931,7 @@
         "clear": "Clear filters",
         "meaningUnavailable": "Showing word matches only: search by meaning isn’t available right now.",
         "emptyTitle": "Your bank fills itself",
-        "emptyBody": "Every question you answer in practice lands here with your score and feedback. Save questions from Company prep as you go.",
+        "emptyBody": "Every question you answer in practice lands here with your score and feedback. Save questions from Company prep, or add ones you were asked in a real interview.",
         "startPractice": "Start a practice",
         "browseCompanyPrep": "Browse Company prep",
         "detail": {
@@ -2948,7 +2948,35 @@
             "notes": "Your notes",
             "notesPlaceholder": "Anything to remember for next time",
             "notesSaved": "Saved",
-            "notesFailed": "U couldn’t save your notes. Try again."
+            "notesFailed": "U couldn’t save your notes. Try again.",
+            "aiWritten": "AI-written for you. Check it against what you know."
+        },
+        "add": {
+            "open": "Add a question",
+            "title": "Add a question you were asked",
+            "body": "From a real interview, anywhere. It stays in your bank only.",
+            "question": "The question",
+            "company": "Company",
+            "optional": "(optional)",
+            "type": "Type",
+            "notes": "How it went",
+            "notesHint": "(optional, only you see it)",
+            "writeAnswer": "Write a model answer for me",
+            "aiMarked": "(marked “AI-written”)",
+            "submit": "Add to my bank",
+            "adding": "Adding…",
+            "cancel": "Cancel",
+            "close": "Close",
+            "added": "Added to your bank.",
+            "addedWriting": "Added to your bank. The model answer will be on its page in a moment.",
+            "errors": {
+                "question": "Write the question, 5 to 500 characters.",
+                "company": "Keep the company name under 100 characters.",
+                "type": "Pick a type.",
+                "notes": "Keep your notes under 2,000 characters.",
+                "unauthorized": "Sign in again to add a question.",
+                "failed": "U couldn’t add that question. Try again."
+            }
         }
     }
 }

@@ -19,6 +19,12 @@ The Question Bank (epic AIIN-206) collects every question a candidate has faced 
 - **Backfilled in the migration.** Every existing practice answer became an item, and repeats of a bank question collapsed into one item on the latest answer.
 - **Only the links that something fills.** The ticket also listed `answerId` (AI interviews) and `applicationId` (Talent Match). They come with the tickets that fill them; the `INTERVIEW`, `SELF_ADDED` and `RECOMMENDED` sources are already in the enum.
 
+### Questions the candidate adds (AIIN-211)
+
+- **Their own item every time,** keyed `self:<uuid>`. Two candidates, or one candidate twice, adding the same words is still two items: the notes and context differ.
+- **Private.** The approved design says "It stays in your bank only", so nothing is shared. Suggesting a question to Company prep, without the candidate's name, belongs to the moderated path (AIIN-215), as a choice the candidate makes there.
+- **The model answer is labelled AI-written** and stored apart from Company prep's reviewed answers (`aiAnswer`), so the two can't be confused. It's written after the response; if Gemini fails, the item simply has no answer.
+
 ### Search (AIIN-210)
 
 - **Word matches, then matches by meaning.** A search matches words in the question, company, topic or tags. It then adds questions whose meaning is close: `BankItem.embedding` holds a `vector(768)` from Gemini `gemini-embedding-001`, compared with cosine distance in Postgres (pgvector), as the [Talent Match ADR](2026-10-26-talent-match-consent-and-computed-score.md) set out.

@@ -4,7 +4,9 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-Migration `question_bank` adds the `BankItem` table, with the `BankSource` and `BankStatus` enums, and fills it from every existing practice answer. Migration `bank_search` enables the pgvector extension and adds `BankItem.embedding`. Local development now needs pgvector (see `docs/LOCAL_DEVELOPMENT.md`).
+Migration `question_bank` adds the `BankItem` table, with the `BankSource` and `BankStatus` enums, and fills it from every existing practice answer. Migration `bank_search` enables the pgvector extension and adds `BankItem.embedding`. Local development now needs pgvector (see `docs/LOCAL_DEVELOPMENT.md`). Migration `bank_ai_answer` adds `BankItem.aiAnswer`.
+
+- **Add a question you were asked (AIIN-211).** The Question Bank's coral "Add a question" opens a dialog for a question from a real interview: the question, company, type and how it went. It lands in the bank as a Real interview item that only the candidate sees. Optionally, Gemini writes a model answer, after the response so adding never waits. It shows on the question's page under "See a strong answer", marked AI-written. Suggesting a question to Company prep is left to the moderated path (AIIN-215), because the approved design keeps added questions private.
 
 - **Browse and search the Question Bank (AIIN-210).** A new page, More → Question Bank, built from the approved artboards, lists every question with its status, source, type, company and last score. Filters for source, type and company, plus status tabs with counts, all live in the URL. Search finds words, and also meaning: "caching" finds a question about CDNs, though the word isn't in it. Each question opens to the latest answer and what to fix, a strong answer when Company prep has one, every attempt with its score, and private notes. A new candidate sees how the bank fills itself, with Start a practice and Browse Company prep. Adding a question, the review schedule and the prep set come next (AIIN-211–213).
 

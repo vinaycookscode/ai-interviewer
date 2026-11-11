@@ -8,6 +8,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { similarities } from "@/lib/bank/meaning";
 import { keywordMatch, meaningMatches, mergeResults, parseBankFilters } from "@/lib/bank/search";
+import { AddQuestion } from "@/components/question-bank/add-question";
 import { BankFilters } from "@/components/question-bank/bank-filters";
 import { SourceChip, StatusChip, bankChip } from "@/components/question-bank/chips";
 import { focusRing } from "@/components/soft-glass/classes";
@@ -81,9 +82,12 @@ export default async function QuestionBankPage({ searchParams }: PageProps) {
 
     return (
         <div className="flex flex-col gap-6 sm:gap-8">
-            <div className="flex max-w-[680px] flex-col gap-2">
-                <h1 className="font-display sg-soft text-[32px] font-semibold leading-[1.14] tracking-[-0.025em] text-balance sm:text-[44px]">{t("title")}</h1>
-                <p className="text-lg text-sg-muted">{t("description")}</p>
+            <div className="flex flex-wrap items-end justify-between gap-4">
+                <div className="flex max-w-[680px] flex-col gap-2">
+                    <h1 className="font-display sg-soft text-[32px] font-semibold leading-[1.14] tracking-[-0.025em] text-balance sm:text-[44px]">{t("title")}</h1>
+                    <p className="text-lg text-sg-muted">{t("description")}</p>
+                </div>
+                <AddQuestion />
             </div>
 
             {total === 0 ? (

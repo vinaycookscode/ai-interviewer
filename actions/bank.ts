@@ -1,11 +1,15 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+import { after } from "next/server";
+import { revalidatePath } from "next/cache";
 import { PlanTier } from "@prisma/client";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { checkFeature } from "@/actions/feature-flags";
 import { FEATURES } from "@/lib/features";
-import { bankKey, bankType } from "@/lib/bank/items";
+import { bankKey, bankType, parseNewQuestion } from "@/lib/bank/items";
+import { writeModelAnswer } from "@/lib/bank/server";
 
 /**
  * Save a Company prep question to the candidate's Question Bank (AIIN-209). Same access as the company page: company
@@ -42,6 +46,36 @@ export async function saveToBank(questionId: string): Promise<{ ok: true } | { e
         update: {},
     });
     return { ok: true };
+}
+
+/**
+ * Add a question the candidate was asked in a real interview (AIIN-211). It stays in their bank only. A model answer,
+ * if asked for, is written after the response so adding never waits on Gemini.
+ */
+export async function addToBank(input: unknown): Promise<{ ok: true; id: string } | { error: "unauthorized" | "question" | "company" | "type" | "notes" }> {
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId) return { error: "unauthorized" };
+
+    const parsed = parseNewQuestion(input);
+    if (!parsed.ok) return { error: parsed.field };
+    const q = parsed.value;
+
+    const item = await db.bankItem.create({
+        data: {
+            userId,
+            sourceKey: bankKey({ selfId: randomUUID() }),
+            source: "SELF_ADDED",
+            questionText: q.question,
+            type: q.type,
+            companyName: q.company,
+            notes: q.notes,
+        },
+        select: { id: true },
+    });
+    if (q.writeAnswer) after(() => writeModelAnswer(userId, item.id, q));
+    revalidatePath("/candidate/question-bank");
+    return { ok: true, id: item.id };
 }
 
 /** The candidate's notes on one of their own bank items (AIIN-210); up to 2,000 characters. */

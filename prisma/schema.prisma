@@ -781,7 +781,7 @@ model BankItem {
   id           String     @id @default(cuid())
   userId       String
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  // "cq:<CompanyQuestion id>" or "mock:<MockAnswer id>" (bankKey), so the same question is never in twice
+  // "cq:<CompanyQuestion id>", "mock:<MockAnswer id>" or "self:<uuid>" (bankKey), so the same question is never in twice
   sourceKey    String
   source       BankSource
   questionText String     @db.Text
@@ -795,6 +795,8 @@ model BankItem {
   box          Int        @default(0)
   nextReview   DateTime?
   notes        String?    @db.Text
+  // A model answer Gemini wrote on request for a question the candidate added; always shown as AI-written (AIIN-211)
+  aiAnswer     String?    @db.Text
   // The question's meaning, for search (AIIN-210): Gemini gemini-embedding-001 at 768 dimensions, filled on first search
   embedding    Unsupported("vector(768)")?
 
