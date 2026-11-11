@@ -1552,7 +1552,11 @@
             "hiresTitle": "How {company} hires",
             "hiresLabel": "How {company} interviews",
             "lookFor": "What they look for",
-            "tips": "Tips from people who got in"
+            "tips": "Tips from people who got in",
+            "save": "Save to my bank",
+            "saved": "Saved to your bank",
+            "inBank": "In your bank",
+            "saveFailed": "U couldn't save that question. Try again."
         },
         "types": {
             "ALL": "All",
@@ -2733,7 +2737,7 @@
                             "To score your answers and show your progress"
                         ],
                         [
-                            "Coach chats, your 90-day plan, flashcards, offers and saved solutions",
+                            "Coach chats, your 90-day plan, flashcards, offers, saved solutions and your Question Bank",
                             "When you use those features",
                             "To run them for you"
                         ],

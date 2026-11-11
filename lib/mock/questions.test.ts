@@ -34,4 +34,6 @@ test("the grading prompt carries the reference only when there is one", () => {
     assert.match(linked, /judging it against the reference/);
     const plain = gradingPrompt("Q", "A", "Frontend", null);
     assert.doesNotMatch(plain, /reference/);
+    // The type sorts the answer into the Question Bank (AIIN-209)
+    assert.match(plain, /type .*"HR", "TECHNICAL", "CODING" or "APTITUDE"/);
 });

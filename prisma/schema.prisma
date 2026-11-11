@@ -109,7 +109,8 @@ model User {
   decisionEvents InterviewDecisionEvent[]
   integrityReviews IntegrityReview[] @relation("IntegrityReviews")
   mockInterviews MockInterview[]
-  
+  bankItems     BankItem[]
+
   // Placement Platform Relations
   candidateProfile CandidateProfile?
   programEnrollments ProgramEnrollment[]
@@ -463,7 +464,8 @@ model MockAnswer {
   // The bank question this answers, when it came from the bank: graded against its model answer (AIIN-208)
   companyQuestionId String?
   companyQuestion   CompanyQuestion? @relation(fields: [companyQuestionId], references: [id], onDelete: SetNull)
-  
+  bankItems         BankItem[]
+
   question        String        // Store question text directly as it's dynamic
   transcript      String
   audioUrl        String?
@@ -757,6 +759,54 @@ model CompanyQuestion {
   @@index([status])
   mockAnswers MockAnswer[]
   bestSolutions ProblemSolution[]
+  bankItems   BankItem[]
+}
+
+enum BankSource {
+  MOCK
+  INTERVIEW
+  COMPANY_PREP
+  SELF_ADDED
+  RECOMMENDED
+}
+
+enum BankStatus {
+  NEW
+  PRACTISING
+  CONFIDENT
+}
+
+// A question in a candidate's Question Bank (AIIN-209): one per question, whatever brought it in. Rules in lib/bank/items.ts.
+model BankItem {
+  id           String     @id @default(cuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // "cq:<CompanyQuestion id>" or "mock:<MockAnswer id>" (bankKey), so the same question is never in twice
+  sourceKey    String
+  source       BankSource
+  questionText String     @db.Text
+  // The practice role, for a mock question
+  topic        String?
+  type         String     // HR, TECHNICAL, CODING, APTITUDE
+  companyName  String?
+  tags         String[]   @default([])
+  status       BankStatus @default(NEW)
+  // Spaced review (AIIN-212): the box and when it's next due
+  box          Int        @default(0)
+  nextReview   DateTime?
+  notes        String?    @db.Text
+
+  companyQuestionId String?
+  companyQuestion   CompanyQuestion? @relation(fields: [companyQuestionId], references: [id], onDelete: SetNull)
+  // The latest answer, for its score and feedback; deleting the item leaves the answer alone
+  mockAnswerId      String?
+  mockAnswer        MockAnswer?      @relation(fields: [mockAnswerId], references: [id], onDelete: SetNull)
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([userId, sourceKey])
+  @@index([userId, status])
 }
 
 // Who changed a problem, what and when (AIIN-107). The name is copied, so the history outlives the account.

@@ -45,6 +45,7 @@ ${guide.map((g) => `      ${g}`).join("\n")}
       Provide a JSON response with:
       - score (1-10 number)
       - feedback (concise string, max 2 sentences)
+      - type (what kind of question this is: "HR", "TECHNICAL", "CODING" or "APTITUDE")
 
       Return ONLY valid JSON.
     `;

@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { awardAchievements } from "@/lib/achievements/server";
 import { checkpointMetric } from "@/lib/achievements/rules";
 import { markPlanActive } from "@/lib/plan/server";
+import { addAnswerToBank } from "@/lib/bank/server";
 import { revalidatePath } from "next/cache";
 import { getGeminiModelInstance, MAX_RATE_LIMIT_RETRIES } from "@/lib/gemini";
 // import { GoogleGenerativeAI } from "@google/generative-ai"; // Removed
@@ -272,7 +273,7 @@ export async function saveMockAnswer(
         return { error: "You've already answered this question" };
     }
 
-    let evaluation = { score: 0, feedback: "" };
+    let evaluation: { score: number; feedback: string; type?: unknown } = { score: 0, feedback: "" };
     // A bank question is graded against its model answer and tips (AIIN-208)
     const companyQuestionId = bankIdFor(mockInterview.questions, mockInterview.bankQuestionIds, question);
     const reference = companyQuestionId
@@ -308,7 +309,7 @@ export async function saveMockAnswer(
     }
 
     try {
-        await db.mockAnswer.create({
+        const saved = await db.mockAnswer.create({
             data: {
                 mockInterviewId,
                 question,
@@ -318,9 +319,15 @@ export async function saveMockAnswer(
                 score: evaluation.score,
                 feedback: evaluation.feedback,
             },
+            select: { id: true },
         });
 
-        return { success: "Answer saved", evaluation };
+        // Every answered question lands in the candidate's Question Bank (AIIN-209). The answer is saved either way.
+        await addAnswerToBank(session.user.id!, { id: saved.id, question, role: mockInterview.role, companyQuestionId, gradedType: evaluation.type }).catch((error) =>
+            console.error("Error adding the answer to the bank:", error)
+        );
+
+        return { success: "Answer saved", evaluation: { score: evaluation.score, feedback: evaluation.feedback } };
     } catch (dbError) {
         console.error("Error saving answer to DB:", dbError);
         return { error: "Failed to save answer" };

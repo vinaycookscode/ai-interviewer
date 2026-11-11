@@ -100,12 +100,17 @@ export default async function CompanyDetailPage({ params }: PageProps) {
 
     if (!kit) notFound();
 
-    // Newest first, so a problem reopens in the language last saved (AIIN-220)
-    const saved = await db.userCompanySolution.findMany({
-        where: { userId: session.user.id, questionId: { in: kit.questions.map((q) => q.id) } },
-        select: { questionId: true, language: true, passedTests: true, totalTests: true },
-        orderBy: { updatedAt: "desc" },
-    });
+    const questionIds = kit.questions.map((q) => q.id);
+    const [saved, banked] = await Promise.all([
+        // Newest first, so a problem reopens in the language last saved (AIIN-220)
+        db.userCompanySolution.findMany({
+            where: { userId: session.user.id, questionId: { in: questionIds } },
+            select: { questionId: true, language: true, passedTests: true, totalTests: true },
+            orderBy: { updatedAt: "desc" },
+        }),
+        // Already in the candidate's Question Bank (AIIN-209)
+        db.bankItem.findMany({ where: { userId: session.user.id, companyQuestionId: { in: questionIds } }, select: { companyQuestionId: true } }),
+    ]);
     const progress: Record<string, ProblemProgress> = {};
     for (const s of saved) {
         const solved = s.totalTests > 0 && s.passedTests === s.totalTests;
@@ -138,6 +143,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
                 };
             })}
             progress={progress}
+            inBank={banked.flatMap((b) => (b.companyQuestionId ? [b.companyQuestionId] : []))}
             featureFlags={{ languageSelector, codePersistence, aiCodeAnalysis, serverJudge: judgeConfigured() }}
         />
     );

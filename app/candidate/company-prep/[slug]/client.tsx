@@ -3,7 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, CheckCircle2, ChevronDown, Code2, Lightbulb } from "lucide-react";
+import { toast } from "sonner";
+import { ArrowLeft, Bookmark, CheckCircle2, ChevronDown, Code2, Lightbulb, Loader2 } from "lucide-react";
+import { saveToBank } from "@/actions/bank";
 import { CoachBubble } from "@/components/soft-glass/coach-bubble";
 import { focusRing } from "@/components/soft-glass/classes";
 import { field, panel, panelTitle, sectionTitle } from "@/components/jobs/employer-ui";
@@ -37,6 +39,8 @@ interface CompanyDetailClientProps {
     questions: SolverQuestion[];
     /** Per problem the candidate has saved code for (AIIN-220). */
     progress: Record<string, ProblemProgress>;
+    /** Questions already in the candidate's Question Bank (AIIN-209). */
+    inBank: string[];
     featureFlags: { languageSelector: boolean; codePersistence: boolean; aiCodeAnalysis: boolean; serverJudge: boolean };
 }
 
@@ -48,7 +52,7 @@ const OFTEN = 8;
 const chip = "inline-flex h-7 items-center gap-1 rounded-full bg-sg-chip px-2.5 text-sm font-semibold";
 const smallChip = "inline-flex h-6 items-center gap-1 rounded-full bg-sg-chip px-2 text-[13px] font-semibold";
 
-export function CompanyDetailClient({ company, questions, progress: initialProgress, featureFlags }: CompanyDetailClientProps) {
+export function CompanyDetailClient({ company, questions, progress: initialProgress, inBank, featureFlags }: CompanyDetailClientProps) {
     const t = useTranslations("CompanyPrep");
     const [kind, setKind] = useState<string>("ALL");
     const [level, setLevel] = useState<string>("ALL");
@@ -57,6 +61,16 @@ export function CompanyDetailClient({ company, questions, progress: initialProgr
     const [solving, setSolving] = useState<SolverQuestion | null>(null);
     // Kept here so a submit shows at once, without reloading the page
     const [progress, setProgress] = useState(initialProgress);
+    const [banked, setBanked] = useState<Set<string>>(() => new Set(inBank));
+    const [saving, setSaving] = useState<string | null>(null);
+
+    const save = async (id: string) => {
+        setSaving(id);
+        const result = await saveToBank(id).catch(() => ({ error: "notFound" as const }));
+        setSaving(null);
+        if ("ok" in result) setBanked((prev) => new Set(prev).add(id));
+        else toast.error(t("detail.saveFailed"));
+    };
 
     const typeName = (type: string) => ((TYPES as readonly string[]).includes(type) ? t(`types.${type as (typeof TYPES)[number]}`) : type);
     const levelName = (l: string) => ((LEVELS as readonly string[]).includes(l) ? t(`levels.${l as (typeof LEVELS)[number]}`) : l);
@@ -220,6 +234,12 @@ export function CompanyDetailClient({ company, questions, progress: initialProgr
                                                         <span className={cn(smallChip, "bg-sg-lavender-soft text-sg-lavender-ink")}>{t("detail.often")}</span>
                                                     )}
                                                     {progress[q.id] && <ProgressChip status={progress[q.id].status} className={smallChip} />}
+                                                    {banked.has(q.id) && (
+                                                        <span className={cn(smallChip, "bg-sg-lavender-soft text-sg-lavender-ink")}>
+                                                            <Bookmark className="size-3.5" aria-hidden="true" />
+                                                            {t("detail.inBank")}
+                                                        </span>
+                                                    )}
                                                 </span>
                                             </span>
                                             <ChevronDown aria-hidden="true" className={cn("mt-0.5 size-5 shrink-0 transition-transform", open && "rotate-180")} />
@@ -257,6 +277,25 @@ export function CompanyDetailClient({ company, questions, progress: initialProgr
                                                             className={cn("inline-flex h-11 items-center rounded-full border border-sg-field-border px-4 text-sm font-semibold hover:bg-sg-chip", focusRing)}
                                                         >
                                                             {answerShown ? t("detail.hideAnswer") : t("detail.showAnswer")}
+                                                        </button>
+                                                    )}
+                                                    {banked.has(q.id) ? (
+                                                        <span role="status" className="inline-flex h-11 items-center gap-2 px-1.5 text-sm font-bold text-sg-success">
+                                                            <CheckCircle2 className="size-4" aria-hidden="true" />
+                                                            {t("detail.saved")}
+                                                        </span>
+                                                    ) : (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => save(q.id)}
+                                                            disabled={saving === q.id}
+                                                            className={cn(
+                                                                "inline-flex h-11 items-center gap-2 rounded-full border border-sg-field-border px-4 text-sm font-semibold hover:bg-sg-chip disabled:opacity-60",
+                                                                focusRing
+                                                            )}
+                                                        >
+                                                            {saving === q.id ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Bookmark className="size-4" aria-hidden="true" />}
+                                                            {t("detail.save")}
                                                         </button>
                                                     )}
                                                 </div>

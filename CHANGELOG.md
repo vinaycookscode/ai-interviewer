@@ -2,6 +2,12 @@
 
 Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning behind larger changes is in `docs/architecture/`.
 
+## Unreleased
+
+Migration `question_bank` adds the `BankItem` table, with the `BankSource` and `BankStatus` enums, and fills it from every existing practice answer.
+
+- **The Question Bank fills itself (AIIN-209).** Every practice answer now lands in the candidate's Question Bank, with the latest answer's score and feedback. A Company prep question appears once, however often it's saved or practised. Each open Company prep question has a "Save to my bank" button. Once saved, it shows "Saved to your bank", and the card says "In your bank". The practice grader now also says whether a question is HR, technical, coding or aptitude. Deleting a bank item keeps the answers it came from. The bank's own page comes next (AIIN-210). ADR: [One item per question](docs/architecture/2026-11-11-one-bank-item-per-question.md).
+
 ## 2026-11-02, release
 
 Migration `hide_study_squad_and_mentors` turns both flags off; migration `decision_confirmed_concerns` adds `InterviewDecisionEvent.confirmedConcerns`. Migration `integrity_reviews` adds the `IntegrityReview` table and `Interview.integrityReviewOutcome`. Migration `mock_answer_bank_link` adds `MockInterview.bankQuestionIds` and `MockAnswer.companyQuestionId`. Migration `best_solutions` adds the `ProblemSolution` table.
