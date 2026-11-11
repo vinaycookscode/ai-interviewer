@@ -8,11 +8,13 @@ export type BankType = (typeof BANK_TYPES)[number];
  * One bank item per question: a Company prep question is keyed by its id, so saving it twice or practising it again
  * updates the same item. A question Gemini wrote for one practice is keyed by the answer it came with.
  */
-export function bankKey(link: { companyQuestionId?: string | null; mockAnswerId?: string | null; selfId?: string | null }): string {
+export function bankKey(link: { companyQuestionId?: string | null; mockAnswerId?: string | null; selfId?: string | null; recId?: string | null }): string {
     if (link.companyQuestionId) return `cq:${link.companyQuestionId}`;
     if (link.mockAnswerId) return `mock:${link.mockAnswerId}`;
     // A question the candidate added (AIIN-211) is its own item, even if they add the same words twice
     if (link.selfId) return `self:${link.selfId}`;
+    // A question U suggested for an interview's prep set (AIIN-213)
+    if (link.recId) return `rec:${link.recId}`;
     throw new Error("A bank item needs a source");
 }
 

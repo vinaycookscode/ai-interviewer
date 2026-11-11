@@ -4,7 +4,15 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-Migration `question_bank` adds the `BankItem` table, with the `BankSource` and `BankStatus` enums, and fills it from every existing practice answer. Migration `bank_search` enables the pgvector extension and adds `BankItem.embedding`. Local development now needs pgvector (see `docs/LOCAL_DEVELOPMENT.md`). Migration `bank_ai_answer` adds `BankItem.aiAnswer`. Migration `bank_review` adds the `BankAttempt` table and schedules every question that already has a practice score.
+Migration `question_bank` adds the `BankItem` table, with the `BankSource` and `BankStatus` enums, and fills it from every existing practice answer. Migration `bank_search` enables the pgvector extension and adds `BankItem.embedding`. Local development now needs pgvector (see `docs/LOCAL_DEVELOPMENT.md`). Migration `bank_ai_answer` adds `BankItem.aiAnswer`. Migration `bank_review` adds the `BankAttempt` table and schedules every question that already has a practice score. Migration `prep_sets` adds `PrepSet` and `PrepSetItem`.
+
+- **A prep set for each upcoming interview (AIIN-213).** The Question Bank shows the candidate's next employer interview, with "Open the prep set". The first time it's opened, U picks 15 questions, built from the approved Prep set artboards:
+  - the candidate's own bank questions closest to the job's must-have skills, which Gemini reads from the job's title and description;
+  - four of the company's Company prep questions, when it has a kit;
+  - their weak spots, ranked by closeness to the job;
+  - Gemini's suggestions for any gap, marked AI-suggested.
+
+  No two questions are near-duplicates. The employer's own interview questions are never shown to Gemini or included. The page shows progress ("1 of 15 practised · 4 days to go"), how many a day to do, and a coral "Practise the next one". Applications (AIIN-195) don't exist yet, so the set is built when the candidate opens it rather than when an application reaches interviewing.
 
 - **Practise bank questions on a schedule (AIIN-212).** Any question in the bank can be practised by voice or text, on a focus page from the approved artboards. It's graded against Company prep's answer or the AI-written one when there is one. A score of 7 or more moves the question up a box (3 days, then 7, 14 and 30), and anything lower brings it back tomorrow. Two strong answers in a row make it Confident. The same rule applies to answers from regular practice. The bank shows a Due today tab, a chip on due questions and a "Practise the N due" panel. Each question shows its next review, every attempt from practice and from the bank, and a coral "Practise this question". A candidate can have up to 30 bank answers scored per day.
 

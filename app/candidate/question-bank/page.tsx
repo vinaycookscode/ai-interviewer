@@ -9,11 +9,12 @@ import { db } from "@/lib/db";
 import { similarities } from "@/lib/bank/meaning";
 import { keywordMatch, meaningMatches, mergeResults, parseBankFilters } from "@/lib/bank/search";
 import { isDue } from "@/lib/bank/review";
+import { upcomingWhere } from "@/lib/bank/prep-server";
 import { AddQuestion } from "@/components/question-bank/add-question";
 import { BankFilters } from "@/components/question-bank/bank-filters";
 import { SourceChip, StatusChip, bankChip } from "@/components/question-bank/chips";
 import { focusRing } from "@/components/soft-glass/classes";
-import { glassButton, inkButton, textLink } from "@/components/jobs/employer-ui";
+import { glassButton, inkButton, outlineButton, textLink } from "@/components/jobs/employer-ui";
 import { cn } from "@/lib/utils";
 
 interface PageProps {
@@ -24,6 +25,8 @@ export async function generateMetadata(): Promise<Metadata> {
     const t = await getTranslations("QuestionBank");
     return { title: t("title") };
 }
+
+const shortDay = new Intl.DateTimeFormat("en-IN", { weekday: "short", day: "numeric", month: "short", timeZone: "Asia/Kolkata" });
 
 type Scored = { score: number | null; createdAt: Date } | null | undefined;
 /** The newest score, from practice or from the bank (AIIN-212). */
@@ -114,9 +117,35 @@ export default async function QuestionBankPage({ searchParams }: PageProps) {
               ? found.filter((item) => item.status === filters.status)
               : found;
     // Due across the whole bank, whatever the filters, for the panel (AIIN-212)
-    const dueTotal = await db.bankItem.count({
-        where: { userId, nextReview: { lte: now } },
-    });
+    const [dueTotal, upcoming] = await Promise.all([
+        db.bankItem.count({ where: { userId, nextReview: { lte: now } } }),
+        // The next interview to prepare for, and how far through its prep set the candidate is (AIIN-213)
+        db.interview.findFirst({
+            where: upcomingWhere(userId),
+            orderBy: { scheduledTime: { sort: "asc", nulls: "last" } },
+            select: {
+                id: true,
+                scheduledTime: true,
+                job: { select: { title: true, employer: { select: { name: true } } } },
+                prepSets: {
+                    where: { userId },
+                    select: {
+                        createdAt: true,
+                        items: { select: { bankItem: { select: { mockAnswer: { select: { createdAt: true } }, attempts: { orderBy: { createdAt: "desc" }, take: 1, select: { createdAt: true } } } } } },
+                    },
+                },
+            },
+        }),
+    ]);
+    const prepSet = upcoming?.prepSets[0];
+    const nextInterview = upcoming && {
+        id: upcoming.id,
+        when: upcoming.scheduledTime,
+        job: upcoming.job.title,
+        company: upcoming.job.employer.name?.trim() || "",
+        total: prepSet?.items.length ?? 0,
+        done: prepSet?.items.filter(({ bankItem: b }) => [b.mockAnswer?.createdAt, b.attempts[0]?.createdAt].some((d) => d && d >= prepSet.createdAt)).length ?? 0,
+    };
 
     return (
         <div className="flex flex-col gap-6 sm:gap-8">
@@ -206,19 +235,44 @@ export default async function QuestionBankPage({ searchParams }: PageProps) {
                             {t("shown", { shown: shown.length, total })}
                         </p>
                     </section>
-                    {dueTotal > 0 && (
-                        <aside
-                            aria-labelledby="qb-due"
-                            className="sg-glass flex min-w-[min(260px,100%)] max-w-full flex-[1_1_300px] flex-col gap-3 rounded-[24px] bg-sg-lavender-soft/40 p-5 sm:rounded-[28px] sm:p-6 lg:max-w-[340px]"
-                        >
-                            <h2 id="qb-due" className="font-display sg-soft text-[22px] leading-7 font-semibold">
-                                {t("due.title")}
-                            </h2>
-                            <p className="text-sg-muted">{t("due.body", { count: dueTotal })}</p>
-                            <Link href="/candidate/question-bank/practise" className={cn(inkButton, "h-12 self-start")}>
-                                <Mic className="size-4" aria-hidden="true" />
-                                {t("due.start", { count: dueTotal })}
-                            </Link>
+                    {(dueTotal > 0 || nextInterview) && (
+                        <aside className="flex min-w-[min(260px,100%)] max-w-full flex-[1_1_300px] flex-col gap-4 lg:max-w-[340px]">
+                            {dueTotal > 0 && (
+                                <section aria-labelledby="qb-due" className="sg-glass flex flex-col gap-3 rounded-[24px] bg-sg-lavender-soft/40 p-5 sm:rounded-[28px] sm:p-6">
+                                    <h2 id="qb-due" className="font-display sg-soft text-[22px] leading-7 font-semibold">
+                                        {t("due.title")}
+                                    </h2>
+                                    <p className="text-sg-muted">{t("due.body", { count: dueTotal })}</p>
+                                    <Link href="/candidate/question-bank/practise" className={cn(inkButton, "h-12 self-start")}>
+                                        <Mic className="size-4" aria-hidden="true" />
+                                        {t("due.start", { count: dueTotal })}
+                                    </Link>
+                                </section>
+                            )}
+                            {nextInterview && (
+                                <section aria-labelledby="qb-prep" className="sg-glass flex flex-col gap-3 rounded-[24px] bg-sg-lavender-soft/40 p-5 sm:rounded-[28px] sm:p-6">
+                                    <h2 id="qb-prep" className="font-display sg-soft text-[22px] leading-7 font-semibold">
+                                        {nextInterview.when ? t("prep.panelTitle", { date: shortDay.format(nextInterview.when) }) : t("prep.panelTitleUnscheduled")}
+                                    </h2>
+                                    <p className="text-sg-muted">
+                                        {nextInterview.total
+                                            ? t("prep.panelReady", { job: nextInterview.job, company: nextInterview.company, count: nextInterview.total })
+                                            : t("prep.panelNew", { job: nextInterview.job, company: nextInterview.company })}
+                                    </p>
+                                    {nextInterview.total > 0 && (
+                                        <div className="flex flex-col gap-1.5">
+                                            <span aria-hidden="true" className="h-2 overflow-hidden rounded-full bg-sg-track">
+                                                <span className="block h-full rounded-full bg-sg-lavender-ink" style={{ width: `${(nextInterview.done / nextInterview.total) * 100}%` }} />
+                                            </span>
+                                            <span className="text-sm font-bold">{t("prep.progress", { done: nextInterview.done, total: nextInterview.total })}</span>
+                                        </div>
+                                    )}
+                                    <Link href={`/candidate/question-bank/prep/${nextInterview.id}`} className={cn(outlineButton, "h-11 self-start")}>
+                                        {t("prep.open")}
+                                        <ChevronRight className="size-4" aria-hidden="true" />
+                                    </Link>
+                                </section>
+                            )}
                         </aside>
                     )}
                 </div>

@@ -33,6 +33,15 @@ The Question Bank (epic AIIN-206) collects every question a candidate has faced 
 - **A daily cap of 30 graded bank answers.** Practising from the bank costs a Gemini call and isn't counted against plan limits the way mock interviews are, so the cap keeps it from being an unlimited free tap. It's enough for any day's due list.
 - **The question being practised is in the URL** (`?id=&step=&of=`). Scoring refreshes the page on the server; without the id, today's list moved on underneath the score.
 
+### Prep sets (AIIN-213)
+
+- **Built on the interviews that exist today.** The ticket planned to start a set when an application reaches Interviewing, but Applications (AIIN-195) and rounds (AIIN-196) aren't built. An employer's invited interview already has a job and a scheduled time, which is what the approved design shows. So a set belongs to one candidate and one interview, and is built the first time the candidate opens it. That also means no background job, and nothing is spent on candidates who never look. The page's loading state covers the few seconds it takes.
+- **Fifteen in three groups:** 6 from the job's must-haves, 4 from the company's Company prep, 5 weak spots. The must-haves are the candidate's own bank questions closest to the job (similarity 0.62 or more), using search by meaning. Gemini's practice questions fill any shortfall in any group and are marked AI-suggested. The company is matched to a Company prep kit by the employer's name.
+- **The employer's questions stay secret (AC3).** Gemini gets only the job's title and description. A question that matches one of the employer's, in wording or with cosine similarity above 0.92, is dropped.
+- **No near-duplicates (AC2).** Every picked question is embedded once, and any above 0.92 similarity to one already picked is dropped (`lib/bank/prep.ts`). The rule is tested.
+- **The picks join the bank.** Company prep questions reuse the candidate's existing item if they have one. New ones and AI suggestions are added with the Recommended source.
+- **Progress counts answers given after the set was picked,** so questions that were weak beforehand don't start out counted as done.
+
 ### Search (AIIN-210)
 
 - **Word matches, then matches by meaning.** A search matches words in the question, company, topic or tags. It then adds questions whose meaning is close: `BankItem.embedding` holds a `vector(768)` from Gemini `gemini-embedding-001`, compared with cosine distance in Postgres (pgvector), as the [Talent Match ADR](2026-10-26-talent-match-consent-and-computed-score.md) set out.

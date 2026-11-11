@@ -110,6 +110,7 @@ model User {
   integrityReviews IntegrityReview[] @relation("IntegrityReviews")
   mockInterviews MockInterview[]
   bankItems     BankItem[]
+  prepSets      PrepSet[]
 
   // Placement Platform Relations
   candidateProfile CandidateProfile?
@@ -379,6 +380,7 @@ model Interview {
   proctoringEvents ProctoringEvent[]
   consents InterviewConsent[]
   integrityReviews IntegrityReview[]
+  prepSets PrepSet[]
 
   @@index([candidateId])
   @@index([jobId])
@@ -781,7 +783,7 @@ model BankItem {
   id           String     @id @default(cuid())
   userId       String
   user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  // "cq:<CompanyQuestion id>", "mock:<MockAnswer id>" or "self:<uuid>" (bankKey), so the same question is never in twice
+  // "cq:<CompanyQuestion id>", "mock:<MockAnswer id>", "self:<uuid>" or "rec:<uuid>" (bankKey), so the same question is never in twice
   sourceKey    String
   source       BankSource
   questionText String     @db.Text
@@ -807,6 +809,7 @@ model BankItem {
   mockAnswer        MockAnswer?      @relation(fields: [mockAnswerId], references: [id], onDelete: SetNull)
 
   attempts     BankAttempt[]
+  prepSetItems PrepSetItem[]
 
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
@@ -814,6 +817,35 @@ model BankItem {
   @@unique([userId, sourceKey])
   @@index([userId, status])
   @@index([userId, nextReview])
+}
+
+// Fifteen questions picked for one upcoming interview (AIIN-213), built the first time the candidate opens it
+model PrepSet {
+  id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  interviewId String
+  interview   Interview     @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  // The job's must-have skills, as Gemini read them from the description
+  skills      String[]      @default([])
+  createdAt   DateTime      @default(now())
+  items       PrepSetItem[]
+
+  @@unique([userId, interviewId])
+}
+
+model PrepSetItem {
+  id          String   @id @default(cuid())
+  prepSetId   String
+  prepSet     PrepSet  @relation(fields: [prepSetId], references: [id], onDelete: Cascade)
+  bankItemId  String
+  bankItem    BankItem @relation(fields: [bankItemId], references: [id], onDelete: Cascade)
+  // JOB, COMPANY or WEAK: why it was picked
+  reason      String
+  aiSuggested Boolean  @default(false)
+  position    Int
+
+  @@unique([prepSetId, bankItemId])
 }
 
 // An answer given from the Question Bank itself (AIIN-212); answers from mock practice stay MockAnswers

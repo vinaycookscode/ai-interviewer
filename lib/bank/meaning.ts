@@ -10,7 +10,7 @@ const BATCH = 100;
 type Task = "RETRIEVAL_DOCUMENT" | "RETRIEVAL_QUERY";
 
 /** Gemini embeddings at 768 dimensions. The SDK can't set the size, so this calls the REST API. */
-async function embed(texts: string[], taskType: Task): Promise<number[][]> {
+export async function embed(texts: string[], taskType: Task): Promise<number[][]> {
     const key = process.env.GEMINI_API_KEY;
     if (!key) throw new Error("GEMINI_API_KEY is not set");
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:batchEmbedContents`, {

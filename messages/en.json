@@ -3024,6 +3024,43 @@
                 "unavailable": "U couldn't score that just now. Your answer is still here: try again in a minute.",
                 "notFound": "That question isn't in your bank any more."
             }
+        },
+        "prep": {
+            "titleDay": "Prep for {day}",
+            "titleDate": "Prep for {date}",
+            "titleUnscheduled": "Prep for your interview",
+            "lead": "{job} at {company}, {when}. {count} questions picked for this interview.",
+            "leadNoCompany": "{job}, {when}. {count} questions picked for this interview.",
+            "leadUnscheduled": "{job} at {company}. {count} questions picked for this interview.",
+            "practiseNext": "Practise the next one",
+            "progress": "{done} of {total} practised",
+            "daysToGo": "{days, plural, =0 {today} one {# day to go} other {# days to go}}",
+            "perDay": "About {count} a day gets you through all {total}.",
+            "allDone": "All {total} practised. Go over any that still feel shaky.",
+            "groups": {
+                "JOB": "From the job’s must-haves",
+                "COMPANY": "Asked at {company}",
+                "WEAK": "Your weak spots"
+            },
+            "groupLead": {
+                "JOB": "{count, plural, one {# question} other {# questions}} on {skills}",
+                "JOBNoSkills": "{count, plural, one {# question} other {# questions}} on what the job needs",
+                "COMPANY": "{count, plural, one {# question} other {# questions}} from Company prep",
+                "WEAK": "{count, plural, one {# question} other {# questions}} where you scored under 6"
+            },
+            "aiSuggested": "AI-suggested",
+            "howTitle": "How these were picked",
+            "how": "{job} from the job’s must-have skills, {company} from {name}’s questions in Company prep, and {weak} from your weakest answers. Where we didn’t have enough, U wrote one and marked it AI-suggested. Your employer’s own interview questions are never included.",
+            "howNoCompany": "{job} from the job’s must-have skills and {weak} from your weakest answers. Where we didn’t have enough, U wrote one and marked it AI-suggested. Your employer’s own interview questions are never included.",
+            "loading": "U is picking questions for this interview…",
+            "failedTitle": "U couldn’t pick your questions just now",
+            "failedBody": "Try again in a minute.",
+            "retry": "Try again",
+            "panelTitle": "Interview on {date}",
+            "panelTitleUnscheduled": "Your interview",
+            "panelReady": "{job} at {company}. {count} questions picked for it.",
+            "panelNew": "{job} at {company}. Get questions picked for it.",
+            "open": "Open the prep set"
         }
     }
 }
