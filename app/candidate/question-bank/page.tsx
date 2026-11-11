@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { BookOpen, ChevronRight, Mic } from "lucide-react";
+import { BookOpen, ChevronRight, Clock, Mic } from "lucide-react";
 import type { Prisma } from "@prisma/client";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { similarities } from "@/lib/bank/meaning";
 import { keywordMatch, meaningMatches, mergeResults, parseBankFilters } from "@/lib/bank/search";
+import { isDue } from "@/lib/bank/review";
 import { AddQuestion } from "@/components/question-bank/add-question";
 import { BankFilters } from "@/components/question-bank/bank-filters";
 import { SourceChip, StatusChip, bankChip } from "@/components/question-bank/chips";
@@ -22,6 +23,13 @@ interface PageProps {
 export async function generateMetadata(): Promise<Metadata> {
     const t = await getTranslations("QuestionBank");
     return { title: t("title") };
+}
+
+type Scored = { score: number | null; createdAt: Date } | null | undefined;
+/** The newest score, from practice or from the bank (AIIN-212). */
+function lastScore(item: { mockAnswer: Scored; attempts: NonNullable<Scored>[] }): number | null {
+    const answers = [item.mockAnswer, item.attempts[0]].filter((a): a is NonNullable<Scored> => !!a && a.score != null);
+    return answers.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]?.score ?? null;
 }
 
 /** The candidate's Question Bank (AIIN-210), built from the approved Question Bank artboards. */
@@ -42,7 +50,12 @@ export default async function QuestionBankPage({ searchParams }: PageProps) {
     };
     const [total, companyRows, filtered] = await Promise.all([
         db.bankItem.count({ where: { userId } }),
-        db.bankItem.findMany({ where: { userId, companyName: { not: null } }, distinct: ["companyName"], select: { companyName: true }, orderBy: { companyName: "asc" } }),
+        db.bankItem.findMany({
+            where: { userId, companyName: { not: null } },
+            distinct: ["companyName"],
+            select: { companyName: true },
+            orderBy: { companyName: "asc" },
+        }),
         db.bankItem.findMany({
             where,
             orderBy: { updatedAt: "desc" },
@@ -55,7 +68,13 @@ export default async function QuestionBankPage({ searchParams }: PageProps) {
                 type: true,
                 source: true,
                 status: true,
-                mockAnswer: { select: { score: true } },
+                nextReview: true,
+                mockAnswer: { select: { score: true, createdAt: true } },
+                attempts: {
+                    orderBy: { createdAt: "desc" },
+                    take: 1,
+                    select: { score: true, createdAt: true },
+                },
             },
         }),
     ]);
@@ -76,15 +95,36 @@ export default async function QuestionBankPage({ searchParams }: PageProps) {
         found = mergeResults(words, meaning).flatMap((id) => byId.get(id) ?? []);
     }
 
-    const counts = { all: found.length, NEW: 0, PRACTISING: 0, CONFIDENT: 0 };
-    for (const item of found) counts[item.status]++;
-    const shown = filters.status ? found.filter((item) => item.status === filters.status) : found;
+    const now = new Date();
+    const counts = {
+        all: found.length,
+        DUE: 0,
+        NEW: 0,
+        PRACTISING: 0,
+        CONFIDENT: 0,
+    };
+    for (const item of found) {
+        counts[item.status]++;
+        if (isDue(item.nextReview, now)) counts.DUE++;
+    }
+    const shown =
+        filters.status === "DUE"
+            ? found.filter((item) => isDue(item.nextReview, now))
+            : filters.status
+              ? found.filter((item) => item.status === filters.status)
+              : found;
+    // Due across the whole bank, whatever the filters, for the panel (AIIN-212)
+    const dueTotal = await db.bankItem.count({
+        where: { userId, nextReview: { lte: now } },
+    });
 
     return (
         <div className="flex flex-col gap-6 sm:gap-8">
             <div className="flex flex-wrap items-end justify-between gap-4">
                 <div className="flex max-w-[680px] flex-col gap-2">
-                    <h1 className="font-display sg-soft text-[32px] font-semibold leading-[1.14] tracking-[-0.025em] text-balance sm:text-[44px]">{t("title")}</h1>
+                    <h1 className="font-display sg-soft text-[32px] font-semibold leading-[1.14] tracking-[-0.025em] text-balance sm:text-[44px]">
+                        {t("title")}
+                    </h1>
                     <p className="text-lg text-sg-muted">{t("description")}</p>
                 </div>
                 <AddQuestion />
@@ -108,50 +148,80 @@ export default async function QuestionBankPage({ searchParams }: PageProps) {
                     </div>
                 </section>
             ) : (
-                <section aria-labelledby="qb-list" className="sg-glass flex min-w-0 flex-col gap-4 rounded-[24px] p-5 sm:rounded-[28px] sm:p-7">
-                    <h2 id="qb-list" className="sr-only">
-                        {t("listLabel")}
-                    </h2>
-                    <BankFilters filters={filters} companies={companyRows.flatMap((c) => (c.companyName ? [c.companyName] : []))} counts={counts} />
-                    {meaningUnavailable && <p className="text-sm text-sg-muted">{t("meaningUnavailable")}</p>}
+                <div className="flex flex-wrap items-start gap-6">
+                    <section
+                        aria-labelledby="qb-list"
+                        className="sg-glass flex min-w-0 flex-[999_1_560px] flex-col gap-4 rounded-[24px] p-5 sm:rounded-[28px] sm:p-7"
+                    >
+                        <h2 id="qb-list" className="sr-only">
+                            {t("listLabel")}
+                        </h2>
+                        <BankFilters filters={filters} companies={companyRows.flatMap((c) => (c.companyName ? [c.companyName] : []))} counts={counts} />
+                        {meaningUnavailable && <p className="text-sm text-sg-muted">{t("meaningUnavailable")}</p>}
 
-                    {shown.length === 0 ? (
-                        <div className="flex flex-col items-start gap-2 rounded-[18px] bg-sg-row px-4 py-5">
-                            <p className="text-sg-muted">{t("noMatches")}</p>
-                            <Link href="/candidate/question-bank" className={textLink}>
-                                {t("clear")}
-                            </Link>
-                        </div>
-                    ) : (
-                        <ul className="flex flex-col gap-2">
-                            {shown.map((item) => (
-                                <li key={item.id}>
-                                    <Link
-                                        href={`/candidate/question-bank/${item.id}`}
-                                        className={cn("flex items-center gap-3 rounded-[18px] bg-sg-row px-4 py-3.5 hover:bg-sg-chip", focusRing)}
-                                    >
-                                        <span className="flex min-w-0 flex-1 flex-col gap-2">
-                                            <span className="font-bold text-pretty break-words">{item.questionText}</span>
-                                            <span className="flex flex-wrap gap-1.5">
-                                                <StatusChip status={item.status} label={t(`statuses.${item.status}`)} />
-                                                <SourceChip source={item.source} label={t(`sources.${item.source}`)} />
-                                                <span className={bankChip}>{t(`types.${item.type as "HR"}`)}</span>
-                                                {item.companyName && <span className={cn(bankChip, "max-w-full truncate")}>{item.companyName}</span>}
-                                                <span className={cn(bankChip, "bg-transparent px-1 text-sg-muted")}>
-                                                    {item.mockAnswer?.score != null ? t("last", { score: item.mockAnswer.score.toFixed(1) }) : t("notPractised")}
+                        {shown.length === 0 ? (
+                            <div className="flex flex-col items-start gap-2 rounded-[18px] bg-sg-row px-4 py-5">
+                                <p className="text-sg-muted">{t("noMatches")}</p>
+                                <Link href="/candidate/question-bank" className={textLink}>
+                                    {t("clear")}
+                                </Link>
+                            </div>
+                        ) : (
+                            <ul className="flex flex-col gap-2">
+                                {shown.map((item) => (
+                                    <li key={item.id}>
+                                        <Link
+                                            href={`/candidate/question-bank/${item.id}`}
+                                            className={cn("flex items-center gap-3 rounded-[18px] bg-sg-row px-4 py-3.5 hover:bg-sg-chip", focusRing)}
+                                        >
+                                            <span className="flex min-w-0 flex-1 flex-col gap-2">
+                                                <span className="font-bold text-pretty break-words">{item.questionText}</span>
+                                                <span className="flex flex-wrap gap-1.5">
+                                                    <StatusChip status={item.status} label={t(`statuses.${item.status}`)} />
+                                                    {isDue(item.nextReview, now) && (
+                                                        <span className={cn(bankChip, "bg-sg-coral/15")}>
+                                                            <Clock className="size-3.5" aria-hidden="true" />
+                                                            {t("dueChip")}
+                                                        </span>
+                                                    )}
+                                                    <SourceChip source={item.source} label={t(`sources.${item.source}`)} />
+                                                    <span className={bankChip}>{t(`types.${item.type as "HR"}`)}</span>
+                                                    {item.companyName && <span className={cn(bankChip, "max-w-full truncate")}>{item.companyName}</span>}
+                                                    <span className={cn(bankChip, "bg-transparent px-1 text-sg-muted")}>
+                                                        {lastScore(item) != null
+                                                            ? t("last", {
+                                                                  score: lastScore(item)!.toFixed(1),
+                                                              })
+                                                            : t("notPractised")}
+                                                    </span>
                                                 </span>
                                             </span>
-                                        </span>
-                                        <ChevronRight className="size-5 shrink-0 text-sg-muted" aria-hidden="true" />
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
+                                            <ChevronRight className="size-5 shrink-0 text-sg-muted" aria-hidden="true" />
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                        <p className="text-[13px] leading-[18px] font-medium text-sg-muted" aria-live="polite">
+                            {t("shown", { shown: shown.length, total })}
+                        </p>
+                    </section>
+                    {dueTotal > 0 && (
+                        <aside
+                            aria-labelledby="qb-due"
+                            className="sg-glass flex min-w-[min(260px,100%)] max-w-full flex-[1_1_300px] flex-col gap-3 rounded-[24px] bg-sg-lavender-soft/40 p-5 sm:rounded-[28px] sm:p-6 lg:max-w-[340px]"
+                        >
+                            <h2 id="qb-due" className="font-display sg-soft text-[22px] leading-7 font-semibold">
+                                {t("due.title")}
+                            </h2>
+                            <p className="text-sg-muted">{t("due.body", { count: dueTotal })}</p>
+                            <Link href="/candidate/question-bank/practise" className={cn(inkButton, "h-12 self-start")}>
+                                <Mic className="size-4" aria-hidden="true" />
+                                {t("due.start", { count: dueTotal })}
+                            </Link>
+                        </aside>
                     )}
-                    <p className="text-[13px] leading-[18px] font-medium text-sg-muted" aria-live="polite">
-                        {t("shown", { shown: shown.length, total })}
-                    </p>
-                </section>
+                </div>
             )}
         </div>
     );

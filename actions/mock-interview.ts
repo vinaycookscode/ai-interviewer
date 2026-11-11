@@ -274,6 +274,8 @@ export async function saveMockAnswer(
     }
 
     let evaluation: { score: number; feedback: string; type?: unknown } = { score: 0, feedback: "" };
+    // Only a real grade moves the question's review schedule in the bank (AIIN-212)
+    let graded = false;
     // A bank question is graded against its model answer and tips (AIIN-208)
     const companyQuestionId = bankIdFor(mockInterview.questions, mockInterview.bankQuestionIds, question);
     const reference = companyQuestionId
@@ -291,6 +293,7 @@ export async function saveMockAnswer(
         const text = response.text();
         const cleanedText = text.replace(/```json/g, "").replace(/```/g, "").trim();
         evaluation = JSON.parse(cleanedText);
+        graded = typeof evaluation.score === "number";
     } catch (error: any) {
         console.error("Error generating feedback:", error);
 
@@ -323,7 +326,7 @@ export async function saveMockAnswer(
         });
 
         // Every answered question lands in the candidate's Question Bank (AIIN-209). The answer is saved either way.
-        await addAnswerToBank(session.user.id!, { id: saved.id, question, role: mockInterview.role, companyQuestionId, gradedType: evaluation.type }).catch((error) =>
+        await addAnswerToBank(session.user.id!, { id: saved.id, question, role: mockInterview.role, companyQuestionId, gradedType: evaluation.type, score: graded ? evaluation.score : null }).catch((error) =>
             console.error("Error adding the answer to the bank:", error)
         );
 

@@ -25,6 +25,14 @@ The Question Bank (epic AIIN-206) collects every question a candidate has faced 
 - **Private.** The approved design says "It stays in your bank only", so nothing is shared. Suggesting a question to Company prep, without the candidate's name, belongs to the moderated path (AIIN-215), as a choice the candidate makes there.
 - **The model answer is labelled AI-written** and stored apart from Company prep's reviewed answers (`aiAnswer`), so the two can't be confused. It's written after the response; if Gemini fails, the item simply has no answer.
 
+### Review schedule (AIIN-212)
+
+- **Leitner boxes, as for flashcards, with the bank's own intervals:** 1, 3, 7, 14 and 30 days, the ones the approved artboard states ("it moves to every 3 days"). A score of 7 or more moves a question up a box, anything lower sends it to box 1 (due tomorrow). Box 3 and above is Confident, which is "two strong answers in a row". Days are IST, due from midnight, as for flashcards. The rules are in `lib/bank/review.ts`.
+- **One rule for every answer.** Answers from the bank (`BankAttempt`) and from regular practice both move the schedule. An answer Gemini couldn't grade doesn't. The migration scheduled existing practised questions from their latest score.
+- **Nothing is saved if grading fails,** so a score is never made up. The candidate keeps their answer to try again.
+- **A daily cap of 30 graded bank answers.** Practising from the bank costs a Gemini call and isn't counted against plan limits the way mock interviews are, so the cap keeps it from being an unlimited free tap. It's enough for any day's due list.
+- **The question being practised is in the URL** (`?id=&step=&of=`). Scoring refreshes the page on the server; without the id, today's list moved on underneath the score.
+
 ### Search (AIIN-210)
 
 - **Word matches, then matches by meaning.** A search matches words in the question, company, topic or tags. It then adds questions whose meaning is close: `BankItem.embedding` holds a `vector(768)` from Gemini `gemini-embedding-001`, compared with cosine distance in Postgres (pgvector), as the [Talent Match ADR](2026-10-26-talent-match-consent-and-computed-score.md) set out.

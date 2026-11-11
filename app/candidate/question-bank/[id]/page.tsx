@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, Clock, Mic, Sparkles } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { BankNotes } from "@/components/question-bank/bank-notes";
 import { SourceChip, StatusChip, bankChip } from "@/components/question-bank/chips";
-import { focusRing } from "@/components/soft-glass/classes";
+import { coralButton, focusRing } from "@/components/soft-glass/classes";
+import { daysUntil, isDue } from "@/lib/bank/review";
 import { panel, panelTitle } from "@/components/jobs/employer-ui";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +36,7 @@ export default async function BankQuestionPage({ params }: PageProps) {
         select: {
             questionText: true,
             status: true,
+            nextReview: true,
             type: true,
             source: true,
             companyName: true,
@@ -43,6 +45,7 @@ export default async function BankQuestionPage({ params }: PageProps) {
             companyQuestionId: true,
             companyQuestion: { select: { answer: true } },
             mockAnswer: { select: { id: true, transcript: true, score: true, feedback: true, createdAt: true, mockInterview: { select: { role: true } } } },
+            attempts: { orderBy: { createdAt: "desc" }, take: 10, select: { transcript: true, score: true, feedback: true, createdAt: true } },
         },
     });
     if (!item) notFound();
@@ -50,12 +53,24 @@ export default async function BankQuestionPage({ params }: PageProps) {
     const t = await getTranslations("QuestionBank");
     const answerSelect = { createdAt: true, score: true, mockInterview: { select: { role: true } } } as const;
     // Every practice of a Company prep question, newest first; a question Gemini wrote was asked once
-    const attempts = item.companyQuestionId
+    const practised = item.companyQuestionId
         ? await db.mockAnswer.findMany({ where: { companyQuestionId: item.companyQuestionId, mockInterview: { userId } }, orderBy: { createdAt: "desc" }, take: 10, select: answerSelect })
         : item.mockAnswer
           ? [item.mockAnswer]
           : [];
-    const latest = item.mockAnswer;
+    // Every attempt, newest first: practice answers and answers given from the bank (AIIN-212 AC2)
+    const attempts = [
+        ...practised.map((a) => ({ createdAt: a.createdAt, score: a.score, from: t("detail.attemptSource", { role: a.mockInterview.role }) })),
+        ...item.attempts.map((a) => ({ createdAt: a.createdAt, score: a.score, from: t("detail.attemptBank") })),
+    ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    // The newest answer, wherever it was given
+    const bankLatest = item.attempts[0];
+    const latest =
+        bankLatest && (!item.mockAnswer || bankLatest.createdAt > item.mockAnswer.createdAt)
+            ? { transcript: bankLatest.transcript, score: bankLatest.score, feedback: bankLatest.feedback, createdAt: bankLatest.createdAt }
+            : item.mockAnswer;
+    const now = new Date();
+    const review = !item.nextReview ? t("detail.notScheduled") : isDue(item.nextReview, now) ? t("detail.dueToday") : t("detail.dueIn", { days: daysUntil(item.nextReview, now) });
     // Company prep's own answer, or one Gemini wrote for a question the candidate added (AIIN-211)
     const strong = item.companyQuestion?.answer ?? item.aiAnswer;
     const strongFrom = item.companyQuestion?.answer
@@ -78,6 +93,10 @@ export default async function BankQuestionPage({ params }: PageProps) {
                     <SourceChip source={item.source} label={t(`sources.${item.source}`)} />
                     {item.companyName && <span className={bankChip}>{item.companyName}</span>}
                 </span>
+                <Link href={`/candidate/question-bank/practise?id=${id}`} className={cn(coralButton, "mt-1 h-12 self-start px-5")}>
+                    <Mic className="size-[18px]" aria-hidden="true" />
+                    {t("detail.practise")}
+                </Link>
             </div>
 
             <div className="flex flex-wrap items-start gap-6">
@@ -131,6 +150,16 @@ export default async function BankQuestionPage({ params }: PageProps) {
                 </div>
 
                 <aside className="flex min-w-[min(260px,100%)] max-w-full flex-[1_1_300px] flex-col gap-4 lg:max-w-[380px]">
+                    <section aria-labelledby="qb-review" className={cn(panel, "bg-sg-lavender-soft/40")}>
+                        <h2 id="qb-review" className={panelTitle}>
+                            {t("detail.nextReview")}
+                        </h2>
+                        <span className="flex items-center gap-2 font-bold">
+                            <Clock className="size-4" aria-hidden="true" />
+                            {review}
+                        </span>
+                        <p className="text-sg-muted">{t("detail.reviewHow")}</p>
+                    </section>
                     {attempts.length > 0 && (
                         <section aria-labelledby="qb-attempts" className={panel}>
                             <h2 id="qb-attempts" className={panelTitle}>
@@ -141,7 +170,7 @@ export default async function BankQuestionPage({ params }: PageProps) {
                                     <li key={i} className="flex items-center justify-between gap-3 border-t border-sg-rule py-3 first:border-t-0 first:pt-0">
                                         <span className="flex min-w-0 flex-col">
                                             <span className="font-bold">{shortDate.format(a.createdAt)}</span>
-                                            <span className="text-[13px] leading-[18px] text-sg-muted">{t("detail.attemptSource", { role: a.mockInterview.role })}</span>
+                                            <span className="text-[13px] leading-[18px] text-sg-muted">{a.from}</span>
                                         </span>
                                         <span className="font-display sg-soft text-[22px] font-semibold">{(a.score ?? 0).toFixed(1)}</span>
                                     </li>

@@ -4,7 +4,9 @@ import { BANK_TYPES, type BankType } from "./items.ts";
 export const BANK_SOURCES = ["MOCK", "INTERVIEW", "COMPANY_PREP", "SELF_ADDED"] as const;
 export type BankSourceFilter = (typeof BANK_SOURCES)[number];
 export const BANK_STATUSES = ["NEW", "PRACTISING", "CONFIDENT"] as const;
-export type BankStatusFilter = (typeof BANK_STATUSES)[number];
+/** The status tabs: what's due for review today (AIIN-212), then each status. */
+export const STATUS_TABS = ["DUE", ...BANK_STATUSES] as const;
+export type BankStatusFilter = (typeof STATUS_TABS)[number];
 
 export interface BankFilters {
     q: string;
@@ -26,7 +28,7 @@ export function parseBankFilters(params: Params): BankFilters {
         source: pick(BANK_SOURCES, one(params.source)),
         type: pick(BANK_TYPES, one(params.type)),
         company: one(params.company).slice(0, 100) || null,
-        status: pick(BANK_STATUSES, one(params.status)),
+        status: pick(STATUS_TABS, one(params.status)),
     };
 }
 

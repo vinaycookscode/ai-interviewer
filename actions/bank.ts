@@ -9,7 +9,8 @@ import { db } from "@/lib/db";
 import { checkFeature } from "@/actions/feature-flags";
 import { FEATURES } from "@/lib/features";
 import { bankKey, bankType, parseNewQuestion } from "@/lib/bank/items";
-import { writeModelAnswer } from "@/lib/bank/server";
+import { gradeBankAnswer, scheduleReview, writeModelAnswer } from "@/lib/bank/server";
+import { istDay, startOfIstDay } from "@/lib/ist";
 
 /**
  * Save a Company prep question to the candidate's Question Bank (AIIN-209). Same access as the company page: company
@@ -94,4 +95,54 @@ export async function deleteBankItem(itemId: string): Promise<{ ok: boolean }> {
     if (!userId || typeof itemId !== "string") return { ok: false };
     const { count } = await db.bankItem.deleteMany({ where: { id: itemId, userId } });
     return { ok: count === 1 };
+}
+
+/** Bank answers a candidate may have graded in one IST day: enough to review everything due, not a free Gemini tap. */
+const DAILY_ATTEMPTS = 30;
+
+export type PractiseResult =
+    | { ok: true; score: number; feedback: string; previous: number | null; inDays: number; status: "PRACTISING" | "CONFIDENT"; againstReference: boolean }
+    | { error: "notFound" | "empty" | "limit" | "unavailable" };
+
+/**
+ * Answer a question from the candidate's own bank (AIIN-212): graded by Gemini against the strong answer when there
+ * is one, kept as a BankAttempt, and the question moved to its next box. Nothing is saved if grading fails.
+ */
+export async function practiseBankItem(itemId: string, transcript: string): Promise<PractiseResult> {
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId || typeof itemId !== "string") return { error: "notFound" };
+    const answer = typeof transcript === "string" ? transcript.trim().slice(0, 5000) : "";
+    if (!answer) return { error: "empty" };
+
+    const item = await db.bankItem.findFirst({
+        where: { id: itemId, userId },
+        select: {
+            id: true,
+            box: true,
+            questionText: true,
+            topic: true,
+            aiAnswer: true,
+            companyQuestion: { select: { answer: true, tips: true } },
+            mockAnswer: { select: { score: true, createdAt: true } },
+            attempts: { orderBy: { createdAt: "desc" }, take: 1, select: { score: true, createdAt: true } },
+        },
+    });
+    if (!item) return { error: "notFound" };
+
+    const today = await db.bankAttempt.count({ where: { bankItem: { userId }, createdAt: { gte: startOfIstDay(istDay(new Date())) } } });
+    if (today >= DAILY_ATTEMPTS) return { error: "limit" };
+
+    const reference = item.companyQuestion?.answer || item.aiAnswer ? { answer: item.companyQuestion?.answer ?? item.aiAnswer, tips: item.companyQuestion?.tips ?? null } : null;
+    const grade = await gradeBankAnswer(item.questionText, answer, item.topic ?? "an entry-level", reference);
+    if (!grade) return { error: "unavailable" };
+
+    // The score to beat: the latest answer before this one, from the bank or from practice
+    const earlier = [item.attempts[0], item.mockAnswer].filter((a): a is { score: number | null; createdAt: Date } => !!a && a.score != null);
+    const previous = earlier.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0]?.score ?? null;
+
+    await db.bankAttempt.create({ data: { bankItemId: item.id, transcript: answer, score: grade.score, feedback: grade.feedback } });
+    const next = await scheduleReview(item, grade.score);
+    revalidatePath("/candidate/question-bank");
+    return { ok: true, score: grade.score, feedback: grade.feedback, previous, inDays: next.inDays, status: next.status, againstReference: !!reference };
 }

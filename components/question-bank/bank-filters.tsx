@@ -14,7 +14,7 @@ interface BankFiltersProps {
     /** Companies in the candidate's bank, for the Company filter. */
     companies: string[];
     /** Items per status for the current search and filters; `all` is their total. */
-    counts: { all: number; NEW: number; PRACTISING: number; CONFIDENT: number };
+    counts: { all: number; DUE: number; NEW: number; PRACTISING: number; CONFIDENT: number };
 }
 
 const select = cn("h-11 rounded-full border border-sg-field-border bg-sg-row px-3.5 text-sm font-semibold", focusRing);
@@ -122,6 +122,7 @@ export function BankFilters({ filters, companies, counts }: BankFiltersProps) {
             </div>
             <div role="group" aria-label={t("status")} className="flex flex-wrap gap-2">
                 {tab(null, t("all", { count: counts.all }))}
+                {tab("DUE", t("statusCount", { label: t("dueFilter"), count: counts.DUE }))}
                 {BANK_STATUSES.map((s) => tab(s, t("statusCount", { label: t(`statuses.${s}`), count: counts[s] })))}
             </div>
         </>

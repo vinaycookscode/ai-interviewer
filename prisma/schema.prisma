@@ -806,11 +806,27 @@ model BankItem {
   mockAnswerId      String?
   mockAnswer        MockAnswer?      @relation(fields: [mockAnswerId], references: [id], onDelete: SetNull)
 
+  attempts     BankAttempt[]
+
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
   @@unique([userId, sourceKey])
   @@index([userId, status])
+  @@index([userId, nextReview])
+}
+
+// An answer given from the Question Bank itself (AIIN-212); answers from mock practice stay MockAnswers
+model BankAttempt {
+  id          String   @id @default(cuid())
+  bankItemId  String
+  bankItem    BankItem @relation(fields: [bankItemId], references: [id], onDelete: Cascade)
+  transcript  String   @db.Text
+  score       Float
+  feedback    String   @db.Text
+  createdAt   DateTime @default(now())
+
+  @@index([bankItemId, createdAt])
 }
 
 // Who changed a problem, what and when (AIIN-107). The name is copied, so the history outlives the account.

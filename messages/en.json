@@ -2949,7 +2949,14 @@
             "notesPlaceholder": "Anything to remember for next time",
             "notesSaved": "Saved",
             "notesFailed": "U couldn’t save your notes. Try again.",
-            "aiWritten": "AI-written for you. Check it against what you know."
+            "aiWritten": "AI-written for you. Check it against what you know.",
+            "practise": "Practise this question",
+            "nextReview": "Next review",
+            "dueToday": "Due today",
+            "dueIn": "In {days, plural, one {# day} other {# days}}",
+            "notScheduled": "Not scheduled yet",
+            "reviewHow": "Score 7 or more and it comes back later each time: in 3 days, then a week. Two strong answers in a row and it's Confident.",
+            "attemptBank": "Question Bank"
         },
         "add": {
             "open": "Add a question",
@@ -2976,6 +2983,46 @@
                 "notes": "Keep your notes under 2,000 characters.",
                 "unauthorized": "Sign in again to add a question.",
                 "failed": "U couldn’t add that question. Try again."
+            }
+        },
+        "dueFilter": "Due today",
+        "due": {
+            "title": "Due today",
+            "body": "{count, plural, one {# question is ready for another go.} other {# questions are ready for another go.}} A few minutes now keeps them fresh for the real thing.",
+            "start": "{count, plural, one {Practise the # due} other {Practise the # due}}"
+        },
+        "dueChip": "Due today",
+        "practise": {
+            "title": "Question Bank",
+            "dueProgress": "Practising {step} of {total} due today",
+            "single": "Practising one question",
+            "done": "Done for now",
+            "answer": "Your answer",
+            "placeholder": "Speak, or type your answer here",
+            "listening": "Listening",
+            "voice": "Answer by voice",
+            "stopVoice": "Stop listening",
+            "score": "Score my answer",
+            "scoring": "U is scoring…",
+            "outOf": "{score} out of 10",
+            "up": "Up from {previous} last time",
+            "down": "Down from {previous} last time",
+            "same": "Same as last time",
+            "first": "Your first score here",
+            "next": "Next review in {days, plural, one {# day} other {# days}} · {status}",
+            "nowConfident": "now Confident",
+            "stillPractising": "still Practising",
+            "againstReference": "Against the strong answer",
+            "whatToFix": "What to fix",
+            "strongAnswer": "See the strong answer",
+            "nextDue": "Next due question",
+            "backToBank": "Back to the bank",
+            "tryAgain": "Try again",
+            "errors": {
+                "empty": "Say or type an answer first.",
+                "limit": "That's 30 answers scored today. Come back tomorrow for more.",
+                "unavailable": "U couldn't score that just now. Your answer is still here: try again in a minute.",
+                "notFound": "That question isn't in your bank any more."
             }
         }
     }

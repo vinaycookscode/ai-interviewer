@@ -6,6 +6,7 @@ test("filters come from the URL, and unknown values are dropped", () => {
     const f = parseBankFilters({ q: " caching ", source: "COMPANY_PREP", type: "HR", company: "Infosys", status: "nope" });
     assert.deepEqual(f, { q: "caching", source: "COMPANY_PREP", type: "HR", company: "Infosys", status: null });
     assert.deepEqual(parseBankFilters({ source: ["MOCK", "X"], type: "SYSTEM" }), { q: "", source: "MOCK", type: null, company: null, status: null });
+    assert.equal(parseBankFilters({ status: "DUE" }).status, "DUE");
 });
 
 test("filters go back into the URL, empty ones left out", () => {
