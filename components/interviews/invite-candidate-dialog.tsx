@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { AlertCircle, Check, CheckCircle2, Copy, Loader2, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { coralButton } from "@/components/soft-glass/classes";
@@ -73,9 +74,17 @@ export function InviteCandidateDialog({ jobId }: { jobId: string }) {
 
     async function copyToClipboard() {
         if (!sent?.link) return;
-        await navigator.clipboard.writeText(sent.link);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        try {
+            await navigator.clipboard.writeText(sent.link);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            // Clipboard refused (permissions, an iframe): select the link so the employer can copy it themselves (AIIN-61)
+            const field = document.getElementById("iv-link") as HTMLInputElement | null;
+            field?.focus();
+            field?.select();
+            toast.error(t("copyFailed"));
+        }
     }
 
     function handleOpenChange(isOpen: boolean) {

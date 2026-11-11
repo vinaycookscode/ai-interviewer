@@ -130,13 +130,15 @@ export function JobForm(props: JobFormProps) {
 
     async function onSubmit(values: FormValues) {
         setIsSaving(true);
+        // A question row added and left empty isn't a question (AIIN-60)
+        const filled = questions.filter((q) => q.text.trim());
         try {
             if (props.mode === "edit") {
-                await updateJob(props.jobId, { ...values, questions: questions.map(({ id, text, type }) => ({ id, text, type })) });
+                await updateJob(props.jobId, { ...values, questions: filled.map(({ id, text, type }) => ({ id, text, type })) });
                 toast.success(t("saved"));
                 router.push(`/dashboard/jobs/${props.jobId}`);
             } else {
-                await createJob({ ...values, questions: questions.map(({ text, type }) => ({ text, type })) });
+                await createJob({ ...values, questions: filled.map(({ text, type }) => ({ text, type })) });
                 router.push("/dashboard");
             }
             router.refresh();

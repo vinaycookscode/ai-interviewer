@@ -94,14 +94,27 @@ export async function updateJob(jobId: string, data: {
         throw new Error("Unauthorized");
     }
 
-    // Verify ownership
+    // Verify ownership, without loading the employer's user row (AIIN-60)
     const job = await db.job.findUnique({
         where: { id: jobId },
-        include: { employer: true },
+        select: { employerId: true, archivedAt: true },
     });
 
-    if (!job || job.employer.id !== userId || job.archivedAt) {
+    if (!job || job.employerId !== userId || job.archivedAt) {
         throw new Error("Unauthorized");
+    }
+
+    // A public endpoint: check the shape and size of what's sent, not only what the form allows
+    const text = (v: unknown, max: number) => typeof v === "string" && v.trim().length > 0 && v.length <= max;
+    const questions = data?.questions ?? [];
+    if (
+        !text(data?.title, 200) ||
+        !text(data?.description, 20_000) ||
+        !Array.isArray(questions) ||
+        questions.length > 50 ||
+        !questions.every((q) => q && text(q.text, 2_000) && (q.type === "TEXT" || q.type === "CODE"))
+    ) {
+        throw new Error("Invalid job details");
     }
 
     // Soft-Delete + Type Support Logic:

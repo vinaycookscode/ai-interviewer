@@ -231,6 +231,7 @@
             "link": "Interview link",
             "copy": "Copy",
             "copied": "Copied",
+            "copyFailed": "Couldn’t copy. The link is selected: press Ctrl+C (⌘C on a Mac).",
             "done": "Done"
         },
         "bulk": {
