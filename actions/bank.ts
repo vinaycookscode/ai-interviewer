@@ -44,6 +44,15 @@ export async function saveToBank(questionId: string): Promise<{ ok: true } | { e
     return { ok: true };
 }
 
+/** The candidate's notes on one of their own bank items (AIIN-210); up to 2,000 characters. */
+export async function saveBankNotes(itemId: string, notes: string): Promise<{ ok: boolean }> {
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId || typeof itemId !== "string" || typeof notes !== "string" || notes.length > 2000) return { ok: false };
+    const { count } = await db.bankItem.updateMany({ where: { id: itemId, userId }, data: { notes: notes.trim() || null } });
+    return { ok: count === 1 };
+}
+
 /** Remove an item from the candidate's own bank. The answers it came from are kept (AIIN-209 AC3). */
 export async function deleteBankItem(itemId: string): Promise<{ ok: boolean }> {
     const session = await auth();

@@ -19,6 +19,14 @@ The Question Bank (epic AIIN-206) collects every question a candidate has faced 
 - **Backfilled in the migration.** Every existing practice answer became an item, and repeats of a bank question collapsed into one item on the latest answer.
 - **Only the links that something fills.** The ticket also listed `answerId` (AI interviews) and `applicationId` (Talent Match). They come with the tickets that fill them; the `INTERVIEW`, `SELF_ADDED` and `RECOMMENDED` sources are already in the enum.
 
+### Search (AIIN-210)
+
+- **Word matches, then matches by meaning.** A search matches words in the question, company, topic or tags. It then adds questions whose meaning is close: `BankItem.embedding` holds a `vector(768)` from Gemini `gemini-embedding-001`, compared with cosine distance in Postgres (pgvector), as the [Talent Match ADR](2026-10-26-talent-match-consent-and-computed-score.md) set out.
+- **Embedded on first search, not on save.** The first search embeds the candidate's questions that have no embedding yet, up to 100 in one call. That covers the backfill and every new item without touching the save paths, and a candidate who never searches costs nothing.
+- **A relative cut-off.** Gemini's similarities sit in a narrow band (0.51–0.70 for "caching" across unrelated and related questions). A match must score at least 0.60 and be within 0.06 of the best match. With that rule "caching" finds cache, memoisation, Redis and CDN questions, but not the behavioural ones. The rule is in `lib/bank/search.ts`, tested with measured scores.
+- **Only the candidate's own items.** The page, the similarity query and every action filter on the signed-in user.
+- **If Gemini fails,** the page shows word matches and says that search by meaning is unavailable.
+
 ## Consequences
 
 **Easier:** The bank is full on day one, with no work from the candidate. Browsing, the review schedule and the prep set (AIIN-210–213) read one table.

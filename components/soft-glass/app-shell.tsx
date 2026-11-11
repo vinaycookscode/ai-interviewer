@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
+    BookOpen,
     Briefcase,
     BriefcaseBusiness,
     Building2,
@@ -75,6 +76,7 @@ const CANDIDATE_MORE: MoreGroup[] = [
         items: [
             { key: "coach", href: "/candidate/coach", icon: MessageCircle, match: under("/candidate/coach") },
             { key: "companyPrep", href: "/candidate/company-prep", icon: Building2, feature: FEATURES.COMPANY_PREP, match: under("/candidate/company-prep") },
+            { key: "questionBank", href: "/candidate/question-bank", icon: BookOpen, match: under("/candidate/question-bank") },
             { key: "flashcards", href: "/candidate/flashcards", icon: Layers, match: under("/candidate/flashcards") },
         ],
     },

@@ -4,7 +4,9 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-Migration `question_bank` adds the `BankItem` table, with the `BankSource` and `BankStatus` enums, and fills it from every existing practice answer.
+Migration `question_bank` adds the `BankItem` table, with the `BankSource` and `BankStatus` enums, and fills it from every existing practice answer. Migration `bank_search` enables the pgvector extension and adds `BankItem.embedding`. Local development now needs pgvector (see `docs/LOCAL_DEVELOPMENT.md`).
+
+- **Browse and search the Question Bank (AIIN-210).** A new page, More → Question Bank, built from the approved artboards, lists every question with its status, source, type, company and last score. Filters for source, type and company, plus status tabs with counts, all live in the URL. Search finds words, and also meaning: "caching" finds a question about CDNs, though the word isn't in it. Each question opens to the latest answer and what to fix, a strong answer when Company prep has one, every attempt with its score, and private notes. A new candidate sees how the bank fills itself, with Start a practice and Browse Company prep. Adding a question, the review schedule and the prep set come next (AIIN-211–213).
 
 - **The Question Bank fills itself (AIIN-209).** Every practice answer now lands in the candidate's Question Bank, with the latest answer's score and feedback. A Company prep question appears once, however often it's saved or practised. Each open Company prep question has a "Save to my bank" button. Once saved, it shows "Saved to your bank", and the card says "In your bank". The practice grader now also says whether a question is HR, technical, coding or aptitude. Deleting a bank item keeps the answers it came from. The bank's own page comes next (AIIN-210). ADR: [One item per question](docs/architecture/2026-11-11-one-bank-item-per-question.md).
 

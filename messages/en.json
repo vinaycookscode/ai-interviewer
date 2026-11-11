@@ -989,6 +989,8 @@
         "coachHint": "Your coach for what to do next",
         "companyPrep": "Company prep",
         "companyPrepHint": "Rounds and questions by company",
+        "questionBank": "Question Bank",
+        "questionBankHint": "Every question you've faced or saved",
         "flashcards": "Flashcards",
         "flashcardsHint": "Short decks, spaced for memory",
         "progress": "Progress",
@@ -2881,5 +2883,72 @@
         "onThisPage": "On this page",
         "inShort": "In short",
         "updatedLabel": "Last updated {date}"
+    },
+    "QuestionBank": {
+        "title": "Question Bank",
+        "description": "Every question you’ve faced or saved, with your answers and what to fix, ready for the next interview.",
+        "listLabel": "Your questions",
+        "search": "Search your questions",
+        "searchPlaceholder": "Search, e.g. “handling conflict”",
+        "searchButton": "Search",
+        "source": "Source",
+        "type": "Type",
+        "company": "Company",
+        "status": "Status",
+        "allSources": "All sources",
+        "anyType": "Any type",
+        "anyCompany": "Any company",
+        "all": "All {count}",
+        "statusCount": "{label} {count}",
+        "sources": {
+            "MOCK": "Practice",
+            "INTERVIEW": "AI interview",
+            "COMPANY_PREP": "Company prep",
+            "SELF_ADDED": "Real interview",
+            "RECOMMENDED": "Recommended"
+        },
+        "sourceFilters": {
+            "MOCK": "Practice",
+            "INTERVIEW": "AI interviews",
+            "COMPANY_PREP": "Company prep",
+            "SELF_ADDED": "Real interviews"
+        },
+        "types": {
+            "HR": "HR",
+            "TECHNICAL": "Technical",
+            "CODING": "Coding",
+            "APTITUDE": "Aptitude"
+        },
+        "statuses": {
+            "NEW": "New",
+            "PRACTISING": "Practising",
+            "CONFIDENT": "Confident"
+        },
+        "last": "Last {score}",
+        "notPractised": "Not practised",
+        "shown": "{shown} of {total} shown",
+        "noMatches": "No questions match. Try another word, or clear the filters.",
+        "clear": "Clear filters",
+        "meaningUnavailable": "Showing word matches only: search by meaning isn’t available right now.",
+        "emptyTitle": "Your bank fills itself",
+        "emptyBody": "Every question you answer in practice lands here with your score and feedback. Save questions from Company prep as you go.",
+        "startPractice": "Start a practice",
+        "browseCompanyPrep": "Browse Company prep",
+        "detail": {
+            "back": "Question Bank",
+            "latestAnswer": "Your latest answer",
+            "answeredOn": "{date} · {score} out of 10",
+            "whatToFix": "What to fix",
+            "noAnswerTitle": "Not practised yet",
+            "noAnswerBody": "Answer it in a practice and your answer, score and feedback will show here.",
+            "strongAnswer": "See a strong answer",
+            "fromCompany": "From Company prep · {company}",
+            "attempts": "Your attempts",
+            "attemptSource": "Practice · {role}",
+            "notes": "Your notes",
+            "notesPlaceholder": "Anything to remember for next time",
+            "notesSaved": "Saved",
+            "notesFailed": "U couldn’t save your notes. Try again."
+        }
     }
 }

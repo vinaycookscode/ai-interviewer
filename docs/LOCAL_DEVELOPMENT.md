@@ -20,7 +20,7 @@ The development branch is shared, so don't use it for tests that create or delet
 
 Use this when you test sign-up, payments or anything destructive. Everything lives in one folder you can delete.
 
-Requires Postgres 17 (`brew install postgresql@17`).
+Requires Postgres 17 with pgvector (`brew install postgresql@17 pgvector`). The Question Bank's search uses the `vector` extension (AIIN-210); Homebrew's pgvector is built for Postgres 17 and 18, not 16.
 
 1. Create the database:
 

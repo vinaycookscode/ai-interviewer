@@ -795,6 +795,8 @@ model BankItem {
   box          Int        @default(0)
   nextReview   DateTime?
   notes        String?    @db.Text
+  // The question's meaning, for search (AIIN-210): Gemini gemini-embedding-001 at 768 dimensions, filled on first search
+  embedding    Unsupported("vector(768)")?
 
   companyQuestionId String?
   companyQuestion   CompanyQuestion? @relation(fields: [companyQuestionId], references: [id], onDelete: SetNull)
