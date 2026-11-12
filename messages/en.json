@@ -2175,6 +2175,46 @@
         "reviewed": {
             "NO_ISSUE": "Reviewed: no issue",
             "CONFIRMED": "Confirmed concern"
+        },
+        "select": {
+            "one": "Select {name}",
+            "all": "Select everyone on this page",
+            "bar": "Selected candidates",
+            "count": "{count} selected",
+            "compare": "Compare",
+            "compareHint": "Pick 2 to 4 candidates",
+            "clear": "Clear the selection"
+        },
+        "compare": {
+            "title": "Compare {count} candidates",
+            "lead": "{job} · the same {count, plural, one {# question} other {# questions}}, side by side.",
+            "back": "{job}",
+            "tableCaption": "Each candidate's score and feedback for every question",
+            "question": "Question {n}",
+            "best": "Best",
+            "notAnswered": "Not answered",
+            "readAnswer": "Read the answer",
+            "inTheirWords": "In their words · Q{n}",
+            "confidence": "Confidence",
+            "cultureFit": "Culture fit",
+            "outOf10": "{score} / 10",
+            "strongest": "Strongest",
+            "weakest": "Weakest",
+            "decision": "Decision",
+            "decisionFor": "Decision for {name}",
+            "saved": "Decision saved",
+            "failed": "Couldn’t save the decision. Try again.",
+            "pickCount": "Pick 2 to 4 candidates",
+            "pickCountBody": "Go back to the job, tick 2 to 4 finished candidates and choose Compare.",
+            "sameJob": "Compare candidates from the same job",
+            "sameJobBody": "These candidates applied to different jobs. Pick 2 to 4 from one job’s list.",
+            "notFinished": "{name} hasn’t finished yet",
+            "notFinishedBody": "Only finished interviews can be compared.",
+            "backToJob": "Back to the job",
+            "confirmTitle": "Shortlist with strong concerns?",
+            "confirmBody": "This interview has strong integrity concerns that haven’t been reviewed. Shortlist anyway?",
+            "confirmCancel": "Cancel",
+            "confirmGo": "Shortlist anyway"
         }
     },
     "Onboarding": {
