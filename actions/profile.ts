@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { userRepository } from "@/lib/repositories/user.repository";
 import { handleError } from "@/lib/error-handler";
 import { GOAL_LIMIT, SKILL_LENGTH, SKILL_LIMIT } from "@/lib/career-path";
+import { ownFileUrl } from "@/lib/storage-key";
 
 export async function updateProfile(data: {
     name?: string;
@@ -21,14 +22,21 @@ export async function updateProfile(data: {
         return { error: "Unauthorized" };
     }
 
+    // A document URL must be a file this user uploaded to their own folder in our bucket (AIIN-216)
+    const own = (url: string | undefined) => (url === undefined ? undefined : ownFileUrl(url, process.env.R2_PUBLIC_URL, session.user!.id!));
+    const urls = { resumeUrl: own(data.resumeUrl), panUrl: own(data.panUrl), aadhaarUrl: own(data.aadhaarUrl) };
+    if ((["resumeUrl", "panUrl", "aadhaarUrl"] as const).some((k) => data[k] !== undefined && !urls[k])) {
+        return { error: "That file isn't yours to attach." };
+    }
+
     try {
         await userRepository.update(session.user.id, {
             name: data.name,
-            resumeUrl: data.resumeUrl,
+            resumeUrl: urls.resumeUrl,
             resumeName: data.resumeName,
-            panUrl: data.panUrl,
+            panUrl: urls.panUrl,
             panName: data.panName,
-            aadhaarUrl: data.aadhaarUrl,
+            aadhaarUrl: urls.aadhaarUrl,
             aadhaarName: data.aadhaarName,
         });
 

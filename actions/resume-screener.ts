@@ -1,5 +1,6 @@
 "use server";
 
+import { ownFileUrl } from "@/lib/storage-key";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { validateUpload, MAX_UPLOAD_BYTES } from "@/lib/upload-validation";
@@ -55,9 +56,8 @@ export async function analyzeResume(formData: FormData) {
         where: { id: session.user.id },
         select: { resumeUrl: true },
     });
-    const bucketUrl = process.env.R2_PUBLIC_URL;
-    const profileResumeUrl =
-        bucketUrl && profile?.resumeUrl?.startsWith(`${bucketUrl}/`) ? profile.resumeUrl : null;
+    // Only their own folder: a stored URL pointing at someone else's file is never fetched (AIIN-216)
+    const profileResumeUrl = ownFileUrl(profile?.resumeUrl, process.env.R2_PUBLIC_URL, session.user.id) ?? null;
 
     if (!(file && file.size > 0) && !profileResumeUrl) {
         return { error: "No resume provided. Please upload a resume or complete your profile." };

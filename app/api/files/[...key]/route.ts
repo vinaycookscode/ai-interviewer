@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { getFromR2 } from "@/lib/r2";
+import { objectKey } from "@/lib/storage-key";
 
 /**
  * Serve a private document after checking who is asking.
@@ -35,16 +36,17 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ key
     const { key } = await params;
     const notFound = NextResponse.json({ error: "Not found" }, { status: 404 });
 
-    if (key.length < 3 || key.some((part) => !part || part === "." || part === "..")) {
-        return notFound;
-    }
+    // Each decoded segment is checked, so "..%2Fu1" (arriving as "../u1") can't be authorized as one folder
+    // and then resolved into another by the storage client (AIIN-216).
+    const objectPath = objectKey(key);
+    if (!objectPath) return notFound;
 
     if (!(await canRead(session.user.id, session.user.role === "ADMIN", key))) {
         return notFound;
     }
 
     try {
-        const file = await getFromR2(key.join("/"));
+        const file = await getFromR2(objectPath);
         if (!file) return notFound;
 
         return new NextResponse(Buffer.from(file.body), {

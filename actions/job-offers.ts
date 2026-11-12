@@ -3,6 +3,7 @@
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { ownFileUrl } from "@/lib/storage-key";
 
 // ============================================
 // JOB OFFERS QUERIES
@@ -10,10 +11,9 @@ import { revalidatePath } from "next/cache";
 
 const OFFER_STATUSES = ["PENDING", "ACCEPTED", "REJECTED", "NEGOTIATING"];
 
-/** An offer letter must be a file this user uploaded to their own folder in our bucket. */
+/** An offer letter must be a file this user uploaded to their own folder in our bucket, with no path tricks (AIIN-216). */
 function ownLetter(url: string | undefined, userId: string): string | undefined {
-    const bucket = process.env.R2_PUBLIC_URL;
-    return url && bucket && url.startsWith(`${bucket}/profiles/${userId}/`) ? url : undefined;
+    return ownFileUrl(url, process.env.R2_PUBLIC_URL, userId);
 }
 
 // The signed-in user's own offers only: server actions are public endpoints (AIIN-135).
