@@ -1082,12 +1082,13 @@
         "signOut": "Sign out",
         "skip": "Skip to content",
         "overview": "Overview",
-        "jobs": "Jobs",
+        "jobs": "Find jobs",
         "candidates": "Candidates",
         "settings": "Settings",
         "newJob": "New job",
         "applications": "My applications",
-        "applicationsHint": "Where each job you applied to stands"
+        "applicationsHint": "Where each job you applied to stands",
+        "jobsHint": "Open jobs, ranked by your match"
     },
     "Today": {
         "metaTitle": "Today",
@@ -3423,7 +3424,8 @@
         "noteOnly": "Note",
         "failed": "Couldn't save. Try again.",
         "saved": "Saved",
-        "closed": "This application is closed. You can still reopen it."
+        "closed": "This application is closed. You can still reopen it.",
+        "theirNote": "Their note"
     },
     "MyApplications": {
         "title": "My applications",
@@ -3461,7 +3463,8 @@
         "emails": "Email me when an application changes",
         "emailsBody": "Only the new stage: never notes or reasons.",
         "noActive": "Nothing active right now",
-        "noActiveBody": "Your earlier applications are under Closed."
+        "noActiveBody": "Your earlier applications are under Closed.",
+        "findJobs": "Find jobs"
     },
     "Discover": {
         "title": "Let employers find me",
@@ -3553,5 +3556,61 @@
         "next": "Next",
         "pageOf": "Page {page} of {pages}",
         "fairness": "A match is worked out from facts candidates confirmed and requirements you confirmed. It never uses name, gender, age, college name or photo."
+    },
+    "Jobs": {
+        "title": "Find jobs",
+        "jobTitle": "Job",
+        "subtitle": "Ranked by how well each job fits the facts you confirmed.",
+        "subtitleNoFacts": "Open jobs, newest first.",
+        "needFacts": "Confirm your profile facts to see how well you match each job.",
+        "checkFacts": "Check your facts",
+        "myApplications": "My applications",
+        "q": "Role or skill",
+        "qPlaceholder": "For example: React",
+        "location": "Location",
+        "locationPlaceholder": "City, or leave empty",
+        "mode": "Work mode",
+        "anyMode": "Any",
+        "modes": {
+            "ONSITE": "On site",
+            "HYBRID": "Hybrid",
+            "REMOTE": "Remote"
+        },
+        "pay": "Pay at least, ₹ lakh",
+        "fits": "Fits my experience",
+        "search": "Search",
+        "countMatch": "{count, plural, one {# job} other {# jobs}} · best match first",
+        "countNew": "{count, plural, one {# job} other {# jobs}} · newest first",
+        "payRange": "₹{min}–{max} L",
+        "anEmployer": "An employer",
+        "missing": "Missing: {skills}",
+        "everyMustHave": "You have every must-have",
+        "match": "match",
+        "applied": "Applied",
+        "view": "View and apply",
+        "noneTitle": "No open jobs match",
+        "noneBody": "Try another skill or place, or clear a filter.",
+        "privacy": "Your match uses only facts you confirmed. Employers don't see that you searched or viewed a job.",
+        "back": "Find jobs",
+        "about": "About the job",
+        "needs": "What it needs",
+        "nice": "{skill}, nice to have",
+        "yearsRange": "{min}–{max} years",
+        "noticeMax": "Notice up to {days} days",
+        "yourMatch": "your match",
+        "applyTitle": "Apply",
+        "appliedTitle": "You've applied",
+        "phone": "Phone, optional",
+        "phoneHint": "So the employer can call you. Saved on your profile.",
+        "note": "A note to the employer, optional",
+        "consent": "Applying shares your name, email and confirmed profile with {company} only.",
+        "apply": "Apply",
+        "appliedToast": "Applied to {company}",
+        "errors": {
+            "notFound": "This job isn't open any more.",
+            "already": "You've already applied to this job.",
+            "phone": "Enter a phone number of 10 to 15 digits, or leave it empty.",
+            "note": "Keep the note under 1,000 characters."
+        }
     }
 }

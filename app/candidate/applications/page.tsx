@@ -8,7 +8,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { cn } from "@/lib/utils";
 import { CLOSED, type Stage } from "@/lib/applications";
-import { focusRing } from "@/components/soft-glass/classes";
+import { coralButton, focusRing } from "@/components/soft-glass/classes";
 import { EmptyState } from "@/components/soft-glass/empty-state";
 import { StageChip } from "@/components/applications/stage-chip";
 import { ApplicationEmailsSwitch, WithdrawApplication } from "@/components/applications/my-application-actions";
@@ -86,6 +86,9 @@ export default async function MyApplicationsPage({ searchParams }: { searchParam
             <div className="flex flex-col gap-2">
                 <h1 className="font-display sg-soft text-[32px] leading-[1.14] font-semibold tracking-[-0.025em] text-balance sm:text-[44px]">{t("title")}</h1>
                 <p className="max-w-[640px] text-lg text-sg-muted">{t("subtitle")}</p>
+                <Link href="/candidate/jobs" className={cn(coralButton, "mt-2 h-12 self-start px-6 text-base")}>
+                    {t("findJobs")}
+                </Link>
             </div>
             <nav aria-label={t("show")} className="flex flex-wrap gap-2">
                 <Link href="/candidate/applications" aria-current={!showClosed ? "page" : undefined} className={tab(!showClosed)}>

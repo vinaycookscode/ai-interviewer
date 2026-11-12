@@ -36,6 +36,7 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
             source: true,
             createdAt: true,
             candidateId: true,
+            coverNote: true,
             job: { select: { id: true, title: true } },
             events: {
                 orderBy: { createdAt: "desc" },
@@ -79,6 +80,12 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
             />
             <div className="grid items-start gap-6 lg:grid-cols-2">
                 <section aria-labelledby="ap-rounds" className={cn(panel, "gap-3")}>
+                    {app.coverNote && !invited && (
+                        <>
+                            <h2 className={panelTitle}>{t("theirNote")}</h2>
+                            <p className="rounded-[18px] bg-sg-row px-4 py-3 break-words whitespace-pre-line">{app.coverNote}</p>
+                        </>
+                    )}
                     <h2 id="ap-rounds" className={panelTitle}>
                         {t("rounds")}
                     </h2>

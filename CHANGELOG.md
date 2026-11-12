@@ -20,6 +20,13 @@ Migration `job_matches` adds `JobMatch` and `MatchTask`. A new daily cron, `/api
 
   It shows 60% and above by default, or 50, 70 or 80%, or everyone who passes the job's filters, so the ranking never hides anyone. You can filter by experience and city, 12 to a page. There's no filter on name, gender, age or college, and a card never shows a name, contact, employer, college or file. Jobs without confirmed requirements say how to get matches. Invitations come next (AIIN-201).
 
+- **Find jobs and apply directly (AIIN-202).** More → Find jobs lists open jobs whose requirements are confirmed, from the approved artboards. Closed, paused and draft jobs never appear.
+  - **Search** by role or skill ("js" finds JavaScript), place (which also includes remote jobs), work mode, minimum pay and "fits my experience".
+  - **Sorted by your own match %**, with "You have every must-have" or what's missing. Without confirmed facts, it's newest first, with a nudge to confirm them.
+  - **Applying:** a job's page shows its description, needs and your match. Apply takes an optional phone (saved on your profile) and note, and creates an application at Applied, marked "Applied from job search". Your note shows on the employer's application page.
+  - **No opt-in needed:** applying shares your name with that one employer.
+  - **My applications** gets a coral "Find jobs".
+
 ## 2026-11-12, second release
 
 Migration `job_requirements` adds `Job.status` (`JobStatus`), the requirement columns and `WorkMode`, and marks existing jobs OPEN (CLOSED if archived). Migration `resume_facts` adds the resume fact columns to `CandidateProfile`. Migration `match_embeddings` adds `Job.embedding` and `CandidateProfile.embedding` (`vector(768)`) with HNSW indexes. Migration `applications` adds `Application` and `ApplicationEvent` with the `ApplicationStage` and `ApplicationSource` enums, and creates an application for every job and candidate that already has an AI interview. Migration `my_applications` adds `Application.candidateSeenAt` and `User.applicationEmails`. Migration `discoverable` adds `CandidateProfile.discoverable` and `discoverableSince`, and the `CandidateBlock` table.
