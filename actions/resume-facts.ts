@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { embedProfile } from "@/lib/match-embeddings";
+import { matchNow } from "@/lib/matching";
 import { Prisma } from "@prisma/client";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
@@ -91,7 +92,10 @@ export async function saveMyFacts(input: {
     };
     await db.candidateProfile.upsert({ where: { userId }, update: data, create: { userId, ...data } });
     // Embedded for matching once the response is sent (AIIN-194)
-    after(() => embedProfile(userId));
+    after(async () => {
+        await embedProfile(userId);
+        await matchNow("PROFILE", userId);
+    });
     revalidatePath("/candidate/profile/facts");
     revalidatePath("/candidate/profile");
     return { ok: true };

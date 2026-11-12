@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { after } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { matchNow, removeProfileMatches } from "@/lib/matching";
 
 async function candidate() {
     const session = await auth();
@@ -28,6 +30,9 @@ export async function setDiscoverable(on: boolean): Promise<{ ok: true } | { err
         update: { discoverable: on, discoverableSince: on ? new Date() : null },
         create: { userId, discoverable: on, discoverableSince: on ? new Date() : null },
     });
+    // Off: out of every match list now. On: matched once the response is sent (AIIN-199)
+    if (on) after(() => matchNow("PROFILE", userId));
+    else await removeProfileMatches(userId);
     refresh();
     return { ok: true };
 }
@@ -54,6 +59,7 @@ export async function blockEmployer(employerId: string): Promise<{ ok: true } | 
     const employer = await db.user.findFirst({ where: { id: employerId, role: "EMPLOYER" }, select: { id: true } });
     if (!employer) return { error: "notFound" };
     await db.candidateBlock.upsert({ where: { candidateId_employerId: { candidateId: userId, employerId } }, update: {}, create: { candidateId: userId, employerId } });
+    await removeProfileMatches(userId, employerId);
     refresh();
     return { ok: true };
 }

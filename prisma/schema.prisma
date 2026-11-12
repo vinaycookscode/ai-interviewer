@@ -334,6 +334,7 @@ model Job {
 
   shares     ShortlistShare[]
   applications Application[]
+  matches    JobMatch[]
   @@index([employerId])
   @@index([status])
 }
@@ -1209,6 +1210,7 @@ model CandidateProfile {
   resumeFacts      Json?
   factsConfirmedAt DateTime?
   // "Let employers find me" (AIIN-198): off for everyone until they turn it on
+  matches           JobMatch[]
   discoverable      Boolean   @default(false)
   discoverableSince DateTime?
   // Confirmed facts and the resume, with personal details removed, for matching (AIIN-194)
@@ -1405,4 +1407,35 @@ model CandidateBlock {
 
   @@id([candidateId, employerId])
   @@index([employerId])
+}
+
+// A candidate's match for a job (AIIN-199): deterministic score and parts, reasons, and which scorer made it.
+model JobMatch {
+  id                 String           @id @default(cuid())
+  jobId              String
+  job                Job              @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidateProfileId String
+  candidateProfile   CandidateProfile @relation(fields: [candidateProfileId], references: [id], onDelete: Cascade)
+  employerId         String
+  score              Int
+  parts              Json
+  reasons            String[]
+  scorerVersion      Int
+  computedAt         DateTime         @default(now())
+
+  @@unique([jobId, candidateProfileId])
+  @@index([jobId, score])
+  @@index([employerId])
+}
+
+// Match work still to do (AIIN-199): run right after the change that queued it, and retried by the daily cron.
+model MatchTask {
+  id        String    @id @default(cuid())
+  kind      String // JOB or PROFILE
+  targetId  String
+  attempts  Int       @default(0)
+  lockedAt  DateTime?
+  createdAt DateTime  @default(now())
+
+  @@unique([kind, targetId])
 }

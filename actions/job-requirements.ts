@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { embedJob } from "@/lib/match-embeddings";
+import { matchNow } from "@/lib/matching";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { getGeminiModelInstance } from "@/lib/gemini";
@@ -52,7 +53,11 @@ export async function saveJobRequirements(jobId: string, input: unknown, publish
         data: { ...checked.ok, requirementsConfirmedAt: new Date(), ...(publish === true ? { status: "OPEN" } : {}) },
     });
     // Embedded for matching once the response is sent (AIIN-194)
-    after(() => embedJob(job.id));
+    // ...then matched straight away, so its matches exist within seconds (AIIN-199)
+    after(async () => {
+        await embedJob(job.id);
+        await matchNow("JOB", job.id);
+    });
     revalidatePath(`/dashboard/jobs/${job.id}`);
     revalidatePath("/dashboard/jobs");
     return { ok: true };

@@ -2,6 +2,17 @@
 
 Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning behind larger changes is in `docs/architecture/`.
 
+## Unreleased
+
+Migration `job_matches` adds `JobMatch` and `MatchTask`. A new daily cron, `/api/cron/matches`, needs `CRON_SECRET` like the others.
+
+- **Matching engine (AIIN-199).** Every open job with confirmed requirements now has matches. Matches come only from findable candidates who passed the job's place and experience filters, ranked by how close their confirmed facts are to the job. Each match stores:
+  - a score that's always the same for the same job and profile: must-haves 45%, relevance of past work 25%, experience 20%, nice-to-haves 10%, rounded to 5;
+  - its four parts;
+  - three reasons, written by AI for each job's top 20 and based on confirmed facts only, with any missing must-have always named.
+
+  A new job's matches are ready within seconds of confirming its requirements. A candidate who confirms facts or switches findable on is matched straight away, and one who switches off or blocks an employer leaves those lists at once. A daily job retries any failures and refreshes matches older than a week. No match reads a name, gender, age or college. See `docs/architecture/2026-11-12-match-scoring.md`.
+
 ## 2026-11-12, second release
 
 Migration `job_requirements` adds `Job.status` (`JobStatus`), the requirement columns and `WorkMode`, and marks existing jobs OPEN (CLOSED if archived). Migration `resume_facts` adds the resume fact columns to `CandidateProfile`. Migration `match_embeddings` adds `Job.embedding` and `CandidateProfile.embedding` (`vector(768)`) with HNSW indexes. Migration `applications` adds `Application` and `ApplicationEvent` with the `ApplicationStage` and `ApplicationSource` enums, and creates an application for every job and candidate that already has an AI interview. Migration `my_applications` adds `Application.candidateSeenAt` and `User.applicationEmails`. Migration `discoverable` adds `CandidateProfile.discoverable` and `discoverableSince`, and the `CandidateBlock` table.
