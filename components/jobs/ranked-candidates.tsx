@@ -26,7 +26,7 @@ const decisionChip: Record<HiringDecision, string> = {
 const th = "px-3 py-2.5 text-left text-[13px] font-bold whitespace-nowrap text-sg-muted";
 const one = (n: number | null) => (n === null ? null : n.toFixed(1));
 
-function DecisionChip({ decision, label }: { decision: HiringDecision; label: string }) {
+export function DecisionChip({ decision, label }: { decision: HiringDecision; label: string }) {
     const Icon = DECISION_ICONS[decision];
     return (
         <span className={cn("inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-bold whitespace-nowrap", decisionChip[decision])}>

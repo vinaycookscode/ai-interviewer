@@ -1,5 +1,5 @@
 // A job's candidates ranked by score, with filters and paging from the URL (AIIN-158).
-import type { HiringDecision, IntegrityReviewOutcome, IntegrityVerdict, Prisma } from "@prisma/client";
+import { Prisma, type HiringDecision, type IntegrityReviewOutcome, type IntegrityVerdict } from "@prisma/client";
 import { db } from "@/lib/db";
 import { PAGE_SIZE, type RankingFilters, type Sort } from "@/lib/candidate-filters";
 
@@ -113,4 +113,60 @@ export async function loadRanking(jobId: string, f: RankingFilters) {
 export function unfinishedWhere(jobId: string, f: RankingFilters): Prisma.InterviewWhereInput {
     const status = f.status === "in_progress" ? "IN_PROGRESS" : f.status === "pending" ? "PENDING" : undefined;
     return { jobId, ...(status ? { status } : { status: { in: ["PENDING", "IN_PROGRESS"] } }), ...searchWhere(f.q) };
+}
+
+export interface JobRanking {
+    id: string;
+    title: string;
+    finished: number;
+    unfinished: number;
+    rows: { id: string; rank: number; name: string | null; email: string; score: number | null; decision: HiringDecision }[];
+}
+
+/**
+ * Every open job of the employer with its top finished candidates, for the Candidates page (AIIN-217). Ranks are each
+ * job's own, computed over all its finished interviews exactly as on the job page, so a filter never changes a rank.
+ * Jobs with the latest finish come first.
+ */
+export async function loadRankingByJob(employerId: string, f: { q: string; decision: HiringDecision | null }, perJob: number): Promise<JobRanking[]> {
+    const jobs = await db.job.findMany({ where: { employerId, archivedAt: null }, orderBy: { createdAt: "desc" }, select: { id: true, title: true } });
+    if (!jobs.length) return [];
+    const jobIds = jobs.map((j) => j.id);
+
+    const [ranks, matching, unfinished] = await Promise.all([
+        db.$queryRaw<{ id: string; jobId: string; rank: bigint; completedAt: Date | null }[]>`
+            SELECT "id", "jobId", "completedAt",
+                   ROW_NUMBER() OVER (PARTITION BY "jobId" ORDER BY "score" DESC NULLS LAST, "completedAt" ASC NULLS LAST, "id" ASC) AS "rank"
+            FROM "Interview"
+            WHERE "jobId" IN (${Prisma.join(jobIds)}) AND "status" = 'COMPLETED'`,
+        db.interview.findMany({
+            where: { jobId: { in: jobIds }, status: "COMPLETED", ...(f.decision ? { decision: f.decision } : {}), ...searchWhere(f.q) },
+            select: { id: true, jobId: true, score: true, decision: true, candidate: { select: { name: true, email: true } } },
+        }),
+        db.interview.groupBy({ by: ["jobId"], where: { jobId: { in: jobIds }, status: { in: ["PENDING", "IN_PROGRESS"] } }, _count: { _all: true } }),
+    ]);
+
+    const rankOf = new Map(ranks.map((r) => [r.id, Number(r.rank)]));
+    const finishedBy = new Map<string, number>();
+    const latestBy = new Map<string, number>();
+    for (const r of ranks) {
+        finishedBy.set(r.jobId, (finishedBy.get(r.jobId) ?? 0) + 1);
+        const t = r.completedAt?.getTime() ?? 0;
+        if (t > (latestBy.get(r.jobId) ?? 0)) latestBy.set(r.jobId, t);
+    }
+    const unfinishedBy = new Map(unfinished.map((u) => [u.jobId, u._count._all]));
+
+    return jobs
+        .map((job) => ({
+            id: job.id,
+            title: job.title,
+            finished: finishedBy.get(job.id) ?? 0,
+            unfinished: unfinishedBy.get(job.id) ?? 0,
+            rows: matching
+                .filter((m) => m.jobId === job.id)
+                .map((m) => ({ id: m.id, rank: rankOf.get(m.id) ?? 0, name: m.candidate.name, email: m.candidate.email, score: m.score, decision: m.decision }))
+                .sort((a, b) => a.rank - b.rank)
+                .slice(0, perJob),
+        }))
+        .sort((a, b) => (latestBy.get(b.id) ?? 0) - (latestBy.get(a.id) ?? 0));
 }

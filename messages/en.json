@@ -129,7 +129,7 @@
         },
         "candidates": {
             "title": "Candidates",
-            "subtitle": "Everyone you’ve invited, across every job.",
+            "subtitle": "The best finished candidates for each job, ranked as on the job’s own page.",
             "lockedTitle": "Candidate search is switched off",
             "lockedBody": "An administrator has turned this feature off. Your candidates are still on each job’s page.",
             "emptyTitle": "No candidates yet",
@@ -169,7 +169,23 @@
             "copyLinkAria": "Copy {name}’s interview link",
             "copied": "Copied",
             "linkCopied": "Interview link copied",
-            "linkCopyFailed": "Couldn’t copy the link. Try again."
+            "linkCopyFailed": "Couldn’t copy the link. Try again.",
+            "decisionGroup": "Decision",
+            "everyone": "Everyone",
+            "topNote": "Top {count} per job, jobs with the latest finish first. Search and the decision filter apply to every job.",
+            "jobMeta": "{finished} finished · {unfinished} not finished yet",
+            "jobMetaNone": "No one has finished yet · {unfinished} invited",
+            "fullRanking": "See the full ranking",
+            "openJob": "Open the job",
+            "ranksAppear": "Ranks appear here as candidates finish.",
+            "tableCaption": "Top candidates for {job}, ranked by score",
+            "colRank": "Rank",
+            "colDecision": "Decision",
+            "viewReport": "View report",
+            "viewReportAria": "View {name}’s report",
+            "noOneMatches": "No one matches these filters.",
+            "clearFilters": "Clear filters",
+            "rank": "Rank {rank}"
         },
         "deleteCandidate": {
             "trigger": "Delete this candidate",
