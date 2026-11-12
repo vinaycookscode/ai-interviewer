@@ -97,6 +97,8 @@ model User {
 
   // The Monday report email; off from the unsubscribe link or the profile (AIIN-103)
   weeklyReportEmails Boolean @default(true)
+  // An email when an employer moves one of their applications; off until they turn it on (AIIN-197)
+  applicationEmails  Boolean @default(false)
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -1360,6 +1362,8 @@ model Application {
   onHold          Boolean           @default(false)
   coverNote       String?
   rejectionReason String?
+  // When the candidate last looked at My applications, for "Updated" (AIIN-197)
+  candidateSeenAt DateTime?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   events          ApplicationEvent[]

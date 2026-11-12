@@ -1084,7 +1084,9 @@
         "jobs": "Jobs",
         "candidates": "Candidates",
         "settings": "Settings",
-        "newJob": "New job"
+        "newJob": "New job",
+        "applications": "My applications",
+        "applicationsHint": "Where each job you applied to stands"
     },
     "Today": {
         "metaTitle": "Today",
@@ -3421,5 +3423,43 @@
         "failed": "Couldn't save. Try again.",
         "saved": "Saved",
         "closed": "This application is closed. You can still reopen it."
+    },
+    "MyApplications": {
+        "title": "My applications",
+        "subtitle": "Every job you've applied to, and where it stands.",
+        "show": "Show",
+        "active": "Active {count}",
+        "closed": "Closed {count}",
+        "stages": {
+            "INVITED": "Invited",
+            "APPLIED": "Applied",
+            "SCREENING": "In review",
+            "INTERVIEW": "Interviewing",
+            "OFFER": "Offer",
+            "HIRED": "Selected",
+            "REJECTED": "Not selected",
+            "WITHDRAWN": "Withdrawn",
+            "DECLINED": "Declined"
+        },
+        "round": "AI interview · {when}",
+        "since": "Since {date}",
+        "updated": "Updated",
+        "prep": "Open the prep set",
+        "anEmployer": "An employer",
+        "withdraw": "Withdraw",
+        "withdrawTitle": "Withdraw from {job}?",
+        "withdrawBody": "The employer will see that you withdrew, and can't move your application any more. You can't undo this.",
+        "keep": "Keep it",
+        "confirmWithdraw": "Withdraw",
+        "withdrawn": "Withdrawn",
+        "failed": "Couldn't save. Try again.",
+        "noneTitle": "No applications yet",
+        "noneBody": "When an employer invites you to an interview, or you apply to a job, it shows here.",
+        "noClosed": "Nothing closed yet",
+        "noClosedBody": "Applications that end, or that you withdraw from, show here.",
+        "emails": "Email me when an application changes",
+        "emailsBody": "Only the new stage: never notes or reasons.",
+        "noActive": "Nothing active right now",
+        "noActiveBody": "Your earlier applications are under Closed."
     }
 }
