@@ -305,11 +305,38 @@ model Job {
   // Set instead of deleting once a job has interviews, so candidates' history is kept (AIIN-188)
   archivedAt DateTime?
 
+  // Talent Match requirements (AIIN-192): proposed by AI, confirmed by the employer. OPEN needs a confirmed must-have.
+  status                  JobStatus @default(DRAFT)
+  mustHaveSkills          String[]  @default([])
+  niceToHaveSkills        String[]  @default([])
+  minYears                Int?
+  maxYears                Int?
+  location                String?
+  workMode                WorkMode?
+  salaryMin               Int? // rupees a year
+  salaryMax               Int?
+  maxNoticeDays           Int?
+  requirementsConfirmedAt DateTime?
+
   questions  Question[]
   interviews Interview[]
 
   shares     ShortlistShare[]
   @@index([employerId])
+  @@index([status])
+}
+
+enum JobStatus {
+  DRAFT
+  OPEN
+  PAUSED
+  CLOSED
+}
+
+enum WorkMode {
+  ONSITE
+  HYBRID
+  REMOTE
 }
 
 enum QuestionType {

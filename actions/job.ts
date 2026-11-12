@@ -44,7 +44,7 @@ export async function createJob(data: {
     });
 
     revalidatePath("/dashboard");
-    return job;
+    return { id: job.id };
 }
 
 export async function deleteJob(jobId: string) {

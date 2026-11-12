@@ -2,6 +2,12 @@
 
 Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning behind larger changes is in `docs/architecture/`.
 
+## Unreleased
+
+Migration `job_requirements` adds `Job.status` (`JobStatus`), the requirement columns and `WorkMode`, and marks existing jobs OPEN (CLOSED if archived).
+
+- **Job requirements, proposed by AI and confirmed by you (AIIN-192).** After creating a job, step 2 is its requirements, built from the approved "Job requirements" artboards. U reads the description and proposes must-have and nice-to-have skills, years, work mode, location, pay and notice period. You mark each skill, add or remove skills, and confirm. Nothing proposed counts until you confirm. A job opens for Talent Match only with at least one must-have. Skills are named one way ("JS" becomes JavaScript). If U can't answer, you fill it in by hand. Older jobs show "Add requirements to get matches". AI interviews work as before, whatever the job's status. See `docs/architecture/2026-11-12-job-requirements-and-status.md`.
+
 ## 2026-11-12, release
 
 Migration `question_bank` adds the `BankItem` table, with the `BankSource` and `BankStatus` enums, and fills it from every existing practice answer. Migration `bank_search` enables the pgvector extension and adds `BankItem.embedding`. Local development now needs pgvector (see `docs/LOCAL_DEVELOPMENT.md`). Migration `bank_ai_answer` adds `BankItem.aiAnswer`. Migration `bank_review` adds the `BankAttempt` table and schedules every question that already has a practice score. Migration `prep_sets` adds `PrepSet` and `PrepSetItem`. Migration `shortlist_shares` adds `ShortlistShare`.

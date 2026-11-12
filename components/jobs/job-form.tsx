@@ -138,8 +138,9 @@ export function JobForm(props: JobFormProps) {
                 toast.success(t("saved"));
                 router.push(`/dashboard/jobs/${props.jobId}`);
             } else {
-                await createJob({ ...values, questions: filled.map(({ text, type }) => ({ text, type })) });
-                router.push("/dashboard");
+                const job = await createJob({ ...values, questions: filled.map(({ text, type }) => ({ text, type })) });
+                // Step 2: the requirements U proposes from the description (AIIN-192)
+                router.push(`/dashboard/jobs/${job.id}/requirements?new=1`);
             }
             router.refresh();
         } catch (error) {

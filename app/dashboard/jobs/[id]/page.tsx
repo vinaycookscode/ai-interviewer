@@ -41,6 +41,7 @@ export default async function JobDetailsPage({
             requireResume: true,
             requireAadhar: true,
             requirePAN: true,
+            requirementsConfirmedAt: true,
             questions: { where: { archived: false }, orderBy: { createdAt: "asc" }, select: { id: true, text: true } },
             // Everyone invited, for the bulk invite's duplicate check
             interviews: { select: { candidate: { select: { email: true } } } },
@@ -85,6 +86,7 @@ export default async function JobDetailsPage({
     const requirements = { requireResume: job.requireResume, requireAadhar: job.requireAadhar, requirePAN: job.requirePAN };
     const docs = [job.requireResume && t("docResume"), job.requirePAN && t("docPan"), job.requireAadhar && t("docAadhaar")].filter(Boolean) as string[];
     const tList = await getTranslations("Shortlist");
+    const tReq = await getTranslations("Employer.requirements");
     const tVerdict = await getTranslations("Integrity.verdicts");
     // What the export will hold, in words, from the list's own filters (AIIN-162)
     const exportFilters = [
@@ -111,6 +113,9 @@ export default async function JobDetailsPage({
                             <Link href={`/dashboard/jobs/${job.id}/edit`} className={cn(outlineButton, "h-12 px-[18px] text-[15px]")}>
                                 {t("edit")}
                             </Link>
+                            <Link href={`/dashboard/jobs/${job.id}/requirements`} className={cn(outlineButton, "h-12 px-[18px] text-[15px]")}>
+                                {tReq("edit")}
+                            </Link>
                             <BulkInviteDialog jobId={job.id} invitedEmails={invitedEmails} />
                             <InviteCandidateDialog jobId={job.id} />
                         </>
@@ -124,6 +129,20 @@ export default async function JobDetailsPage({
                     </Chip>
                 </div>
             </div>
+
+            {!job.requirementsConfirmedAt && (
+                <section aria-labelledby="req-banner" className="flex flex-wrap items-center justify-between gap-3 rounded-[22px] bg-sg-lavender-soft px-5 py-4 text-sg-lavender-ink">
+                    <span className="flex min-w-0 flex-[1_1_260px] flex-col">
+                        <h2 id="req-banner" className="font-bold">
+                            {tReq("banner")}
+                        </h2>
+                        <span className="text-sm">{tReq("bannerBody")}</span>
+                    </span>
+                    <Link href={`/dashboard/jobs/${job.id}/requirements`} className={cn(outlineButton, "h-11 border-sg-lavender-ink text-[15px] text-sg-lavender-ink")}>
+                        {tReq("bannerCta")}
+                    </Link>
+                </section>
+            )}
 
             <section id="candidates" aria-labelledby="candidates-title" className={cn(panel, "scroll-mt-24 gap-4 sm:p-6")}>
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
