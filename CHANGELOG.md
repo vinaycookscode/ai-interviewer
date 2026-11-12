@@ -2,7 +2,7 @@
 
 Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning behind larger changes is in `docs/architecture/`.
 
-## Unreleased
+## 2026-11-12, release
 
 Migration `question_bank` adds the `BankItem` table, with the `BankSource` and `BankStatus` enums, and fills it from every existing practice answer. Migration `bank_search` enables the pgvector extension and adds `BankItem.embedding`. Local development now needs pgvector (see `docs/LOCAL_DEVELOPMENT.md`). Migration `bank_ai_answer` adds `BankItem.aiAnswer`. Migration `bank_review` adds the `BankAttempt` table and schedules every question that already has a practice score. Migration `prep_sets` adds `PrepSet` and `PrepSetItem`. Migration `shortlist_shares` adds `ShortlistShare`.
 
