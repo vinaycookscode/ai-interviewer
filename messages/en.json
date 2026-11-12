@@ -2263,6 +2263,36 @@
             "notEmailed": "The email to {email} didn’t send. Their decision is saved.",
             "retry": "Retry",
             "retried": "Sent."
+        },
+        "share": {
+            "open": "Share shortlist",
+            "title": "Share the shortlist",
+            "body": "Anyone with the link can read the candidates’ scores, feedback and transcripts, without signing in. They never see emails, phone numbers, documents, integrity evidence or your notes.",
+            "label": "Who it’s for",
+            "labelPlaceholder": "For example: Anita, engineering",
+            "include": "Include",
+            "onlyShortlisted": "Shortlisted only ({count})",
+            "withOnHold": "Shortlisted and on hold ({count})",
+            "duration": "Link works for",
+            "days": "{count, plural, one {# day} other {# days}}",
+            "create": "Create link",
+            "creating": "Creating…",
+            "created": "Link created. Copy it now: it won’t be shown again.",
+            "link": "Link",
+            "copy": "Copy",
+            "copied": "Copied",
+            "copyFailed": "Couldn’t copy. The link is selected: press Ctrl+C (⌘C on a Mac).",
+            "active": "Active links",
+            "noActive": "No active links.",
+            "forLabel": "For {label}",
+            "expires": "Expires {date}",
+            "opened": "Opened {count, plural, one {# time} other {# times}} · last {when}",
+            "notOpened": "Not opened yet",
+            "turnOff": "Turn off",
+            "turnOffAria": "Turn off the link for {label}",
+            "close": "Close",
+            "labelRequired": "Say who it’s for, up to 80 characters.",
+            "failed": "Couldn’t do that. Try again."
         }
     },
     "Onboarding": {
@@ -3167,5 +3197,29 @@
             "panelNew": "{job} at {company}. Get questions picked for it.",
             "open": "Open the prep set"
         }
+    },
+    "SharedShortlist": {
+        "metaTitle": "Shared shortlist",
+        "readOnly": "Read-only.",
+        "sharedBy": "Shared by {employer} · works until {date}",
+        "count": "Shortlist · {count, plural, one {# candidate} other {# candidates}}",
+        "listLabel": "Shortlisted candidates",
+        "strongest": "Strongest: {skill}",
+        "reportLabel": "Report",
+        "outOf10": "/ 10",
+        "readAnswer": "Read the answer",
+        "confidence": "Confidence",
+        "cultureFit": "Culture fit",
+        "strengths": "Strengths",
+        "watchFor": "Watch for",
+        "none": "—",
+        "notShared": "Contact details, documents and {employer}’s notes aren’t shared. To talk to a candidate, ask {employer}.",
+        "empty": "No one is shortlisted yet. Check back later.",
+        "expiredTitle": "This link has expired",
+        "expiredBody": "Ask the person who shared it for a new one.",
+        "revokedTitle": "This link was turned off",
+        "revokedBody": "{employer} turned it off. Ask them for a new one if you still need it.",
+        "tooManyTitle": "Too many tries",
+        "tooManyBody": "Wait a minute and open the link again."
     }
 }

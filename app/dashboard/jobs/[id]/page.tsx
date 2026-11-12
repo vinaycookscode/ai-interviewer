@@ -10,6 +10,7 @@ import { BulkInviteDialog } from "@/components/interviews/bulk-invite-dialog";
 import { CandidateList } from "@/components/jobs/candidate-list";
 import { Chip, PageHeading, caption, formatShortDate, glassButton, outlineButton, panel, panelTitle } from "@/components/jobs/employer-ui";
 import { RankedCandidates } from "@/components/jobs/ranked-candidates";
+import { ShareShortlist } from "@/components/jobs/share-shortlist";
 import { RankedFilters } from "@/components/jobs/ranked-filters";
 import { EmptyState } from "@/components/soft-glass/empty-state";
 import { hasFilters, parseFilters } from "@/lib/candidate-filters";
@@ -50,7 +51,7 @@ export default async function JobDetailsPage({
     // Ranked finished interviews, and the unfinished ones below them (AIIN-158)
     const showRanked = !filters.status || filters.status === "completed";
     const showUnfinished = filters.status !== "completed";
-    const [ranking, unfinished] = await Promise.all([
+    const [ranking, unfinished, decisionCounts, shares] = await Promise.all([
         showRanked ? loadRanking(job.id, filters) : null,
         showUnfinished
             ? db.interview.findMany({
@@ -69,7 +70,15 @@ export default async function JobDetailsPage({
                 },
               })
             : [],
+        db.interview.groupBy({ by: ["decision"], where: { jobId: job.id, status: "COMPLETED" }, _count: { _all: true } }),
+        // Links to the shortlist still working (AIIN-161)
+        db.shortlistShare.findMany({
+            where: { jobId: job.id, revokedAt: null, expiresAt: { gt: new Date() } },
+            orderBy: { createdAt: "desc" },
+            select: { id: true, label: true, expiresAt: true, openCount: true, lastOpenedAt: true },
+        }),
     ]);
+    const countOf = (d: string) => decisionCounts.find((c) => c.decision === d)?._count._all ?? 0;
 
     const t = await getTranslations("Employer.job");
     const requirements = { requireResume: job.requireResume, requireAadhar: job.requireAadhar, requirePAN: job.requirePAN };
@@ -110,7 +119,15 @@ export default async function JobDetailsPage({
                     <h2 id="candidates-title" className={panelTitle}>
                         {t("candidates")}
                     </h2>
-                    <span className={caption}>{t("invitedCompleted", { invited: job.interviews.length, completed: finished })}</span>
+                    <span className="flex flex-wrap items-center gap-3">
+                        <span className={caption}>{t("invitedCompleted", { invited: job.interviews.length, completed: finished })}</span>
+                        <ShareShortlist
+                            jobId={job.id}
+                            shortlisted={countOf("SHORTLISTED")}
+                            onHold={countOf("ON_HOLD")}
+                            shares={shares.map((sh) => ({ ...sh, expiresAt: sh.expiresAt.toISOString(), lastOpenedAt: sh.lastOpenedAt?.toISOString() ?? null }))}
+                        />
+                    </span>
                 </div>
                 {ranking && finished > 0 && (
                     <ul className="flex flex-wrap gap-2">

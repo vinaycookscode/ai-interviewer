@@ -110,6 +110,7 @@ model User {
   integrityReviews IntegrityReview[] @relation("IntegrityReviews")
   mockInterviews MockInterview[]
   bankItems     BankItem[]
+  shortlistShares ShortlistShare[] @relation("ShortlistShares")
   prepSets      PrepSet[]
 
   // Placement Platform Relations
@@ -307,12 +308,35 @@ model Job {
   questions  Question[]
   interviews Interview[]
 
+  shares     ShortlistShare[]
   @@index([employerId])
 }
 
 enum QuestionType {
   TEXT
   CODE
+}
+
+// A read-only link to a job's shortlist for a hiring manager without an account (AIIN-161). Only the token's hash is kept.
+model ShortlistShare {
+  id            String    @id @default(cuid())
+  jobId         String
+  job           Job       @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  createdById   String
+  createdBy     User      @relation("ShortlistShares", fields: [createdById], references: [id], onDelete: Cascade)
+  // SHA-256 of the 256-bit token in the link; the token itself is shown once and never stored
+  tokenHash     String    @unique
+  // Who it's for, e.g. "Anita, engineering"
+  label         String
+  // Shortlisted only, or shortlisted and on hold
+  includeOnHold Boolean   @default(false)
+  expiresAt     DateTime
+  revokedAt     DateTime?
+  lastOpenedAt  DateTime?
+  openCount     Int       @default(0)
+  createdAt     DateTime  @default(now())
+
+  @@index([jobId])
 }
 
 model Question {
