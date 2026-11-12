@@ -41,3 +41,15 @@ export function ownFileUrl(url: string | null | undefined, bucketUrl: string | u
     }
     return parts.length >= 3 && parts[0] === "profiles" && parts[1] === userId && parts.every(safeSegment) ? url : undefined;
 }
+
+/** The object key ("profiles/<userId>/<file>") of a stored URL that passes `ownFileUrl`, or undefined (AIIN-224). */
+export function ownFileKey(url: string | null | undefined, bucketUrl: string | undefined, userId: string): string | undefined {
+    const own = ownFileUrl(url, bucketUrl, userId);
+    if (!own || !bucketUrl) return undefined;
+    const base = new URL(bucketUrl).pathname.replace(/\/+$/, "");
+    const key = new URL(own).pathname
+        .slice(base.length + 1)
+        .split("/")
+        .map(decodeURIComponent);
+    return objectKey(key) ?? undefined;
+}

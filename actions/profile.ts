@@ -2,6 +2,9 @@
 
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { db } from "@/lib/db";
+import { deleteReplacedFile } from "@/lib/replaced-file";
 import { userRepository } from "@/lib/repositories/user.repository";
 import { handleError } from "@/lib/error-handler";
 import { GOAL_LIMIT, SKILL_LENGTH, SKILL_LIMIT } from "@/lib/career-path";
@@ -30,7 +33,9 @@ export async function updateProfile(data: {
     }
 
     try {
-        await userRepository.update(session.user.id, {
+        const userId = session.user.id;
+        const before = await db.user.findUnique({ where: { id: userId }, select: { resumeUrl: true, panUrl: true, aadhaarUrl: true } });
+        await userRepository.update(userId, {
             name: data.name,
             resumeUrl: urls.resumeUrl,
             resumeName: data.resumeName,
@@ -39,6 +44,13 @@ export async function updateProfile(data: {
             aadhaarUrl: urls.aadhaarUrl,
             aadhaarName: data.aadhaarName,
         });
+
+        // The file each new upload replaced is deleted once the response is sent (AIIN-224)
+        after(() =>
+            Promise.all(
+                (["resumeUrl", "panUrl", "aadhaarUrl"] as const).map((k) => (urls[k] ? deleteReplacedFile(before?.[k], urls[k], userId) : undefined))
+            )
+        );
 
         revalidatePath("/candidate/profile");
         return { success: "Profile updated successfully" };

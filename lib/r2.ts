@@ -1,4 +1,4 @@
-import { DeleteObjectsCommand, GetObjectCommand, ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, DeleteObjectsCommand, GetObjectCommand, ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 
 // Initialize S3 Client for Cloudflare R2
@@ -64,6 +64,14 @@ export async function getFromR2(key: string): Promise<{ body: Uint8Array; conten
         if ((error as { name?: string }).name === "NoSuchKey") return null;
         throw error;
     }
+}
+
+/** Deletes one object in a user's profile folder, "profiles/<userId>/<file>" (AIIN-224). Missing objects are fine. */
+export async function deleteFromR2(key: string): Promise<void> {
+    const bucketName = process.env.R2_BUCKET_NAME;
+    if (!bucketName) throw new Error("R2 configuration missing (R2_BUCKET_NAME)");
+    if (!/^profiles\/[^/]+\/[^/]+$/.test(key)) throw new Error(`Refusing to delete "${key}"`);
+    await R2.send(new DeleteObjectCommand({ Bucket: bucketName, Key: key }));
 }
 
 /** Deletes every object under a prefix, e.g. "profiles/<userId>/" (AIIN-58). Returns how many were deleted. */

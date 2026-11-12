@@ -3,6 +3,8 @@
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { deleteReplacedFile } from "@/lib/replaced-file";
 import { ownFileUrl } from "@/lib/storage-key";
 
 // ============================================
@@ -114,12 +116,16 @@ export async function deleteOffer(offerId: string) {
     }
 
     // Only the user's own offer (AIIN-135)
+    const userId = session.user.id;
+    const offer = await db.jobOffer.findFirst({ where: { id: offerId, userId }, select: { offerLetterUrl: true } });
     const { count } = await db.jobOffer.deleteMany({
-        where: { id: offerId, userId: session.user.id }
+        where: { id: offerId, userId }
     });
     if (count === 0) {
         return { error: "Offer not found" };
     }
+    // Its letter goes with it (AIIN-224)
+    after(() => deleteReplacedFile(offer?.offerLetterUrl, null, userId));
 
     revalidatePath("/candidate/offers");
     return { success: true };
@@ -152,6 +158,7 @@ export async function updateOffer(offerId: string, data: {
         return { error: "Offer not found" };
     }
 
+    const letter = ownLetter(data.offerLetterUrl, session.user.id);
     await db.jobOffer.update({
         where: { id: offerId },
         data: {
@@ -164,10 +171,13 @@ export async function updateOffer(offerId: string, data: {
             joiningDate: data.joiningDate,
             deadline: data.deadline,
             notes: data.notes,
-            offerLetterUrl: ownLetter(data.offerLetterUrl, session.user.id),
+            offerLetterUrl: letter,
             status: data.status && OFFER_STATUSES.includes(data.status) ? data.status : undefined,
         }
     });
+    // A new letter replaces the old one, which is deleted once the response is sent (AIIN-224)
+    const userId = session.user.id;
+    if (letter) after(() => deleteReplacedFile(existing.offerLetterUrl, letter, userId));
 
     revalidatePath("/candidate/offers");
     return { success: true };
