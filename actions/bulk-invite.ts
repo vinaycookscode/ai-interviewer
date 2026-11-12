@@ -1,5 +1,7 @@
 "use server";
 
+import { ensureApplication } from "@/lib/application-sync";
+
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { Resend } from "resend";
@@ -162,6 +164,9 @@ export async function bulkInviteCandidates(data: {
                     expiresAt,
                 },
             });
+
+            // Every invitation is an application at Applied (AIIN-195)
+            await ensureApplication(data.jobId, user.id, userId);
 
             const interviewLink = `${baseUrl}/interview/${interview.id}?token=${interviewToken}`;
 

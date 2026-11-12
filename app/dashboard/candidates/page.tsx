@@ -22,6 +22,7 @@ const td = "border-t border-sg-rule px-3 py-3 align-middle";
 /** Every job's top finished candidates, ranked as on the job page (AIIN-217), from the approved "Candidates by job" artboards. */
 export default async function CandidatesPage({ searchParams }: { searchParams: Promise<{ q?: string; d?: string }> }) {
     const t = await getTranslations("Employer.candidates");
+    const tApps = await getTranslations("Applications");
     const tShortlist = await getTranslations("Shortlist");
     const isEnabled = await checkFeature(FEATURES.CANDIDATE_SEARCH);
 
@@ -97,10 +98,16 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
                                                 : t("jobMetaNone", { unfinished: job.unfinished })}
                                         </span>
                                     </div>
-                                    <Link href={`/dashboard/jobs/${job.id}#candidates`} className={cn(textLink, "inline-flex items-center gap-1")}>
-                                        {job.finished ? t("fullRanking") : t("openJob")}
-                                        <ChevronRight className="size-3.5" aria-hidden="true" />
-                                    </Link>
+                                    <span className="flex flex-wrap items-center gap-4">
+                                        <Link href={`/dashboard/jobs/${job.id}/applications`} className={cn(textLink, "inline-flex items-center gap-1")}>
+                                            {tApps("open")}
+                                            <ChevronRight className="size-3.5" aria-hidden="true" />
+                                        </Link>
+                                        <Link href={`/dashboard/jobs/${job.id}#candidates`} className={cn(textLink, "inline-flex items-center gap-1")}>
+                                            {job.finished ? t("fullRanking") : t("openJob")}
+                                            <ChevronRight className="size-3.5" aria-hidden="true" />
+                                        </Link>
+                                    </span>
                                 </div>
 
                                 {job.rows.length === 0 ? (

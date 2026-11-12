@@ -1,5 +1,7 @@
 "use server";
 
+import { syncDecision } from "@/lib/application-sync";
+
 import { revalidatePath } from "next/cache";
 import { HiringDecision } from "@prisma/client";
 import { auth } from "@/auth";
@@ -93,6 +95,8 @@ export async function bulkSetInterviewDecision(input: {
                 data: change.map((i) => ({ interviewId: i.id, from: i.decision, to: input.decision, note, byUserId: userId, source: "BULK" as const })),
             }),
         ]);
+        // The applications hold the outcome (AIIN-195)
+        await syncDecision(change.map((i) => i.id), input.decision, userId, note ?? null);
     }
 
     let notEmailed: (Person & { email: string })[] = [];

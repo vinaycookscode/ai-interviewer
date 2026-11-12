@@ -111,6 +111,10 @@ model User {
   mockInterviews MockInterview[]
   bankItems     BankItem[]
   shortlistShares ShortlistShare[] @relation("ShortlistShares")
+  // Talent Match applications (AIIN-195)
+  candidateApplications Application[]      @relation("CandidateApplications")
+  employerApplications  Application[]      @relation("EmployerApplications")
+  applicationEvents     ApplicationEvent[] @relation("ApplicationEvents")
   prepSets      PrepSet[]
 
   // Placement Platform Relations
@@ -324,6 +328,7 @@ model Job {
   interviews Interview[]
 
   shares     ShortlistShare[]
+  applications Application[]
   @@index([employerId])
   @@index([status])
 }
@@ -1320,4 +1325,62 @@ model InterviewDecisionEvent {
   createdAt   DateTime       @default(now())
 
   @@index([interviewId])
+}
+
+// One pipeline per job and candidate (AIIN-195). The stage is the candidate's outcome for the job; an AI interview's
+// decision moves it (Shortlisted to Screening, Rejected to Rejected), never the other way round.
+enum ApplicationStage {
+  INVITED
+  APPLIED
+  SCREENING
+  INTERVIEW
+  OFFER
+  HIRED
+  REJECTED
+  WITHDRAWN
+  DECLINED
+}
+
+enum ApplicationSource {
+  INVITED
+  DIRECT
+}
+
+model Application {
+  id              String            @id @default(cuid())
+  jobId           String
+  job             Job               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  candidateId     String
+  candidate       User              @relation("CandidateApplications", fields: [candidateId], references: [id], onDelete: Cascade)
+  employerId      String
+  employer        User              @relation("EmployerApplications", fields: [employerId], references: [id], onDelete: Cascade)
+  source          ApplicationSource @default(INVITED)
+  stage           ApplicationStage  @default(APPLIED)
+  stageChangedAt  DateTime          @default(now())
+  onHold          Boolean           @default(false)
+  coverNote       String?
+  rejectionReason String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  events          ApplicationEvent[]
+
+  @@unique([jobId, candidateId])
+  @@index([employerId, stage])
+  @@index([jobId, stage])
+  @@index([candidateId])
+}
+
+// Every move and note on an application, for its history (AIIN-195)
+model ApplicationEvent {
+  id            String            @id @default(cuid())
+  applicationId String
+  application   Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  actorId       String?
+  actor         User?             @relation("ApplicationEvents", fields: [actorId], references: [id], onDelete: SetNull)
+  fromStage     ApplicationStage?
+  toStage       ApplicationStage?
+  note          String?
+  createdAt     DateTime          @default(now())
+
+  @@index([applicationId, createdAt])
 }

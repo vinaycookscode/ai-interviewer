@@ -411,7 +411,8 @@
             "banner": "Add requirements to get matches",
             "bannerBody": "Confirm the skills and experience this job needs, and U will find candidates who fit.",
             "bannerCta": "Add requirements",
-            "edit": "Requirements"
+            "edit": "Requirements",
+            "applications": "Applications"
         }
     },
     "Sidebar": {
@@ -3344,5 +3345,81 @@
             "year": "Year"
         },
         "link": "Check your profile facts"
+    },
+    "Applications": {
+        "title": "Applications",
+        "eyebrow": "Applications",
+        "open": "Applications",
+        "stages": {
+            "INVITED": "Invited",
+            "APPLIED": "Applied",
+            "SCREENING": "Screening",
+            "INTERVIEW": "Interview",
+            "OFFER": "Offer",
+            "HIRED": "Hired",
+            "REJECTED": "Not moving forward",
+            "WITHDRAWN": "Withdrawn",
+            "DECLINED": "Declined"
+        },
+        "all": "All",
+        "onHold": "On hold",
+        "stageLabel": "Stage",
+        "searchLabel": "Search by name",
+        "search": "Search",
+        "count": "{count, plural, one {# application} other {# applications}} · latest first",
+        "invitedName": "Invited candidate",
+        "invitedNote": "Shown once they accept your invitation",
+        "since": {
+            "INVITED": "Invited {when}",
+            "APPLIED": "Applied {when}",
+            "other": "In this stage since {when}"
+        },
+        "source": {
+            "INVITED": "You invited them",
+            "DIRECT": "Applied from job search"
+        },
+        "aiScore": "AI score",
+        "noScore": "No score yet",
+        "emptyTitle": "No one at {stage} yet",
+        "emptyBody": "Move someone here from their application.",
+        "noneTitle": "No applications yet",
+        "noneBody": "Invite candidates to an AI interview and they'll appear here at Applied.",
+        "noMatchTitle": "No one matches",
+        "noMatchBody": "Try another name, or show all stages.",
+        "candidates": "Candidates",
+        "requirements": "Requirements",
+        "back": "Applications",
+        "applied": "Applied {date}",
+        "rounds": "Rounds",
+        "aiInterview": "AI interview",
+        "report": "Report",
+        "notStarted": "Not finished yet",
+        "noRounds": "No interviews yet.",
+        "notes": "Call notes",
+        "noteLabel": "Add a note only your team sees",
+        "addNote": "Add note",
+        "noNotes": "No notes yet.",
+        "moveTo": "Move to",
+        "moveNext": "Move to {stage}",
+        "hold": "Put on hold",
+        "unhold": "Take off hold",
+        "reject": "Not moving forward",
+        "reasonLabel": "Why? Only your team sees this.",
+        "reasonRequired": "Add a reason so your team knows why.",
+        "confirmReject": "Mark as not moving forward",
+        "cancel": "Cancel",
+        "otherStage": "Or move to",
+        "choose": "Choose a stage",
+        "move": "Move",
+        "rejectNote": "The candidate sees only “Not selected”, never your reason. Nothing is emailed from here.",
+        "history": "History",
+        "by": "by {name}",
+        "you": "you",
+        "created": "Application started",
+        "fromTo": "Moved to {to}",
+        "noteOnly": "Note",
+        "failed": "Couldn't save. Try again.",
+        "saved": "Saved",
+        "closed": "This application is closed. You can still reopen it."
     }
 }

@@ -1,5 +1,7 @@
 "use server";
 
+import { ensureApplication } from "@/lib/application-sync";
+
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { Resend } from "resend";
@@ -73,6 +75,9 @@ export async function inviteCandidate(data: {
                 expiresAt: data.expiresAt ? new Date(data.expiresAt) : new Date(new Date(data.scheduledTime).getTime() + 48 * 60 * 60 * 1000), // Default 48h
             },
         });
+
+        // Every invitation is an application at Applied (AIIN-195)
+        await ensureApplication(data.jobId, candidate.id, userId);
 
         // Generate interview link
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";

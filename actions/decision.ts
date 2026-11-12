@@ -5,6 +5,7 @@ import { HiringDecision } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireEmployerInterview } from "@/lib/employer-access";
 import { NOTE_LIMIT } from "@/lib/decision";
+import { syncDecision } from "@/lib/application-sync";
 
 type Result = { success: true } | { error: string; field?: "note" } | { confirm: "strongConcerns" };
 
@@ -53,6 +54,8 @@ export async function setInterviewDecision(
         }),
     ]);
 
+    // The application holds the outcome (AIIN-195)
+    await syncDecision([interview.id], decision, userId, cleanNote);
     revalidatePath(`/interview/${interview.id}/feedback`);
     revalidatePath(`/dashboard/jobs/${interview.jobId}`);
     revalidatePath("/dashboard/candidates");
