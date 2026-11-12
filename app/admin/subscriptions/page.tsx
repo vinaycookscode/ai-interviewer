@@ -64,6 +64,7 @@ export default async function AdminSubscriptionsPage({ searchParams }: { searchP
                     questionGenerationLimit: p.questionGenerationLimit,
                     coverLetterLimit: p.coverLetterLimit,
                     resumeRewriteLimit: p.resumeRewriteLimit,
+                    talentInvitesPerMonth: p.talentInvitesPerMonth,
                     aiEvaluationEnabled: p.aiEvaluationEnabled,
                     prioritySupport: p.prioritySupport,
                     activeSubscribers: p.activeSubscribers,

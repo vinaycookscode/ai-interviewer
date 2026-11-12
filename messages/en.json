@@ -516,7 +516,8 @@
                 "resumeAnalysisLimit": "Resume reviews",
                 "questionGenerationLimit": "AI questions",
                 "coverLetterLimit": "Cover letters",
-                "resumeRewriteLimit": "Resume rewrites"
+                "resumeRewriteLimit": "Resume rewrites",
+                "talentInvitesPerMonth": "Talent Match invitations a month (employers)"
             },
             "unlimited": "Unlimited",
             "off": "Off",
@@ -1082,13 +1083,16 @@
         "signOut": "Sign out",
         "skip": "Skip to content",
         "overview": "Overview",
-        "jobs": "Find jobs",
+        "jobs": "Jobs",
         "candidates": "Candidates",
         "settings": "Settings",
         "newJob": "New job",
         "applications": "My applications",
         "applicationsHint": "Where each job you applied to stands",
-        "jobsHint": "Open jobs, ranked by your match"
+        "invitations": "Invitations",
+        "invitationsHint": "Employers who asked you to apply",
+        "findJobs": "Find jobs",
+        "findJobsHint": "Open jobs, ranked by your match"
     },
     "Today": {
         "metaTitle": "Today",
@@ -3425,7 +3429,13 @@
         "failed": "Couldn't save. Try again.",
         "saved": "Saved",
         "closed": "This application is closed. You can still reopen it.",
-        "theirNote": "Their note"
+        "theirNote": "Their note",
+        "declinedName": "Candidate who declined",
+        "declinedNote": "They chose not to apply, so they stay anonymous",
+        "contact": "Contact",
+        "email": "Email",
+        "phone": "Phone",
+        "resume": "Resume"
     },
     "MyApplications": {
         "title": "My applications",
@@ -3555,7 +3565,40 @@
         "previous": "Previous",
         "next": "Next",
         "pageOf": "Page {page} of {pages}",
-        "fairness": "A match is worked out from facts candidates confirmed and requirements you confirmed. It never uses name, gender, age, college name or photo."
+        "fairness": "A match is worked out from facts candidates confirmed and requirements you confirmed. It never uses name, gender, age, college name or photo.",
+        "allowance": "{left} of {limit} invitations left this month",
+        "unlimited": "Unlimited invitations on your plan",
+        "invitedOn": "Invited {date}",
+        "appStage": {
+            "INVITED": "Invited",
+            "APPLIED": "Applied",
+            "SCREENING": "Screening",
+            "INTERVIEW": "Interview",
+            "OFFER": "Offer",
+            "HIRED": "Hired",
+            "REJECTED": "Not moving forward",
+            "WITHDRAWN": "Withdrawn",
+            "DECLINED": "Declined"
+        },
+        "invite": {
+            "open": "Invite to apply",
+            "title": "Invite {code} to apply",
+            "left": "{count, plural, =0 {No invitations left this month} one {# invitation left this month} other {# invitations left this month}}",
+            "unlimited": "Unlimited invitations on your plan",
+            "message": "A short message, optional",
+            "placeholder": "For example: Your accessibility work stood out.",
+            "hint": "They see your company, the job and this message. You see who they are only if they apply.",
+            "send": "Send invitation",
+            "cancel": "Cancel",
+            "close": "Close",
+            "sent": "Invitation sent to {code}",
+            "errors": {
+                "notFound": "This candidate can't be invited any more.",
+                "limit": "You've used this month's invitations. They reset on the 1st.",
+                "already": "They already have an application for this job.",
+                "message": "Keep the message under 300 characters, without links."
+            }
+        }
     },
     "Jobs": {
         "title": "Find jobs",
@@ -3612,5 +3655,41 @@
             "phone": "Enter your phone number, 10 to 15 digits.",
             "note": "Keep the note under 1,000 characters."
         }
+    },
+    "Invitations": {
+        "title": "Invitations",
+        "subtitle": "Employers who found your anonymous card and asked you to apply. They see your name only if you apply.",
+        "new": "New",
+        "match": "{score}% match",
+        "when": "Invited {date} · open for {count, plural, one {# more day} other {# more days}}",
+        "anEmployer": "An employer",
+        "modes": {
+            "ONSITE": "On site",
+            "HYBRID": "Hybrid",
+            "REMOTE": "Remote"
+        },
+        "notInterested": "Not interested",
+        "seeJob": "See the job",
+        "apply": "Apply",
+        "confirmApply": "Apply",
+        "cancel": "Cancel",
+        "phone": "Phone",
+        "note": "A note to the employer, optional",
+        "consent": "Applying shares your name, email, phone, resume and confirmed profile with {company} only.",
+        "accepted": "Applied to {company}",
+        "declined": "Invitation closed. The employer only sees that you declined.",
+        "noneTitle": "No invitations yet",
+        "noneBody": "Turn on “Let employers find me” so employers can invite you.",
+        "privacyLink": "Open privacy settings",
+        "privacy": "Saying Not interested is private: the employer only sees that the invitation closed, never who you are.",
+        "errors": {
+            "notFound": "This invitation isn't open any more.",
+            "expired": "This invitation has expired.",
+            "phone": "Enter your phone number, 10 to 15 digits.",
+            "note": "Keep the note under 1,000 characters."
+        },
+        "banner": "{count, plural, one {You have # invitation to apply} other {You have # invitations to apply}}",
+        "bannerLink": "See invitations",
+        "noneBodyFindable": "Employers can find your anonymous card. When one invites you, it shows here."
     }
 }

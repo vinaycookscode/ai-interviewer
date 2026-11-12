@@ -2,19 +2,31 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { getFromR2 } from "@/lib/r2";
+import { documentHref } from "@/lib/document-url";
 import { objectKey } from "@/lib/storage-key";
 
 /**
  * Serve a private document after checking who is asking.
  * Access is decided from the object key, never from a URL the client stored:
- *   profiles/<userId>/...       → that user, or an admin
+ *   profiles/<userId>/...       → that user, or an admin; and their current resume (only) to an employer they've
+ *                                 applied to or accepted an invitation from (AIIN-201)
  *   documents/<interviewId>/... → the interview's candidate, the job's employer, or an admin
  */
 async function canRead(userId: string, isAdmin: boolean, key: string[]): Promise<boolean> {
     if (isAdmin) return true;
 
     const [area, ownerId] = key;
-    if (area === "profiles") return ownerId === userId;
+    if (area === "profiles") {
+        if (ownerId === userId) return true;
+        // The candidate's current resume, and nothing else in their folder, to an employer they chose to share it with
+        const candidate = await db.user.findUnique({ where: { id: ownerId }, select: { resumeUrl: true } });
+        if (!candidate?.resumeUrl || documentHref(candidate.resumeUrl) !== `/api/files/${key.join("/")}`) return false;
+        const shared = await db.application.findFirst({
+            where: { candidateId: ownerId, employerId: userId, stage: { notIn: ["INVITED", "DECLINED"] } },
+            select: { id: true },
+        });
+        return !!shared;
+    }
 
     if (area === "documents") {
         const interview = await db.interview.findUnique({

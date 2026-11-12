@@ -19,6 +19,7 @@ import {
     LayoutDashboard,
     LayoutGrid,
     Layers,
+    Mail,
     LogOut,
     MessageCircle,
     Mic,
@@ -86,8 +87,9 @@ const CANDIDATE_MORE: MoreGroup[] = [
         key: "progress",
         items: [
             { key: "analytics", href: "/candidate/dashboard/analytics", icon: ChartLine, feature: FEATURES.ANALYTICS, match: under("/candidate/dashboard/analytics") },
-            { key: "jobs", href: "/candidate/jobs", icon: Search, match: under("/candidate/jobs") },
+            { key: "findJobs", href: "/candidate/jobs", icon: Search, match: under("/candidate/jobs") },
             { key: "applications", href: "/candidate/applications", icon: Send, match: under("/candidate/applications") },
+            { key: "invitations", href: "/candidate/invitations", icon: Mail, match: under("/candidate/invitations") },
             { key: "offers", href: "/candidate/offers", icon: BriefcaseBusiness, feature: FEATURES.OFFER_COMPARATOR, match: under("/candidate/offers") },
         ],
     },

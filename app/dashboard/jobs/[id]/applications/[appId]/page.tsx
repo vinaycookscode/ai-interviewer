@@ -7,6 +7,8 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { cn } from "@/lib/utils";
 import { CLOSED, EMPLOYER_MOVES, nextStage, type Stage } from "@/lib/applications";
+import { revealsCandidate } from "@/lib/invitations";
+import { documentHref } from "@/lib/document-url";
 import { PageHeading, displayName, formatShortDate, panel, panelTitle } from "@/components/jobs/employer-ui";
 import { focusRing } from "@/components/soft-glass/classes";
 import { HoldChip, StageChip } from "@/components/applications/stage-chip";
@@ -47,20 +49,22 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
     });
     if (!app) notFound();
     const stage = app.stage as Stage;
-    const invited = stage === "INVITED";
+    // Invited and declined candidates stay anonymous (AIIN-201): only applying or accepting reveals them
+    const invited = !revealsCandidate(stage);
 
     // An invitation not yet accepted stays anonymous: no name, email or interviews are loaded (AC3)
     const [person, interviews] = invited
         ? [null, []]
         : await Promise.all([
-              db.user.findUnique({ where: { id: app.candidateId }, select: { name: true, email: true } }),
+              db.user.findUnique({ where: { id: app.candidateId }, select: { name: true, email: true, resumeUrl: true, resumeName: true, candidateProfile: { select: { phone: true } } } }),
               db.interview.findMany({
                   where: { jobId: app.job.id, candidateId: app.candidateId },
                   orderBy: { createdAt: "desc" },
                   select: { id: true, status: true, score: true, completedAt: true, _count: { select: { answers: true } } },
               }),
           ]);
-    const name = person ? displayName(person) : t("invitedName");
+    const name = person ? displayName(person) : t(stage === "DECLINED" ? "declinedName" : "invitedName");
+    const resumeHref = documentHref(person?.resumeUrl);
     const notes = app.events.filter((e) => e.note && !e.toStage);
     const who = (e: { actorId: string | null; actor: { name: string | null } | null }) => (e.actorId === userId ? t("you") : (e.actor?.name ?? ""));
     const next = nextStage(stage);
@@ -80,6 +84,41 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
             />
             <div className="grid items-start gap-6 lg:grid-cols-2">
                 <section aria-labelledby="ap-rounds" className={cn(panel, "gap-3")}>
+                    {person && (
+                        <>
+                            <h2 className={panelTitle}>{t("contact")}</h2>
+                            <dl className="flex flex-col gap-1.5 rounded-[18px] bg-sg-row px-4 py-3 text-[15px]">
+                                <div className="flex flex-wrap gap-x-2">
+                                    <dt className="text-sg-muted">{t("email")}</dt>
+                                    <dd className="min-w-0 break-all">
+                                        <a href={`mailto:${person.email}`} className={cn("rounded-md font-semibold", focusRing)}>
+                                            {person.email}
+                                        </a>
+                                    </dd>
+                                </div>
+                                {person.candidateProfile?.phone && (
+                                    <div className="flex flex-wrap gap-x-2">
+                                        <dt className="text-sg-muted">{t("phone")}</dt>
+                                        <dd>
+                                            <a href={`tel:${person.candidateProfile.phone}`} className={cn("rounded-md font-semibold", focusRing)}>
+                                                {person.candidateProfile.phone}
+                                            </a>
+                                        </dd>
+                                    </div>
+                                )}
+                                {resumeHref && (
+                                    <div className="flex flex-wrap gap-x-2">
+                                        <dt className="text-sg-muted">{t("resume")}</dt>
+                                        <dd className="min-w-0 break-all">
+                                            <a href={resumeHref} target="_blank" rel="noreferrer" className={cn("rounded-md font-semibold", focusRing)}>
+                                                {person.resumeName ?? t("resume")}
+                                            </a>
+                                        </dd>
+                                    </div>
+                                )}
+                            </dl>
+                        </>
+                    )}
                     {app.coverNote && !invited && (
                         <>
                             <h2 className={panelTitle}>{t("theirNote")}</h2>

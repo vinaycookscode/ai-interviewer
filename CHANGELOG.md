@@ -4,7 +4,7 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-Migration `job_matches` adds `JobMatch` and `MatchTask`. A new daily cron, `/api/cron/matches`, needs `CRON_SECRET` like the others.
+Migration `job_matches` adds `JobMatch` and `MatchTask`. Migration `invitations` adds `SubscriptionPlan.talentInvitesPerMonth` (Free 10, Pro 50, Premium 200) and `Application.inviteMessage`, `invitedAt` and `inviteExpiresAt`. A new daily cron, `/api/cron/matches`, needs `CRON_SECRET` like the others.
 
 - **Matching engine (AIIN-199).** Every open job with confirmed requirements now has matches. Matches come only from findable candidates who passed the job's place and experience filters, ranked by how close their confirmed facts are to the job. Each match stores:
   - a score that's always the same for the same job and profile: must-haves 45%, relevance of past work 25%, experience 20%, nice-to-haves 10%, rounded to 5;
@@ -26,6 +26,12 @@ Migration `job_matches` adds `JobMatch` and `MatchTask`. A new daily cron, `/api
   - **Applying:** a job's page shows its description, needs and your match. Apply takes your phone, which is required and saved on your profile (AIIN-204), and an optional note, and creates an application at Applied, marked "Applied from job search". Your note shows on the employer's application page.
   - **No opt-in needed:** applying shares your name with that one employer.
   - **My applications** gets a coral "Find jobs".
+
+- **Invite to apply, with an invitations inbox (AIIN-201).**
+  - **Employers** invite a matched candidate from their card with an optional short message (no links). Invitations come from a monthly allowance per plan (AIIN-204): Free 10, Pro 50, Premium 200, editable in Admin → Subscriptions. The matches page shows how many are left, and the server refuses invitations beyond the allowance, to candidates who blocked the employer, or to anyone who's no longer findable.
+  - **Candidates** see Invitations under More, plus a banner on My applications. Each invitation shows the job, company, match % and message, and lasts 14 days. Apply asks for a phone, which is required, and an optional note. Not interested is private.
+  - **Privacy:** until a candidate applies, the employer sees only "Invited candidate", or "Candidate who declined" afterwards, with no name, contacts or files. Once they apply, the employer sees their name, email, phone and resume. An employer can open only that candidate's current resume, nothing else in their folder.
+  - **Fixed:** the employer's "Jobs" tab was briefly labelled "Find jobs" on `develop`.
 
 ## 2026-11-12, second release
 

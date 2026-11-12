@@ -9,10 +9,14 @@ import { cn } from "@/lib/utils";
 import { anonymousCard } from "@/lib/anonymous-card";
 import { checkFacts, EMPTY_FACTS } from "@/lib/resume-facts";
 import type { MatchParts } from "@/lib/match-score";
-import { PageHeading, outlineButton } from "@/components/jobs/employer-ui";
+import { PageHeading, formatShortDate, outlineButton } from "@/components/jobs/employer-ui";
 import { focusRing } from "@/components/soft-glass/classes";
 import { EmptyState } from "@/components/soft-glass/empty-state";
 import { MatchCard } from "@/components/talent-match/match-card";
+import { InviteButton } from "@/components/talent-match/invite-button";
+import { StageChip } from "@/components/applications/stage-chip";
+import { inviteAllowance } from "@/lib/invite-allowance";
+import { candidateCode } from "@/lib/anonymous-card";
 
 export async function generateMetadata(): Promise<Metadata> {
     const t = await getTranslations("Matches");
@@ -78,13 +82,21 @@ export default async function JobMatchesPage({ params, searchParams }: { params:
             skip: (page - 1) * PAGE,
             take: PAGE,
             // AC2: facts and scores only, never a name, email, phone or file
-            select: { id: true, score: true, parts: true, reasons: true, candidateProfile: { select: { userId: true, resumeFacts: true, primaryRole: true, noticePeriodDays: true } } },
+            select: { id: true, score: true, parts: true, reasons: true, candidateProfileId: true, candidateProfile: { select: { userId: true, resumeFacts: true, primaryRole: true, noticePeriodDays: true } } },
         }),
     ]);
     const mocks = matches.length
         ? await db.mockInterview.findMany({ where: { userId: { in: matches.map((m) => m.candidateProfile.userId) }, score: { not: null } }, orderBy: { createdAt: "desc" }, select: { userId: true, score: true } })
         : [];
     const scoresOf = (u: string) => mocks.filter((m) => m.userId === u).map((m) => m.score);
+    // Who already has an application here, and the month's invitation allowance (AIIN-201)
+    const [existing, allowance] = await Promise.all([
+        matches.length
+            ? db.application.findMany({ where: { jobId: job.id, candidateId: { in: matches.map((m) => m.candidateProfile.userId) } }, select: { candidateId: true, stage: true, invitedAt: true } })
+            : [],
+        inviteAllowance(userId),
+    ]);
+    const appOf = new Map(existing.map((a) => [a.candidateId, a]));
 
     const labels = {
         anonymous: t("anonymous"),
@@ -116,9 +128,12 @@ export default async function JobMatchesPage({ params, searchParams }: { params:
                 title={t("title")}
                 subtitle={t("subtitle")}
                 actions={
-                    <Link href={`/dashboard/jobs/${job.id}/applications`} className={cn(outlineButton, "h-12 px-[18px] text-[15px]")}>
-                        {t("applications")}
-                    </Link>
+                    <span className="flex flex-wrap items-center gap-3">
+                        <span className="text-sm text-sg-muted">{allowance.left === null ? t("unlimited") : t("allowance", { left: allowance.left, limit: allowance.limit })}</span>
+                        <Link href={`/dashboard/jobs/${job.id}/applications`} className={cn(outlineButton, "h-12 px-[18px] text-[15px]")}>
+                            {t("applications")}
+                        </Link>
+                    </span>
                 }
             />
 
@@ -204,6 +219,13 @@ export default async function JobMatchesPage({ params, searchParams }: { params:
                                     parts={parts(m.parts)}
                                     reasons={m.reasons}
                                     labels={labels}
+                                    action={(() => {
+                                        const a = appOf.get(m.candidateProfile.userId);
+                                        if (a?.invitedAt && a.stage === "INVITED") return <StageChip stage="INVITED" label={t("invitedOn", { date: formatShortDate(a.invitedAt) })} />;
+                                        if (a) return <StageChip stage={a.stage} label={t(`appStage.${a.stage}`)} />;
+                                        const code = candidateCode(m.candidateProfile.userId);
+                                        return <InviteButton jobId={job.id} candidateProfileId={m.candidateProfileId} code={code} left={allowance.left} />;
+                                    })()}
                                 />
                             ))}
                         </div>

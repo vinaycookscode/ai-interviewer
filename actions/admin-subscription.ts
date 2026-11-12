@@ -255,6 +255,7 @@ export async function updateSubscriptionPlan(
         questionGenerationLimit?: number;
         coverLetterLimit?: number;
         resumeRewriteLimit?: number;
+        talentInvitesPerMonth?: number;
         aiEvaluationEnabled?: boolean;
         prioritySupport?: boolean;
     }

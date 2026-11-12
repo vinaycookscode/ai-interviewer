@@ -7,6 +7,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { cn } from "@/lib/utils";
 import { PIPELINE, STAGES, type Stage } from "@/lib/applications";
+import { revealsCandidate } from "@/lib/invitations";
 import { PageHeading, displayName, field, formatShortDate, outlineButton, panel } from "@/components/jobs/employer-ui";
 import { focusRing } from "@/components/soft-glass/classes";
 import { EmptyState } from "@/components/soft-glass/empty-state";
@@ -45,7 +46,10 @@ export default async function JobApplicationsPage({
         employerId: userId,
         ...(stage ? { stage } : {}),
         ...(q
-            ? { stage: stage && stage !== "INVITED" ? stage : { not: "INVITED" as const }, candidate: { name: { contains: q, mode: "insensitive" as const } } }
+            ? {
+                  stage: stage && revealsCandidate(stage) ? stage : { notIn: ["INVITED" as const, "DECLINED" as const] },
+                  candidate: { name: { contains: q, mode: "insensitive" as const } },
+              }
             : {}),
     };
 
@@ -59,7 +63,8 @@ export default async function JobApplicationsPage({
         }),
     ]);
     // Names and scores only for people who are in the pipeline, never for an invitation not yet accepted (AC3)
-    const known = apps.filter((a) => a.stage !== "INVITED").map((a) => a.candidateId);
+    // Invited and declined candidates stay anonymous (AIIN-201): nothing about them is loaded
+    const known = apps.filter((a) => revealsCandidate(a.stage)).map((a) => a.candidateId);
     const [people, interviews] = await Promise.all([
         known.length ? db.user.findMany({ where: { id: { in: known } }, select: { id: true, name: true, email: true } }) : [],
         known.length
@@ -149,7 +154,8 @@ export default async function JobApplicationsPage({
                     <ul className="flex flex-col gap-2">
                         {apps.map((a) => {
                             const person = personOf.get(a.candidateId);
-                            const name = a.stage === "INVITED" || !person ? t("invitedName") : displayName(person);
+                            const hidden = !revealsCandidate(a.stage);
+                            const name = hidden || !person ? t(a.stage === "DECLINED" ? "declinedName" : "invitedName") : displayName(person);
                             const score = scoreOf.get(a.candidateId);
                             const when = formatShortDate(a.stageChangedAt);
                             const since = a.stage === "INVITED" || a.stage === "APPLIED" ? t(`since.${a.stage}`, { when }) : t("since.other", { when });
@@ -159,7 +165,7 @@ export default async function JobApplicationsPage({
                                         aria-hidden="true"
                                         className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-sg-chip font-bold"
                                     >
-                                        {a.stage === "INVITED" ? "?" : name.charAt(0).toUpperCase()}
+                                        {hidden ? "?" : name.charAt(0).toUpperCase()}
                                     </span>
                                     <span className="flex min-w-0 flex-[1_1_200px] flex-col">
                                         <Link
@@ -169,10 +175,10 @@ export default async function JobApplicationsPage({
                                             {name}
                                         </Link>
                                         <span className="text-[13px] text-sg-muted">
-                                            {a.stage === "INVITED" ? t("invitedNote") : `${since} · ${t(`source.${a.source}`)}`}
+                                            {hidden ? t(a.stage === "DECLINED" ? "declinedNote" : "invitedNote") : `${since} · ${t(`source.${a.source}`)}`}
                                         </span>
                                     </span>
-                                    {a.stage !== "INVITED" && (
+                                    {!hidden && (
                                         <span className="flex flex-col items-end">
                                             <span className="font-display sg-soft text-xl font-semibold">{score != null ? score.toFixed(1) : "–"}</span>
                                             <span className="text-xs text-sg-muted">{score != null ? t("aiScore") : t("noScore")}</span>

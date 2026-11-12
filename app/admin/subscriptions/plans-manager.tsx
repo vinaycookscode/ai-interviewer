@@ -23,12 +23,14 @@ interface Plan {
     questionGenerationLimit: number;
     coverLetterLimit: number;
     resumeRewriteLimit: number;
+    talentInvitesPerMonth: number;
     aiEvaluationEnabled: boolean;
     prioritySupport: boolean;
     activeSubscribers: number;
 }
 
-const LIMITS = ["mockInterviewLimit", "resumeAnalysisLimit", "questionGenerationLimit", "coverLetterLimit", "resumeRewriteLimit"] as const;
+// talentInvitesPerMonth: employers' Talent Match invitations a month (AIIN-201)
+const LIMITS = ["mockInterviewLimit", "resumeAnalysisLimit", "questionGenerationLimit", "coverLetterLimit", "resumeRewriteLimit", "talentInvitesPerMonth"] as const;
 type LimitKey = (typeof LIMITS)[number];
 const rupees = (paise: number) => (paise / 100).toLocaleString("en-IN");
 

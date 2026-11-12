@@ -1242,6 +1242,8 @@ model SubscriptionPlan {
   aiEvaluationEnabled     Boolean @default(false)
   // Messages to Ask U, the coach, per IST day (AIIN-100)
   coachMessagesPerDay     Int   @default(10)
+  // Talent Match invitations an employer may send per IST calendar month (AIIN-201, AIIN-204); -1 = unlimited
+  talentInvitesPerMonth   Int   @default(10)
   prioritySupport         Boolean @default(false)
   
   // Razorpay Plan IDs
@@ -1370,6 +1372,10 @@ model Application {
   onHold          Boolean           @default(false)
   coverNote       String?
   rejectionReason String?
+  // A Talent Match invitation (AIIN-201): the employer's message, when it was sent, when it lapses
+  inviteMessage   String?
+  invitedAt       DateTime?
+  inviteExpiresAt DateTime?
   // When the candidate last looked at My applications, for "Updated" (AIIN-197)
   candidateSeenAt DateTime?
   createdAt       DateTime          @default(now())

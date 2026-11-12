@@ -37,6 +37,8 @@ export default async function MyApplicationsPage({ searchParams }: { searchParam
     const t = await getTranslations("MyApplications");
     const tStage = await getTranslations("MyApplications.stages");
 
+    const tInv = await getTranslations("Invitations");
+    const invitations = await db.application.count({ where: { candidateId: userId, stage: "INVITED", inviteExpiresAt: { gt: new Date() } } });
     const [apps, me] = await Promise.all([
         db.application.findMany({
             where: { candidateId: userId },
@@ -90,6 +92,14 @@ export default async function MyApplicationsPage({ searchParams }: { searchParam
                     {t("findJobs")}
                 </Link>
             </div>
+            {invitations > 0 && (
+                <p className="flex flex-wrap items-center gap-2 rounded-[16px] bg-sg-lavender-soft px-3.5 py-3 text-sm text-sg-lavender-ink">
+                    <span className="flex-[1_1_220px] font-bold">{tInv("banner", { count: invitations })}</span>
+                    <Link href="/candidate/invitations" className={cn("rounded-md font-bold underline", focusRing)}>
+                        {tInv("bannerLink")}
+                    </Link>
+                </p>
+            )}
             <nav aria-label={t("show")} className="flex flex-wrap gap-2">
                 <Link href="/candidate/applications" aria-current={!showClosed ? "page" : undefined} className={tab(!showClosed)}>
                     {t("active", { count: active.length })}
