@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { embedProfile } from "@/lib/match-embeddings";
 import { Prisma } from "@prisma/client";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
@@ -88,6 +90,8 @@ export async function saveMyFacts(input: {
         noticePeriodDays: notice,
     };
     await db.candidateProfile.upsert({ where: { userId }, update: data, create: { userId, ...data } });
+    // Embedded for matching once the response is sent (AIIN-194)
+    after(() => embedProfile(userId));
     revalidatePath("/candidate/profile/facts");
     revalidatePath("/candidate/profile");
     return { ok: true };

@@ -4,7 +4,9 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-Migration `job_requirements` adds `Job.status` (`JobStatus`), the requirement columns and `WorkMode`, and marks existing jobs OPEN (CLOSED if archived). Migration `resume_facts` adds the resume fact columns to `CandidateProfile`.
+Migration `job_requirements` adds `Job.status` (`JobStatus`), the requirement columns and `WorkMode`, and marks existing jobs OPEN (CLOSED if archived). Migration `resume_facts` adds the resume fact columns to `CandidateProfile`. Migration `match_embeddings` adds `Job.embedding` and `CandidateProfile.embedding` (`vector(768)`) with HNSW indexes.
+
+- **Jobs and candidates are embedded for matching (AIIN-194).** Confirming a job's requirements, or a candidate's facts, stores a 768-dimension Gemini embedding of them once the save has gone through, ready for match scores (AIIN-199). A candidate's embedding uses only confirmed facts and their resume with personal details stripped first: name, email, phone, links, gender, age, date of birth, address, photo and college names. Embedding never slows or fails a save. The embedding helper moved to `lib/ai/embeddings.ts`, shared with Question Bank search.
 
 - **Your profile facts, read from your resume (AIIN-193).** Profile → "Check your profile facts" opens a page, from the approved "Resume facts" artboards, where U reads your resume (in about 15 seconds) and lists your jobs, education and skills with years. You check each one ("Looks right", Edit, or remove), or confirm them all, and add what's missing by hand. Only facts you confirm are ever shown to employers or used for matching, and they never include your name, email or phone. A scanned PDF with no text is called out so you can type facts in instead. Uploading a new resume proposes new facts without touching the ones you confirmed. See `docs/architecture/2026-11-12-resume-facts.md`.
 

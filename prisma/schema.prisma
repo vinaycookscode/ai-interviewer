@@ -317,6 +317,8 @@ model Job {
   salaryMax               Int?
   maxNoticeDays           Int?
   requirementsConfirmedAt DateTime?
+  // The confirmed requirements' meaning, for matching (AIIN-194): gemini-embedding-001 at 768 dimensions
+  embedding               Unsupported("vector(768)")?
 
   questions  Question[]
   interviews Interview[]
@@ -1196,6 +1198,8 @@ model CandidateProfile {
   proposedFacts    Json?
   resumeFacts      Json?
   factsConfirmedAt DateTime?
+  // Confirmed facts and the resume, with personal details removed, for matching (AIIN-194)
+  embedding        Unsupported("vector(768)")?
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
