@@ -9,10 +9,14 @@ import { focusRing } from "@/components/soft-glass/classes";
 import { formatShortDate, outlineButton } from "@/components/jobs/employer-ui";
 import { VerdictChip } from "@/components/feedback/verdict-chip";
 import { CandidateSelection, PickAll, PickCandidate, SelectionBar } from "@/components/jobs/candidate-selection";
+import { BulkDecision } from "@/components/jobs/bulk-decision";
 import { cn } from "@/lib/utils";
 
 interface RankedCandidatesProps {
     jobId: string;
+    /** For the bulk decision email preview (AIIN-159). */
+    jobTitle: string;
+    company: string;
     rows: RankedRow[];
     total: number;
     filters: RankingFilters;
@@ -38,7 +42,7 @@ export function DecisionChip({ decision, label }: { decision: HiringDecision; la
 }
 
 /** A table from 640px, and a list on phones with rank, name, score and decision (AIIN-158). */
-export function RankedCandidates({ jobId, rows, total, filters }: RankedCandidatesProps) {
+export function RankedCandidates({ jobId, jobTitle, company, rows, total, filters }: RankedCandidatesProps) {
     const t = useTranslations("Shortlist");
     const tIntegrity = useTranslations("Integrity");
     // A verdict in words; a finished interview without one yet says so (AIIN-178)
@@ -83,7 +87,7 @@ export function RankedCandidates({ jobId, rows, total, filters }: RankedCandidat
     const pickRows = rows.map((r) => ({ id: r.id, name: r.name || r.email }));
 
     return (
-        <CandidateSelection jobId={jobId}>
+        <CandidateSelection jobId={jobId} matching={{ total, query, pageSize: rows.length }}>
             <div className="flex flex-col gap-3">
                 <div className="hidden overflow-x-auto sm:block">
                     <table className="w-full border-separate border-spacing-y-1.5 text-[15px]">
@@ -200,7 +204,9 @@ export function RankedCandidates({ jobId, rows, total, filters }: RankedCandidat
                     </nav>
                 )}
             </div>
-            <SelectionBar />
+            <SelectionBar>
+                <BulkDecision jobTitle={jobTitle} company={company} />
+            </SelectionBar>
         </CandidateSelection>
     );
 }

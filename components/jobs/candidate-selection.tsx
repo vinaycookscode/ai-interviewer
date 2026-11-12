@@ -13,6 +13,11 @@ import { COMPARE_MAX, COMPARE_MIN } from "@/lib/compare";
 
 interface Selection {
     jobId: string;
+    /** Finished candidates matching the list's filters, across every page, and those filters as a query (AIIN-159 AC6). */
+    matching: { total: number; query: string; pageSize: number };
+    /** Everyone matching is picked, not only the rows ticked. */
+    all: boolean;
+    setAll_: (on: boolean) => void;
     /** Picked candidates, id to display name, in the order picked. */
     picked: Map<string, string>;
     toggle: (id: string, name: string) => void;
@@ -28,13 +33,18 @@ function useSelection(): Selection {
     return s;
 }
 
-export function CandidateSelection({ jobId, children }: { jobId: string; children: React.ReactNode }) {
+export function CandidateSelection({ jobId, matching, children }: { jobId: string; matching: Selection["matching"]; children: React.ReactNode }) {
     const [picked, setPicked] = useState<Map<string, string>>(new Map());
+    const [all, setAllMatching] = useState(false);
     const value: Selection = {
         jobId,
+        matching,
+        all,
+        setAll_: setAllMatching,
         picked,
         toggle: (id, name) =>
             setPicked((prev) => {
+                setAllMatching(false);
                 const next = new Map(prev);
                 if (next.has(id)) next.delete(id);
                 else next.set(id, name);
@@ -42,6 +52,7 @@ export function CandidateSelection({ jobId, children }: { jobId: string; childre
             }),
         setAll: (rows, on) =>
             setPicked((prev) => {
+                if (!on) setAllMatching(false);
                 const next = new Map(prev);
                 for (const r of rows) {
                     if (on) next.set(r.id, r.name);
@@ -49,7 +60,10 @@ export function CandidateSelection({ jobId, children }: { jobId: string; childre
                 }
                 return next;
             }),
-        clear: () => setPicked(new Map()),
+        clear: () => {
+            setPicked(new Map());
+            setAllMatching(false);
+        },
     };
     return <SelectionContext.Provider value={value}>{children}</SelectionContext.Provider>;
 }
@@ -77,11 +91,14 @@ export function PickAll({ rows }: { rows: { id: string; name: string }[] }) {
 /** The bar along the bottom while candidates are picked: how many, the actions, and clear. */
 export function SelectionBar({ children }: { children?: React.ReactNode }) {
     const t = useTranslations("Shortlist.select");
-    const { jobId, picked, clear } = useSelection();
+    const { jobId, picked, clear, all, setAll_, matching } = useSelection();
     if (picked.size === 0) return null;
 
     const ids = [...picked.keys()];
-    const canCompare = ids.length >= COMPARE_MIN && ids.length <= COMPARE_MAX;
+    const count = all ? matching.total : picked.size;
+    const canCompare = !all && ids.length >= COMPARE_MIN && ids.length <= COMPARE_MAX;
+    // The whole page is picked and there's more beyond it: offer everyone matching (AC6)
+    const offerAll = !all && picked.size >= matching.pageSize && matching.total > picked.size;
     const pill = "inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-sm font-bold whitespace-nowrap";
 
     return (
@@ -91,8 +108,13 @@ export function SelectionBar({ children }: { children?: React.ReactNode }) {
             className="sticky bottom-40 z-20 flex flex-wrap items-center gap-x-4 gap-y-2.5 rounded-[22px] bg-sg-ink px-4 py-3 text-sg-ink-foreground shadow-[var(--sg-shadow-lg)] lg:bottom-4"
         >
             <span className="font-bold" aria-live="polite">
-                {t("count", { count: picked.size })}
+                {all ? t("allCount", { count }) : t("count", { count })}
             </span>
+            {offerAll && (
+                <button type="button" onClick={() => setAll_(true)} className={cn("rounded-md text-sm font-semibold underline underline-offset-4", focusRing)}>
+                    {t("selectAllMatching", { count: matching.total })}
+                </button>
+            )}
             <div className="ml-auto flex flex-wrap items-center gap-2">
                 {canCompare ? (
                     <Link
@@ -120,8 +142,8 @@ export function SelectionBar({ children }: { children?: React.ReactNode }) {
     );
 }
 
-/** The picked candidates, for actions in the bar (AIIN-159). */
+/** The picked candidates, for actions in the bar (AIIN-159): either the ticked rows or everyone matching. */
 export function usePicked() {
-    const { picked, clear } = useSelection();
-    return { picked, clear };
+    const { jobId, picked, clear, all, matching } = useSelection();
+    return { jobId, picked, clear, all, matching };
 }

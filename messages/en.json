@@ -2183,7 +2183,9 @@
             "count": "{count} selected",
             "compare": "Compare",
             "compareHint": "Pick 2 to 4 candidates",
-            "clear": "Clear the selection"
+            "clear": "Clear the selection",
+            "allCount": "All {count} selected",
+            "selectAllMatching": "Select all {count} matching"
         },
         "compare": {
             "title": "Compare {count} candidates",
@@ -2215,6 +2217,52 @@
             "confirmBody": "This interview has strong integrity concerns that haven’t been reviewed. Shortlist anyway?",
             "confirmCancel": "Cancel",
             "confirmGo": "Shortlist anyway"
+        },
+        "bulk": {
+            "actions": "Decide for the selected candidates",
+            "SHORTLISTED": "Shortlist",
+            "ON_HOLD": "Hold",
+            "REJECTED": "Reject",
+            "title": {
+                "SHORTLISTED": "Shortlist {count, plural, one {# candidate} other {# candidates}}?",
+                "ON_HOLD": "Put {count, plural, one {# candidate} other {# candidates}} on hold?",
+                "REJECTED": "Reject {count, plural, one {# candidate} other {# candidates}}?"
+            },
+            "names": "{names}. You can change any decision later.",
+            "namesMore": "{names} and {more} more. You can change any decision later.",
+            "everyoneMatching": "Everyone matching your filters. You can change any decision later.",
+            "note": "Note",
+            "noteHint": "(optional, only your team sees it)",
+            "notePlaceholder": "For example: below the bar on React fundamentals",
+            "email": "Email these candidates",
+            "emailCount": "{count, plural, one {# candidate} other {# candidates}} will get one email each, shown below.",
+            "noEmail": "On hold sends no email.",
+            "preview": "Preview · sent from {company} via Get Back To U",
+            "confirm": {
+                "SHORTLISTED": "Shortlist {count}",
+                "ON_HOLD": "Hold {count}",
+                "REJECTED": "Reject {count}"
+            },
+            "cancel": "Cancel",
+            "close": "Close",
+            "working": "Saving…",
+            "limit": "That’s more than 500. Narrow the filters and try again.",
+            "failed": "Couldn’t save the decisions. Nothing was changed. Try again.",
+            "resultTitle": "{count, plural, one {# candidate updated} other {# candidates updated}}",
+            "done": "Done",
+            "tileDecision": {
+                "SHORTLISTED": "Shortlisted",
+                "ON_HOLD": "On hold",
+                "REJECTED": "Rejected"
+            },
+            "tileEmailed": "Emailed",
+            "tileSkipped": "Skipped",
+            "unfinished": "{name} was skipped because they haven’t finished the interview.",
+            "concerns": "{name} was skipped: their strong integrity concerns need a review before shortlisting.",
+            "unchanged": "{count, plural, one {# already had} other {# already had}} this decision, so nothing was sent again.",
+            "notEmailed": "The email to {email} didn’t send. Their decision is saved.",
+            "retry": "Retry",
+            "retried": "Sent."
         }
     },
     "Onboarding": {

@@ -157,7 +157,7 @@ export default async function JobDetailsPage({
                                 </h3>
                                 <p className="text-sm text-sg-muted">{tList("rankedNote")}</p>
                             </div>
-                            <RankedCandidates jobId={job.id} rows={ranking.rows} total={ranking.total} filters={filters} />
+                            <RankedCandidates jobId={job.id} jobTitle={job.title} company={session.user?.name ?? ""} rows={ranking.rows} total={ranking.total} filters={filters} />
                         </section>
                     ))}
 

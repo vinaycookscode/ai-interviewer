@@ -38,12 +38,9 @@ export interface RankedRow {
     completedAt: Date | null;
 }
 
-/**
- * One page of the job's finished interviews, ranked by score among all of them (so a candidate keeps
- * their rank under any filter or sort). The caller has already checked the employer owns the job.
- */
-export async function loadRanking(jobId: string, f: RankingFilters) {
-    const where: Prisma.InterviewWhereInput = {
+/** The job's finished interviews that match the ranked list's filters: the list, and "Select all matching" (AIIN-159). */
+export function rankingWhere(jobId: string, f: RankingFilters): Prisma.InterviewWhereInput {
+    return {
         jobId,
         status: "COMPLETED",
         ...(f.decisions.length ? { decision: { in: f.decisions } } : {}),
@@ -52,6 +49,14 @@ export async function loadRanking(jobId: string, f: RankingFilters) {
         ...(f.integrity ? { integrityVerdict: f.integrity } : {}),
         ...searchWhere(f.q),
     };
+}
+
+/**
+ * One page of the job's finished interviews, ranked by score among all of them (so a candidate keeps
+ * their rank under any filter or sort). The caller has already checked the employer owns the job.
+ */
+export async function loadRanking(jobId: string, f: RankingFilters) {
+    const where = rankingWhere(jobId, f);
 
     const [total, rows, ranks, decisions] = await Promise.all([
         db.interview.count({ where }),
