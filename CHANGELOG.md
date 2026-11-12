@@ -4,7 +4,9 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-Migration `job_requirements` adds `Job.status` (`JobStatus`), the requirement columns and `WorkMode`, and marks existing jobs OPEN (CLOSED if archived).
+Migration `job_requirements` adds `Job.status` (`JobStatus`), the requirement columns and `WorkMode`, and marks existing jobs OPEN (CLOSED if archived). Migration `resume_facts` adds the resume fact columns to `CandidateProfile`.
+
+- **Your profile facts, read from your resume (AIIN-193).** Profile → "Check your profile facts" opens a page, from the approved "Resume facts" artboards, where U reads your resume (in about 15 seconds) and lists your jobs, education and skills with years. You check each one ("Looks right", Edit, or remove), or confirm them all, and add what's missing by hand. Only facts you confirm are ever shown to employers or used for matching, and they never include your name, email or phone. A scanned PDF with no text is called out so you can type facts in instead. Uploading a new resume proposes new facts without touching the ones you confirmed. See `docs/architecture/2026-11-12-resume-facts.md`.
 
 - **Job requirements, proposed by AI and confirmed by you (AIIN-192).** After creating a job, step 2 is its requirements, built from the approved "Job requirements" artboards. U reads the description and proposes must-have and nice-to-have skills, years, work mode, location, pay and notice period. You mark each skill, add or remove skills, and confirm. Nothing proposed counts until you confirm. A job opens for Talent Match only with at least one must-have. Skills are named one way ("JS" becomes JavaScript). If U can't answer, you fill it in by hand. Older jobs show "Add requirements to get matches". AI interviews work as before, whatever the job's status. See `docs/architecture/2026-11-12-job-requirements-and-status.md`.
 

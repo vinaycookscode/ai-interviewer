@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { db } from "@/lib/db";
+import { Prisma } from "@prisma/client";
 import { deleteReplacedFile } from "@/lib/replaced-file";
 import { userRepository } from "@/lib/repositories/user.repository";
 import { handleError } from "@/lib/error-handler";
@@ -44,6 +45,11 @@ export async function updateProfile(data: {
             aadhaarUrl: urls.aadhaarUrl,
             aadhaarName: data.aadhaarName,
         });
+
+        // A new resume is read again on the facts page; confirmed facts stay until new ones are confirmed (AIIN-193)
+        if (urls.resumeUrl && urls.resumeUrl !== before?.resumeUrl) {
+            await db.candidateProfile.updateMany({ where: { userId }, data: { resumeText: null, resumeReadAt: null, proposedFacts: Prisma.DbNull } });
+        }
 
         // The file each new upload replaced is deleted once the response is sent (AIIN-224)
         after(() =>

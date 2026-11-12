@@ -1184,6 +1184,18 @@ model CandidateProfile {
   careerGoals     String?  @db.Text
   
   onboardingComplete Boolean @default(false)
+
+  // Resume facts for Talent Match (AIIN-193). Only `resumeFacts` (confirmed by the candidate) is ever shown or matched;
+  // `proposedFacts` waits for them. Never name, email or phone.
+  city             String?
+  noticePeriodDays Int?
+  totalYears       Float?
+  phone            String?
+  resumeText       String?   @db.Text
+  resumeReadAt     DateTime? // when the current resume was read, text or not
+  proposedFacts    Json?
+  resumeFacts      Json?
+  factsConfirmedAt DateTime?
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

@@ -37,6 +37,7 @@ This directory records significant technical decisions made on this project — 
 | 2026-11-11 | [The Question Bank: one item per question, filled by what the candidate already does](2026-11-11-one-bank-item-per-question.md) | Accepted · implemented | AIIN-209–213 |
 | 2026-11-12 | [Read-only shortlist links for hiring managers](2026-11-12-read-only-share-links.md) | Accepted · implemented | AIIN-161 |
 | 2026-11-12 | [Job requirements, confirmed by the employer, and a job status for Talent Match](2026-11-12-job-requirements-and-status.md) | Accepted · implemented | AIIN-192 |
+| 2026-11-12 | [Resume facts: proposed by AI, confirmed by the candidate, never personal](2026-11-12-resume-facts.md) | Accepted · implemented | AIIN-193 |
 
 Proposals that aren't ADRs yet (Upstash rate limiting, Deepgram and Google TTS) are listed in `docs/audits/2026-10-24-master-decision-index.md`.
 
