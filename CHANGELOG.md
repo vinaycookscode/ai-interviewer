@@ -2,7 +2,7 @@
 
 Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning behind larger changes is in `docs/architecture/`.
 
-## Unreleased
+## 2026-11-12, second release
 
 Migration `job_requirements` adds `Job.status` (`JobStatus`), the requirement columns and `WorkMode`, and marks existing jobs OPEN (CLOSED if archived). Migration `resume_facts` adds the resume fact columns to `CandidateProfile`. Migration `match_embeddings` adds `Job.embedding` and `CandidateProfile.embedding` (`vector(768)`) with HNSW indexes. Migration `applications` adds `Application` and `ApplicationEvent` with the `ApplicationStage` and `ApplicationSource` enums, and creates an application for every job and candidate that already has an AI interview. Migration `my_applications` adds `Application.candidateSeenAt` and `User.applicationEmails`. Migration `discoverable` adds `CandidateProfile.discoverable` and `discoverableSince`, and the `CandidateBlock` table.
 
