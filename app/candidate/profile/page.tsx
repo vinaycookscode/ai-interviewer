@@ -24,6 +24,7 @@ export default async function ProfilePage() {
     const t = await getTranslations("Profile");
 
     const tFacts = await getTranslations("Facts");
+    const tDiscover = await getTranslations("Discover");
     const tBadges = await getTranslations("Badges");
 
     // Only what the page shows: never the whole user row (it holds the password hash).
@@ -133,6 +134,9 @@ export default async function ProfilePage() {
                                             </dd>
                                             <Link href="/candidate/profile/facts" className={cn("self-start rounded-md text-sm font-bold", focusRing)}>
                                                 {tFacts("link")}
+                                            </Link>
+                                            <Link href="/candidate/profile/discover" className={cn("self-start rounded-md text-sm font-bold", focusRing)}>
+                                                {tDiscover("link")}
                                             </Link>
                                         </div>
                                     )}

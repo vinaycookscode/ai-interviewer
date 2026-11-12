@@ -4,7 +4,15 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-Migration `job_requirements` adds `Job.status` (`JobStatus`), the requirement columns and `WorkMode`, and marks existing jobs OPEN (CLOSED if archived). Migration `resume_facts` adds the resume fact columns to `CandidateProfile`. Migration `match_embeddings` adds `Job.embedding` and `CandidateProfile.embedding` (`vector(768)`) with HNSW indexes. Migration `applications` adds `Application` and `ApplicationEvent` with the `ApplicationStage` and `ApplicationSource` enums, and creates an application for every job and candidate that already has an AI interview. Migration `my_applications` adds `Application.candidateSeenAt` and `User.applicationEmails`.
+Migration `job_requirements` adds `Job.status` (`JobStatus`), the requirement columns and `WorkMode`, and marks existing jobs OPEN (CLOSED if archived). Migration `resume_facts` adds the resume fact columns to `CandidateProfile`. Migration `match_embeddings` adds `Job.embedding` and `CandidateProfile.embedding` (`vector(768)`) with HNSW indexes. Migration `applications` adds `Application` and `ApplicationEvent` with the `ApplicationStage` and `ApplicationSource` enums, and creates an application for every job and candidate that already has an AI interview. Migration `my_applications` adds `Application.candidateSeenAt` and `User.applicationEmails`. Migration `discoverable` adds `CandidateProfile.discoverable` and `discoverableSince`, and the `CandidateBlock` table.
+
+- **Let employers find me (AIIN-198).** Profile → "Let employers find me", from the approved artboards:
+  - a switch, off for everyone until they turn it on, which needs confirmed profile facts;
+  - what employers never see;
+  - a preview of the exact anonymous card employers will see: role, years, top skills, city, notice period, practice score, degree, and a code like "Candidate 4F2A". No name, contacts, employer or college names.
+  - a block list: find an employer by name and block them, so they never see or invite you.
+
+  Turning it off takes effect on the next match query; applications already made stay. Matching and search must use `discoverableWhere` (`lib/discovery.ts`), and the card comes from `anonymousCard` (`lib/anonymous-card.ts`) so the preview and employers' cards always match.
 
 - **My applications (AIIN-197).** More → My applications shows every job you applied to, from the approved artboards: Active and Closed tabs, with each job's company and stage in your words (Applied, In review, Interviewing, Offer, Selected, Not selected). The next AI interview shows with its date and a link to its prep set, and "Updated" marks anything that changed since you last looked. You can withdraw from any open application; the employer sees Withdrawn and can't move it after that. "Email me when an application changes" is off until you turn it on. When it's on, you get one email each time an employer moves your application, with the new stage only, never their notes or reasons.
 
