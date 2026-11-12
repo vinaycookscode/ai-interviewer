@@ -412,7 +412,8 @@
             "bannerBody": "Confirm the skills and experience this job needs, and U will find candidates who fit.",
             "bannerCta": "Add requirements",
             "edit": "Requirements",
-            "applications": "Applications"
+            "applications": "Applications",
+            "matches": "Matches"
         }
     },
     "Sidebar": {
@@ -3505,5 +3506,52 @@
             "none": "Not set"
         },
         "link": "Let employers find me"
+    },
+    "Matches": {
+        "title": "Matched candidates",
+        "subtitle": "People who chose to be found, ranked by how well their confirmed facts fit your confirmed requirements.",
+        "applications": "Applications",
+        "anonymous": "Anonymous until they apply",
+        "match": "match",
+        "years": "{count, plural, one {# year} other {# years}}",
+        "parts": {
+            "mustHave": "Must-haves",
+            "relevance": "Relevant work",
+            "experience": "Experience",
+            "niceToHave": "Nice-to-haves"
+        },
+        "city": "City",
+        "notice": "Notice",
+        "noticeDays": "{count, plural, one {# day} other {# days}}",
+        "practice": "Practice score",
+        "none": "Not set",
+        "filters": "Filters",
+        "show": "Show",
+        "minLabel": "Minimum match",
+        "minPill": "{min}% and above",
+        "all": "Everyone who passes · {count}",
+        "yearsLabel": "Experience",
+        "anyYears": "Any experience",
+        "yearsOption": {
+            "0-2": "Up to 2 years",
+            "3-5": "3 to 5 years",
+            "6+": "6 years or more"
+        },
+        "cityLabel": "City",
+        "anyCity": "Any city",
+        "apply": "Apply filters",
+        "count": "{count, plural, one {# candidate} other {# candidates}} · best match first",
+        "noneTitle": "No matches yet",
+        "noneBody": "Matches appear as candidates who fit choose to be found. Check back soon.",
+        "noMatchTitle": "No one at this level",
+        "noMatchBody": "Lower the minimum, or show everyone who passes.",
+        "notReadyTitle": "Add requirements to get matches",
+        "notReadyBody": "Confirm the skills and experience this job needs, and U will find candidates who fit.",
+        "addRequirements": "Add requirements",
+        "pages": "Pages",
+        "previous": "Previous",
+        "next": "Next",
+        "pageOf": "Page {page} of {pages}",
+        "fairness": "A match is worked out from facts candidates confirmed and requirements you confirmed. It never uses name, gender, age, college name or photo."
     }
 }

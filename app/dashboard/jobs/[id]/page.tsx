@@ -119,6 +119,9 @@ export default async function JobDetailsPage({
                             <Link href={`/dashboard/jobs/${job.id}/applications`} className={cn(outlineButton, "h-12 px-[18px] text-[15px]")}>
                                 {tReq("applications")}
                             </Link>
+                            <Link href={`/dashboard/jobs/${job.id}/matches`} className={cn(outlineButton, "h-12 px-[18px] text-[15px]")}>
+                                {tReq("matches")}
+                            </Link>
                             <BulkInviteDialog jobId={job.id} invitedEmails={invitedEmails} />
                             <InviteCandidateDialog jobId={job.id} />
                         </>
