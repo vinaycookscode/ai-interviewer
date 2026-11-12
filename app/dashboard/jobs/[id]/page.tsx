@@ -11,9 +11,10 @@ import { CandidateList } from "@/components/jobs/candidate-list";
 import { Chip, PageHeading, caption, formatShortDate, glassButton, outlineButton, panel, panelTitle } from "@/components/jobs/employer-ui";
 import { RankedCandidates } from "@/components/jobs/ranked-candidates";
 import { ShareShortlist } from "@/components/jobs/share-shortlist";
+import { ExportCandidates } from "@/components/jobs/export-candidates";
 import { RankedFilters } from "@/components/jobs/ranked-filters";
 import { EmptyState } from "@/components/soft-glass/empty-state";
-import { hasFilters, parseFilters } from "@/lib/candidate-filters";
+import { filtersQuery, hasFilters, parseFilters } from "@/lib/candidate-filters";
 import { loadRanking, unfinishedWhere } from "@/lib/candidate-ranking";
 
 export default async function JobDetailsPage({
@@ -84,6 +85,16 @@ export default async function JobDetailsPage({
     const requirements = { requireResume: job.requireResume, requireAadhar: job.requireAadhar, requirePAN: job.requirePAN };
     const docs = [job.requireResume && t("docResume"), job.requirePAN && t("docPan"), job.requireAadhar && t("docAadhaar")].filter(Boolean) as string[];
     const tList = await getTranslations("Shortlist");
+    const tVerdict = await getTranslations("Integrity.verdicts");
+    // What the export will hold, in words, from the list's own filters (AIIN-162)
+    const exportFilters = [
+        filters.decisions.length ? new Intl.ListFormat("en-GB").format(filters.decisions.map((d) => tList(`decisions.${d}`))) : tList("export.allDecisions"),
+        filters.min ? tList("export.minScore", { score: filters.min }) : tList("export.anyScore"),
+        filters.within ? tList("export.lastDays", { count: filters.within }) : tList("export.anyTime"),
+        ...(filters.integrity ? [tVerdict(filters.integrity)] : []),
+        ...(filters.q ? [tList("export.matching", { q: filters.q })] : []),
+    ].join(", ");
+    const exportQuery = filtersQuery({ ...filters, page: 1, status: null });
     const finished = ranking?.finished ?? (await db.interview.count({ where: { jobId: job.id, status: "COMPLETED" } }));
     const rows = unfinished.map((interview) => ({ ...interview, job: { title: job.title, ...requirements } }));
     const invitedEmails = job.interviews.map((i) => i.candidate.email.toLowerCase());
@@ -121,6 +132,14 @@ export default async function JobDetailsPage({
                     </h2>
                     <span className="flex flex-wrap items-center gap-3">
                         <span className={caption}>{t("invitedCompleted", { invited: job.interviews.length, completed: finished })}</span>
+                        {ranking && finished > 0 && (
+                            <ExportCandidates
+                                href={`/dashboard/jobs/${job.id}/export${exportQuery ? `?${exportQuery}` : ""}`}
+                                count={ranking.total}
+                                filters={exportFilters}
+                                order={tList(`export.order.${filters.sort}`)}
+                            />
+                        )}
                         <ShareShortlist
                             jobId={job.id}
                             shortlisted={countOf("SHORTLISTED")}

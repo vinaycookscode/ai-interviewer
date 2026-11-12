@@ -2293,6 +2293,27 @@
             "close": "Close",
             "labelRequired": "Say who it’s for, up to 80 characters.",
             "failed": "Couldn’t do that. Try again."
+        },
+        "export": {
+            "open": "Export",
+            "title": "Export {count, plural, one {# candidate} other {# candidates}}",
+            "uses": "Uses your current filters: <b>{filters}</b>. One row per candidate, {order}.",
+            "allDecisions": "all decisions",
+            "anyScore": "any score",
+            "minScore": "{score} and above",
+            "anyTime": "any time",
+            "lastDays": "last {count} days",
+            "matching": "matching “{q}”",
+            "order": {
+                "score": "ranked by score",
+                "finished": "latest finish first",
+                "name": "by name"
+            },
+            "columns": "Columns",
+            "warning": "The file includes candidates’ emails. Keep it somewhere only your team can open.",
+            "cancel": "Cancel",
+            "download": "Download CSV",
+            "close": "Close"
         }
     },
     "Onboarding": {

@@ -13,7 +13,8 @@ function withinDate(days: number): Date {
     return new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 }
 
-const ORDER: Record<Sort, Prisma.InterviewOrderByWithRelationInput[]> = {
+/** The ranked list's sorts; the CSV export uses the same (AIIN-162). */
+export const RANKING_ORDER: Record<Sort, Prisma.InterviewOrderByWithRelationInput[]> = {
     // Highest first; a tie goes to whoever finished earlier
     score: [{ score: { sort: "desc", nulls: "last" } }, { completedAt: { sort: "asc", nulls: "last" } }, { id: "asc" }],
     finished: [{ completedAt: { sort: "desc", nulls: "last" } }, { id: "asc" }],
@@ -38,6 +39,15 @@ export interface RankedRow {
     completedAt: Date | null;
 }
 
+/** Every finished interview's rank by score among all of the job's, whatever the filters: a candidate keeps their rank. */
+export async function rankOfAll(jobId: string): Promise<Map<string, number>> {
+    const ranks = await db.$queryRaw<{ id: string; rank: bigint }[]>`
+        SELECT "id", ROW_NUMBER() OVER (ORDER BY "score" DESC NULLS LAST, "completedAt" ASC NULLS LAST, "id" ASC) AS "rank"
+        FROM "Interview"
+        WHERE "jobId" = ${jobId} AND "status" = 'COMPLETED'`;
+    return new Map(ranks.map((r) => [r.id, Number(r.rank)]));
+}
+
 /** The job's finished interviews that match the ranked list's filters: the list, and "Select all matching" (AIIN-159). */
 export function rankingWhere(jobId: string, f: RankingFilters): Prisma.InterviewWhereInput {
     return {
@@ -58,11 +68,11 @@ export function rankingWhere(jobId: string, f: RankingFilters): Prisma.Interview
 export async function loadRanking(jobId: string, f: RankingFilters) {
     const where = rankingWhere(jobId, f);
 
-    const [total, rows, ranks, decisions] = await Promise.all([
+    const [total, rows, rankOf, decisions] = await Promise.all([
         db.interview.count({ where }),
         db.interview.findMany({
             where,
-            orderBy: ORDER[f.sort],
+            orderBy: RANKING_ORDER[f.sort],
             skip: (f.page - 1) * PAGE_SIZE,
             take: PAGE_SIZE,
             select: {
@@ -76,10 +86,7 @@ export async function loadRanking(jobId: string, f: RankingFilters) {
                 personalityProfile: { select: { strengths: true, weaknesses: true } },
             },
         }),
-        db.$queryRaw<{ id: string; rank: bigint }[]>`
-            SELECT "id", ROW_NUMBER() OVER (ORDER BY "score" DESC NULLS LAST, "completedAt" ASC NULLS LAST, "id" ASC) AS "rank"
-            FROM "Interview"
-            WHERE "jobId" = ${jobId} AND "status" = 'COMPLETED'`,
+        rankOfAll(jobId),
         db.interview.groupBy({ by: ["decision"], where: { jobId, status: "COMPLETED" }, _count: { _all: true } }),
     ]);
 
@@ -92,7 +99,6 @@ export async function loadRanking(jobId: string, f: RankingFilters) {
           })
         : [];
     const spreadOf = new Map(spreads.map((s) => [s.interviewId, s]));
-    const rankOf = new Map(ranks.map((r) => [r.id, Number(r.rank)]));
 
     const ranked: RankedRow[] = rows.map((r) => ({
         id: r.id,
@@ -111,7 +117,7 @@ export async function loadRanking(jobId: string, f: RankingFilters) {
     }));
 
     const counts = Object.fromEntries(decisions.map((d) => [d.decision, d._count._all])) as Partial<Record<HiringDecision, number>>;
-    return { total, rows: ranked, finished: ranks.length, counts };
+    return { total, rows: ranked, finished: rankOf.size, counts };
 }
 
 /** Unfinished interviews for the job: listed below the ranking, unranked. */
