@@ -11,7 +11,7 @@ import { coralButton } from "@/components/soft-glass/classes";
 import { field } from "@/components/jobs/employer-ui";
 import { cn } from "@/lib/utils";
 
-/** Apply to a job directly (AIIN-202): an optional phone and note. Applying shares your name with this one employer. */
+/** Apply to a job directly (AIIN-202): a phone (required, AIIN-204) and an optional note. Shares your name with this one employer. */
 export function ApplyForm({ jobId, company, phone }: { jobId: string; company: string; phone: string }) {
     const t = useTranslations("Jobs");
     const router = useRouter();
@@ -42,6 +42,8 @@ export function ApplyForm({ jobId, company, phone }: { jobId: string; company: s
                     type="tel"
                     inputMode="tel"
                     autoComplete="tel"
+                    required
+                    aria-required="true"
                     value={values.phone}
                     onChange={(e) => setValues({ ...values, phone: e.target.value })}
                     aria-describedby="ap-phone-hint"

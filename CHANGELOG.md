@@ -23,7 +23,7 @@ Migration `job_matches` adds `JobMatch` and `MatchTask`. A new daily cron, `/api
 - **Find jobs and apply directly (AIIN-202).** More → Find jobs lists open jobs whose requirements are confirmed, from the approved artboards. Closed, paused and draft jobs never appear.
   - **Search** by role or skill ("js" finds JavaScript), place (which also includes remote jobs), work mode, minimum pay and "fits my experience".
   - **Sorted by your own match %**, with "You have every must-have" or what's missing. Without confirmed facts, it's newest first, with a nudge to confirm them.
-  - **Applying:** a job's page shows its description, needs and your match. Apply takes an optional phone (saved on your profile) and note, and creates an application at Applied, marked "Applied from job search". Your note shows on the employer's application page.
+  - **Applying:** a job's page shows its description, needs and your match. Apply takes your phone, which is required and saved on your profile (AIIN-204), and an optional note, and creates an application at Applied, marked "Applied from job search". Your note shows on the employer's application page.
   - **No opt-in needed:** applying shares your name with that one employer.
   - **My applications** gets a coral "Find jobs".
 

@@ -3600,7 +3600,7 @@
         "yourMatch": "your match",
         "applyTitle": "Apply",
         "appliedTitle": "You've applied",
-        "phone": "Phone, optional",
+        "phone": "Phone",
         "phoneHint": "So the employer can call you. Saved on your profile.",
         "note": "A note to the employer, optional",
         "consent": "Applying shares your name, email and confirmed profile with {company} only.",
@@ -3609,7 +3609,7 @@
         "errors": {
             "notFound": "This job isn't open any more.",
             "already": "You've already applied to this job.",
-            "phone": "Enter a phone number of 10 to 15 digits, or leave it empty.",
+            "phone": "Enter your phone number, 10 to 15 digits.",
             "note": "Keep the note under 1,000 characters."
         }
     }

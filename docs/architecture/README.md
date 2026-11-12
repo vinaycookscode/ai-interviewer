@@ -40,6 +40,7 @@ This directory records significant technical decisions made on this project — 
 | 2026-11-12 | [Resume facts: proposed by AI, confirmed by the candidate, never personal](2026-11-12-resume-facts.md) | Accepted · implemented | AIIN-193 |
 | 2026-11-12 | [Applications hold a candidate's outcome for a job](2026-11-12-applications-hold-the-outcome.md) | Accepted · implemented | AIIN-195 |
 | 2026-11-12 | [Match scoring: deterministic, computed on change, refreshed daily](2026-11-12-match-scoring.md) | Accepted · implemented | AIIN-199 |
+| 2026-11-12 | [Talent Match: invitation allowance, phone on apply, human rounds](2026-11-12-talent-match-decisions.md) | Accepted | AIIN-204 |
 
 Proposals that aren't ADRs yet (Upstash rate limiting, Deepgram and Google TTS) are listed in `docs/audits/2026-10-24-master-decision-index.md`.
 

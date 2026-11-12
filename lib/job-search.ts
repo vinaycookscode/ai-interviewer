@@ -53,9 +53,8 @@ export function searchWhere(f: SearchFilters, years: number | null): Prisma.JobW
     return { AND: and };
 }
 
-/** A phone number to apply with: optional, digits with an optional +, 10 to 15 digits. */
-export function cleanPhone(v: unknown): string | null | undefined {
-    if (v === undefined || v === null || v === "") return null;
+/** A phone number to apply with: required (AIIN-204), digits with an optional +, 10 to 15 digits. */
+export function cleanPhone(v: unknown): string | undefined {
     if (typeof v !== "string") return undefined;
     const s = v.replace(/[\s()-]/g, "");
     return /^\+?\d{10,15}$/.test(s) ? s : undefined;

@@ -8,7 +8,7 @@ import { SEARCHABLE, cleanPhone } from "@/lib/job-search";
 
 /**
  * Apply to an open job directly (AIIN-202): an application at Applied, from Direct. Applying is consent to this one
- * employer, so no "find me" opt-in is needed. The phone is optional and saved on the profile.
+ * employer, so no "find me" opt-in is needed. A phone is required (AIIN-204) and saved on the profile.
  */
 export async function applyToJob(input: { jobId: string; phone?: string; note?: string }): Promise<{ ok: true } | { error: "notFound" | "already" | "phone" | "note" }> {
     const session = await auth();
@@ -30,7 +30,7 @@ export async function applyToJob(input: { jobId: string; phone?: string; note?: 
             select: { id: true },
         });
         await tx.applicationEvent.create({ data: { applicationId: app.id, actorId: userId, toStage: "APPLIED", note: "Applied from job search" } });
-        if (phone) await tx.candidateProfile.upsert({ where: { userId }, update: { phone }, create: { userId, phone } });
+        await tx.candidateProfile.upsert({ where: { userId }, update: { phone }, create: { userId, phone } });
     });
     revalidatePath("/candidate/jobs");
     revalidatePath(`/candidate/jobs/${job.id}`);

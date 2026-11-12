@@ -17,7 +17,8 @@ test("filters are read safely from the URL", () => {
 
 test("phone numbers to apply with", () => {
     assert.equal(cleanPhone("+91 98765 43210"), "+919876543210");
-    assert.equal(cleanPhone(""), null);
+    assert.equal(cleanPhone(""), undefined); // required (AIIN-204)
+    assert.equal(cleanPhone(undefined), undefined);
     assert.equal(cleanPhone("call me"), undefined);
     assert.equal(cleanPhone(42), undefined);
 });
