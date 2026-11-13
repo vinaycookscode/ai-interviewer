@@ -1381,6 +1381,7 @@ model Application {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
   events          ApplicationEvent[]
+  humanRounds     HumanRound[]
 
   @@unique([jobId, candidateId])
   @@index([employerId, stage])
@@ -1444,4 +1445,32 @@ model MatchTask {
   createdAt DateTime  @default(now())
 
   @@unique([kind, targetId])
+}
+
+// A human interview round under an application (AIIN-196): recorded, with a calendar invite; no built-in video
+// (AIIN-204). AI rounds stay as Interview rows for the same job and candidate, so scores and rankings are untouched.
+enum RoundOutcome {
+  PASSED
+  FAILED
+  NO_SHOW
+}
+
+model HumanRound {
+  id            String        @id @default(cuid())
+  applicationId String
+  application   Application   @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  roundName     String
+  startsAt      DateTime
+  durationMins  Int           @default(45)
+  interviewer   String?
+  meetingLink   String
+  // Bumped on every change, so calendars replace the old invite (RFC 5545 SEQUENCE)
+  sequence      Int           @default(0)
+  outcome       RoundOutcome?
+  cancelledAt   DateTime?
+  createdById   String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([applicationId, startsAt])
 }

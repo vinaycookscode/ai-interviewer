@@ -4,7 +4,15 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-Migration `job_matches` adds `JobMatch` and `MatchTask`. Migration `invitations` adds `SubscriptionPlan.talentInvitesPerMonth` (Free 10, Pro 50, Premium 200) and `Application.inviteMessage`, `invitedAt` and `inviteExpiresAt`. A new daily cron, `/api/cron/matches`, needs `CRON_SECRET` like the others.
+Migration `job_matches` adds `JobMatch` and `MatchTask`. Migration `invitations` adds `SubscriptionPlan.talentInvitesPerMonth` (Free 10, Pro 50, Premium 200) and `Application.inviteMessage`, `invitedAt` and `inviteExpiresAt`. Migration `human_rounds` adds `HumanRound`. A new daily cron, `/api/cron/matches`, needs `CRON_SECRET` like the others.
+
+- **Interview rounds on an application (AIIN-196).** An application's Rounds list now holds AI and human rounds together, in time order, each with its outcome.
+  - **Add an AI round:** sends the usual AI interview invite and link.
+  - **Add a round with a person:** name, date and time, length, interviewer and an https meeting link. The candidate gets an email with a calendar invite.
+  - **New time or cancel:** sends an updated invite that replaces or removes the event in their calendar.
+  - **Outcome:** each human round can be marked Passed, Not passed or Didn't join. AI rounds show their decision.
+  - Booking a round from Applied or Screening moves the application to Interviewing.
+  - Candidates see the next round's date, time and a Join link in My applications, but never the outcome.
 
 - **Matching engine (AIIN-199).** Every open job with confirmed requirements now has matches. Matches come only from findable candidates who passed the job's place and experience filters, ranked by how close their confirmed facts are to the job. Each match stores:
   - a score that's always the same for the same job and profile: must-haves 45%, relevance of past work 25%, experience 20%, nice-to-haves 10%, rounded to 5;

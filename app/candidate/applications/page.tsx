@@ -65,6 +65,17 @@ export default async function MyApplicationsPage({ searchParams }: { searchParam
         : [];
     const roundOf = new Map<string, (typeof rounds)[number]>();
     for (const r of rounds) if (!roundOf.has(r.jobId)) roundOf.set(r.jobId, r);
+    // The next round with a person: its date, time and link (AIIN-196 AC2). Never its outcome.
+    const people = apps.length
+        ? await db.humanRound.findMany({
+              where: { applicationId: { in: apps.map((a) => a.id) }, cancelledAt: null, startsAt: { gt: new Date(Date.now() - 2 * 3_600_000) } },
+              orderBy: { startsAt: "asc" },
+              select: { applicationId: true, roundName: true, startsAt: true, meetingLink: true },
+          })
+        : [];
+    const personOf = new Map<string, (typeof people)[number]>();
+    for (const r of people) if (!personOf.has(r.applicationId)) personOf.set(r.applicationId, r);
+    const tR = await getTranslations("Rounds");
 
     const closed = apps.filter((a) => CLOSED.includes(a.stage as Stage));
     const active = apps.filter((a) => !CLOSED.includes(a.stage as Stage) && a.stage !== "INVITED");
@@ -121,6 +132,7 @@ export default async function MyApplicationsPage({ searchParams }: { searchParam
                     {list.map((a) => {
                         const stage = a.stage as Stage;
                         const round = roundOf.get(a.jobId);
+                        const person = CLOSED.includes(stage) ? undefined : personOf.get(a.id);
                         const updated = !!a.candidateSeenAt && a.candidateSeenAt < a.stageChangedAt;
                         const company = a.job.employer.name?.trim() || t("anEmployer");
                         return (
@@ -132,7 +144,12 @@ export default async function MyApplicationsPage({ searchParams }: { searchParam
                                         {a.job.location ? ` · ${a.job.location}` : ""}
                                     </span>
                                     <span className="mt-1 inline-flex items-center gap-1.5 text-[13px]">
-                                        {round?.scheduledTime && !CLOSED.includes(stage) ? (
+                                        {person ? (
+                                            <>
+                                                <CalendarClock className="size-3.5 shrink-0" aria-hidden="true" />
+                                                <span className="break-words">{tR("next", { name: person.roundName, when: when.format(person.startsAt) })}</span>
+                                            </>
+                                        ) : round?.scheduledTime && !CLOSED.includes(stage) ? (
                                             <>
                                                 <CalendarClock className="size-3.5 shrink-0" aria-hidden="true" />
                                                 {t("round", { when: when.format(round.scheduledTime) })}
@@ -153,6 +170,17 @@ export default async function MyApplicationsPage({ searchParams }: { searchParam
                                 </span>
                                 {!CLOSED.includes(stage) && (
                                     <span className="flex flex-wrap items-center gap-3">
+                                        {person && (
+                                            <a
+                                                href={person.meetingLink}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className={cn("inline-flex items-center gap-1.5 rounded-md text-sm font-bold", focusRing)}
+                                            >
+                                                {tR("join")}
+                                                <ArrowRight className="size-3.5" aria-hidden="true" />
+                                            </a>
+                                        )}
                                         {round && (
                                             <Link
                                                 href={`/candidate/question-bank/prep/${round.id}`}

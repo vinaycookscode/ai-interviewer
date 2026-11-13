@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { ArrowRight, CheckCircle2, Mic, StickyNote } from "lucide-react";
+import { ArrowRight, Ban, Bot, CheckCircle2, CircleDashed, StickyNote, UserX, Users, XCircle } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,7 @@ import { PageHeading, displayName, formatShortDate, panel, panelTitle } from "@/
 import { focusRing } from "@/components/soft-glass/classes";
 import { HoldChip, StageChip } from "@/components/applications/stage-chip";
 import { ApplicationMove, ApplicationNote } from "@/components/applications/application-actions";
+import { AddRound, HumanRoundActions } from "@/components/applications/rounds";
 
 export async function generateMetadata(): Promise<Metadata> {
     const t = await getTranslations("Applications");
@@ -28,6 +29,7 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
     const userId = session?.user?.id;
     if (!userId) redirect("/auth/login");
     const t = await getTranslations("Applications");
+    const tR = await getTranslations("Rounds");
 
     const app = await db.application.findFirst({
         where: { id: appId, jobId: id, employerId: userId },
@@ -53,16 +55,31 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
     const invited = !revealsCandidate(stage);
 
     // An invitation not yet accepted stays anonymous: no name, email or interviews are loaded (AC3)
-    const [person, interviews] = invited
-        ? [null, []]
+    const [person, interviews, humanRounds] = invited
+        ? [null, [], []]
         : await Promise.all([
               db.user.findUnique({ where: { id: app.candidateId }, select: { name: true, email: true, resumeUrl: true, resumeName: true, candidateProfile: { select: { phone: true } } } }),
               db.interview.findMany({
                   where: { jobId: app.job.id, candidateId: app.candidateId },
                   orderBy: { createdAt: "desc" },
-                  select: { id: true, status: true, score: true, completedAt: true, _count: { select: { answers: true } } },
+                  select: { id: true, status: true, score: true, completedAt: true, scheduledTime: true, createdAt: true, decision: true },
+              }),
+              db.humanRound.findMany({
+                  where: { applicationId: app.id },
+                  select: { id: true, roundName: true, startsAt: true, durationMins: true, interviewer: true, meetingLink: true, outcome: true, cancelledAt: true },
               }),
           ]);
+    // AI and human rounds together, in time order (AIIN-196 AC3). An AI round's outcome is its hiring decision.
+    const rounds = [
+        ...interviews.map((i) => ({
+            kind: "AI" as const,
+            at: i.scheduledTime ?? i.createdAt,
+            i,
+            outcome: i.decision === "SHORTLISTED" ? ("PASSED" as const) : i.decision === "REJECTED" ? ("FAILED" as const) : null,
+        })),
+        ...humanRounds.map((h) => ({ kind: "HUMAN" as const, at: h.startsAt, h, outcome: h.cancelledAt ? null : h.outcome })),
+    ].sort((a, b) => a.at.getTime() - b.at.getTime());
+    const canBook = !invited && !CLOSED.includes(stage);
     const name = person ? displayName(person) : t(stage === "DECLINED" ? "declinedName" : "invitedName");
     const resumeHref = documentHref(person?.resumeUrl);
     const notes = app.events.filter((e) => e.note && !e.toStage);
@@ -128,32 +145,72 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
                     <h2 id="ap-rounds" className={panelTitle}>
                         {t("rounds")}
                     </h2>
-                    {interviews.length === 0 ? (
+                    {rounds.length === 0 ? (
                         <p className="text-sm text-sg-muted">{t("noRounds")}</p>
                     ) : (
-                        <ul className="flex flex-col gap-2">
-                            {interviews.map((i) => (
-                                <li key={i.id} className="flex flex-wrap items-center gap-3 rounded-[18px] bg-sg-row px-4 py-3">
-                                    <Mic className="size-[18px] shrink-0" aria-hidden="true" />
+                        <ol className="flex flex-col gap-2">
+                            {rounds.map((r, n) => (
+                                <li key={r.kind === "AI" ? r.i.id : r.h.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[18px] bg-sg-row px-4 py-3">
+                                    {r.kind === "AI" ? <Bot className="size-[18px] shrink-0" aria-hidden="true" /> : <Users className="size-[18px] shrink-0" aria-hidden="true" />}
                                     <span className="flex min-w-0 flex-[1_1_160px] flex-col">
-                                        <strong>{t("aiInterview")}</strong>
-                                        <span className="text-[13px] text-sg-muted">{i.completedAt ? formatShortDate(i.completedAt) : t("notStarted")}</span>
+                                        <strong className={cn("break-words", r.kind === "HUMAN" && r.h.cancelledAt && "line-through")}>
+                                            {tR("numbered", { n: n + 1, name: r.kind === "AI" ? t("aiInterview") : r.h.roundName })}
+                                        </strong>
+                                        <span className="text-[13px] break-words text-sg-muted">
+                                            {r.kind === "AI"
+                                                ? r.i.completedAt
+                                                    ? tR("done", { when: time.format(r.i.completedAt) })
+                                                    : r.i.scheduledTime
+                                                      ? tR("from", { when: time.format(r.i.scheduledTime) })
+                                                      : t("notStarted")
+                                                : [time.format(r.h.startsAt), tR("minutes", { count: r.h.durationMins }), r.h.interviewer].filter(Boolean).join(" · ")}
+                                        </span>
+                                        {r.kind === "HUMAN" && !r.h.cancelledAt && (
+                                            <a
+                                                href={r.h.meetingLink}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className={cn("self-start rounded-md text-[13px] font-semibold break-all", focusRing)}
+                                            >
+                                                {r.h.meetingLink}
+                                            </a>
+                                        )}
                                     </span>
-                                    {i.status === "COMPLETED" && (
+                                    {r.kind === "HUMAN" && r.h.cancelledAt ? (
+                                        <RoundOutcome outcome="CANCELLED" label={tR("cancelled")} />
+                                    ) : (
+                                        // An open human round shows its outcome in its own picker below
+                                        (r.kind === "AI" || !canBook) && <RoundOutcome outcome={r.outcome ?? "NONE"} label={tR(`outcomes.${r.outcome ?? "NONE"}`)} />
+                                    )}
+                                    {r.kind === "AI" && r.i.status === "COMPLETED" && (
                                         <>
-                                            <span className="font-display sg-soft text-[22px] font-semibold">{i.score?.toFixed(1) ?? "–"}</span>
+                                            <span className="font-display sg-soft text-[22px] font-semibold">{r.i.score?.toFixed(1) ?? "–"}</span>
                                             <Link
-                                                href={`/interview/${i.id}/feedback?from=${encodeURIComponent(`/dashboard/jobs/${app.job.id}/applications/${app.id}`)}`}
+                                                href={`/interview/${r.i.id}/feedback?from=${encodeURIComponent(`/dashboard/jobs/${app.job.id}/applications/${app.id}`)}`}
                                                 className={cn("rounded-md font-bold", focusRing)}
                                             >
                                                 {t("report")}
                                             </Link>
                                         </>
                                     )}
+                                    {r.kind === "HUMAN" && !r.h.cancelledAt && canBook && (
+                                        <HumanRoundActions
+                                            round={{
+                                                id: r.h.id,
+                                                roundName: r.h.roundName,
+                                                startsAt: r.h.startsAt.toISOString(),
+                                                durationMins: r.h.durationMins,
+                                                interviewer: r.h.interviewer,
+                                                meetingLink: r.h.meetingLink,
+                                                outcome: r.h.outcome,
+                                            }}
+                                        />
+                                    )}
                                 </li>
                             ))}
-                        </ul>
+                        </ol>
                     )}
+                    {canBook && <AddRound id={app.id} />}
                     <h2 className={cn(panelTitle, "mt-2")}>{t("notes")}</h2>
                     {!invited && <ApplicationNote id={app.id} />}
                     {notes.length === 0 ? (
@@ -220,5 +277,19 @@ export default async function ApplicationPage({ params }: { params: Promise<{ id
                 </section>
             </div>
         </div>
+    );
+}
+
+const OUTCOME_ICON = { PASSED: CheckCircle2, FAILED: XCircle, NO_SHOW: UserX, NONE: CircleDashed, CANCELLED: Ban } as const;
+
+/** A round's outcome, told by icon and word. */
+function RoundOutcome({ outcome, label }: { outcome: keyof typeof OUTCOME_ICON; label: string }) {
+    const Icon = OUTCOME_ICON[outcome];
+    const tone = outcome === "PASSED" ? "text-sg-success" : outcome === "FAILED" || outcome === "NO_SHOW" ? "text-sg-danger" : "text-sg-muted";
+    return (
+        <span className={cn("inline-flex h-[30px] shrink-0 items-center gap-1.5 rounded-full bg-sg-chip px-3 text-[13px] font-bold", tone)}>
+            <Icon className="size-3.5" aria-hidden="true" />
+            {label}
+        </span>
     );
 }

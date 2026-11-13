@@ -18,3 +18,11 @@ Three open questions from the Talent Match spec had to be settled before invitat
 - Pricing can change by editing plan numbers, with no code change. Paid per-invitation credits can come later if needed.
 - A required phone may lower applications a little. If it does, we revisit.
 - Calendar files mean no calendar integration to maintain. Employers keep using their own meeting tools.
+
+## Implementation of human rounds (AIIN-196)
+
+- **Human rounds have their own table, `HumanRound`**, under the application: round name, start, length, interviewer, https meeting link, outcome (Passed, Not passed, Didn't join) and a cancelled time. They are not rows in `Interview`, so ranking, compare, decisions and export, which all read AI interviews, are unaffected.
+- **AI rounds stay as they are.** Adding one from the application calls the existing invite (same email, link and expiry). An AI round's outcome shown in the list is its hiring decision: Shortlisted reads Passed, Rejected reads Not passed.
+- **Booking any round from Applied or Screening moves the application to Interviewing**, with a line in its history.
+- **The calendar invite** is an iCalendar file with a stable UID per round. Each new time or cancellation raises its SEQUENCE, so calendars replace or remove the earlier event. Round emails are always sent, even when application emails are off, because the candidate has to attend.
+- **The candidate sees the next round's name, date, time and link** in My applications, never its outcome.
