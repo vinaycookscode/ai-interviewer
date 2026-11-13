@@ -12,6 +12,7 @@ import {
     FileUp,
     Hourglass,
     ListChecks,
+    Mail,
     Sparkles,
     Mic,
     TriangleAlert,
@@ -26,6 +27,7 @@ import { getFeatureFlags } from "@/actions/feature-flags";
 import { canStartInterview, getTimeUntilInterview } from "@/lib/interview-timing";
 import { DashboardRefresher } from "@/components/candidate/dashboard-refresher";
 import { Mascot } from "@/components/soft-glass/mascot";
+import { ResendVerification } from "@/components/auth/resend-verification";
 import { ScoreGauge } from "@/components/soft-glass/score-gauge";
 import { coralButton, focusRing } from "@/components/soft-glass/classes";
 import { loadStreak, todaysQuestion } from "@/lib/daily-challenge/server";
@@ -77,6 +79,7 @@ const PAST_MAX = 200;
 
 export default async function CandidateDashboardPage({ searchParams }: { searchParams: Promise<{ past?: string }> }) {
     const t = await getTranslations("Today");
+    const tVerify = await getTranslations("VerifyEmail");
     const session = await auth();
     const userId = session?.user?.id;
 
@@ -93,7 +96,7 @@ export default async function CandidateDashboardPage({ searchParams }: { searchP
     const [candidate, upcoming, past, pastCount, scoreStats, firstScored, lastScored, enrollment, flags] = await Promise.all([
         db.user.findUnique({
             where: { id: userId },
-            select: { id: true, name: true, candidateProfile: { select: { primaryRole: true } } },
+            select: { id: true, name: true, email: true, emailVerified: true, candidateProfile: { select: { primaryRole: true } } },
         }),
         // Every interview still to do: there are few, and the next one is chosen from them.
         db.interview.findMany({
@@ -230,6 +233,22 @@ export default async function CandidateDashboardPage({ searchParams }: { searchP
                     </h1>
                 </div>
             </section>
+
+            {candidate && !candidate.emailVerified && (
+                // AIIN-55: practice waits for a verified email
+                <section aria-labelledby="verify-title" className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-[22px] bg-sg-lavender-soft px-[18px] py-4 text-sg-lavender-ink">
+                    <span aria-hidden="true" className="inline-flex size-10 shrink-0 items-center justify-center rounded-[14px] bg-sg-glass-strong">
+                        <Mail className="size-5" />
+                    </span>
+                    <span className="flex min-w-0 flex-[1_1_260px] flex-col gap-0.5">
+                        <strong id="verify-title">{tVerify("bannerTitle")}</strong>
+                        <span className="text-sm [overflow-wrap:anywhere]">{tVerify("bannerBody", { email: candidate.email })}</span>
+                    </span>
+                    <span className="flex flex-col items-start gap-1">
+                        <ResendVerification label={tVerify("resend")} className={cn(inkButton, "h-11 px-[18px] text-[15px] disabled:opacity-80")} />
+                    </span>
+                </section>
+            )}
 
             {next && nextState ? (
                 <NextInterview

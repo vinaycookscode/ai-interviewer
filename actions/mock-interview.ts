@@ -43,6 +43,13 @@ export async function createMockInterview(role: string, difficulty: string) {
         return { error: "Unauthorized" };
     }
 
+    // A verified email comes first (AIIN-55)
+    const { needsVerification } = await import("@/lib/email-verification");
+    if (await needsVerification(session.user.id)) {
+        const { getTranslations } = await import("next-intl/server");
+        return { error: (await getTranslations("VerifyEmail"))("practiceBlocked"), verifyRequired: true };
+    }
+
     // Check usage limit
     const { checkUsageLimit, incrementUsage } = await import("@/lib/usage");
     const usageCheck = await checkUsageLimit("mock_interview");

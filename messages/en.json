@@ -4332,5 +4332,26 @@
         "rowTitle": "What was flagged",
         "rowSome": "{count, plural, one {# moment was} other {# moments were}} noted. See them and add your side.",
         "rowNone": "Nothing was flagged in this interview."
+    },
+    "VerifyEmail": {
+        "checkTitle": "Check your email",
+        "checkBody": "We sent a link to {email}. Open it to verify your address and start practising.",
+        "checkHint": "The link works for 24 hours. Not there? Check spam or promotions.",
+        "resend": "Send it again",
+        "newLink": "Send a new link",
+        "sent": "Sent. Check your inbox",
+        "limit": "That’s 3 links in the last hour. Try again later.",
+        "failed": "Couldn’t send it. Try again in a minute.",
+        "continue": "Continue",
+        "continueSetup": "Set up your career path",
+        "doneTitle": "You’re verified",
+        "doneBody": "Thanks, your email is confirmed. Practice and interviews are open.",
+        "startPractising": "Start practising",
+        "expiredTitle": "This link has expired",
+        "expiredBody": "Links work for 24 hours, and only the newest one works. Send yourself a new one.",
+        "signedOut": "Signed out? <link>Sign in</link> and we’ll send a new link.",
+        "bannerTitle": "Verify your email to start practising",
+        "bannerBody": "We sent a link to {email}. It works for 24 hours. Check spam if it isn’t there.",
+        "practiceBlocked": "Verify your email first: open the link we sent you, or send a new one from Today."
     }
 }

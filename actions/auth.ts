@@ -14,6 +14,7 @@ import { checkRateLimit } from "@/lib/rate-limit";
 import { headers } from "next/headers";
 import { getClientIP } from "@/lib/geolocation";
 import type { AuthErrorCode } from "@/lib/auth-errors";
+import { issueVerification } from "@/lib/email-verification";
 
 /** A sign-in or sign-up error the form shows as a specific message (AIIN-57). */
 type AuthFail = { error: AuthErrorCode };
@@ -126,6 +127,8 @@ export const register = async (
                 data: {
                     name,
                     password: hashedPassword,
+                    // The invitation link proved the address (AIIN-55)
+                    emailVerified: new Date(),
                 },
             });
 
@@ -172,8 +175,12 @@ export const register = async (
         },
     });
 
-    // Auto-login after registration, then set up the career path (AIIN-52) unless a link sent them somewhere
-    const failed = await signInWith(email, password, callbackUrl || ONBOARDING_REDIRECT);
+    // Send the verification link (AIIN-55); signing in carries on even if the email fails, and they can resend it
+    await issueVerification({ email, name }).catch((e) => console.error("Verification email failed:", e));
+
+    // Auto-login, then "Check your email", then the career path set-up (AIIN-52) unless a link sent them somewhere
+    const next = callbackUrl?.startsWith("/") && !callbackUrl.startsWith("//") ? callbackUrl : ONBOARDING_REDIRECT;
+    const failed = await signInWith(email, password, `/auth/verify-email?next=${encodeURIComponent(next)}`);
     return failed ?? { success: "User created!" };
 };
 

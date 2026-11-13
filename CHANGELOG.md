@@ -4,6 +4,13 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
+Migration `verify_existing_emails` marks every existing account's email as verified, so nobody already using the app is blocked; only new sign-ups verify.
+
+- **New accounts verify their email (AIIN-55).** From the approved boards:
+  - **After sign-up:** "Check your email", with Send it again (3 an hour) and the way on to setting up a career path. The email's link works for 24 hours; only the newest link works, and only its hash is stored.
+  - **The link:** "You're verified" with Start practising, or "This link has expired" with Send a new link (or a nudge to sign in first).
+  - **Until verified:** Today shows "Verify your email to start practising" with Send it again, and starting a practice says to verify first. Accounts created from an invitation link count as verified, since the link proved the address.
+
 - **Sign-in and sign-up say what went wrong (AIIN-57).** "Something went wrong!" is gone. The forms now say whether the email has no account, the password doesn't match, there were too many tries (wait 15 minutes), the account was invited but has no password yet, the email already has an account or a pending invitation, the password misses a rule, or the problem is on our side. Each has its next step where there is one (reset your password, create an account, sign in). Red when the person can fix it, lavender when it's a wait or on our side. A failed sign-in keeps the email filled in.
 
 Migration `candidate_context` adds `Interview.candidateContext` and `candidateContextAt`.

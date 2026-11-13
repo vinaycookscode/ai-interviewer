@@ -92,3 +92,45 @@ export async function sendPasswordResetEmail(email: string, token: string) {
         return { success: false, error: 'Failed to send email' };
     }
 }
+
+/**
+ * "Verify your email" (AIIN-55), from the approved EmailVerify board. The link works for 24 hours; only the newest
+ * one works. Without Resend configured, the link is logged for local development.
+ */
+export async function sendVerificationEmail(email: string, name: string | null, token: string) {
+    const link = `${APP_URL}/auth/verify?token=${encodeURIComponent(token)}`;
+    if (!resend) {
+        console.log(`Verification email (Resend not configured) to ${email}: ${link}`);
+        return { success: true, dev: true };
+    }
+    const hello = name?.trim() ? `Hi ${name.trim().split(/\s+/)[0]}, confirm` : "Confirm";
+    try {
+        await resend.emails.send({
+            from: "Get Back To U <noreply@getbacktou.com>",
+            to: email,
+            subject: "Verify your email for Get Back To U",
+            text: [
+                `${hello} that ${email} is yours and your practice interviews are ready to go:`,
+                link,
+                "This link works for 24 hours. If you didn't create an account, ignore this email and nothing happens.",
+            ].join("\n\n"),
+            html: `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:24px 16px 40px;background:#f6f2ee;color:#1f1a26;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif">
+<div style="max-width:600px;margin:0 auto">
+<p style="margin:0 0 20px;font-size:18px;font-weight:600;font-family:Georgia,serif">Get Back To U</p>
+<div style="padding:32px;border-radius:24px;background:#ffffff">
+<h1 style="margin:0 0 20px;font-size:28px;line-height:1.2;font-weight:600;font-family:Georgia,serif">Verify your email</h1>
+<p style="margin:0 0 20px;font-size:16px;line-height:26px">${escapeHtml(hello)} that <strong>${escapeHtml(email)}</strong> is yours and your practice interviews are ready to go:</p>
+<p style="margin:0 0 20px"><a href="${escapeHtml(link)}" style="display:inline-block;padding:15px 28px;border-radius:999px;background:#f28c6b;color:#2a1612;font-weight:700;text-decoration:none">Verify my email</a></p>
+<p style="margin:0 0 16px;font-size:15px;line-height:23px;color:#5b5466">This link works for 24 hours. If you didn't create an account, ignore this email and nothing happens.</p>
+<p style="margin:0;font-size:13px;line-height:20px;color:#5b5466">Button not working? Paste this into your browser:<br><span style="color:#1f1a26;word-break:break-all">${escapeHtml(link)}</span></p>
+</div>
+<p style="margin:16px 0 0;font-size:13px;line-height:20px;color:#5b5466">Sent because an account was created with this address on getbacktou.com. Get Back To U, Pune, India.</p>
+</div></body></html>`,
+        });
+        return { success: true };
+    } catch (error) {
+        console.error("Verification email failed:", error);
+        return { success: false };
+    }
+}
