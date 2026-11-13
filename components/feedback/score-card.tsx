@@ -16,10 +16,16 @@ interface ScoreCardProps {
     viewer: "candidate" | "employer";
     strongest: HighlightAnswer | null;
     weakest: HighlightAnswer | null;
+    /** The AI summary for this viewer (AIIN-41); null until written, or for interviews from before it. */
+    summary: string | null;
+    /** True while the summary is still being written. */
+    writing: boolean;
+    /** The candidate's name, for the employer's label. */
+    name: string;
 }
 
 /** The overall result: the gauge, U's summary, and the strongest and weakest answers. */
-export function ScoreCard({ score, answerCount, viewer, strongest, weakest }: ScoreCardProps) {
+export function ScoreCard({ score, answerCount, viewer, strongest, weakest, summary, writing, name }: ScoreCardProps) {
     const t = useTranslations("FeedbackReport");
     const band = score === null ? null : score >= 7 ? "high" : score >= 4 ? "mid" : "low";
 
@@ -49,7 +55,23 @@ export function ScoreCard({ score, answerCount, viewer, strongest, weakest }: Sc
             <div className="flex min-w-0 flex-col gap-4">
                 {band && (
                     <CoachBubble>
-                        <p className="text-[17px] leading-[27px]">{t(`summary.${viewer}.${band}`)}</p>
+                        {summary || writing ? (
+                            <div className="flex flex-col gap-1.5">
+                                <span className={label}>
+                                    {viewer === "candidate" ? t("summaryLabel", { count: answerCount }) : t("summaryLabelEmployer", { count: answerCount, name })}
+                                </span>
+                                {summary ? (
+                                    <p className="text-[17px] leading-[27px] [overflow-wrap:anywhere]">{summary}</p>
+                                ) : (
+                                    <p role="status" className="text-[17px] leading-[27px] text-sg-muted">
+                                        {t("summaryWriting")}
+                                    </p>
+                                )}
+                            </div>
+                        ) : (
+                            // Interviews from before AIIN-41, or a summary that couldn't be written
+                            <p className="text-[17px] leading-[27px]">{t(`summary.${viewer}.${band}`)}</p>
+                        )}
                     </CoachBubble>
                 )}
                 {(strongest || weakest) && (

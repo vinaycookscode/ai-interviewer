@@ -51,10 +51,18 @@
             "outOfTen": "{value} / 10",
             "outOfHundred": "{value} / 100",
             "strengths": "Strengths",
-            "growthAreas": "Growth areas"
+            "growthAreas": "Growth areas",
+            "titleOwn": "How you came across",
+            "fromAnswers": "From your answers in this interview",
+            "ownNote": "U read all your answers together to describe how you came across. It’s a starting point, not a verdict: the same thing the employer sees, minus their culture-fit rating.",
+            "worked": "What worked",
+            "workOn": "What to work on"
         },
         "scoringTitle": "Your results will be ready shortly",
-        "scoringBody": "We're scoring your answers now. It usually takes a few minutes. Check back soon."
+        "scoringBody": "We're scoring your answers now. It usually takes a few minutes. Check back soon.",
+        "summaryLabel": "U’s summary of your {count, plural, one {# answer} other {# answers}}",
+        "summaryLabelEmployer": "U’s summary of {name}’s {count, plural, one {# answer} other {# answers}}",
+        "summaryWriting": "U is writing your summary. It takes a minute after the last answer is scored."
     },
     "Employer": {
         "loading": "Loading",

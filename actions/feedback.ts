@@ -24,7 +24,11 @@ export async function getInterviewFeedback(interviewId: string) {
                 id: true,
                 candidateId: true,
                 createdAt: true,
+                completedAt: true,
                 score: true,
+                // The AI summaries (AIIN-41): the page shows only the one for its viewer
+                feedback: true,
+                candidateSummary: true,
                 job: { select: { id: true, title: true, employerId: true } },
                 candidate: { select: { name: true, email: true } },
                 answers: {
@@ -69,8 +73,16 @@ export async function getInterviewFeedback(interviewId: string) {
             success: true as const,
             viewer,
             averageScore,
-            // The personality profile is for the hiring team only.
-            interview: { ...interview, personalityProfile: viewer === "employer" ? interview.personalityProfile : null },
+            // Each viewer gets their own summary (AIIN-41). The candidate sees how they came across, but not the
+            // culture-fit rating or the paragraph written for the employer (AIIN-42).
+            interview:
+                viewer === "employer"
+                    ? { ...interview, candidateSummary: null }
+                    : {
+                          ...interview,
+                          feedback: null,
+                          personalityProfile: interview.personalityProfile && { ...interview.personalityProfile, cultureFitScore: 0, summary: "" },
+                      },
         };
     } catch (error) {
         console.error("Error fetching feedback:", error);

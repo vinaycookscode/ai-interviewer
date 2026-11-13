@@ -5,10 +5,16 @@ import { PageHeading, displayName, formatShortDate, inkButton } from "@/componen
 import { PdfDownloadButton } from "@/components/interview/pdf-download-button";
 import { PersonalityCard } from "@/components/interview/personality-card";
 import { ScoreCard, type HighlightAnswer } from "@/components/feedback/score-card";
+import { summaryPending } from "@/lib/interview-summary";
 import { AnswerList, type ReportAnswer } from "@/components/feedback/answer-card";
 
 export interface FeedbackInterview {
     createdAt: Date;
+    completedAt: Date | null;
+    /** The AI summary for the employer (AIIN-41). */
+    feedback: string | null;
+    /** The AI summary for the candidate (AIIN-41). */
+    candidateSummary: string | null;
     job: { id: string; title: string };
     candidate: { name: string | null; email: string };
     answers: { id: string; transcript: string; score: number | null; feedback: string | null; question: { text: string } }[];
@@ -47,6 +53,7 @@ export function FeedbackReport({ interview, averageScore, viewer, back, aside, i
     }));
     const { strongest, weakest } = highlights(answers);
     const name = displayName(interview.candidate);
+    const summary = viewer === "candidate" ? interview.candidateSummary : interview.feedback;
 
     return (
         <div className="flex flex-col gap-6 sm:gap-9">
@@ -80,8 +87,11 @@ export function FeedbackReport({ interview, averageScore, viewer, back, aside, i
                             viewer={viewer}
                             strongest={strongest}
                             weakest={weakest}
+                            summary={summary}
+                            writing={summaryPending(summary, averageScore !== null, interview.completedAt, new Date())}
+                            name={name}
                         />
-                        {viewer === "employer" && interview.personalityProfile && <PersonalityCard profile={interview.personalityProfile} />}
+                        {interview.personalityProfile && <PersonalityCard profile={interview.personalityProfile} viewer={viewer} />}
                         <AnswerList answers={answers} viewer={viewer} />
                     </div>
                 </div>

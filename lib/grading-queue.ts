@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { evaluateAnswer, type EvaluationResult } from "@/lib/gemini";
 import { MAX_GRADING_ATTEMPTS, MIN_TRANSCRIPT, averageScore, gradingBackoffMs } from "@/lib/grading-rules";
 import { autoShortlist } from "@/lib/drive-shortlist";
+import { retryMissingSummaries, writeSummaries } from "@/lib/ai/interview-summary";
 
 const STUCK_MS = 10 * 60_000;
 const LEASE = "grading-worker";
@@ -78,7 +79,7 @@ async function gradeOne(row: Claimed, evaluate: Evaluate, backoffScale = 1): Pro
  * Set the score of finished interviews whose answers are all graded (AC2, AC7). Never from a partial average: one
  * pending, grading or failed answer keeps the score empty.
  */
-export async function finalizeInterviews(interviewIds: string[]): Promise<number> {
+export async function finalizeInterviews(interviewIds: string[], opts: { summaries?: boolean } = {}): Promise<number> {
     let scored = 0;
     for (const id of [...new Set(interviewIds)]) {
         const iv = await db.interview.findUnique({
@@ -95,6 +96,8 @@ export async function finalizeInterviews(interviewIds: string[]): Promise<number
             scored++;
             // A drive's auto-shortlist runs once, when the score is first set (AIIN-171)
             await autoShortlist(id).catch((e) => console.error("Auto-shortlist failed:", e));
+            // The AI summaries, now that every answer is scored (AIIN-41)
+            if (opts.summaries !== false) await writeSummaries(id).catch((e) => console.error("Interview summary failed:", e));
         }
     }
     return scored;
@@ -123,12 +126,14 @@ export async function processGrading(
             if (!rows.length) break;
             const results = await Promise.all(rows.map((r) => gradeOne(r, evaluate, opts.backoffScale)));
             for (const r of results) tally[r === "done" ? "graded" : r === "retry" ? "retried" : "failed"]++;
-            tally.scored += await finalizeInterviews(rows.map((r) => r.interviewId));
+            tally.scored += await finalizeInterviews(rows.map((r) => r.interviewId), { summaries: !opts.evaluate });
             // Pace: this batch may use rows.length of the per-minute budget
             const wait = (rows.length * 60_000) / rate - (Date.now() - started);
             if (wait > 0) await sleep(Math.min(wait, Math.max(0, stopAt - Date.now())));
             await takeLease(owner);
         }
+        // Summaries a busy model missed earlier (AIIN-41)
+        if (!opts.evaluate && Date.now() < stopAt) await retryMissingSummaries().catch((e) => console.error("Summary retry failed:", e));
     } catch (error) {
         console.error("Grading worker failed:", error);
     } finally {

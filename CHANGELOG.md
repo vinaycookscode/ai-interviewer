@@ -4,6 +4,12 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
+Migration `candidate_summary` adds `Interview.candidateSummary`.
+
+- **An AI summary of each interview, and candidates see how they came across (AIIN-41, AIIN-42).** From the approved report artboards:
+  - **Summary:** once every answer is scored, U writes two short summaries from the answers, their scores and feedback: one to the candidate ("you"), one for the employer ("they"), in the interview's language. They replace the three fixed score-band texts and are labelled "U's summary of your 8 answers". Shortly after scoring the card says "U is writing your summary"; interviews from before this keep the old text. A busy model is retried, and each grading run picks up summaries it missed in the last day. The employer's summary is also what shared shortlists show.
+  - **How you came across:** candidates now see their communication style, technical depth, confidence, what worked and what to work on. The culture-fit rating and the paragraph written for the employer stay employer-only and aren't sent to the candidate.
+
 - **Fix: grading started after a page response failed (AIIN-170).** Choosing the Gemini model read a cookie, which Next.js doesn't allow in background work, so every grading run started with `after()` errored and retried until the answer was marked "Couldn't score". Only the daily cron graded. Background work now uses the default model.
 
 Migration `verify_existing_emails` marks every existing account's email as verified, so nobody already using the app is blocked; only new sign-ups verify.

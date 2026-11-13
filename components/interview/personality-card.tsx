@@ -13,30 +13,34 @@ interface PersonalityProfile {
 
 interface PersonalityCardProps {
     profile: PersonalityProfile | null;
+    viewer?: "candidate" | "employer";
 }
 
-/** How the candidate came across. Employer view only. */
-export function PersonalityCard({ profile }: PersonalityCardProps) {
+/** How the candidate came across. The candidate sees it too, without the culture-fit rating (AIIN-42). */
+export function PersonalityCard({ profile, viewer = "employer" }: PersonalityCardProps) {
     const t = useTranslations("FeedbackReport.personality");
     if (!profile) return null;
+    const own = viewer === "candidate";
 
     const traits = [
         { term: t("communication"), value: profile.communicationStyle },
         { term: t("technicalDepth"), value: profile.technicalDepth },
         { term: t("confidence"), value: t("outOfTen", { value: Number(profile.confidenceScore.toFixed(1)) }) },
-        { term: t("cultureFit"), value: t("outOfHundred", { value: Math.round(profile.cultureFitScore) }) },
+        ...(own ? [] : [{ term: t("cultureFit"), value: t("outOfHundred", { value: Math.round(profile.cultureFitScore) }) }]),
     ];
 
     return (
         <section aria-labelledby="personality-title" className={`${panel} gap-5`}>
             <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h2 id="personality-title" className={sectionTitle}>
-                    {t("title")}
+                    {own ? t("titleOwn") : t("title")}
                 </h2>
-                <span className="font-medium text-sg-muted">{t("teamOnly")}</span>
+                <span className="font-medium text-sg-muted">{own ? t("fromAnswers") : t("teamOnly")}</span>
             </div>
 
-            <dl className="grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-2 lg:grid-cols-4">
+            {own && <p className="text-sg-muted">{t("ownNote")}</p>}
+
+            <dl className={own ? "grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-3" : "grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-2 lg:grid-cols-4"}>
                 {traits.map((trait) => (
                     <div key={trait.term} className={`${row} min-w-0`}>
                         <dt className={label}>{trait.term}</dt>
@@ -45,11 +49,12 @@ export function PersonalityCard({ profile }: PersonalityCardProps) {
                 ))}
             </dl>
 
-            {profile.summary && <p className="text-[17px] leading-[27px]">{profile.summary}</p>}
+            {/* Written about the candidate for the employer, so it's the employer's only */}
+            {!own && profile.summary && <p className="text-[17px] leading-[27px]">{profile.summary}</p>}
 
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                <TraitList title={t("strengths")} items={profile.strengths} />
-                <TraitList title={t("growthAreas")} items={profile.weaknesses} />
+                <TraitList title={own ? t("worked") : t("strengths")} items={profile.strengths} />
+                <TraitList title={own ? t("workOn") : t("growthAreas")} items={profile.weaknesses} />
             </div>
         </section>
     );

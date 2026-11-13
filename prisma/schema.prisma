@@ -414,7 +414,9 @@ model Interview {
 
   // Results
   score     Float? // Overall score
-  feedback  String? // Overall feedback
+  feedback  String? // Overall feedback: the AI summary for the employer (AIIN-41)
+  // The AI summary for the candidate, written with the employer's once every answer is scored (AIIN-41)
+  candidateSummary String? @db.Text
   language  String   @default("en") // Interview language (en, hi, mr, etc.)
   createdAt DateTime @default(now())
 
