@@ -8,6 +8,8 @@ export const env = createEnv({
         NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
         AUTH_SECRET: z.string().min(1).optional(),
         RESEND_API_KEY: z.string().min(1).optional(),
+        // Signs Resend's bounce and complaint webhooks (AIIN-167); without it, the webhook refuses every call
+        RESEND_WEBHOOK_SECRET: z.string().startsWith("whsec_").optional(),
         APP_URL: z.string().url().default("http://localhost:3000"),
         // Vercel Cron sends it as a bearer token; the cron routes refuse requests without it (AIIN-103)
         CRON_SECRET: z.string().min(16).optional(),
@@ -24,6 +26,7 @@ export const env = createEnv({
         NODE_ENV: process.env.NODE_ENV,
         AUTH_SECRET: process.env.AUTH_SECRET,
         RESEND_API_KEY: process.env.RESEND_API_KEY,
+        RESEND_WEBHOOK_SECRET: process.env.RESEND_WEBHOOK_SECRET,
         APP_URL: process.env.APP_URL,
         CRON_SECRET: process.env.CRON_SECRET,
         RUNNER_URL: process.env.RUNNER_URL,

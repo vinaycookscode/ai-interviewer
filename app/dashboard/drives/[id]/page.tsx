@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { after } from "next/server";
 import { getTranslations } from "next-intl/server";
 import { PencilLine } from "lucide-react";
 import { auth } from "@/auth";
@@ -10,6 +11,8 @@ import { REOPEN_DAYS, canReopen, driveStatus } from "@/lib/drives";
 import { PageHeading, outlineButton, panel, panelTitle } from "@/components/jobs/employer-ui";
 import { DriveStatusChip, istShort } from "@/components/drives/drive-status";
 import { DriveActions } from "@/components/drives/drive-actions";
+import { EmailProblems } from "@/components/drives/email-problems";
+import { processOutbox } from "@/lib/outbox";
 
 export async function generateMetadata(): Promise<Metadata> {
     const t = await getTranslations("Drives");
@@ -44,10 +47,20 @@ export default async function DrivePage({ params }: { params: Promise<{ id: stri
     });
     if (!drive) notFound();
 
-    const [byStage, byCollege] = await Promise.all([
+    const [byStage, byCollege, byEmail, problems] = await Promise.all([
         db.driveCandidate.groupBy({ by: ["stage"], where: { driveId: drive.id }, _count: { _all: true } }),
         db.driveCandidate.groupBy({ by: ["driveCollegeId"], where: { driveId: drive.id }, _count: { _all: true } }),
+        db.outboundEmail.groupBy({ by: ["status"], where: { driveId: drive.id }, _count: { _all: true } }),
+        db.outboundEmail.findMany({
+            where: { driveId: drive.id, status: { in: ["FAILED", "BOUNCED"] } },
+            orderBy: { updatedAt: "desc" },
+            take: 50,
+            select: { driveCandidateId: true, to: true, status: true },
+        }),
     ]);
+    const emailCount = (s: string) => byEmail.find((r) => r.status === s)?._count._all ?? 0;
+    // Emails waiting to go out are sent after this page is served (no per-minute cron on this plan, AIIN-167)
+    if (emailCount("QUEUED") > 0) after(() => processOutbox());
     const now = new Date();
     const status = driveStatus(drive, now);
     const reopen = canReopen(drive, now);
@@ -128,6 +141,31 @@ export default async function DrivePage({ params }: { params: Promise<{ id: stri
                         </p>
                     )}
                     <p className="text-[13px] text-sg-muted">{t("linksNote")}</p>
+                </section>
+                <section aria-labelledby="dr-emails" className={cn(panel, "gap-3 lg:col-span-2")}>
+                    <h2 id="dr-emails" className={panelTitle}>
+                        {t("emails")}
+                    </h2>
+                    {byEmail.length === 0 ? (
+                        <p className="text-sm text-sg-muted">{t("noEmails")}</p>
+                    ) : (
+                        <>
+                            <dl className="flex flex-wrap gap-x-6 gap-y-2">
+                                {(["SENT", "QUEUED", "SENDING", "FAILED", "BOUNCED"] as const).map((s) =>
+                                    emailCount(s) || s === "SENT" ? (
+                                        <div key={s} className="flex min-w-[96px] flex-col">
+                                            <dd className="font-display sg-soft order-1 text-[26px] leading-8 font-semibold">{emailCount(s)}</dd>
+                                            <dt className="order-2 text-[13px] text-sg-muted">{t(`emailStatus.${s}`)}</dt>
+                                        </div>
+                                    ) : null,
+                                )}
+                            </dl>
+                            {problems.length > 0 && (
+                                <EmailProblems driveId={drive.id} rows={problems.map((p) => ({ driveCandidateId: p.driveCandidateId, to: p.to, bounced: p.status === "BOUNCED" }))} />
+                            )}
+                            <p className="text-[13px] text-sg-muted">{t("emailsNote")}</p>
+                        </>
+                    )}
                 </section>
             </div>
         </div>

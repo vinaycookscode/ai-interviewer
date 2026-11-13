@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { processOutbox, requeueFailed } from "@/lib/outbox";
 import { canReopen, cleanDrive, driveStatus, linkExpiry, type DriveError, type DriveField, type DriveInput } from "@/lib/drives";
 
 type SaveResult =
@@ -126,4 +128,15 @@ export async function deleteDrive(id: string): Promise<Result> {
     await db.drive.delete({ where: { id: d.id } });
     refresh();
     return { ok: true };
+}
+
+/** Send failed and bounced invitations again: all of a drive's, or one candidate's. Each is re-queued once (AIIN-167 AC6). */
+export async function resendDriveEmails(id: string, driveCandidateId?: string): Promise<{ ok: true; count: number } | { error: "notFound" | "invalid" }> {
+    const d = await ownDrive(id);
+    if (!d) return { error: "notFound" };
+    if (driveCandidateId !== undefined && typeof driveCandidateId !== "string") return { error: "invalid" };
+    const count = await requeueFailed(d.id, driveCandidateId);
+    if (count) after(() => processOutbox());
+    refresh(d.id);
+    return { ok: true, count };
 }

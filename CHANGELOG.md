@@ -4,8 +4,16 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-Migration `drives` adds `Drive`, `DriveCollege` and `DriveCandidate` (with the `DriveStage` and `DriveSource` enums) and `Interview.driveId`. `scripts/seed-local-test-users.ts` seeds test accounts into a local throwaway database only.
+Migration `email_outbox` adds `OutboundEmail` (`OutboundStatus`). A new daily cron, `/api/cron/outbox`, needs `CRON_SECRET`; set `RESEND_WEBHOOK_SECRET` (Resend → Webhooks → signing secret) and point a Resend webhook for `email.bounced` and `email.complained` at `/api/webhooks/resend`. Migration `drives` adds `Drive`, `DriveCollege` and `DriveCandidate` (with the `DriveStage` and `DriveSource` enums) and `Interview.driveId`. `scripts/seed-local-test-users.ts` seeds test accounts into a local throwaway database only.
 
+- **Drive emails reach everyone (AIIN-167).** Drive emails are now queued, never sent inside a request.
+  - **Sending:** a worker sends them in batches of 100, paced under Resend's rate limit. An invalid address fails on its own; anything else is retried with backoff up to 5 times.
+  - **No duplicates:** two workers can never send the same email.
+  - **Reminders:** candidates who haven't started get one reminder when the drive closes within 30 hours.
+  - **Bounces:** bounces and spam complaints come back through a signed webhook.
+  - **On the drive page:** sent, waiting, failed and bounced counts, with "Resend" for one person or "Resend to all".
+
+  See `docs/architecture/2026-11-13-queue-outbound-email-in-the-database.md`.
 - **Hiring drives (AIIN-165).** Jobs → Hiring drives lists every drive with its colleges, dates, and how many were invited, finished and shortlisted. Each drive shows its status as Draft, Scheduled, Live or Closed, and the status comes from its dates, so a drive goes Live and closes without anyone touching it.
   - **Create or edit a drive:** pick a job that has interview questions, give it a name, set the open and close times in India time, and add colleges with an optional city and placement officer email. You can also shortlist automatically, with an interview cutoff out of 10.
   - **Checks:**

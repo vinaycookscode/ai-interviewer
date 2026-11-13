@@ -11,6 +11,10 @@
         {
             "path": "/api/cron/matches",
             "schedule": "0 21 * * *"
+        },
+        {
+            "path": "/api/cron/outbox",
+            "schedule": "30 4 * * *"
         }
     ]
 }

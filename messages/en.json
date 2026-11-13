@@ -3821,6 +3821,21 @@
         "nobodyYet": "Nobody invited yet.",
         "inviteCsv": "Invite by CSV",
         "closedNote": "Closed. Unstarted links no longer work.",
-        "reopenUntil": "You can reopen it until {when}."
+        "reopenUntil": "You can reopen it until {when}.",
+        "emails": "Emails",
+        "emailStatus": {
+            "QUEUED": "Waiting to send",
+            "SENDING": "Sending",
+            "SENT": "Sent",
+            "FAILED": "Failed",
+            "BOUNCED": "Bounced"
+        },
+        "noEmails": "No emails yet.",
+        "emailBounced": "Email bounced",
+        "emailFailed": "Couldn't send",
+        "resend": "Resend",
+        "resendAll": "Resend to all {count}",
+        "resent": "{count, plural, =0 {Nothing to resend} one {# email queued again} other {# emails queued again}}",
+        "emailsNote": "Emails go out in batches over a few minutes. Failed ones are retried up to 5 times."
     }
 }

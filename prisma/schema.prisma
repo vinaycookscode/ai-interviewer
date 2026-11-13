@@ -1555,3 +1555,38 @@ model DriveCandidate {
   @@index([driveId, stage])
   @@index([driveCollegeId])
 }
+
+// ---- Email outbox (AIIN-167) ----
+// Emails are queued here and sent by a worker in batches, with retries; never inside a user's request.
+// See docs/architecture/2026-11-13-queue-outbound-email-in-the-database.md.
+enum OutboundStatus {
+  QUEUED
+  SENDING
+  SENT
+  FAILED
+  BOUNCED
+}
+
+model OutboundEmail {
+  id               String         @id @default(cuid())
+  to               String
+  template         String // e.g. DRIVE_INVITE, DRIVE_REMINDER
+  payload          Json // what the template needs; rendered at send time
+  driveId          String?
+  driveCandidateId String?
+  interviewId      String?
+  // One email per purpose: e.g. "DRIVE_REMINDER:<driveCandidateId>", so a reminder is never queued twice
+  dedupeKey        String?        @unique
+  status           OutboundStatus @default(QUEUED)
+  attempts         Int            @default(0)
+  lastError        String?
+  sendAfter        DateTime       @default(now())
+  sentAt           DateTime?
+  providerId       String?        @unique
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([status, sendAfter])
+  @@index([driveId, status])
+  @@index([driveCandidateId])
+}
