@@ -4,6 +4,8 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
+## 2026-11-13, second release
+
 Migration `aptitude` adds `AptitudeTest`, `AptitudeSection`, `AptitudeQuestion`, `AptitudeAttempt` and the drive's aptitude settings; seed the ready-made test with `npx tsx scripts/seed-aptitude.ts` (it refuses a non-local database without `ALLOW_SEED=1`). Migration `email_outbox` adds `OutboundEmail` (`OutboundStatus`). A new daily cron, `/api/cron/outbox`, needs `CRON_SECRET`; set `RESEND_WEBHOOK_SECRET` (Resend → Webhooks → signing secret) and point a Resend webhook for `email.bounced` and `email.complained` at `/api/webhooks/resend`. Migration `drives` adds `Drive`, `DriveCollege` and `DriveCandidate` (with the `DriveStage` and `DriveSource` enums) and `Interview.driveId`. `scripts/seed-local-test-users.ts` seeds test accounts into a local throwaway database only.
 
 - **Employers write their own aptitude tests (AIIN-226).** Hiring drives now has an "Aptitude tests" tab next to Drives, from the approved artboards. It lists the ready-made tests and your own, each marked Ready, Needs N more, or Locked while in use.
