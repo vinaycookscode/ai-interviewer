@@ -270,7 +270,7 @@ function QuestionDialog({
             else setError(r.error === "invalid" ? t("invalid") : r.error === "locked" ? t("lockedError") : t("failed"));
         });
     return (
-        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[color-mix(in_srgb,var(--sg-ink)_35%,transparent)] p-3 pt-12 sm:pt-20">
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-[color-mix(in_srgb,var(--sg-bg)_72%,transparent)] p-3 pt-12 backdrop-blur-[6px] sm:pt-20">
             <div role="dialog" aria-modal="true" aria-labelledby="qd-t" className="sg-glass-strong sg-shadow-lg flex w-full max-w-[640px] flex-col gap-4 rounded-[28px] p-5 sm:p-7">
                 <div className="flex items-start justify-between gap-3">
                     <h2 id="qd-t" className={panelTitle}>
