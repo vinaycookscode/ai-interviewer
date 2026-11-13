@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { after } from "next/server";
 import { getTranslations } from "next-intl/server";
-import { PencilLine } from "lucide-react";
+import { PencilLine, Upload } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { cn } from "@/lib/utils";
@@ -81,6 +81,12 @@ export default async function DrivePage({ params }: { params: Promise<{ id: stri
                             <PencilLine className="size-4" aria-hidden="true" />
                             {t("edit")}
                         </Link>
+                        {(status === "SCHEDULED" || status === "LIVE") && (
+                            <Link href={`/dashboard/drives/${drive.id}/import`} className={cn(outlineButton, "h-10 text-sm")}>
+                                <Upload className="size-4" aria-hidden="true" />
+                                {t("inviteCsv")}
+                            </Link>
+                        )}
                         <DriveActions
                             id={drive.id}
                             canClose={status === "LIVE" || status === "SCHEDULED"}

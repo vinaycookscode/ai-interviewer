@@ -1,11 +1,10 @@
 "use server";
 
-import { ensureApplication } from "@/lib/application-sync";
+import { createInterview, findOrCreateCandidate } from "@/lib/candidate-invites";
 
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { Resend } from "resend";
-import { randomBytes } from "crypto";
 import { escapeHtml } from "@/lib/utils";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -115,19 +114,12 @@ export async function bulkInviteCandidates(data: {
         processedEmails.add(email);
 
         try {
-            // Find or create candidate user
-            let user = await db.user.findUnique({
-                where: { email },
-            });
-
-            if (!user) {
-                user = await db.user.create({
-                    data: {
-                        email,
-                        name,
-                        role: "CANDIDATE",
-                    },
-                });
+            // Find or create the candidate; staff accounts are never invited (shared with the drive import, AIIN-166)
+            const user = await findOrCreateCandidate(email, name);
+            if ("error" in user) {
+                failed++;
+                results.push({ email, name, status: "failed", error: "This email belongs to a staff account" });
+                continue;
             }
 
             // Check if interview already exists for this job + candidate
@@ -150,23 +142,8 @@ export async function bulkInviteCandidates(data: {
                 continue;
             }
 
-            // Generate unique interview token
-            const interviewToken = randomBytes(32).toString("hex");
-
-            // Create interview record
-            const interview = await db.interview.create({
-                data: {
-                    candidateId: user.id,
-                    jobId: data.jobId,
-                    status: "PENDING",
-                    token: interviewToken,
-                    scheduledTime: scheduledDate,
-                    expiresAt,
-                },
-            });
-
-            // Every invitation is an application at Applied (AIIN-195)
-            await ensureApplication(data.jobId, user.id, userId);
+            const interview = await createInterview({ jobId: data.jobId, candidateId: user.id, employerId: userId, expiresAt, scheduledTime: scheduledDate });
+            const interviewToken = interview.token;
 
             const interviewLink = `${baseUrl}/interview/${interview.id}?token=${interviewToken}`;
 

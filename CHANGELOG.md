@@ -6,6 +6,13 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 Migration `email_outbox` adds `OutboundEmail` (`OutboundStatus`). A new daily cron, `/api/cron/outbox`, needs `CRON_SECRET`; set `RESEND_WEBHOOK_SECRET` (Resend → Webhooks → signing secret) and point a Resend webhook for `email.bounced` and `email.complained` at `/api/webhooks/resend`. Migration `drives` adds `Drive`, `DriveCollege` and `DriveCandidate` (with the `DriveStage` and `DriveSource` enums) and `Interview.driveId`. `scripts/seed-local-test-users.ts` seeds test accounts into a local throwaway database only.
 
+- **Invite a drive's candidates by CSV (AIIN-166).** A drive's page has "Invite by CSV" while it's scheduled or live, from the approved artboards, in four steps:
+  1. **Upload** a CSV of up to 5,000 rows or 2 MB. Anything else is refused before it's read, and a template is available to download.
+  2. **Match columns.** Headers like "Student Name, Email ID, College, PRN" are matched for you, and you can change them.
+  3. **Check rows.** Every row is checked before anything is created: ready, invalid email, missing name, duplicate in the file, already in this drive, staff account, or unknown college. You can add unknown colleges to the drive or leave those rows out, and download the problem rows (made safe to open in a spreadsheet).
+  4. **Invite.** "Invite N candidates" creates or finds each candidate, adds them to the drive with their college and roll number, creates an interview whose link expires when the drive closes, and queues their invitation in the outbox.
+
+  Uploading the same file twice invites nobody twice. The job's own bulk invite now uses the same code, so neither one can invite an employer's or admin's email.
 - **Drive emails reach everyone (AIIN-167).** Drive emails are now queued, never sent inside a request.
   - **Sending:** a worker sends them in batches of 100, paced under Resend's rate limit. An invalid address fails on its own; anything else is retried with backoff up to 5 times.
   - **No duplicates:** two workers can never send the same email.

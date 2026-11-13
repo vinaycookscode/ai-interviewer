@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
   experimental: {
     // reactCompiler: true,
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+    // A drive's candidate CSV can be up to 2 MB (AIIN-166); the default limit is 1 MB
+    serverActions: { bodySizeLimit: '3mb' },
   },
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? {
