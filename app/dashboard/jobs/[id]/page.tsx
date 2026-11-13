@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { cn } from "@/lib/utils";
+import { focusRing } from "@/components/soft-glass/classes";
 import { DeleteJobButton } from "@/components/jobs/delete-job-button";
 import { InviteCandidateDialog } from "@/components/interviews/invite-candidate-dialog";
 import { BulkInviteDialog } from "@/components/interviews/bulk-invite-dialog";
@@ -101,6 +102,9 @@ export default async function JobDetailsPage({
     const rows = unfinished.map((interview) => ({ ...interview, job: { title: job.title, ...requirements } }));
     const invitedEmails = job.interviews.map((i) => i.candidate.email.toLowerCase());
     const filtered = hasFilters(filters);
+    // Filtered to one of this job's drives (AIIN-172); another job's or employer's drive is just ignored
+    const driveFilter = filters.drive ? await db.drive.findFirst({ where: { id: filters.drive, jobId: job.id, employerId: userId }, select: { name: true } }) : null;
+    const tDrives = await getTranslations("Drives");
 
     return (
         <div className="flex flex-col gap-6 sm:gap-9">
@@ -186,6 +190,14 @@ export default async function JobDetailsPage({
                     </ul>
                 )}
                 {job.interviews.length > 0 && <RankedFilters filters={filters} />}
+                {driveFilter && (
+                    <p className="flex flex-wrap items-center gap-2 rounded-2xl bg-sg-lavender-soft px-4 py-3 text-sm text-sg-lavender-ink">
+                        {tDrives("onlyDrive", { name: driveFilter.name })}
+                        <Link href={`/dashboard/jobs/${job.id}?${filtersQuery({ ...filters, drive: null, page: 1 })}`} className={cn("rounded-md font-bold underline", focusRing)}>
+                            {tDrives("showAll")}
+                        </Link>
+                    </p>
+                )}
 
                 {ranking &&
                     (finished === 0 && !filtered ? (

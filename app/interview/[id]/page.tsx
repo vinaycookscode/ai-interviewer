@@ -102,6 +102,9 @@ export default async function InterviewPage({
         );
     }
 
+    // A drive candidate opening their link counts as Opened in the drive's funnel (AIIN-172)
+    if (interview.driveId) await db.driveCandidate.updateMany({ where: { interviewId: interview.id, stage: "INVITED" }, data: { stage: "OPENED" } });
+
     // Check if scheduled time has arrived
     const now = new Date();
     const scheduledTime = interview.scheduledTime ? new Date(interview.scheduledTime) : null;

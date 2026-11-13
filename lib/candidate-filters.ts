@@ -20,6 +20,8 @@ export interface RankingFilters {
     within: number | null;
     status: StatusFilter | null;
     integrity: IntegrityVerdict | null;
+    /** One hiring drive's candidates only (AIIN-172) */
+    drive: string | null;
     sort: Sort;
     page: number;
 }
@@ -36,6 +38,7 @@ export function parseFilters(params: Params): RankingFilters {
     const within = Number(one(params.within));
     const status = one(params.status);
     const integrity = one(params.i);
+    const drive = one(params.drive);
     const sort = one(params.sort);
     const page = Math.floor(Number(one(params.page)));
     return {
@@ -45,6 +48,7 @@ export function parseFilters(params: Params): RankingFilters {
         within: (FINISHED_WITHIN as readonly number[]).includes(within) ? within : null,
         status: (STATUSES as readonly string[]).includes(status) ? (status as StatusFilter) : null,
         integrity: (VERDICTS as readonly string[]).includes(integrity) ? (integrity as IntegrityVerdict) : null,
+        drive: /^[a-z0-9-]{1,40}$/.test(drive) ? drive : null,
         sort: (SORTS as readonly string[]).includes(sort) ? (sort as Sort) : "score",
         page: page >= 1 ? page : 1,
     };
@@ -59,12 +63,13 @@ export function filtersQuery(f: Partial<RankingFilters>): string {
     if (f.within) p.set("within", String(f.within));
     if (f.status) p.set("status", f.status);
     if (f.integrity) p.set("i", f.integrity);
+    if (f.drive) p.set("drive", f.drive);
     if (f.sort && f.sort !== "score") p.set("sort", f.sort);
     if (f.page && f.page > 1) p.set("page", String(f.page));
     return p.toString();
 }
 
 export function hasFilters(f: RankingFilters): boolean {
-    return !!(f.q || f.decisions.length || f.min || f.within || f.status || f.integrity);
+    return !!(f.q || f.decisions.length || f.min || f.within || f.status || f.integrity || f.drive);
 }
 

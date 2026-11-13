@@ -4,6 +4,14 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
+- **Live drive dashboard (AIIN-172).** A drive's page is now its dashboard, from the approved artboards:
+  - **Funnel:** invited, opened, passed aptitude, started, finished, scored, at or above the cutoff, and shortlisted, each with its count and percent of invited.
+  - **By college:** a table with the same counts, which scrolls inside its own box on phones.
+  - **Needs attention:** bounced or unsent emails, interviews that couldn't be scored, and integrity flags, each linking to who's affected.
+  - **View ranked candidates:** opens the job's ranked list filtered to this drive.
+  - **Live updates:** while live, the numbers refresh every 30 seconds ("Updated 20 seconds ago"). Counts come from one grouped query, and a 500-candidate drive loads in about 0.1 s.
+  - **Stages:** opening a drive interview link now counts as Opened, and starting and finishing move the candidate's stage.
+
 Migration `answer_grading_queue` adds `Answer.gradingStatus` (`GradingStatus`), `gradingAttempts`, `gradeAfter` and `gradingError`, and marks existing answers graded. Optional: `GRADING_RATE_PER_MINUTE` (default 60).
 
 - **Interviews are graded reliably at volume (AIIN-170).** Answers are queued and graded by one worker at a time, paced under Gemini's rate limit, with retries. Finishing an interview no longer waits for grading. A score appears only once every answer is graded, so lists show "Scoring", never a partial average. An answer that fails 5 times shows "Couldn't score 1 answer · Try again". A Gemini error can no longer be saved as a score of 0. See `docs/architecture/2026-11-13-grade-answers-through-a-queue.md`.

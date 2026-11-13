@@ -61,6 +61,7 @@ export function rankingWhere(jobId: string, f: RankingFilters): Prisma.Interview
         ...(f.min ? { score: { gte: f.min } } : {}),
         ...(f.within ? { completedAt: { gte: withinDate(f.within) } } : {}),
         ...(f.integrity ? { integrityVerdict: f.integrity } : {}),
+        ...(f.drive ? { driveId: f.drive } : {}),
         ...searchWhere(f.q),
     };
 }
