@@ -2913,7 +2913,7 @@
         }
     },
     "Privacy": {
-        "updated": "2 November 2026",
+        "updated": "13 November 2026",
         "title": "Privacy",
         "lead": "What we collect, why, who helps us run the service, how long we keep it, and how to have it changed or deleted.",
         "short": [
@@ -2974,6 +2974,11 @@
                             "Interview integrity events, and your agreement to the checks",
                             "During an employer’s interview, after you agree",
                             "So the employer can trust the answers are your own"
+                        ],
+                        [
+                            "Your progress in a hiring drive: your name, roll number, how far you got and, if the employer chooses, whether you were shortlisted",
+                            "When you join an employer’s hiring drive",
+                            "The employer can share it with your college’s placement officer. Your scores, answers and feedback are never shared with them"
                         ],
                         [
                             "Payment records: amount, status and Razorpay’s reference, never card details",
@@ -3895,7 +3900,8 @@
         "refreshes": "refreshes every 30 seconds while live",
         "onlyDrive": "Showing {name} only.",
         "showAll": "Show everyone",
-        "openLink": "Open link"
+        "openLink": "Open link",
+        "shareCol": "Share with placement officer"
     },
     "DriveImport": {
         "title": "Invite by CSV",
@@ -4214,5 +4220,75 @@
         "download": "Download SVG",
         "how": "Students sign up or sign in, pick their college and go straight to the first round. Only candidate accounts can join.",
         "notYet": "Save once to create the link."
+    },
+    "CollegeShare": {
+        "metaTitle": "Your students in a hiring drive",
+        "theEmployer": "The employer",
+        "tooManyTitle": "Too many tries",
+        "tooManyBody": "Wait a minute, then open the link again.",
+        "revokedTitle": "This link was turned off",
+        "revokedBody": "{employer} turned this link off. Ask them for a new one if you still need it.",
+        "expiredTitle": "This link has expired",
+        "expiredBody": "Ask {employer} for a new link if you still need it.",
+        "sharedBy": "Shared by {employer} · read only",
+        "closes": "closes {when}",
+        "closed": "closed {when}",
+        "invited": "invited",
+        "started": "started",
+        "finished": "finished",
+        "shortlisted": "shortlisted",
+        "filter": "Filter students",
+        "all": "all",
+        "filters": {
+            "NOT_STARTED": "not started",
+            "STARTED": "started",
+            "FINISHED": "finished"
+        },
+        "stages": {
+            "NOT_STARTED": "Not started",
+            "STARTED": "Started",
+            "APTITUDE_FAILED": "Didn't pass aptitude",
+            "FINISHED": "Finished"
+        },
+        "shortlistedChip": "Shortlisted",
+        "noName": "Name not given",
+        "none": "No students from this college are in the drive yet.",
+        "noneInFilter": "No students here.",
+        "never": "Scores, answers, feedback and documents are never shown here. This link works until {date}.",
+        "dialog": {
+            "open": "Share",
+            "openAria": "Share {college} with its placement officer",
+            "title": "Share with the placement officer",
+            "subtitle": "{college} · {count, plural, one {# student} other {# students}}",
+            "close": "Close",
+            "what": "They'll see only this college's students: name, roll number and how far each got. Never scores, transcripts, feedback or documents.",
+            "showShortlisted": "Show who was shortlisted",
+            "showShortlistedHint": "Off by default. When on, each student shows Shortlisted or nothing.",
+            "email": "Email it to",
+            "emailPlaceholder": "placement@college.edu",
+            "emailHint": "Optional. You can also copy the link.",
+            "until": "Link works until",
+            "untilHint": "Two weeks after the drive closes, unless you change it.",
+            "copy": "Copy link",
+            "copied": "Copied",
+            "send": "Send link",
+            "created": "New link, copied. It's shown only this once.",
+            "createdCopy": "New link. Copy it now: it's shown only this once.",
+            "sent": "Sent to {email}. The link is shown only this once.",
+            "link": "Link",
+            "emailRequired": "Enter the placement officer's email to send it.",
+            "emailInvalid": "That email address doesn't look right.",
+            "untilInvalid": "Pick a date from tomorrow up to 60 days after the drive closes.",
+            "failed": "Something went wrong. Try again.",
+            "active": "Links that work now",
+            "noActive": "None yet.",
+            "sentToLabel": "Sent to {email}",
+            "copiedLabel": "Copied link",
+            "expires": "until {date}",
+            "withShortlist": "shows shortlisted",
+            "opened": "opened {count, plural, one {once} other {# times}}, last {when}",
+            "notOpened": "not opened yet",
+            "turnOff": "Turn off"
+        }
     }
 }

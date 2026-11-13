@@ -113,6 +113,7 @@ model User {
   mockInterviews MockInterview[]
   bankItems     BankItem[]
   shortlistShares ShortlistShare[] @relation("ShortlistShares")
+  collegeShares   CollegeShare[]   @relation("CollegeShares")
   // Talent Match applications (AIIN-195)
   candidateApplications Application[]      @relation("CandidateApplications")
   employerApplications  Application[]      @relation("EmployerApplications")
@@ -1542,8 +1543,31 @@ model DriveCollege {
   createdAt             DateTime @default(now())
 
   candidates DriveCandidate[]
+  shares     CollegeShare[]
 
   @@index([driveId])
+}
+
+// A read-only link to one college's students in a drive, for its placement officer (AIIN-173). Same model as
+// ShortlistShare: only the token's hash is kept.
+model CollegeShare {
+  id              String       @id @default(cuid())
+  driveCollegeId  String
+  driveCollege    DriveCollege @relation(fields: [driveCollegeId], references: [id], onDelete: Cascade)
+  createdById     String
+  createdBy       User         @relation("CollegeShares", fields: [createdById], references: [id], onDelete: Cascade)
+  tokenHash       String       @unique
+  // Off by default: when on, each student shows Shortlisted or nothing
+  showShortlisted Boolean      @default(false)
+  // Where it was emailed, if it was
+  sentTo          String?
+  expiresAt       DateTime
+  revokedAt       DateTime?
+  lastOpenedAt    DateTime?
+  openCount       Int          @default(0)
+  createdAt       DateTime     @default(now())
+
+  @@index([driveCollegeId])
 }
 
 enum DriveStage {

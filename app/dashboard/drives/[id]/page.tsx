@@ -18,6 +18,8 @@ import { driveFunnel, driveProblems } from "@/lib/drive-dashboard";
 import { emptyCounts, funnelStages } from "@/lib/drive-funnel";
 import { AutoRefresh } from "@/components/drives/auto-refresh";
 import { coralButton, focusRing } from "@/components/soft-glass/classes";
+import { ShareCollege } from "@/components/drives/share-college";
+import { MAX_AFTER_CLOSE_DAYS, defaultExpiry, istDay } from "@/lib/college-share";
 
 export async function generateMetadata(): Promise<Metadata> {
     const t = await getTranslations("Drives");
@@ -48,7 +50,21 @@ export default async function DrivePage({ params }: { params: Promise<{ id: stri
             aptitudeCutoff: true,
             aptitudeTest: { select: { name: true } },
             job: { select: { id: true, title: true } },
-            colleges: { orderBy: { createdAt: "asc" }, select: { id: true, name: true, city: true } },
+            colleges: {
+                orderBy: { createdAt: "asc" },
+                select: {
+                    id: true,
+                    name: true,
+                    city: true,
+                    placementOfficerEmail: true,
+                    // Live placement officer links (AIIN-173)
+                    shares: {
+                        where: { revokedAt: null, expiresAt: { gt: new Date() } },
+                        orderBy: { createdAt: "desc" },
+                        select: { id: true, sentTo: true, showShortlisted: true, expiresAt: true, openCount: true, lastOpenedAt: true },
+                    },
+                },
+            },
             _count: { select: { candidates: true } },
         },
     });
@@ -87,9 +103,16 @@ export default async function DrivePage({ params }: { params: Promise<{ id: stri
     const [funnelData, attention] = await Promise.all([driveFunnel(drive.id, drive.interviewCutoff), driveProblems(drive.id)]);
     const stages = funnelStages(funnelData.total, { aptitude: drive.aptitudeEnabled, cutoff: drive.interviewCutoff !== null });
     const collegeRows = [
-        ...drive.colleges.map((c) => ({ id: c.id as string | null, name: c.name, counts: funnelData.byCollege.get(c.id) ?? emptyCounts() })),
-        ...(funnelData.byCollege.has(null) ? [{ id: null, name: t("noCollege"), counts: funnelData.byCollege.get(null)! }] : []),
+        ...drive.colleges.map((c) => ({ id: c.id as string | null, name: c.name, counts: funnelData.byCollege.get(c.id) ?? emptyCounts(), college: c })),
+        ...(funnelData.byCollege.has(null) ? [{ id: null, name: t("noCollege"), counts: funnelData.byCollege.get(null)!, college: null }] : []),
     ];
+    // A placement officer's link lasts two weeks past the close by default, and at most 60 days (AIIN-173)
+    const shareBase = drive.closesAt && drive.closesAt > now ? drive.closesAt : now;
+    const shareDates = {
+        until: istDay(defaultExpiry(drive.closesAt, now)),
+        minUntil: istDay(new Date(now.getTime() + 24 * 60 * 60 * 1000)),
+        maxUntil: istDay(new Date(shareBase.getTime() + MAX_AFTER_CLOSE_DAYS * 24 * 60 * 60 * 1000)),
+    };
     const stageCount = (s: string) => byStage.find((r) => r.stage === s)?._count._all ?? 0;
     const dates =
         drive.opensAt && drive.closesAt ? t("range", { from: istShort.format(drive.opensAt), to: istShort.format(drive.closesAt) }) : t("notScheduled");
@@ -236,6 +259,9 @@ export default async function DrivePage({ params }: { params: Promise<{ id: stri
                                                 {t(`funnelStages.${x.key}`)}
                                             </th>
                                         ))}
+                                        <th scope="col" className="px-3 py-2.5">
+                                            <span className="sr-only">{t("shareCol")}</span>
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -249,6 +275,25 @@ export default async function DrivePage({ params }: { params: Promise<{ id: stri
                                                     {r.counts[x.key]}
                                                 </td>
                                             ))}
+                                            <td className="px-3 py-3 text-right">
+                                                {r.college && (
+                                                    <ShareCollege
+                                                        collegeId={r.college.id}
+                                                        college={r.college.name}
+                                                        students={r.counts.invited}
+                                                        email={r.college.placementOfficerEmail ?? ""}
+                                                        {...shareDates}
+                                                        shares={r.college.shares.map((s) => ({
+                                                            id: s.id,
+                                                            sentTo: s.sentTo,
+                                                            showShortlisted: s.showShortlisted,
+                                                            expiresAt: s.expiresAt.toISOString(),
+                                                            openCount: s.openCount,
+                                                            lastOpenedAt: s.lastOpenedAt?.toISOString() ?? null,
+                                                        }))}
+                                                    />
+                                                )}
+                                            </td>
                                         </tr>
                                     ))}
                                     <tr className="border-t border-sg-rule">
@@ -260,6 +305,7 @@ export default async function DrivePage({ params }: { params: Promise<{ id: stri
                                                 {x.count}
                                             </td>
                                         ))}
+                                        <td />
                                     </tr>
                                 </tbody>
                             </table>

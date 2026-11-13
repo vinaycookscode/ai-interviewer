@@ -4,6 +4,14 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
+Migration `college_shares` adds `CollegeShare`.
+
+- **Placement officers can follow their own students (AIIN-173).** On a drive's page, each college in the "By college" table has Share, which opens the approved "Share with the placement officer" dialog:
+  - **Sharing:** copy the link, or send it to the college's placement officer (remembered for next time) through the email outbox. Links last two weeks past the drive's close by default, up to 60 days. Each link lists its opens and can be turned off.
+  - **What the officer sees:** without an account, only that college's students, with name, roll number and how far each got (not started, started, didn't pass aptitude, finished), and filters. "Show who was shortlisted" is off by default; when on, each student shows Shortlisted or nothing. Scores, answers, feedback, other decisions, documents and integrity details are never shown.
+  - **Security:** works like shortlist links: only the token's hash is stored, a turned-off or expired link says so, guesses are limited to 30 a minute per address, and pages are never indexed or cached. The emailed link is cleared from the outbox once sent. See the addendum in `docs/architecture/2026-11-12-read-only-share-links.md`.
+  - **Privacy policy:** now says drive progress may be shared with the candidate's college's placement officer.
+
 Migration `drive_open_link` adds `Drive.openLinkSlug` (unique), `openLinkOn`, `allowedDomains` and `joinCap`. New dependency: `qrcode`.
 
 - **One open link for a drive, with a QR code (AIIN-168).** A drive's "Open link" page turns on one link students can use to join on their own, from the approved artboards:

@@ -4,7 +4,7 @@ import { Resend } from "resend";
 import { Prisma } from "@prisma/client";
 import { env } from "@/env";
 import { db } from "@/lib/db";
-import { DRIVE_TEMPLATES, MAX_ATTEMPTS, driveEmail, readPayload, retryDelayMs, type DriveTemplate } from "@/lib/drive-email";
+import { MAX_ATTEMPTS, OFFICER_TEMPLATE, renderQueued, retryDelayMs, type DriveTemplate } from "@/lib/drive-email";
 
 const FROM = "Get Back To U <noreply@getbacktou.com>";
 const BATCH = 100; // Resend's batch limit
@@ -13,7 +13,7 @@ const STUCK_MS = 10 * 60_000; // a row left SENDING this long (a worker died mid
 
 export interface QueuedEmail {
     to: string;
-    template: DriveTemplate;
+    template: DriveTemplate | typeof OFFICER_TEMPLATE;
     payload: Prisma.InputJsonValue;
     driveId?: string;
     driveCandidateId?: string;
@@ -57,7 +57,7 @@ async function fail(row: Claimed, error: string) {
     await db.outboundEmail.update({
         where: { id: row.id },
         data: final
-            ? { status: "FAILED", lastError: error.slice(0, 500) }
+            ? { status: "FAILED", lastError: error.slice(0, 500), ...(row.template === OFFICER_TEMPLATE ? { payload: {} } : {}) }
             : { status: "QUEUED", lastError: error.slice(0, 500), sendAfter: new Date(Date.now() + retryDelayMs(row.attempts)) },
     });
 }
@@ -77,13 +77,13 @@ export async function processOutbox(opts: { deadlineMs?: number } = {}): Promise
             if (!rows.length) break;
             const ready: { row: Claimed; mail: { from: string; to: string; subject: string; html: string; text: string } }[] = [];
             for (const row of rows) {
-                const payload = readPayload(row.payload);
-                if (!payload || !(DRIVE_TEMPLATES as string[]).includes(row.template)) {
+                const rendered = renderQueued(row.template, row.payload);
+                if (!rendered) {
                     await db.outboundEmail.update({ where: { id: row.id }, data: { status: "FAILED", lastError: "Unknown template or bad payload" } });
                     tally.failed++;
                     continue;
                 }
-                ready.push({ row, mail: { from: FROM, to: row.to, ...driveEmail(row.template as DriveTemplate, payload) } });
+                ready.push({ row, mail: { from: FROM, to: row.to, ...rendered } });
             }
             if (!ready.length) continue;
             if (!resend) {
@@ -114,7 +114,11 @@ export async function processOutbox(opts: { deadlineMs?: number } = {}): Promise
                 const reason = bad.get(i);
                 const id = reason === undefined ? ids.shift()?.id : undefined;
                 if (id) {
-                    await db.outboundEmail.update({ where: { id: r.row.id }, data: { status: "SENT", sentAt: now, providerId: id, lastError: null } });
+                    await db.outboundEmail.update({
+                        where: { id: r.row.id },
+                        // A placement officer's link carries its token: once sent, it isn't kept (AIIN-173)
+                        data: { status: "SENT", sentAt: now, providerId: id, lastError: null, ...(r.row.template === OFFICER_TEMPLATE ? { payload: {} } : {}) },
+                    });
                     tally.sent++;
                 } else {
                     await fail(r.row, reason ?? "No id returned");

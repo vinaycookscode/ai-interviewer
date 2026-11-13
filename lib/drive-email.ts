@@ -51,6 +51,52 @@ export function driveEmail(template: DriveTemplate, p: DriveEmailPayload): { sub
     };
 }
 
+/** The placement officer's link to their college's students (AIIN-173). */
+export const OFFICER_TEMPLATE = "COLLEGE_SHARE";
+
+export interface OfficerEmailPayload {
+    company: string;
+    drive: string;
+    job: string;
+    college: string;
+    expiresAt: string; // ISO
+    link: string;
+}
+
+const day = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Kolkata" });
+
+export function readOfficerPayload(v: unknown): OfficerEmailPayload | null {
+    if (!v || typeof v !== "object") return null;
+    const p = v as Record<string, unknown>;
+    const keys = ["company", "drive", "job", "college", "expiresAt", "link"] as const;
+    if (keys.some((k) => typeof p[k] !== "string" || !p[k]) || Number.isNaN(Date.parse(p.expiresAt as string))) return null;
+    return Object.fromEntries(keys.map((k) => [k, p[k]])) as unknown as OfficerEmailPayload;
+}
+
+export function officerEmail(p: OfficerEmailPayload): { subject: string; html: string; text: string } {
+    const lead = `${p.company} has shared how ${p.college}'s students are doing in its hiring drive for ${p.job} (${p.drive}).`;
+    const what = "You'll see each student's name, roll number and how far they got, so you can remind those who haven't started. Scores, answers and feedback are never shown.";
+    const until = `The link works until ${day.format(new Date(p.expiresAt))}. Please don't forward it outside your placement office.`;
+    return {
+        subject: `${p.college} students: ${p.job} at ${p.company}`,
+        text: ["Hello,", lead, what, `Open: ${p.link}`, until].join("\n\n"),
+        html:
+            `<p>Hello,</p><p>${esc(lead)}</p><p>${esc(what)}</p>` +
+            `<p><a href="${esc(p.link)}" style="display:inline-block;padding:12px 22px;border-radius:999px;background:#f28c6b;color:#2a1612;font-weight:700;text-decoration:none">See your students</a></p>` +
+            `<p style="color:#666;font-size:13px">${esc(until)}</p>`,
+    };
+}
+
+/** Any queued email, rendered at send time, or null when its template or payload is unusable. */
+export function renderQueued(template: string, payload: unknown): { subject: string; html: string; text: string } | null {
+    if (template === OFFICER_TEMPLATE) {
+        const p = readOfficerPayload(payload);
+        return p ? officerEmail(p) : null;
+    }
+    const p = readPayload(payload);
+    return p && (DRIVE_TEMPLATES as string[]).includes(template) ? driveEmail(template as DriveTemplate, p) : null;
+}
+
 /** Wait before the next try: 1, 2, 4, 8 minutes, so a short outage passes without losing anyone (AC2). */
 export function retryDelayMs(attempts: number): number {
     return 60_000 * 2 ** Math.max(0, attempts - 1);

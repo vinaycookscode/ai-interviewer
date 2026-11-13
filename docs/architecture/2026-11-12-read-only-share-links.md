@@ -1,6 +1,6 @@
 # Read-only shortlist links for hiring managers
 **Date:** 2026-11-12  
-**Status:** Accepted · implemented (AIIN-161)  
+**Status:** Accepted · implemented (AIIN-161; extended by AIIN-173)  
 **Deciders:** Vinay
 
 ## Context
@@ -28,3 +28,9 @@ An employer often needs a hiring manager to look at the shortlist, and that pers
 - **Signed URLs (JWT or HMAC) with no table.** They can't be turned off one at a time and can't count opens.
 - **Storing the token itself.** It's simpler, and it lets the link be copied again later, but a leaked table would open every link.
 - **A frozen snapshot of the shortlist.** It's predictable, but it goes stale the moment a decision changes, which is the opposite of what the ticket asks.
+
+## Addendum 2026-11-13: placement officer links (AIIN-173)
+
+The same model serves a college's placement officer: `/share/college/<token>`, a `CollegeShare` row per link holding only the token's hash, turned off or expired as above, and the same 30 tries a minute per IP (shared with shortlist links). It shows one college's students only: name, roll number, how far each got and, when the employer turns it on for that link, Shortlisted or nothing. Scores, answers, feedback, other decisions, documents and integrity details aren't selected. Links last two weeks past the drive's close by default, and at most 60 days past it.
+
+Unlike shortlist links, these can be emailed, through the outbox. A queued row has to hold the link until it's sent, so the token sits in `OutboundEmail.payload` for that time. The outbox empties the payload once the email is sent or has finally failed, so afterwards only the hash remains.
