@@ -11,6 +11,7 @@ import { PageHeading } from "@/components/jobs/employer-ui";
 import { coralButton, focusRing } from "@/components/soft-glass/classes";
 import { EmptyState } from "@/components/soft-glass/empty-state";
 import { DriveStatusChip, istShort } from "@/components/drives/drive-status";
+import { DrivesTabs } from "@/components/drives/drives-tabs";
 
 export async function generateMetadata(): Promise<Metadata> {
     const t = await getTranslations("Drives");
@@ -24,6 +25,7 @@ export default async function DrivesPage({ searchParams }: { searchParams: Promi
     const userId = session?.user?.id;
     if (!userId) redirect("/auth/login");
     const t = await getTranslations("Drives");
+    const tTests = await getTranslations("AptitudeTests");
 
     const drives = await db.drive.findMany({
         where: { employerId: userId },
@@ -79,6 +81,7 @@ export default async function DrivesPage({ searchParams }: { searchParams: Promi
                     </Link>
                 }
             />
+            <DrivesTabs current="drives" label={t("tabsLabel")} drives={tTests("drivesTab")} tests={tTests("testsTab")} />
             {rows.length === 0 ? (
                 <EmptyState icon={<GraduationCap className="size-7" aria-hidden="true" />} title={t("noneTitle")}>
                     {t("noneBody")}

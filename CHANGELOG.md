@@ -6,6 +6,16 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 Migration `aptitude` adds `AptitudeTest`, `AptitudeSection`, `AptitudeQuestion`, `AptitudeAttempt` and the drive's aptitude settings; seed the ready-made test with `npx tsx scripts/seed-aptitude.ts` (it refuses a non-local database without `ALLOW_SEED=1`). Migration `email_outbox` adds `OutboundEmail` (`OutboundStatus`). A new daily cron, `/api/cron/outbox`, needs `CRON_SECRET`; set `RESEND_WEBHOOK_SECRET` (Resend → Webhooks → signing secret) and point a Resend webhook for `email.bounced` and `email.complained` at `/api/webhooks/resend`. Migration `drives` adds `Drive`, `DriveCollege` and `DriveCandidate` (with the `DriveStage` and `DriveSource` enums) and `Interview.driveId`. `scripts/seed-local-test-users.ts` seeds test accounts into a local throwaway database only.
 
+- **Employers write their own aptitude tests (AIIN-226).** Hiring drives now has an "Aptitude tests" tab next to Drives, from the approved artboards. It lists the ready-made tests and your own, each marked Ready, Needs N more, or Locked while in use.
+  - **Setting up a test:** a name, the time allowed, whether to shuffle answer options, and named sections that each ask a number of questions per attempt. Each attempt draws its questions from every section's pool.
+  - **Adding questions:**
+    - write them, with 2 to 6 options, one correct answer and the working;
+    - import a CSV, where problems are named by row and imported questions need a check;
+    - draft them with AI. Nothing is saved until you press "Answer is right · add".
+  - **Rules:**
+    - only checked questions are used, and a drive can only pick a test that's ready;
+    - a test used by a scheduled or live drive is locked, and "Make a copy" makes an editable copy;
+    - ready-made tests can be copied, not edited.
 - **Aptitude round with a pass mark (AIIN-169).** A drive can start with a timed aptitude test before the AI interview. You pick the test and a pass mark from 1 to 100% on the drive form.
   - **The ready-made test:** "General aptitude", 30 minutes and 30 questions, drawn from a pool of 45 across quantitative, logical and verbal. Each candidate gets their own questions, with the options shuffled.
   - **For candidates:** the drive email links to the round. After instructions, they get a timer and "Question n of 30" that stay at the top on a phone, 56px answer options, a question grid, and a spoken warning at 5 minutes and 1 minute left. Answers save as they go and survive a reload.
