@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/form";
 import { CardWrapper } from "@/components/auth/card-wrapper";
 import { FormError } from "@/components/auth/form-error";
+import { AuthError } from "@/components/auth/auth-error";
+import { isAuthErrorCode, type AuthErrorCode } from "@/lib/auth-errors";
 import { FormSuccess } from "@/components/auth/form-success";
 import { coralButton, fieldError, fieldInput, fieldLabel, focusRing } from "@/components/soft-glass/classes";
 import { login } from "@/actions/auth";
@@ -41,7 +43,7 @@ export const LoginForm = () => {
         ? t("errors.oauthAccountNotLinked")
         : "";
 
-    const [error, setError] = useState<string | undefined>("");
+    const [error, setError] = useState<AuthErrorCode | null>(null);
     const [success, setSuccess] = useState<string | undefined>("");
     const [isPending, startTransition] = useTransition();
 
@@ -60,7 +62,7 @@ export const LoginForm = () => {
     const selectedPeriod = selection.period ?? "MONTHLY";
 
     const onSubmit = (values: z.infer<typeof LoginSchema>) => {
-        setError("");
+        setError(null);
         setSuccess("");
 
         let callbackUrl = searchParams.get("callbackUrl") || undefined;
@@ -74,8 +76,9 @@ export const LoginForm = () => {
             login(values, callbackUrl)
                 .then((data) => {
                     if (data?.error) {
-                        form.reset();
-                        setError(data.error);
+                        // Keep the email: only the password is cleared
+                        form.resetField("password");
+                        setError(isAuthErrorCode(data.error) ? data.error : "UNAVAILABLE");
                     }
                     // Success is handled by redirect in server action
                 })
@@ -84,7 +87,7 @@ export const LoginForm = () => {
                     if (error?.message?.includes("NEXT_REDIRECT") || error?.digest?.includes("NEXT_REDIRECT")) {
                         return;
                     }
-                    setError(t("errors.generic"));
+                    setError("UNAVAILABLE");
                 });
         });
     };
@@ -153,7 +156,7 @@ export const LoginForm = () => {
                             </FormItem>
                         )}
                     />
-                    <FormError message={error || urlError} />
+                    {error ? <AuthError code={error} /> : <FormError message={urlError} />}
                     <FormSuccess message={success} />
                     <button disabled={isPending} type="submit" className={cn(coralButton, "mt-1 h-12 w-full")}>
                         {isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}

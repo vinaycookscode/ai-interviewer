@@ -816,8 +816,7 @@
             "noAccount": "New here?",
             "createAccount": "Create an account",
             "errors": {
-                "oauthAccountNotLinked": "Email already in use with different provider!",
-                "generic": "Something went wrong"
+                "oauthAccountNotLinked": "Email already in use with different provider!"
             }
         },
         "register": {
@@ -850,6 +849,22 @@
             "confirmPassword": "Confirm password",
             "resetting": "Saving…",
             "reset": "Save new password"
+        },
+        "errors": {
+            "WRONG_PASSWORD": "That email and password don’t match. Try again, or reset your password.",
+            "NO_ACCOUNT": "There’s no account with that email. Check the spelling, or create an account.",
+            "TOO_MANY": "Too many tries. Wait 15 minutes, then try again, or reset your password now.",
+            "INVITED": "You were invited but haven’t set a password. Open the link in your invitation email to finish setting up.",
+            "UNAVAILABLE": "We couldn’t sign you in just now. It’s on our side; try again in a minute.",
+            "EMAIL_TAKEN": "That email already has an account. Sign in instead, or reset the password if you’ve forgotten it.",
+            "PENDING_INVITE": "This email has an invitation waiting. Use the link in your invitation email to create your account.",
+            "WEAK_PASSWORD": "Your password needs at least 8 characters, with a capital letter, a number and a symbol such as ! or #.",
+            "INVALID": "Check the details above and try again.",
+            "actions": {
+                "reset": "Reset your password",
+                "register": "Create an account",
+                "login": "Sign in"
+            }
         }
     },
     "Pricing": {

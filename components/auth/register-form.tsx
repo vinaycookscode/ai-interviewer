@@ -18,7 +18,8 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { CardWrapper } from "@/components/auth/card-wrapper";
-import { FormError } from "@/components/auth/form-error";
+import { AuthError } from "@/components/auth/auth-error";
+import { isAuthErrorCode, type AuthErrorCode } from "@/lib/auth-errors";
 import { FormSuccess } from "@/components/auth/form-success";
 import { coralButton, fieldError, fieldHint, fieldInput, fieldLabel, focusRing } from "@/components/soft-glass/classes";
 import { register } from "@/actions/auth";
@@ -42,7 +43,7 @@ export const RegisterForm = () => {
     const tCommon = useTranslations("Common");
     const tPricing = useTranslations("Pricing");
     const tLanding = useTranslations("Landing.pricing");
-    const [error, setError] = useState<string | undefined>("");
+    const [error, setError] = useState<AuthErrorCode | null>(null);
     const [success, setSuccess] = useState<string | undefined>("");
     const [isPending, startTransition] = useTransition();
     const router = useRouter();
@@ -71,7 +72,7 @@ export const RegisterForm = () => {
     });
 
     const onSubmit = (values: z.infer<typeof RegisterSchema>) => {
-        setError("");
+        setError(null);
         setSuccess("");
 
         // Get callbackUrl from URL params
@@ -86,8 +87,13 @@ export const RegisterForm = () => {
         startTransition(() => {
             register(values, callbackUrl || undefined)
                 .then((data) => {
-                    setError(data.error);
-                    setSuccess(data.success);
+                    if ("error" in data) setError(isAuthErrorCode(data.error) ? data.error : "UNAVAILABLE");
+                    else setSuccess(data.success);
+                })
+                .catch((e) => {
+                    // A successful sign-up ends in a redirect, which isn't an error
+                    if (e?.digest?.includes?.("NEXT_REDIRECT")) return;
+                    setError("UNAVAILABLE");
                 });
         });
     };
@@ -215,7 +221,7 @@ export const RegisterForm = () => {
                             </FormItem>
                         )}
                     />
-                    <FormError message={error} />
+                    <AuthError code={error} />
                     <FormSuccess message={success} />
                     <button disabled={isPending} type="submit" className={cn(coralButton, "mt-1 h-12 w-full")}>
                         {isPending && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}

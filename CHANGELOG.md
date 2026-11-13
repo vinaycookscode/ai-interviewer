@@ -4,6 +4,8 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
+- **Sign-in and sign-up say what went wrong (AIIN-57).** "Something went wrong!" is gone. The forms now say whether the email has no account, the password doesn't match, there were too many tries (wait 15 minutes), the account was invited but has no password yet, the email already has an account or a pending invitation, the password misses a rule, or the problem is on our side. Each has its next step where there is one (reset your password, create an account, sign in). Red when the person can fix it, lavender when it's a wait or on our side. A failed sign-in keeps the email filled in.
+
 Migration `candidate_context` adds `Interview.candidateContext` and `candidateContextAt`.
 
 - **Candidates see what was flagged and can add their side (AIIN-185).** A finished interview's report now has a "What was flagged" row leading to a page from the approved artboards:

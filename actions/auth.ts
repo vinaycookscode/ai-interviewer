@@ -13,6 +13,20 @@ import bcrypt from "bcryptjs";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { headers } from "next/headers";
 import { getClientIP } from "@/lib/geolocation";
+import type { AuthErrorCode } from "@/lib/auth-errors";
+
+/** A sign-in or sign-up error the form shows as a specific message (AIIN-57). */
+type AuthFail = { error: AuthErrorCode };
+
+/** Sign in after a password is set; anything but a redirect is turned into an error code. */
+async function signInWith(email: string, password: string, redirectTo: string): Promise<AuthFail | undefined> {
+    try {
+        await signIn("credentials", { email, password, redirectTo });
+    } catch (error) {
+        if (error instanceof AuthError) return { error: error.type === "CredentialsSignin" ? "WRONG_PASSWORD" : "UNAVAILABLE" };
+        throw error;
+    }
+}
 
 /**
  * True if callbackUrl is an interview invitation link (/interview/<id>?token=…)
@@ -47,37 +61,32 @@ export const login = async (
     const validatedFields = LoginSchema.safeParse(values);
 
     if (!validatedFields.success) {
-        return { error: "Invalid fields!" };
+        return { error: "INVALID" as const };
     }
 
     const { email, password } = validatedFields.data;
 
-    // Rate Limiting
+    // Rate Limiting: 5 tries in 15 minutes per address
     const headersList = await headers();
     const ip = getClientIP(headersList);
 
     const rateLimit = await checkRateLimit(ip);
     if (!rateLimit.success) {
-        return { error: "Too many login attempts. Please try again later." };
+        return { error: "TOO_MANY" as const };
     }
 
+    // Say which it is: no account, or an invited account with no password yet (AIIN-57)
+    let account: { password: string | null } | null;
     try {
-        await signIn("credentials", {
-            email,
-            password,
-            redirectTo: callbackUrl || DEFAULT_LOGIN_REDIRECT,
-        });
+        account = await db.user.findUnique({ where: { email }, select: { password: true } });
     } catch (error) {
-        if (error instanceof AuthError) {
-            switch (error.type) {
-                case "CredentialsSignin":
-                    return { error: "Invalid credentials!" };
-                default:
-                    return { error: "Something went wrong!" };
-            }
-        }
-        throw error;
+        console.error("Sign-in lookup failed:", error);
+        return { error: "UNAVAILABLE" as const };
     }
+    if (!account) return { error: "NO_ACCOUNT" as const };
+    if (account.password === null) return { error: "INVITED" as const };
+
+    return signInWith(email, password, callbackUrl || DEFAULT_LOGIN_REDIRECT);
 };
 
 
@@ -88,7 +97,8 @@ export const register = async (
     const validatedFields = RegisterSchema.safeParse(values);
 
     if (!validatedFields.success) {
-        return { error: "Invalid fields!" };
+        // The only rule a person can miss after the form's own checks is the password's
+        return { error: validatedFields.error.issues.some((i) => i.path[0] === "password") ? ("WEAK_PASSWORD" as const) : ("INVALID" as const) };
     }
 
     const { email, password, name } = validatedFields.data;
@@ -107,7 +117,7 @@ export const register = async (
         // their invitation link: otherwise anyone who knows the email could.
         if (existingUser.password === null) {
             if (!(await hasInvitationFor(email, callbackUrl))) {
-                return { error: "This email has a pending invitation. Please use the link in your invitation email to create your account." };
+                return { error: "PENDING_INVITE" as const };
             }
 
             // Keep the existing role: claiming must not change it.
@@ -120,28 +130,12 @@ export const register = async (
             });
 
             // Auto-login after claiming account
-            try {
-                await signIn("credentials", {
-                    email,
-                    password,
-                    redirectTo: callbackUrl || DEFAULT_LOGIN_REDIRECT,
-                });
-            } catch (error) {
-                if (error instanceof AuthError) {
-                    switch (error.type) {
-                        case "CredentialsSignin":
-                            return { error: "Invalid credentials!" };
-                        default:
-                            return { error: "Something went wrong!" };
-                    }
-                }
-                throw error;
-            }
-            return { success: "Account claimed successfully!" };
+            const failed = await signInWith(email, password, callbackUrl || DEFAULT_LOGIN_REDIRECT);
+            return failed ?? { success: "Account claimed successfully!" };
         }
 
         // User already has a password - cannot register again
-        return { error: "Email already in use!" };
+        return { error: "EMAIL_TAKEN" as const };
     }
 
     // Capture user location from IP (best effort, don't block on errors)
@@ -179,25 +173,8 @@ export const register = async (
     });
 
     // Auto-login after registration, then set up the career path (AIIN-52) unless a link sent them somewhere
-    try {
-        await signIn("credentials", {
-            email,
-            password,
-            redirectTo: callbackUrl || ONBOARDING_REDIRECT,
-        });
-    } catch (error) {
-        if (error instanceof AuthError) {
-            switch (error.type) {
-                case "CredentialsSignin":
-                    return { error: "Invalid credentials!" };
-                default:
-                    return { error: "Something went wrong!" };
-            }
-        }
-        throw error;
-    }
-
-    return { success: "User created!" };
+    const failed = await signInWith(email, password, callbackUrl || ONBOARDING_REDIRECT);
+    return failed ?? { success: "User created!" };
 };
 
 // =============================================================================
