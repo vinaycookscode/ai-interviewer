@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { driveJobs, formValues } from "@/lib/drive-loaders";
+import { driveJobs, driveTests, formValues } from "@/lib/drive-loaders";
 import { PageHeading } from "@/components/jobs/employer-ui";
 import { DriveForm } from "@/components/drives/drive-form";
 
@@ -30,17 +30,20 @@ export default async function EditDrivePage({ params }: { params: Promise<{ id: 
             closesAt: true,
             autoShortlist: true,
             interviewCutoff: true,
+            aptitudeEnabled: true,
+            aptitudeTestId: true,
+            aptitudeCutoff: true,
             colleges: { orderBy: { createdAt: "asc" }, select: { id: true, name: true, city: true, placementOfficerEmail: true } },
             _count: { select: { candidates: true } },
         },
     });
     if (!drive) notFound();
-    const jobs = await driveJobs(userId);
+    const [jobs, tests] = await Promise.all([driveJobs(userId), driveTests(userId)]);
 
     return (
         <div className="flex flex-col gap-6 sm:gap-9">
             <PageHeading back={{ href: `/dashboard/drives/${drive.id}`, label: drive.name }} title={t("editTitle")} subtitle={t("formSubtitle")} />
-            <DriveForm id={drive.id} jobs={jobs} locked={drive._count.candidates > 0} initial={formValues(drive)} />
+            <DriveForm id={drive.id} jobs={jobs} tests={tests} locked={drive._count.candidates > 0} initial={formValues(drive)} />
         </div>
     );
 }

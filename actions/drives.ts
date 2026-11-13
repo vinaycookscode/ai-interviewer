@@ -5,6 +5,7 @@ import { after } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { processOutbox, requeueFailed } from "@/lib/outbox";
+import { driveTests } from "@/lib/drive-loaders";
 import { canReopen, cleanDrive, driveStatus, linkExpiry, type DriveError, type DriveField, type DriveInput } from "@/lib/drives";
 
 type SaveResult =
@@ -24,7 +25,18 @@ async function ownDrive(id: unknown) {
     if (!userId || typeof id !== "string") return null;
     const drive = await db.drive.findFirst({
         where: { id, employerId: userId },
-        select: { id: true, jobId: true, draft: true, opensAt: true, closesAt: true, closedAt: true, _count: { select: { candidates: true } } },
+        select: {
+            id: true,
+            jobId: true,
+            draft: true,
+            opensAt: true,
+            closesAt: true,
+            closedAt: true,
+            aptitudeEnabled: true,
+            aptitudeTestId: true,
+            aptitudeCutoff: true,
+            _count: { select: { candidates: true } },
+        },
     });
     return drive ? { ...drive, userId } : null;
 }
@@ -67,6 +79,19 @@ export async function saveDrive(id: string | null, input: DriveInput): Promise<S
     if (job._count.questions === 0) return { error: "noQuestions" };
     // A drive with candidates can't move to another job, or go back to being a draft
     if (existing && existing._count.candidates > 0 && (existing.jobId !== v.jobId || v.draft)) return { errors: { jobId: "invalid" } };
+    // ...or change its aptitude round, since candidates are already on their way through it (AIIN-169)
+    if (
+        existing &&
+        existing._count.candidates > 0 &&
+        (existing.aptitudeEnabled !== v.aptitudeEnabled || existing.aptitudeTestId !== v.aptitudeTestId || existing.aptitudeCutoff !== v.aptitudeCutoff)
+    )
+        return { errors: { aptitudeTestId: "invalid" } };
+    // The test must be ready-made or this employer's own, and ready (every section has enough checked questions)
+    if (v.aptitudeTestId) {
+        const ok = (await driveTests(userId)).find((x) => x.id === v.aptitudeTestId);
+        if (!ok) return { errors: { aptitudeTestId: "invalid" } };
+        if (!ok.ready) return { errors: { aptitudeTestId: "notReady" } };
+    }
 
     const data = {
         jobId: v.jobId,
@@ -76,6 +101,9 @@ export async function saveDrive(id: string | null, input: DriveInput): Promise<S
         closesAt: v.closesAt,
         autoShortlist: v.autoShortlist,
         interviewCutoff: v.interviewCutoff,
+        aptitudeEnabled: v.aptitudeEnabled,
+        aptitudeTestId: v.aptitudeTestId,
+        aptitudeCutoff: v.aptitudeCutoff,
     };
     const driveId = await db.$transaction(async (tx) => {
         const d = existing

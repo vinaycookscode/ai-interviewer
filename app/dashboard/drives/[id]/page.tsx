@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { after } from "next/server";
 import { getTranslations } from "next-intl/server";
-import { PencilLine, Upload } from "lucide-react";
+import { CheckCircle2, PencilLine, Upload, XCircle } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { cn } from "@/lib/utils";
@@ -40,6 +40,9 @@ export default async function DrivePage({ params }: { params: Promise<{ id: stri
             closedAt: true,
             autoShortlist: true,
             interviewCutoff: true,
+            aptitudeEnabled: true,
+            aptitudeCutoff: true,
+            aptitudeTest: { select: { name: true } },
             job: { select: { id: true, title: true } },
             colleges: { orderBy: { createdAt: "asc" }, select: { id: true, name: true, city: true } },
             _count: { select: { candidates: true } },
@@ -58,6 +61,18 @@ export default async function DrivePage({ params }: { params: Promise<{ id: stri
             select: { driveCandidateId: true, to: true, status: true },
         }),
     ]);
+    // Aptitude results, best first: percent, pass or not, and how often they left the tab (AIIN-169 AC9)
+    const results = drive.aptitudeEnabled
+        ? await db.aptitudeAttempt.findMany({
+              where: { driveCandidate: { driveId: drive.id }, submittedAt: { not: null } },
+              orderBy: [{ percent: "desc" }, { submittedAt: "asc" }],
+              take: 50,
+              select: { id: true, percent: true, passed: true, tabSwitches: true, driveCandidate: { select: { userId: true, college: { select: { name: true } } } } },
+          })
+        : [];
+    const people = results.length
+        ? new Map((await db.user.findMany({ where: { id: { in: results.map((r) => r.driveCandidate.userId) } }, select: { id: true, name: true, email: true } })).map((u) => [u.id, u]))
+        : new Map<string, { id: string; name: string | null; email: string }>();
     const emailCount = (s: string) => byEmail.find((r) => r.status === s)?._count._all ?? 0;
     // Emails waiting to go out are sent after this page is served (no per-minute cron on this plan, AIIN-167)
     if (emailCount("QUEUED") > 0) after(() => processOutbox());
@@ -141,6 +156,9 @@ export default async function DrivePage({ params }: { params: Promise<{ id: stri
                             ))}
                         </ul>
                     )}
+                    {drive.aptitudeEnabled && drive.aptitudeTest && (
+                        <p className="text-sm text-sg-muted">{t("aptitudeSummary", { test: drive.aptitudeTest.name, cutoff: drive.aptitudeCutoff ?? 0 })}</p>
+                    )}
                     {drive.autoShortlist && drive.interviewCutoff !== null && (
                         <p className="text-sm text-sg-muted">
                             {t("autoShortlist")} · {t("interviewCutoff")} {drive.interviewCutoff}
@@ -148,6 +166,47 @@ export default async function DrivePage({ params }: { params: Promise<{ id: stri
                     )}
                     <p className="text-[13px] text-sg-muted">{t("linksNote")}</p>
                 </section>
+                {drive.aptitudeEnabled && (
+                    <section aria-labelledby="dr-apt" className={cn(panel, "gap-3 lg:col-span-2")}>
+                        <h2 id="dr-apt" className={panelTitle}>
+                            {t("aptitudeResults")}
+                        </h2>
+                        <p className="text-sm">
+                            {t("aptitudeCounts", { passed: stageCount("APTITUDE_PASSED"), failed: stageCount("APTITUDE_FAILED"), taking: stageCount("APTITUDE_STARTED") })}
+                        </p>
+                        {results.length === 0 ? (
+                            <p className="text-sm text-sg-muted">{t("noResults")}</p>
+                        ) : (
+                            <ul className="flex flex-col gap-2">
+                                {results.map((r) => {
+                                    const p = people.get(r.driveCandidate.userId);
+                                    return (
+                                        <li key={r.id} className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-[18px] bg-sg-row px-4 py-3">
+                                            <span className="flex min-w-0 flex-[1_1_200px] flex-col">
+                                                <strong className="break-words">{p?.name || p?.email}</strong>
+                                                <span className="text-[13px] break-all text-sg-muted">
+                                                    {p?.email}
+                                                    {r.driveCandidate.college ? ` · ${r.driveCandidate.college.name}` : ""}
+                                                </span>
+                                            </span>
+                                            {r.tabSwitches > 0 && <span className="text-[13px] text-sg-muted">{t("tabSwitches", { count: r.tabSwitches })}</span>}
+                                            <span className="font-display sg-soft text-[22px] font-semibold tabular-nums">{r.percent ?? 0}%</span>
+                                            <span
+                                                className={cn(
+                                                    "inline-flex h-[30px] items-center gap-1.5 rounded-full bg-sg-chip px-3 text-[13px] font-bold",
+                                                    r.passed ? "text-sg-success" : "text-sg-muted",
+                                                )}
+                                            >
+                                                {r.passed ? <CheckCircle2 className="size-3.5" aria-hidden="true" /> : <XCircle className="size-3.5" aria-hidden="true" />}
+                                                {r.passed ? t("passedAptitude") : t("didntPass")}
+                                            </span>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        )}
+                    </section>
+                )}
                 <section aria-labelledby="dr-emails" className={cn(panel, "gap-3 lg:col-span-2")}>
                     <h2 id="dr-emails" className={panelTitle}>
                         {t("emails")}

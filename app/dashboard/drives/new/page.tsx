@@ -3,7 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { auth } from "@/auth";
-import { driveJobs } from "@/lib/drive-loaders";
+import { driveJobs, driveTests } from "@/lib/drive-loaders";
 import { PageHeading } from "@/components/jobs/employer-ui";
 import { EmptyState } from "@/components/soft-glass/empty-state";
 import { coralButton } from "@/components/soft-glass/classes";
@@ -22,7 +22,7 @@ export default async function NewDrivePage({ searchParams }: { searchParams: Pro
     const userId = session?.user?.id;
     if (!userId) redirect("/auth/login");
     const t = await getTranslations("Drives");
-    const jobs = await driveJobs(userId);
+    const [jobs, tests] = await Promise.all([driveJobs(userId), driveTests(userId)]);
     const first = jobs.find((j) => j.id === job) ?? jobs.find((j) => j.questions > 0) ?? jobs[0];
 
     return (
@@ -41,8 +41,20 @@ export default async function NewDrivePage({ searchParams }: { searchParams: Pro
                 <DriveForm
                     id={null}
                     jobs={jobs}
+                    tests={tests}
                     locked={false}
-                    initial={{ jobId: first.id, name: "", opensAt: "", closesAt: "", colleges: [{ name: "" }], autoShortlist: false, interviewCutoff: "" }}
+                    initial={{
+                        jobId: first.id,
+                        name: "",
+                        opensAt: "",
+                        closesAt: "",
+                        colleges: [{ name: "" }],
+                        autoShortlist: false,
+                        interviewCutoff: "",
+                        aptitudeEnabled: false,
+                        aptitudeTestId: tests.find((t) => t.ready)?.id ?? "",
+                        aptitudeCutoff: "60",
+                    }}
                 />
             )}
         </div>

@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { AlertTriangle, Check, Loader2, Lock, Plus, X } from "lucide-react";
 import { saveDrive } from "@/actions/drives";
-import { CITY_MAX, COLLEGE_MAX, NAME_MAX, type CollegeInput, type DriveError, type DriveField, type DriveFormValues } from "@/lib/drives";
+import { CITY_MAX, COLLEGE_MAX, NAME_MAX, type CollegeInput, type DriveError, type DriveField, type DriveFormValues, type DriveTestOption } from "@/lib/drives";
 import { coralButton, focusRing } from "@/components/soft-glass/classes";
 import { field, fieldLabel, outlineButton, panel, panelTitle } from "@/components/jobs/employer-ui";
 import { cn } from "@/lib/utils";
@@ -17,11 +17,13 @@ export function DriveForm({
     id,
     initial,
     jobs,
+    tests,
     locked,
 }: {
     id: string | null;
     initial: DriveFormValues;
     jobs: { id: string; title: string; questions: number }[];
+    tests: DriveTestOption[];
     /** A drive with candidates stays on its job and can't go back to draft */
     locked: boolean;
 }) {
@@ -46,10 +48,10 @@ export function DriveForm({
         });
 
     const err = (f: DriveField) => (errors[f] ? t(`errors.${errors[f]}`) : null);
-    const input = (f: "name" | "opensAt" | "closesAt" | "interviewCutoff", props: React.InputHTMLAttributes<HTMLInputElement>, hint?: string) => (
+    const input = (f: "name" | "opensAt" | "closesAt" | "interviewCutoff" | "aptitudeCutoff", props: React.InputHTMLAttributes<HTMLInputElement>, hint?: string) => (
         <div className="flex min-w-0 flex-[1_1_200px] flex-col gap-1.5">
             <label htmlFor={`df-${f}`} className={fieldLabel}>
-                {t(f === "interviewCutoff" ? "interviewCutoff" : f)}
+                {t(f)}
             </label>
             <input
                 id={`df-${f}`}
@@ -190,31 +192,36 @@ export function DriveForm({
                         <h2 id="df-cut" className={panelTitle}>
                             {t("cutoffs")}
                         </h2>
-                        <div className="flex items-start justify-between gap-4">
-                            <span className="flex min-w-0 flex-col">
-                                <span id="df-auto-l" className="font-semibold">
-                                    {t("autoShortlist")}
-                                </span>
-                                <span id="df-auto-h" className="text-[13px] text-sg-muted">
-                                    {t("autoShortlistHint")}
-                                </span>
-                            </span>
-                            <button
-                                type="button"
-                                role="switch"
-                                aria-checked={v.autoShortlist}
-                                aria-labelledby="df-auto-l"
-                                aria-describedby="df-auto-h"
-                                onClick={() => setV({ ...v, autoShortlist: !v.autoShortlist })}
-                                className={cn(
-                                    "relative inline-flex h-8 w-14 shrink-0 items-center rounded-full border-2 transition-colors",
-                                    v.autoShortlist ? "border-sg-ink bg-sg-ink" : "border-sg-field-border bg-sg-chip",
-                                    focusRing,
-                                )}
-                            >
-                                <span className={cn("absolute size-6 rounded-full bg-sg-bg shadow transition-transform", v.autoShortlist ? "translate-x-[26px]" : "translate-x-[2px]")} />
-                            </button>
-                        </div>
+                        <Toggle id="df-apt" on={v.aptitudeEnabled} label={t("aptitude")} hint={t("aptitudeHint")} onChange={(on) => setV({ ...v, aptitudeEnabled: on })} />
+                        {v.aptitudeEnabled && (
+                            <div className="flex flex-wrap items-start gap-3">
+                                <div className="flex min-w-0 flex-[2_1_240px] flex-col gap-1.5">
+                                    <label htmlFor="df-test" className={fieldLabel}>
+                                        {t("test")}
+                                    </label>
+                                    <select
+                                        id="df-test"
+                                        value={v.aptitudeTestId}
+                                        onChange={(e) => setV({ ...v, aptitudeTestId: e.target.value })}
+                                        aria-invalid={!!errors.aptitudeTestId}
+                                        className={cn(field, "h-12")}
+                                    >
+                                        <option value="">{t("chooseTest")}</option>
+                                        {tests.map((x) => (
+                                            <option key={x.id} value={x.id} disabled={!x.ready}>
+                                                {t("testOption", { name: x.name, questions: x.questions, minutes: x.minutes })}
+                                                {x.ready ? "" : ` · ${t("testNotReady")}`}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <span className={cn("text-[13px]", errors.aptitudeTestId ? "font-semibold text-sg-danger" : "text-sg-muted")}>
+                                        {errors.aptitudeTestId ? t(`errors.${errors.aptitudeTestId}`) : t("testHint")}
+                                    </span>
+                                </div>
+                                <div className="flex flex-[1_1_120px]">{input("aptitudeCutoff", { inputMode: "numeric", maxLength: 3 }, t("passMarkHint"))}</div>
+                            </div>
+                        )}
+                        <Toggle id="df-auto" on={v.autoShortlist} label={t("autoShortlist")} hint={t("autoShortlistHint")} onChange={(on) => setV({ ...v, autoShortlist: on })} />
                         {(v.autoShortlist || v.interviewCutoff) && <div className="flex">{input("interviewCutoff", { inputMode: "decimal", maxLength: 4 }, t("cutoffHint"))}</div>}
                         <p className="flex items-start gap-2.5 rounded-2xl bg-sg-lavender-soft px-3.5 py-3 text-sm text-sg-lavender-ink">
                             <Lock className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
@@ -236,5 +243,35 @@ export function DriveForm({
                 </button>
             </div>
         </form>
+    );
+}
+
+function Toggle({ id, on, label, hint, onChange }: { id: string; on: boolean; label: string; hint: string; onChange: (on: boolean) => void }) {
+    return (
+        <div className="flex items-start justify-between gap-4">
+            <span className="flex min-w-0 flex-col">
+                <span id={`${id}-l`} className="font-semibold">
+                    {label}
+                </span>
+                <span id={`${id}-h`} className="text-[13px] text-sg-muted">
+                    {hint}
+                </span>
+            </span>
+            <button
+                type="button"
+                role="switch"
+                aria-checked={on}
+                aria-labelledby={`${id}-l`}
+                aria-describedby={`${id}-h`}
+                onClick={() => onChange(!on)}
+                className={cn(
+                    "relative inline-flex h-8 w-14 shrink-0 items-center rounded-full border-2 transition-colors",
+                    on ? "border-sg-ink bg-sg-ink" : "border-sg-field-border bg-sg-chip",
+                    focusRing,
+                )}
+            >
+                <span className={cn("absolute size-6 rounded-full bg-sg-bg shadow transition-transform", on ? "translate-x-[26px]" : "translate-x-[2px]")} />
+            </button>
+        </div>
     );
 }

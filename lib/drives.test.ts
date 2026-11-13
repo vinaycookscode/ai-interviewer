@@ -11,6 +11,9 @@ const base: DriveInput = {
     colleges: [{ name: "Deccan Institute of Technology", city: "Pune", placementOfficerEmail: "Placement@DIT.edu.in" }, { name: "Sahyadri College" }],
     autoShortlist: false,
     interviewCutoff: "",
+    aptitudeEnabled: false,
+    aptitudeTestId: "",
+    aptitudeCutoff: "",
     draft: false,
 };
 
@@ -83,4 +86,15 @@ test("colleges: a name is required and emails are checked", () => {
     assert.deepEqual(!r.ok && r.errors, { colleges: "invalid" });
     const e = cleanDrive({ ...base, colleges: [{ name: " " }] }, { now });
     assert.deepEqual(!e.ok && e.errors, { colleges: "required" });
+});
+
+test("AIIN-169: an aptitude round needs a test and a pass mark from 1 to 100", () => {
+    const r = cleanDrive({ ...base, aptitudeEnabled: true }, { now });
+    assert.deepEqual(!r.ok && r.errors, { aptitudeTestId: "required", aptitudeCutoff: "required" });
+    const bad = cleanDrive({ ...base, aptitudeEnabled: true, aptitudeTestId: "t1", aptitudeCutoff: "101" }, { now });
+    assert.deepEqual(!bad.ok && bad.errors, { aptitudeCutoff: "percent" });
+    const ok = cleanDrive({ ...base, aptitudeEnabled: true, aptitudeTestId: "t1", aptitudeCutoff: "60" }, { now });
+    assert.ok(ok.ok && ok.value.aptitudeCutoff === 60 && ok.value.aptitudeTestId === "t1");
+    const off = cleanDrive({ ...base, aptitudeTestId: "t1", aptitudeCutoff: "60" }, { now });
+    assert.ok(off.ok && off.value.aptitudeTestId === null, "off clears the test");
 });

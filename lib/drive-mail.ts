@@ -10,6 +10,11 @@ export function interviewLink(interview: { id: string; token: string | null }): 
     return `${APP_URL}/interview/${interview.id}?token=${interview.token ?? ""}`;
 }
 
+/** A drive with an aptitude round sends candidates to it first (AIIN-169); they sign in as themselves there. */
+export function aptitudeLink(driveCandidateId: string): string {
+    return `${APP_URL}/aptitude/${driveCandidateId}`;
+}
+
 /** The payload an invitation or reminder needs, from the drive, its job and the candidate. */
 export function drivePayload(input: {
     candidateName: string | null;
@@ -41,9 +46,10 @@ export async function queueDriveReminders(now = new Date()): Promise<number> {
             id: true,
             name: true,
             closesAt: true,
+            aptitudeEnabled: true,
             job: { select: { title: true, employer: { select: { name: true } }, _count: { select: { questions: { where: { archived: false } } } } } },
             candidates: {
-                where: { stage: { in: ["INVITED", "OPENED"] }, interviewId: { not: null } },
+                where: { stage: { in: ["INVITED", "OPENED"] } },
                 select: { id: true, interviewId: true, userId: true },
             },
         },
@@ -51,13 +57,32 @@ export async function queueDriveReminders(now = new Date()): Promise<number> {
     const rows: QueuedEmail[] = [];
     for (const d of drives) {
         if (!d.closesAt || !d.candidates.length) continue;
+        const job = { title: d.job.title, employerName: d.job.employer.name, questions: d.job._count.questions };
+        if (d.aptitudeEnabled) {
+            // Not started the aptitude round yet: remind them to take it
+            const people = await db.user.findMany({ where: { id: { in: d.candidates.map((c) => c.userId) } }, select: { id: true, email: true, name: true } });
+            const byUser = new Map(people.map((p) => [p.id, p]));
+            for (const c of d.candidates) {
+                const p = byUser.get(c.userId);
+                if (!p) continue;
+                rows.push({
+                    to: p.email,
+                    template: "DRIVE_REMINDER",
+                    driveId: d.id,
+                    driveCandidateId: c.id,
+                    dedupeKey: `DRIVE_REMINDER:${c.id}`,
+                    payload: { ...drivePayload({ candidateName: p.name, drive: { name: d.name, closesAt: d.closesAt }, job, link: aptitudeLink(c.id), aptitude: true }) },
+                });
+            }
+            continue;
+        }
         const interviews = await db.interview.findMany({
-            where: { id: { in: d.candidates.map((c) => c.interviewId!) }, status: "PENDING" },
+            where: { id: { in: d.candidates.flatMap((c) => (c.interviewId ? [c.interviewId] : [])) }, status: "PENDING" },
             select: { id: true, token: true, candidate: { select: { email: true, name: true } } },
         });
         const byId = new Map(interviews.map((i) => [i.id, i]));
         for (const c of d.candidates) {
-            const iv = byId.get(c.interviewId!);
+            const iv = c.interviewId ? byId.get(c.interviewId) : undefined;
             if (!iv) continue; // started or finished: no reminder
             rows.push({
                 to: iv.candidate.email,
@@ -69,7 +94,7 @@ export async function queueDriveReminders(now = new Date()): Promise<number> {
                 payload: { ...drivePayload({
                     candidateName: iv.candidate.name,
                     drive: { name: d.name, closesAt: d.closesAt },
-                    job: { title: d.job.title, employerName: d.job.employer.name, questions: d.job._count.questions },
+                    job,
                     link: interviewLink(iv),
                     aptitude: false,
                 }) },

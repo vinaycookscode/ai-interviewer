@@ -4,8 +4,14 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
-Migration `email_outbox` adds `OutboundEmail` (`OutboundStatus`). A new daily cron, `/api/cron/outbox`, needs `CRON_SECRET`; set `RESEND_WEBHOOK_SECRET` (Resend → Webhooks → signing secret) and point a Resend webhook for `email.bounced` and `email.complained` at `/api/webhooks/resend`. Migration `drives` adds `Drive`, `DriveCollege` and `DriveCandidate` (with the `DriveStage` and `DriveSource` enums) and `Interview.driveId`. `scripts/seed-local-test-users.ts` seeds test accounts into a local throwaway database only.
+Migration `aptitude` adds `AptitudeTest`, `AptitudeSection`, `AptitudeQuestion`, `AptitudeAttempt` and the drive's aptitude settings; seed the ready-made test with `npx tsx scripts/seed-aptitude.ts` (it refuses a non-local database without `ALLOW_SEED=1`). Migration `email_outbox` adds `OutboundEmail` (`OutboundStatus`). A new daily cron, `/api/cron/outbox`, needs `CRON_SECRET`; set `RESEND_WEBHOOK_SECRET` (Resend → Webhooks → signing secret) and point a Resend webhook for `email.bounced` and `email.complained` at `/api/webhooks/resend`. Migration `drives` adds `Drive`, `DriveCollege` and `DriveCandidate` (with the `DriveStage` and `DriveSource` enums) and `Interview.driveId`. `scripts/seed-local-test-users.ts` seeds test accounts into a local throwaway database only.
 
+- **Aptitude round with a pass mark (AIIN-169).** A drive can start with a timed aptitude test before the AI interview. You pick the test and a pass mark from 1 to 100% on the drive form.
+  - **The ready-made test:** "General aptitude", 30 minutes and 30 questions, drawn from a pool of 45 across quantitative, logical and verbal. Each candidate gets their own questions, with the options shuffled.
+  - **For candidates:** the drive email links to the round. After instructions, they get a timer and "Question n of 30" that stay at the top on a phone, 56px answer options, a question grid, and a spoken warning at 5 minutes and 1 minute left. Answers save as they go and survive a reload.
+  - **The server keeps time and scores:** answers after the deadline (plus 30 seconds) don't count, and correct answers never reach the browser. An attempt left after its deadline is scored the next time it's opened, or by the daily job.
+  - **Results:** passing opens the AI interview straight away ("You've moved to the interview"); otherwise "Thanks for taking part". There's no second attempt.
+  - **On the drive page:** passed, didn't pass and taking it now, plus each candidate's percent and how often they left the tab.
 - **Invite a drive's candidates by CSV (AIIN-166).** A drive's page has "Invite by CSV" while it's scheduled or live, from the approved artboards, in four steps:
   1. **Upload** a CSV of up to 5,000 rows or 2 MB. Anything else is refused before it's read, and a template is available to download.
   2. **Match columns.** Headers like "Student Name, Email ID, College, PRN" are matched for you, and you can change them.

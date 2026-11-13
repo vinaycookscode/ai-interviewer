@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 import { driveStatus, linkExpiry } from "@/lib/drives";
 import { MAX_BYTES, MAX_ROWS, checkRows, guessMapping, parseCsv, validMapping, type CheckedRow, type Mapping, type RowStatus } from "@/lib/drive-csv";
 import { createInterview, findOrCreateCandidate } from "@/lib/candidate-invites";
-import { drivePayload, interviewLink } from "@/lib/drive-mail";
+import { aptitudeLink, drivePayload, interviewLink } from "@/lib/drive-mail";
 import { enqueue, processOutbox, type QueuedEmail } from "@/lib/outbox";
 
 type FileError = "notFound" | "notReady" | "tooBig" | "tooManyRows" | "empty";
@@ -53,6 +53,7 @@ async function openDrive(id: unknown) {
             opensAt: true,
             closesAt: true,
             closedAt: true,
+            aptitudeEnabled: true,
             colleges: { select: { id: true, name: true } },
             job: { select: { title: true, employer: { select: { name: true } }, _count: { select: { questions: { where: { archived: false } } } } } },
         },
@@ -145,9 +146,12 @@ export async function importDriveCsv(
             // One per person per drive (AC8): a row already there is skipped, never duplicated
             const existing = await db.driveCandidate.findUnique({ where: { driveId_userId: { driveId: drive.id, userId: person.id } }, select: { id: true } });
             if (existing) continue;
-            const interview = await createInterview({ jobId: drive.jobId, candidateId: person.id, employerId: drive.userId, expiresAt, driveId: drive.id });
+            // With an aptitude round, the interview is created when they pass it (AIIN-169)
+            const interview = drive.aptitudeEnabled
+                ? null
+                : await createInterview({ jobId: drive.jobId, candidateId: person.id, employerId: drive.userId, expiresAt, driveId: drive.id });
             const dc = await db.driveCandidate.create({
-                data: { driveId: drive.id, userId: person.id, driveCollegeId: collegeId, interviewId: interview.id, rollNumber: row.roll || null, source: "CSV" },
+                data: { driveId: drive.id, userId: person.id, driveCollegeId: collegeId, interviewId: interview?.id ?? null, rollNumber: row.roll || null, source: "CSV" },
                 select: { id: true },
             });
             emails.push({
@@ -155,14 +159,14 @@ export async function importDriveCsv(
                 template: "DRIVE_INVITE",
                 driveId: drive.id,
                 driveCandidateId: dc.id,
-                interviewId: interview.id,
+                interviewId: interview?.id,
                 dedupeKey: `DRIVE_INVITE:${dc.id}`,
                 payload: { ...drivePayload({
                     candidateName: person.name ?? row.name,
                     drive: { name: drive.name, closesAt: drive.closesAt },
                     job: { title: drive.job.title, employerName: drive.job.employer.name, questions: drive.job._count.questions },
-                    link: interviewLink(interview),
-                    aptitude: false,
+                    link: interview ? interviewLink(interview) : aptitudeLink(dc.id),
+                    aptitude: drive.aptitudeEnabled,
                 }) },
             });
             invited++;

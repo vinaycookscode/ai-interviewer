@@ -61,8 +61,21 @@ export interface DriveInput {
     colleges: CollegeInput[];
     autoShortlist: boolean;
     interviewCutoff: string;
+    aptitudeEnabled: boolean;
+    aptitudeTestId: string;
+    aptitudeCutoff: string;
     draft: boolean;
 }
+/** An aptitude test the drive form can offer (AIIN-169). Only ready tests can be picked. */
+export interface DriveTestOption {
+    id: string;
+    name: string;
+    minutes: number;
+    questions: number;
+    readyMade: boolean;
+    ready: boolean;
+}
+
 /** What the drive form edits: dates as India-time "2026-11-18T09:00" strings. */
 export type DriveFormValues = Omit<DriveInput, "draft">;
 
@@ -75,9 +88,12 @@ export interface CleanDrive {
     colleges: { id?: string; name: string; city: string | null; placementOfficerEmail: string | null }[];
     autoShortlist: boolean;
     interviewCutoff: number | null;
+    aptitudeEnabled: boolean;
+    aptitudeTestId: string | null;
+    aptitudeCutoff: number | null;
 }
-export type DriveField = "jobId" | "name" | "opensAt" | "closesAt" | "colleges" | "interviewCutoff";
-export type DriveError = "required" | "tooLong" | "invalid" | "inPast" | "beforeOpen" | "range";
+export type DriveField = "jobId" | "name" | "opensAt" | "closesAt" | "colleges" | "interviewCutoff" | "aptitudeTestId" | "aptitudeCutoff";
+export type DriveError = "required" | "tooLong" | "invalid" | "inPast" | "beforeOpen" | "range" | "percent" | "notReady";
 
 const EMAIL = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/;
 const text = (v: unknown) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim() : "");
@@ -138,6 +154,23 @@ export function cleanDrive(
         else interviewCutoff = Math.round(n * 10) / 10;
     } else if (autoShortlist) errors.interviewCutoff = "required";
 
+    // An aptitude round needs a test and a pass mark between 1 and 100% (AIIN-165 AC4, AIIN-169)
+    const aptitudeEnabled = input.aptitudeEnabled === true;
+    let aptitudeTestId: string | null = null;
+    let aptitudeCutoff: number | null = null;
+    if (aptitudeEnabled) {
+        aptitudeTestId = typeof input.aptitudeTestId === "string" && input.aptitudeTestId ? input.aptitudeTestId : null;
+        if (!aptitudeTestId) errors.aptitudeTestId = "required";
+        const cut = text(input.aptitudeCutoff);
+        const n = Number(cut);
+        if (!cut) errors.aptitudeCutoff = "required";
+        else if (!Number.isInteger(n) || n < 1 || n > 100) errors.aptitudeCutoff = "percent";
+        else aptitudeCutoff = n;
+    }
+
     if (Object.keys(errors).length) return { ok: false, errors };
-    return { ok: true, value: { jobId, name, draft, opensAt: opensAt ?? null, closesAt: closesAt ?? null, colleges, autoShortlist, interviewCutoff } };
+    return {
+        ok: true,
+        value: { jobId, name, draft, opensAt: opensAt ?? null, closesAt: closesAt ?? null, colleges, autoShortlist, interviewCutoff, aptitudeEnabled, aptitudeTestId, aptitudeCutoff },
+    };
 }

@@ -1495,6 +1495,11 @@ model Drive {
   closedAt        DateTime? // closed early by the employer; cleared on reopen (within 7 days)
   interviewCutoff Float? // 0–10; required when autoShortlist is on
   autoShortlist   Boolean   @default(false)
+  // Optional aptitude round before the AI interview (AIIN-169): pass at or above aptitudeCutoff percent
+  aptitudeEnabled Boolean       @default(false)
+  aptitudeTestId  String?
+  aptitudeTest    AptitudeTest? @relation(fields: [aptitudeTestId], references: [id])
+  aptitudeCutoff  Int?
   createdById     String
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -1547,6 +1552,7 @@ model DriveCandidate {
   interviewId    String?       @unique
   stage          DriveStage    @default(INVITED)
   rollNumber     String?
+  attempt        AptitudeAttempt?
   source         DriveSource
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
@@ -1589,4 +1595,80 @@ model OutboundEmail {
   @@index([status, sendAfter])
   @@index([driveId, status])
   @@index([driveCandidateId])
+}
+
+// ---- Aptitude round (AIIN-169; employer-built tests in AIIN-226) ----
+// A test has named sections; each attempt draws askCount checked questions from every section's pool.
+model AptitudeTest {
+  id              String    @id @default(cuid())
+  name            String
+  durationMinutes Int
+  ownerId         String? // null: a ready-made test written by us; otherwise the employer who owns it
+  shuffle         Boolean   @default(true) // shuffle each question's options per attempt
+  archivedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  sections  AptitudeSection[]
+  questions AptitudeQuestion[]
+  drives    Drive[]
+  attempts  AptitudeAttempt[]
+
+  @@index([ownerId])
+}
+
+model AptitudeSection {
+  id        String       @id @default(cuid())
+  testId    String
+  test      AptitudeTest @relation(fields: [testId], references: [id], onDelete: Cascade)
+  name      String
+  askCount  Int
+  order     Int          @default(0)
+
+  questions AptitudeQuestion[]
+
+  @@index([testId])
+}
+
+model AptitudeQuestion {
+  id           String          @id @default(cuid())
+  testId       String
+  test         AptitudeTest    @relation(fields: [testId], references: [id], onDelete: Cascade)
+  sectionId    String
+  section      AptitudeSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  text         String
+  options      String[]
+  correctIndex Int // never sent to a candidate's browser
+  explanation  String?
+  checked      Boolean         @default(false) // only checked questions are used in attempts
+  retiredAt    DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([testId, sectionId])
+}
+
+// The server owns time and scoring: the deadline is set on start and answers count only up to it (plus 30 s grace).
+model AptitudeAttempt {
+  id               String         @id @default(cuid())
+  driveCandidateId String         @unique
+  driveCandidate   DriveCandidate @relation(fields: [driveCandidateId], references: [id], onDelete: Cascade)
+  testId           String
+  test             AptitudeTest   @relation(fields: [testId], references: [id])
+  questionIds      String[] // the drawn questions, in the order shown
+  optionOrders     Json // per question: the order its options are shown in (indexes into options)
+  answers          Json           @default("{}") // questionId → original option index
+  startedAt        DateTime       @default(now())
+  deadline         DateTime
+  submittedAt      DateTime?
+  score            Int?
+  total            Int?
+  percent          Float?
+  passed           Boolean?
+  tabSwitches      Int            @default(0) // times the candidate left the tab, for the employer
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([testId])
+  @@index([deadline])
 }
