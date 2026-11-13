@@ -107,6 +107,15 @@ export default async function InterviewPage({
     const scheduledTime = interview.scheduledTime ? new Date(interview.scheduledTime) : null;
 
     // Check if interview has expired
+    if (interview.expiresAt && now > interview.expiresAt && interview.driveId && interview.status === "PENDING") {
+        // A hiring drive's links stop when it closes (AIIN-165)
+        return (
+            <StatusScreen icon={TimerOff} tone="error" title="This hiring drive has closed">
+                <p>It isn&apos;t taking new interviews. If you think this is a mistake, contact the hiring team.</p>
+            </StatusScreen>
+        );
+    }
+
     if (interview.expiresAt && now > interview.expiresAt) {
         return (
             <StatusScreen icon={TimerOff} tone="error" title="Interview expired">

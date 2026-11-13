@@ -4,6 +4,18 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
+Migration `drives` adds `Drive`, `DriveCollege` and `DriveCandidate` (with the `DriveStage` and `DriveSource` enums) and `Interview.driveId`. `scripts/seed-local-test-users.ts` seeds test accounts into a local throwaway database only.
+
+- **Hiring drives (AIIN-165).** Jobs → Hiring drives lists every drive with its colleges, dates, and how many were invited, finished and shortlisted. Each drive shows its status as Draft, Scheduled, Live or Closed, and the status comes from its dates, so a drive goes Live and closes without anyone touching it.
+  - **Create or edit a drive:** pick a job that has interview questions, give it a name, set the open and close times in India time, and add colleges with an optional city and placement officer email. You can also shortlist automatically, with an interview cutoff out of 10.
+  - **Checks:**
+    - closing must come after opening;
+    - a new drive can't open in the past;
+    - auto-shortlisting needs a cutoff;
+    - a job without questions is refused with a link to edit it.
+  - **Links follow the drive:** interview links expire when the drive closes and move when its closing time moves. Closing early stops unstarted links at once ("This hiring drive has closed"), while interviews already started can still be finished. A drive closed early can be reopened for a week.
+  - **History is kept:** a drive with candidates can't be deleted (only closed), moved to another job or turned back into a draft.
+
 ## 2026-11-13, release
 
 Migration `job_matches` adds `JobMatch` and `MatchTask`. Migration `invitations` adds `SubscriptionPlan.talentInvitesPerMonth` (Free 10, Pro 50, Premium 200) and `Application.inviteMessage`, `invitedAt` and `inviteExpiresAt`. Migration `human_rounds` adds `HumanRound`. A new daily cron, `/api/cron/matches`, needs `CRON_SECRET` like the others.

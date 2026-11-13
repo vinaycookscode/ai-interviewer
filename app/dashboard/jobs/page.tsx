@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { Plus, Search } from "lucide-react";
+import { GraduationCap, Plus, Search } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { cn } from "@/lib/utils";
@@ -25,6 +25,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
     if (!userId) redirect("/auth/login");
 
     const t = await getTranslations("Employer.jobs");
+    const tDrives = await getTranslations("Drives");
     const q = (await searchParams).q?.trim() ?? "";
 
     const jobs = await db.job.findMany({
@@ -48,10 +49,16 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
                 title={t("title")}
                 subtitle={t("subtitle")}
                 actions={
-                    <Link href="/dashboard/jobs/new" className={cn(coralButton, "h-12 px-[22px]")}>
-                        <Plus className="size-5" aria-hidden="true" />
-                        {t("newJob")}
-                    </Link>
+                    <>
+                        <Link href="/dashboard/drives" className={cn(outlineButton, "h-12 px-5")}>
+                            <GraduationCap className="size-5" aria-hidden="true" />
+                            {tDrives("title")}
+                        </Link>
+                        <Link href="/dashboard/jobs/new" className={cn(coralButton, "h-12 px-[22px]")}>
+                            <Plus className="size-5" aria-hidden="true" />
+                            {t("newJob")}
+                        </Link>
+                    </>
                 }
             />
 

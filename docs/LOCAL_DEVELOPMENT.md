@@ -43,6 +43,8 @@ Requires Postgres 17 with pgvector (`brew install postgresql@17 pgvector`). The 
    node scripts/seed-features.js
    ```
 
+   For test accounts (one employer, two candidates), choose a password and run `LOCAL_TEST_PASSWORD="…" npx tsx scripts/seed-local-test-users.ts`. It refuses any database that isn't on localhost.
+
    Check that the seeds went to the local database. Expect `3|8`:
 
    ```bash

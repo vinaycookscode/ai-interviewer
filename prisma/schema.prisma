@@ -335,6 +335,7 @@ model Job {
   shares     ShortlistShare[]
   applications Application[]
   matches    JobMatch[]
+  drives     Drive[]
   @@index([employerId])
   @@index([status])
 }
@@ -440,6 +441,9 @@ model Interview {
 
   answers Answer[]
   decisionEvents InterviewDecisionEvent[]
+  // The hiring drive this interview belongs to (AIIN-165); its link expires when the drive closes
+  driveId String?
+  drive   Drive?  @relation(fields: [driveId], references: [id], onDelete: SetNull)
   personalityProfile PersonalityProfile?
   proctoringEvents ProctoringEvent[]
   consents InterviewConsent[]
@@ -450,6 +454,7 @@ model Interview {
   @@index([jobId])
   @@index([jobId, score])
   @@index([jobId, integrityVerdict])
+  @@index([driveId])
   @@index([scheduledTime])
   @@index([status])
 }
@@ -1473,4 +1478,80 @@ model HumanRound {
   updatedAt     DateTime      @updatedAt
 
   @@index([applicationId, startsAt])
+}
+
+// ---- Hiring drives (AIIN-165) ----
+// A campus or bulk hiring round for one job. Its status is worked out from the dates (lib/drives.ts), never stored:
+// Draft until saved with dates, Scheduled before opensAt, Live until closesAt, Closed after it or once closedAt is set.
+model Drive {
+  id              String    @id @default(cuid())
+  jobId           String
+  job             Job       @relation(fields: [jobId], references: [id])
+  employerId      String
+  name            String
+  draft           Boolean   @default(true)
+  opensAt         DateTime?
+  closesAt        DateTime?
+  closedAt        DateTime? // closed early by the employer; cleared on reopen (within 7 days)
+  interviewCutoff Float? // 0–10; required when autoShortlist is on
+  autoShortlist   Boolean   @default(false)
+  createdById     String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  colleges   DriveCollege[]
+  candidates DriveCandidate[]
+  interviews Interview[]
+
+  @@index([employerId])
+  @@index([jobId])
+}
+
+model DriveCollege {
+  id                    String   @id @default(cuid())
+  driveId               String
+  drive                 Drive    @relation(fields: [driveId], references: [id], onDelete: Cascade)
+  name                  String
+  city                  String?
+  placementOfficerEmail String?
+  createdAt             DateTime @default(now())
+
+  candidates DriveCandidate[]
+
+  @@index([driveId])
+}
+
+enum DriveStage {
+  INVITED
+  OPENED
+  APTITUDE_STARTED
+  APTITUDE_PASSED
+  APTITUDE_FAILED
+  INTERVIEW_STARTED
+  INTERVIEW_FINISHED
+}
+
+enum DriveSource {
+  CSV
+  OPEN_LINK
+  MANUAL
+}
+
+model DriveCandidate {
+  id             String        @id @default(cuid())
+  driveId        String
+  drive          Drive         @relation(fields: [driveId], references: [id], onDelete: Cascade)
+  driveCollegeId String?
+  college        DriveCollege? @relation(fields: [driveCollegeId], references: [id], onDelete: SetNull)
+  userId         String
+  interviewId    String?       @unique
+  stage          DriveStage    @default(INVITED)
+  rollNumber     String?
+  source         DriveSource
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([driveId, userId])
+  @@index([driveId, stage])
+  @@index([driveCollegeId])
 }

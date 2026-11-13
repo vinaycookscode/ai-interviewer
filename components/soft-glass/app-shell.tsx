@@ -104,7 +104,7 @@ const CANDIDATE_MORE: MoreGroup[] = [
 
 const EMPLOYER_NAV: NavItem[] = [
     { key: "overview", href: "/dashboard", icon: LayoutDashboard, match: exactly("/dashboard") },
-    { key: "jobs", href: "/dashboard/jobs", icon: Briefcase, feature: FEATURES.JOB_MANAGEMENT, match: under("/dashboard/jobs") },
+    { key: "jobs", href: "/dashboard/jobs", icon: Briefcase, feature: FEATURES.JOB_MANAGEMENT, match: (p: string) => under("/dashboard/jobs")(p) || under("/dashboard/drives")(p) },
     { key: "candidates", href: "/dashboard/candidates", icon: Users, feature: FEATURES.CANDIDATE_SEARCH, match: under("/dashboard/candidates") },
     { key: "settings", href: "/dashboard/settings", icon: Settings, match: under("/dashboard/settings") },
 ];
