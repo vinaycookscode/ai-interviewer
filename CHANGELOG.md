@@ -4,6 +4,8 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
+- **Fix: grading started after a page response failed (AIIN-170).** Choosing the Gemini model read a cookie, which Next.js doesn't allow in background work, so every grading run started with `after()` errored and retried until the answer was marked "Couldn't score". Only the daily cron graded. Background work now uses the default model.
+
 Migration `verify_existing_emails` marks every existing account's email as verified, so nobody already using the app is blocked; only new sign-ups verify.
 
 - **New accounts verify their email (AIIN-55).** From the approved boards:

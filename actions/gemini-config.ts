@@ -3,34 +3,52 @@
 import { cookies } from 'next/headers';
 import { DEFAULT_GEMINI_MODEL } from '@/lib/gemini-models';
 
+/** The request's cookies, or null in background work (after(), crons), where there are none. */
+async function requestCookies() {
+    try {
+        return await cookies();
+    } catch {
+        return null;
+    }
+}
+
 export async function setGeminiModel(model: string) {
-    const cookieStore = await cookies();
-    cookieStore.set('gemini_model', model);
+    const cookieStore = await requestCookies();
+    cookieStore?.set('gemini_model', model);
 }
 
 export async function getGeminiModel() {
-    const cookieStore = await cookies();
-    return cookieStore.get('gemini_model')?.value || DEFAULT_GEMINI_MODEL;
+    // Background work (grading in after(), crons) has no request cookies: use the default there
+    try {
+        const cookieStore = await cookies();
+        return cookieStore.get('gemini_model')?.value || DEFAULT_GEMINI_MODEL;
+    } catch {
+        return DEFAULT_GEMINI_MODEL;
+    }
 }
 
 /** Forget the user's model choice so the default is used again. */
 export async function clearGeminiModel() {
-    const cookieStore = await cookies();
-    cookieStore.delete('gemini_model');
+    try {
+        const cookieStore = await cookies();
+        cookieStore.delete('gemini_model');
+    } catch {
+        // No request to clear it on
+    }
 }
 
 export async function markModelRateLimited(model: string) {
-    const cookieStore = await cookies();
+    const cookieStore = await requestCookies();
     // Block the model for 1 hour, store the expiry timestamp
     const expiry = Date.now() + 3600000;
-    cookieStore.set(`rate_limit_${model}`, expiry.toString(), { maxAge: 3600 });
+    cookieStore?.set(`rate_limit_${model}`, expiry.toString(), { maxAge: 3600 });
 }
 
 export async function getAvailableGeminiModels() {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return [];
 
-    const cookieStore = await cookies();
+    const cookieStore = await requestCookies();
 
     try {
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`, {
@@ -77,7 +95,7 @@ export async function getAvailableGeminiModels() {
                 const baseId = id.replace(/-latest$/, '').replace(/-\d+$/, '');
 
                 const getLimitTime = (key: string) => {
-                    const val = cookieStore.get(key)?.value;
+                    const val = cookieStore?.get(key)?.value;
                     if (!val) return null;
                     if (val === 'true') return null; // Legacy
                     const num = Number(val);
