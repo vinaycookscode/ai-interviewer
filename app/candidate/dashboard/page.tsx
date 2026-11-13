@@ -220,6 +220,18 @@ export default async function CandidateDashboardPage({ searchParams }: { searchP
     const showPlan = !!enrollment || flagOn(FEATURES.PLACEMENT_PROGRAM);
     const showPractice = flagOn(FEATURES.PRACTICE_INTERVIEWS);
 
+    // An unfinished practice from the last week, to pick up where they left off (AIIN-50)
+    const unfinished = showPractice
+        ? await db.mockInterview.findFirst({
+              where: { userId, score: null, createdAt: { gt: new Date(Date.now() - 7 * 24 * 3600_000) } },
+              orderBy: { createdAt: "desc" },
+              select: { id: true, role: true, questions: true, createdAt: true, _count: { select: { answers: true } } },
+          })
+        : null;
+    const practiceTotal = unfinished ? unfinished.questions.length || 5 : 0;
+    const practiceDone = unfinished ? Math.min(unfinished._count.answers, practiceTotal) : 0;
+    const startedDays = unfinished ? istDayDiff(unfinished.createdAt, new Date()) : 0;
+
     return (
         <div className="flex flex-col gap-6 sm:gap-9">
             <DashboardRefresher active={upcoming.some((i) => i.status === "IN_PROGRESS") || pastCount > scoreStats._count.score} />
@@ -403,7 +415,41 @@ export default async function CandidateDashboardPage({ searchParams }: { searchP
                         )}
                     </section>
 
-                    {showPractice && (
+                    {showPractice && unfinished && (
+                        <section aria-labelledby="practice-title" className={cn(card, "sg-shadow-lg gap-4")}>
+                            <div className="flex flex-col gap-1">
+                                <span className="text-[13px] leading-[18px] font-bold text-sg-muted">
+                                    {t("continue.started", { days: startedDays })}
+                                </span>
+                                <h2 id="practice-title" className={cardTitle}>
+                                    {t("continue.title")}
+                                </h2>
+                            </div>
+                            <div className="flex flex-col gap-2.5 rounded-[18px] bg-sg-row px-4 py-3.5">
+                                <span className="font-bold break-words">{t("continue.role", { role: unfinished.role, count: practiceTotal })}</span>
+                                <span
+                                    role="img"
+                                    aria-label={t("continue.progress", { done: practiceDone, total: practiceTotal })}
+                                    className="grid gap-1.5"
+                                    style={{ gridTemplateColumns: `repeat(${practiceTotal}, minmax(0, 1fr))` }}
+                                >
+                                    {Array.from({ length: practiceTotal }, (_, i) => (
+                                        <i key={i} className={cn("h-2 rounded-full", i < practiceDone ? "bg-sg-ink" : "bg-sg-track")} />
+                                    ))}
+                                </span>
+                                <span className="text-sm text-sg-muted">{t("continue.saved", { done: practiceDone, total: practiceTotal })}</span>
+                            </div>
+                            <Link href={`/candidate/practice/${unfinished.id}`} className={cn(inkButton, "mt-auto h-12 w-full px-[22px]")}>
+                                {t("continue.cta", { n: Math.min(practiceDone + 1, practiceTotal) })}
+                                <ArrowRight className="size-[18px]" aria-hidden="true" />
+                            </Link>
+                            <Link href="/candidate/practice" className={cn("self-center rounded text-sm font-semibold text-sg-muted underline underline-offset-[3px]", focusRing)}>
+                                {t("continue.new")}
+                            </Link>
+                        </section>
+                    )}
+
+                    {showPractice && !unfinished && (
                         <section aria-labelledby="practice-title" className={cn(card, "gap-4")}>
                             <h2 id="practice-title" className={cardTitle}>
                                 {t("practice.title")}
@@ -677,4 +723,10 @@ function InterviewRow({ interview, now, t }: { interview: InterviewWithJob; now:
             </div>
         </li>
     );
+}
+
+/** Whole days between two moments, by the calendar in India: 0 today, 1 yesterday. */
+function istDayDiff(from: Date, to: Date): number {
+    const day = (d: Date) => Date.parse(new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(d));
+    return Math.max(0, Math.round((day(to) - day(from)) / 86_400_000));
 }

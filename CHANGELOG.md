@@ -4,6 +4,8 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
+- **Continue your practice from Today (AIIN-50).** When a practice from the last week isn't finished, Today's warm-up card becomes "Continue your practice", from the approved artboards: the role, how many questions are answered (with a progress bar), "Continue at question 3" and "Start a new one instead".
+
 Migration `candidate_summary` adds `Interview.candidateSummary`.
 
 - **An AI summary of each interview, and candidates see how they came across (AIIN-41, AIIN-42).** From the approved report artboards:

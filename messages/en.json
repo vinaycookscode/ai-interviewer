@@ -1228,6 +1228,15 @@
             "done": "Done · {score} out of 10",
             "donePending": "Done · U is scoring it",
             "see": "See U’s answer"
+        },
+        "continue": {
+            "started": "Unfinished practice · started {days, plural, =0 {today} =1 {yesterday} other {# days ago}}",
+            "title": "Continue your practice",
+            "role": "{role} · {count, plural, one {# question} other {# questions}}",
+            "progress": "{done} of {total} answered",
+            "saved": "{done} of {total} answered. Your answers so far are saved.",
+            "cta": "Continue at question {n}",
+            "new": "Start a new one instead"
         }
     },
     "ResumeScreener": {
