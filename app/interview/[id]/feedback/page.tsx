@@ -13,6 +13,8 @@ import { IntegritySection, type IntegrityConsent, type IntegrityGroup, type Inte
 import { loadIntegrity, storeIntegrity } from "@/lib/integrity/compute";
 import { RULES_VERSION } from "@/lib/integrity/verdict";
 import { db } from "@/lib/db";
+import { Hourglass } from "lucide-react";
+import { StatusScreen } from "@/components/layout/status-screen";
 
 const istTime = (d: Date) =>
     `${d.toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", hour12: true })} IST`;
@@ -36,6 +38,14 @@ export default async function FeedbackPage({
     const { interview, averageScore, viewer } = result;
 
     const t = await getTranslations("FeedbackReport");
+    // Still being scored (AIIN-170): the candidate waits for the whole result, never a partial one
+    if (viewer === "candidate" && (await db.answer.count({ where: { interviewId: id, gradingStatus: { in: ["PENDING", "GRADING"] } } })) > 0) {
+        return (
+            <StatusScreen icon={Hourglass} title={t("scoringTitle")} action={{ label: t("backCandidate"), href: "/candidate/dashboard" }}>
+                <p>{t("scoringBody")}</p>
+            </StatusScreen>
+        );
+    }
     const isAdmin = user.role === "ADMIN";
     const back = viewer === "candidate"
         ? { href: "/candidate/dashboard", label: t("backCandidate") }

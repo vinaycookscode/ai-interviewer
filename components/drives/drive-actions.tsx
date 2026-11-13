@@ -4,8 +4,8 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Lock, RotateCcw, Trash2 } from "lucide-react";
-import { closeDrive, deleteDrive, reopenDrive } from "@/actions/drives";
+import { CheckCheck, Lock, RotateCcw, Trash2 } from "lucide-react";
+import { applyDriveCutoff, closeDrive, deleteDrive, reopenDrive } from "@/actions/drives";
 import { outlineButton } from "@/components/jobs/employer-ui";
 import { cn } from "@/lib/utils";
 
@@ -44,5 +44,32 @@ export function DriveActions({ id, canClose, canReopen, canDelete }: { id: strin
                 </button>
             )}
         </>
+    );
+}
+
+/** Apply the drive's cutoff to undecided candidates, once, when the employer asks (AIIN-171 AC5). */
+export function ApplyCutoff({ id, cutoff }: { id: string; cutoff: number }) {
+    const t = useTranslations("Drives");
+    const router = useRouter();
+    const [isPending, startTransition] = useTransition();
+    return (
+        <button
+            type="button"
+            disabled={isPending}
+            onClick={() =>
+                confirm(t("applyCutoffConfirm", { cutoff })) &&
+                startTransition(async () => {
+                    const r = await applyDriveCutoff(id).catch(() => ({ error: "invalid" as const }));
+                    if ("ok" in r) {
+                        toast.success(t("applied", { count: r.count }));
+                        router.refresh();
+                    } else toast.error(t("failed"));
+                })
+            }
+            className={cn(outlineButton, "h-10 self-start text-sm")}
+        >
+            <CheckCheck className="size-4" aria-hidden="true" />
+            {t("applyCutoff", { cutoff })}
+        </button>
     );
 }

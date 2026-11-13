@@ -4,6 +4,11 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
+Migration `answer_grading_queue` adds `Answer.gradingStatus` (`GradingStatus`), `gradingAttempts`, `gradeAfter` and `gradingError`, and marks existing answers graded. Optional: `GRADING_RATE_PER_MINUTE` (default 60).
+
+- **Interviews are graded reliably at volume (AIIN-170).** Answers are queued and graded by one worker at a time, paced under Gemini's rate limit, with retries. Finishing an interview no longer waits for grading. A score appears only once every answer is graded, so lists show "Scoring", never a partial average. An answer that fails 5 times shows "Couldn't score 1 answer · Try again". A Gemini error can no longer be saved as a score of 0. See `docs/architecture/2026-11-13-grade-answers-through-a-queue.md`.
+- **Auto-shortlist at a drive's cutoff (AIIN-171).** When a drive interview's score is set, a score at or above the drive's cutoff is shortlisted automatically, recorded as "auto cutoff" with no author. Strong integrity concerns go On hold with "Integrity review needed" instead. It never rejects and never overrides a decision someone made. After changing the cutoff, "Apply the cutoff to undecided candidates" applies it on request.
+
 ## 2026-11-13, second release
 
 Migration `aptitude` adds `AptitudeTest`, `AptitudeSection`, `AptitudeQuestion`, `AptitudeAttempt` and the drive's aptitude settings; seed the ready-made test with `npx tsx scripts/seed-aptitude.ts` (it refuses a non-local database without `ALLOW_SEED=1`). Migration `email_outbox` adds `OutboundEmail` (`OutboundStatus`). A new daily cron, `/api/cron/outbox`, needs `CRON_SECRET`; set `RESEND_WEBHOOK_SECRET` (Resend → Webhooks → signing secret) and point a Resend webhook for `email.bounced` and `email.complained` at `/api/webhooks/resend`. Migration `drives` adds `Drive`, `DriveCollege` and `DriveCandidate` (with the `DriveStage` and `DriveSource` enums) and `Interview.driveId`. `scripts/seed-local-test-users.ts` seeds test accounts into a local throwaway database only.

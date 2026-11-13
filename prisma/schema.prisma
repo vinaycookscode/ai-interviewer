@@ -471,6 +471,21 @@ model Answer {
   score       Float? // Score for this specific answer
   feedback    String? // Feedback for this specific answer
   createdAt   DateTime  @default(now())
+  // Graded by a worker, never inside the candidate's request (AIIN-170); see lib/grading-queue.ts
+  gradingStatus   GradingStatus @default(PENDING)
+  gradingAttempts Int           @default(0)
+  gradeAfter      DateTime      @default(now())
+  gradingError    String?
+
+  @@index([gradingStatus, gradeAfter])
+  @@index([interviewId, gradingStatus])
+}
+
+enum GradingStatus {
+  PENDING
+  GRADING
+  DONE
+  FAILED
 }
 
 model DailyStat {

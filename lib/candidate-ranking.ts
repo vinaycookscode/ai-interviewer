@@ -1,5 +1,6 @@
 // A job's candidates ranked by score, with filters and paging from the URL (AIIN-158).
 import { Prisma, type HiringDecision, type IntegrityReviewOutcome, type IntegrityVerdict } from "@prisma/client";
+import { scoringState, type ScoringState } from "@/lib/grading-rules";
 import { db } from "@/lib/db";
 import { PAGE_SIZE, type RankingFilters, type Sort } from "@/lib/candidate-filters";
 
@@ -37,6 +38,9 @@ export interface RankedRow {
     /** The employer's latest review of the verdict (AIIN-179) */
     review: IntegrityReviewOutcome | null;
     completedAt: Date | null;
+    /** Scored, still being scored, or with answers that couldn't be scored (AIIN-170): never ranked on a partial average */
+    scoring: ScoringState;
+    failed: number;
 }
 
 /** Every finished interview's rank by score among all of the job's, whatever the filters: a candidate keeps their rank. */
@@ -99,6 +103,12 @@ export async function loadRanking(jobId: string, f: RankingFilters) {
           })
         : [];
     const spreadOf = new Map(spreads.map((s) => [s.interviewId, s]));
+    const unscored = rows.filter((r) => r.score === null).map((r) => r.id);
+    const grading = unscored.length
+        ? await db.answer.groupBy({ by: ["interviewId", "gradingStatus"], where: { interviewId: { in: unscored }, gradingStatus: { not: "DONE" } }, _count: { _all: true } })
+        : [];
+    const gradingOf = (id: string, failed: boolean) =>
+        grading.filter((g) => g.interviewId === id && (g.gradingStatus === "FAILED") === failed).reduce((n, g) => n + g._count._all, 0);
 
     const ranked: RankedRow[] = rows.map((r) => ({
         id: r.id,
@@ -114,6 +124,8 @@ export async function loadRanking(jobId: string, f: RankingFilters) {
         integrity: r.integrityVerdict,
         review: r.integrityReviewOutcome,
         completedAt: r.completedAt,
+        scoring: scoringState({ score: r.score, pending: gradingOf(r.id, false), failed: gradingOf(r.id, true) }),
+        failed: gradingOf(r.id, true),
     }));
 
     const counts = Object.fromEntries(decisions.map((d) => [d.decision, d._count._all])) as Partial<Record<HiringDecision, number>>;

@@ -151,7 +151,11 @@ export interface EvaluationResult {
     };
 }
 
-export async function evaluateAnswer(question: string, answer: string, contextLanguage: string = "en", attempt = 0): Promise<EvaluationResult> {
+/**
+ * Score one answer. By default a failure comes back as a score of 0 with an explanation (practice sessions show it).
+ * With `strict`, failures throw instead, so the grading queue can retry rather than store a 0 (AIIN-170).
+ */
+export async function evaluateAnswer(question: string, answer: string, contextLanguage: string = "en", attempt = 0, strict = false): Promise<EvaluationResult> {
     const model = await getGeminiModelInstance();
     let modelName = 'unknown';
     try { modelName = model.model.replace('models/', ''); } catch (e) { }
@@ -226,8 +230,9 @@ export async function evaluateAnswer(question: string, answer: string, contextLa
             const result = await handleRateLimit(modelName);
             if (result.switched && attempt < MAX_RATE_LIMIT_RETRIES) {
                 // Retry with new model
-                return evaluateAnswer(question, answer, contextLanguage, attempt + 1);
+                return evaluateAnswer(question, answer, contextLanguage, attempt + 1, strict);
             }
+            if (strict) throw Object.assign(new Error("Rate limited"), { rateLimited: true });
             return {
                 score: 0,
                 feedback: result.switched ? "All AI models are busy. Please try again in a few minutes." : result.message,
@@ -235,6 +240,7 @@ export async function evaluateAnswer(question: string, answer: string, contextLa
             };
         }
 
+        if (strict) throw error;
         return {
             score: 0,
             feedback: `Unable to evaluate answer at this time. Error: ${error.message}`,

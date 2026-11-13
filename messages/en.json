@@ -52,7 +52,9 @@
             "outOfHundred": "{value} / 100",
             "strengths": "Strengths",
             "growthAreas": "Growth areas"
-        }
+        },
+        "scoringTitle": "Your results will be ready shortly",
+        "scoringBody": "We're scoring your answers now. It usually takes a few minutes. Check back soon."
     },
     "Employer": {
         "loading": "Loading",
@@ -2374,7 +2376,11 @@
             "cancel": "Cancel",
             "download": "Download CSV",
             "close": "Close"
-        }
+        },
+        "scoring": "Scoring",
+        "couldntScore": "{count, plural, one {Couldn't score # answer} other {Couldn't score # answers}}",
+        "tryAgain": "Try again",
+        "retryFailed": "That didn't work. Try again."
     },
     "Onboarding": {
         "brand": "Get Back To U",
@@ -3856,7 +3862,10 @@
         "tabSwitches": "{count, plural, one {Left the tab once} other {Left the tab # times}}",
         "passedAptitude": "Passed",
         "didntPass": "Didn't pass",
-        "tabsLabel": "Hiring drives"
+        "tabsLabel": "Hiring drives",
+        "applyCutoff": "Apply the cutoff of {cutoff} to undecided candidates",
+        "applyCutoffConfirm": "Shortlist every undecided candidate scored {cutoff} or more? Decisions people already made don't change.",
+        "applied": "{count, plural, =0 {No one new to shortlist} one {# candidate shortlisted} other {# candidates shortlisted}}"
     },
     "DriveImport": {
         "title": "Invite by CSV",

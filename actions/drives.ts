@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { processOutbox, requeueFailed } from "@/lib/outbox";
 import { driveTests } from "@/lib/drive-loaders";
+import { applyCutoffToUndecided } from "@/lib/drive-shortlist";
 import { canReopen, cleanDrive, driveStatus, linkExpiry, type DriveError, type DriveField, type DriveInput } from "@/lib/drives";
 
 type SaveResult =
@@ -165,6 +166,17 @@ export async function resendDriveEmails(id: string, driveCandidateId?: string): 
     if (driveCandidateId !== undefined && typeof driveCandidateId !== "string") return { error: "invalid" };
     const count = await requeueFailed(d.id, driveCandidateId);
     if (count) after(() => processOutbox());
+    refresh(d.id);
+    return { ok: true, count };
+}
+
+/** "Apply the cutoff to undecided candidates" (AIIN-171 AC5): only scored, undecided interviews of this drive change. */
+export async function applyDriveCutoff(id: string): Promise<{ ok: true; count: number } | { error: "notFound" | "invalid" }> {
+    const d = await ownDrive(id);
+    if (!d) return { error: "notFound" };
+    const drive = await db.drive.findUnique({ where: { id: d.id }, select: { autoShortlist: true, interviewCutoff: true } });
+    if (!drive?.autoShortlist || drive.interviewCutoff === null) return { error: "invalid" };
+    const count = await applyCutoffToUndecided(d.id);
     refresh(d.id);
     return { ok: true, count };
 }

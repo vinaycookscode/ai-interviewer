@@ -10,9 +10,10 @@ import { cn } from "@/lib/utils";
 import { REOPEN_DAYS, canReopen, driveStatus } from "@/lib/drives";
 import { PageHeading, outlineButton, panel, panelTitle } from "@/components/jobs/employer-ui";
 import { DriveStatusChip, istShort } from "@/components/drives/drive-status";
-import { DriveActions } from "@/components/drives/drive-actions";
+import { ApplyCutoff, DriveActions } from "@/components/drives/drive-actions";
 import { EmailProblems } from "@/components/drives/email-problems";
 import { processOutbox } from "@/lib/outbox";
+import { processGrading } from "@/lib/grading-queue";
 
 export async function generateMetadata(): Promise<Metadata> {
     const t = await getTranslations("Drives");
@@ -76,6 +77,8 @@ export default async function DrivePage({ params }: { params: Promise<{ id: stri
     const emailCount = (s: string) => byEmail.find((r) => r.status === s)?._count._all ?? 0;
     // Emails waiting to go out are sent after this page is served (no per-minute cron on this plan, AIIN-167)
     if (emailCount("QUEUED") > 0) after(() => processOutbox());
+    // ...and answers waiting to be graded (AIIN-170)
+    if (await db.answer.count({ where: { interview: { driveId: drive.id }, gradingStatus: "PENDING" } })) after(() => processGrading());
     const now = new Date();
     const status = driveStatus(drive, now);
     const reopen = canReopen(drive, now);
@@ -160,9 +163,12 @@ export default async function DrivePage({ params }: { params: Promise<{ id: stri
                         <p className="text-sm text-sg-muted">{t("aptitudeSummary", { test: drive.aptitudeTest.name, cutoff: drive.aptitudeCutoff ?? 0 })}</p>
                     )}
                     {drive.autoShortlist && drive.interviewCutoff !== null && (
-                        <p className="text-sm text-sg-muted">
-                            {t("autoShortlist")} · {t("interviewCutoff")} {drive.interviewCutoff}
-                        </p>
+                        <>
+                            <p className="text-sm text-sg-muted">
+                                {t("autoShortlist")} · {t("interviewCutoff")} {drive.interviewCutoff}
+                            </p>
+                            <ApplyCutoff id={drive.id} cutoff={drive.interviewCutoff} />
+                        </>
                     )}
                     <p className="text-[13px] text-sg-muted">{t("linksNote")}</p>
                 </section>

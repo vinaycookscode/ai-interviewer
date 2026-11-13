@@ -10,6 +10,7 @@ import { formatShortDate, outlineButton } from "@/components/jobs/employer-ui";
 import { VerdictChip } from "@/components/feedback/verdict-chip";
 import { CandidateSelection, PickAll, PickCandidate, SelectionBar } from "@/components/jobs/candidate-selection";
 import { BulkDecision } from "@/components/jobs/bulk-decision";
+import { ScoringNote } from "@/components/jobs/score-cell";
 import { cn } from "@/lib/utils";
 
 interface RankedCandidatesProps {
@@ -125,7 +126,7 @@ export function RankedCandidates({ jobId, jobTitle, company, rows, total, filter
                                     <td className="px-3 py-3">
                                         <PickCandidate id={r.id} name={r.name || r.email} />
                                     </td>
-                                    <td className="px-3 py-3 font-bold tabular-nums">{r.rank}</td>
+                                    <td className="px-3 py-3 font-bold tabular-nums">{r.score === null ? t("none") : r.rank}</td>
                                     <th scope="row" className="max-w-[260px] px-3 py-3 text-left font-normal">
                                         <Link href={reportHref(r.id)} className={cn("flex min-w-0 flex-col rounded-md hover:underline", focusRing)}>
                                             <span className="truncate font-bold">{r.name || r.email}</span>
@@ -133,8 +134,14 @@ export function RankedCandidates({ jobId, jobTitle, company, rows, total, filter
                                         </Link>
                                     </th>
                                     <td className="px-3 py-3">
-                                        <span className="font-display sg-soft text-xl font-semibold tabular-nums">{one(r.score) ?? t("none")}</span>
-                                        {r.score !== null && <span className="sr-only"> {t("outOfTen")}</span>}
+                                        {r.scoring === "SCORING" || r.scoring === "FAILED" ? (
+                                            <ScoringNote interviewId={r.id} state={r.scoring} failed={r.failed} withRetry />
+                                        ) : (
+                                            <>
+                                                <span className="font-display sg-soft text-xl font-semibold tabular-nums">{one(r.score) ?? t("none")}</span>
+                                                {r.score !== null && <span className="sr-only"> {t("outOfTen")}</span>}
+                                            </>
+                                        )}
                                     </td>
                                     <td className="px-3 py-3 whitespace-nowrap text-sg-muted tabular-nums">
                                         {r.low !== null && r.high !== null ? `${one(r.low)}–${one(r.high)}` : t("none")}
@@ -167,9 +174,13 @@ export function RankedCandidates({ jobId, jobTitle, company, rows, total, filter
                                 aria-label={t("openReport", { name: r.name || r.email })}
                                 className={cn("flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2 rounded-[18px] bg-sg-row px-3.5 py-3", focusRing)}
                             >
-                                <span className="w-9 shrink-0 font-bold tabular-nums text-sg-muted">{t("rankShort", { rank: r.rank })}</span>
+                                <span className="w-9 shrink-0 font-bold tabular-nums text-sg-muted">{r.score === null ? t("none") : t("rankShort", { rank: r.rank })}</span>
                                 <span className="min-w-0 flex-1 truncate font-bold">{r.name || r.email}</span>
-                                <span className="font-display sg-soft text-lg font-semibold tabular-nums">{one(r.score) ?? t("none")}</span>
+                                {r.scoring === "SCORING" || r.scoring === "FAILED" ? (
+                                    <ScoringNote interviewId={r.id} state={r.scoring} failed={r.failed} withRetry={false} />
+                                ) : (
+                                    <span className="font-display sg-soft text-lg font-semibold tabular-nums">{one(r.score) ?? t("none")}</span>
+                                )}
                                 {/* On phones the chips wrap under the name (AIIN-178) */}
                                 <span className="flex basis-full flex-wrap gap-1.5 pl-12">
                                     <VerdictChip verdict={r.integrity} review={reviewOf(r)} label={verdict(r)} />

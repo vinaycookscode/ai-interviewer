@@ -42,6 +42,7 @@ This directory records significant technical decisions made on this project — 
 | 2026-11-12 | [Match scoring: deterministic, computed on change, refreshed daily](2026-11-12-match-scoring.md) | Accepted · implemented | AIIN-199 |
 | 2026-11-12 | [Talent Match: invitation allowance, phone on apply, human rounds](2026-11-12-talent-match-decisions.md) | Accepted · implemented | AIIN-204, AIIN-196 |
 | 2026-11-13 | [Queue outbound email in the database](2026-11-13-queue-outbound-email-in-the-database.md) | Accepted · implemented | AIIN-167 |
+| 2026-11-13 | [Grade answers through a queue](2026-11-13-grade-answers-through-a-queue.md) | Accepted · implemented | AIIN-170, AIIN-171 |
 
 Proposals that aren't ADRs yet (Upstash rate limiting, Deepgram and Google TTS) are listed in `docs/audits/2026-10-24-master-decision-index.md`.
 
