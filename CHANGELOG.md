@@ -4,6 +4,8 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
+## 2026-11-13, release
+
 Migration `job_matches` adds `JobMatch` and `MatchTask`. Migration `invitations` adds `SubscriptionPlan.talentInvitesPerMonth` (Free 10, Pro 50, Premium 200) and `Application.inviteMessage`, `invitedAt` and `inviteExpiresAt`. Migration `human_rounds` adds `HumanRound`. A new daily cron, `/api/cron/matches`, needs `CRON_SECRET` like the others.
 
 - **Interview rounds on an application (AIIN-196).** An application's Rounds list now holds AI and human rounds together, in time order, each with its outcome.
