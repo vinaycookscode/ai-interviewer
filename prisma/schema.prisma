@@ -1515,6 +1515,11 @@ model Drive {
   aptitudeTestId  String?
   aptitudeTest    AptitudeTest? @relation(fields: [aptitudeTestId], references: [id])
   aptitudeCutoff  Int?
+  // One open link for students to join themselves (AIIN-168): /drive/<openLinkSlug>
+  openLinkSlug    String?       @unique
+  openLinkOn      Boolean       @default(false)
+  allowedDomains  String[]      @default([])
+  joinCap         Int?
   createdById     String
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

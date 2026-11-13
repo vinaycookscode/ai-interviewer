@@ -4,6 +4,13 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
+Migration `drive_open_link` adds `Drive.openLinkSlug` (unique), `openLinkOn`, `allowedDomains` and `joinCap`. New dependency: `qrcode`.
+
+- **One open link for a drive, with a QR code (AIIN-168).** A drive's "Open link" page turns on one link students can use to join on their own, from the approved artboards:
+  - **For the employer:** the link with Copy, a QR code to print (download as SVG), allowed email domains, a cap on how many can join, and "Make a new link", which stops the old one at once.
+  - **For students:** signed out, the link explains the steps and offers Sign up or Sign in, then returns to the drive. Signed in, they pick their college and optionally a roll number, and go straight to the aptitude round or the interview.
+  - **Rules:** only candidate accounts can join; someone already in the drive carries on where they left off; the link says plainly when the drive hasn't opened, has closed, is full, or is for other email domains; joins are limited to 20 a minute per address.
+
 - **Live drive dashboard (AIIN-172).** A drive's page is now its dashboard, from the approved artboards:
   - **Funnel:** invited, opened, passed aptitude, started, finished, scored, at or above the cutoff, and shortlisted, each with its count and percent of invited.
   - **By college:** a table with the same counts, which scrolls inside its own box on phones.

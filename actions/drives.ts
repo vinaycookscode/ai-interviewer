@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { processOutbox, requeueFailed } from "@/lib/outbox";
 import { driveTests } from "@/lib/drive-loaders";
 import { applyCutoffToUndecided } from "@/lib/drive-shortlist";
+import { cleanDomains, newSlug } from "@/lib/open-link";
 import { canReopen, cleanDrive, driveStatus, linkExpiry, type DriveError, type DriveField, type DriveInput } from "@/lib/drives";
 
 type SaveResult =
@@ -179,4 +180,28 @@ export async function applyDriveCutoff(id: string): Promise<{ ok: true; count: n
     const count = await applyCutoffToUndecided(d.id);
     refresh(d.id);
     return { ok: true, count };
+}
+
+/** Turn the open link on or off, and set its allowed email domains and cap (AIIN-168). The first save makes the link. */
+export async function saveOpenLink(id: string, input: { on: boolean; domains: string; cap: string }): Promise<{ ok: true } | { error: "notFound" | "invalid" }> {
+    const d = await ownDrive(id);
+    if (!d) return { error: "notFound" };
+    const domains = cleanDomains(input?.domains ?? "");
+    const capText = typeof input?.cap === "string" ? input.cap.trim() : "";
+    const cap = capText ? Number(capText) : null;
+    if (domains === undefined || (cap !== null && (!Number.isInteger(cap) || cap < 1 || cap > 100_000)) || typeof input?.on !== "boolean") return { error: "invalid" };
+    const current = await db.drive.findUnique({ where: { id: d.id }, select: { openLinkSlug: true } });
+    await db.drive.update({ where: { id: d.id }, data: { openLinkOn: input.on, allowedDomains: domains, joinCap: cap, openLinkSlug: current?.openLinkSlug ?? newSlug() } });
+    refresh(d.id);
+    revalidatePath(`/dashboard/drives/${d.id}/link`);
+    return { ok: true };
+}
+
+/** A new link: the old one stops working at once (AC6). */
+export async function rotateOpenLink(id: string): Promise<{ ok: true } | { error: "notFound" }> {
+    const d = await ownDrive(id);
+    if (!d) return { error: "notFound" };
+    await db.drive.update({ where: { id: d.id }, data: { openLinkSlug: newSlug() } });
+    revalidatePath(`/dashboard/drives/${d.id}/link`);
+    return { ok: true };
 }

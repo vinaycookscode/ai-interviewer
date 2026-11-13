@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { after } from "next/server";
 import { getTranslations } from "next-intl/server";
-import { AlertTriangle, ArrowRight, CheckCircle2, Flag, MailX, PencilLine, Upload, XCircle } from "lucide-react";
+import { AlertTriangle, ArrowRight, Link as LinkIcon, CheckCircle2, Flag, MailX, PencilLine, Upload, XCircle } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { cn } from "@/lib/utils";
@@ -106,6 +106,10 @@ export default async function DrivePage({ params }: { params: Promise<{ id: stri
                         <Link href={`/dashboard/drives/${drive.id}/edit`} className={cn(outlineButton, "h-10 text-sm")}>
                             <PencilLine className="size-4" aria-hidden="true" />
                             {t("edit")}
+                        </Link>
+                        <Link href={`/dashboard/drives/${drive.id}/link`} className={cn(outlineButton, "h-10 text-sm")}>
+                            <LinkIcon className="size-4" aria-hidden="true" />
+                            {t("openLink")}
                         </Link>
                         {(status === "SCHEDULED" || status === "LIVE") && (
                             <Link href={`/dashboard/drives/${drive.id}/import`} className={cn(outlineButton, "h-10 text-sm")}>
