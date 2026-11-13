@@ -4,6 +4,8 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
+## 2026-11-13, third release
+
 Migration `college_shares` adds `CollegeShare`.
 
 - **Placement officers can follow their own students (AIIN-173).** On a drive's page, each college in the "By college" table has Share, which opens the approved "Share with the placement officer" dialog:
@@ -31,6 +33,7 @@ Migration `answer_grading_queue` adds `Answer.gradingStatus` (`GradingStatus`), 
 
 - **Interviews are graded reliably at volume (AIIN-170).** Answers are queued and graded by one worker at a time, paced under Gemini's rate limit, with retries. Finishing an interview no longer waits for grading. A score appears only once every answer is graded, so lists show "Scoring", never a partial average. An answer that fails 5 times shows "Couldn't score 1 answer · Try again". A Gemini error can no longer be saved as a score of 0. See `docs/architecture/2026-11-13-grade-answers-through-a-queue.md`.
 - **Auto-shortlist at a drive's cutoff (AIIN-171).** When a drive interview's score is set, a score at or above the drive's cutoff is shortlisted automatically, recorded as "auto cutoff" with no author. Strong integrity concerns go On hold with "Integrity review needed" instead. It never rejects and never overrides a decision someone made. After changing the cutoff, "Apply the cutoff to undecided candidates" applies it on request.
+- **Fix: the aptitude question dialog no longer lays a grey haze over the page in dark mode (AIIN-226).** It dims with the page colour, like the other dialogs.
 
 ## 2026-11-13, second release
 
