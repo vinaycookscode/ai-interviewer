@@ -2543,7 +2543,8 @@
             "saved": "Review saved",
             "history": "History",
             "noHistory": "Not reviewed yet."
-        }
+        },
+        "candidateSide": "The candidate's side, sent {when}"
     },
     "Unsubscribe": {
         "brand": "Get Back To U",
@@ -4290,5 +4291,31 @@
             "notOpened": "not opened yet",
             "turnOff": "Turn off"
         }
+    },
+    "CandidateFlags": {
+        "title": "What was flagged",
+        "theEmployer": "the employer",
+        "back": "Your report",
+        "backToReport": "Back to your report",
+        "noneTitle": "Nothing was flagged",
+        "noneBody": "Your interview went normally. There’s nothing to respond to.",
+        "listTitle": "The moments we noted",
+        "listBody": "These are facts, not a judgement. Someone at {company} looks at each one. If there’s something they should know, add it below.",
+        "question": "Question {n}",
+        "beforeQuestions": "Before the first question",
+        "addTitle": "Add your side",
+        "label": "Context",
+        "optional": "(optional)",
+        "placeholder": "For example: my phone rang and I muted it; I was pasting my own notes, not looking anything up",
+        "hint": "Only the hiring team at {company} sees this. {left, plural, one {# character} other {# characters}} left.",
+        "send": "Send to {company}",
+        "sentOn": "Sent on {date}",
+        "sentBody": "{company} will see it next to these moments.",
+        "empty": "Write something first, or leave this empty.",
+        "tooLong": "Keep it to 500 characters.",
+        "failed": "Couldn’t send it. Try again.",
+        "rowTitle": "What was flagged",
+        "rowSome": "{count, plural, one {# moment was} other {# moments were}} noted. See them and add your side.",
+        "rowNone": "Nothing was flagged in this interview."
     }
 }

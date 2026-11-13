@@ -435,6 +435,10 @@ model Interview {
   // The candidate said no to the integrity checks (AIIN-176); cleared if they agree later. Consent itself is InterviewConsent.
   consentDeclinedAt DateTime?
 
+  // The candidate's side of what was flagged, sent once from "What was flagged" (AIIN-185); shown to the employer
+  candidateContext   String?
+  candidateContextAt DateTime?
+
   // Hiring decision (AIIN-157); history in InterviewDecisionEvent
   decision     HiringDecision @default(UNDECIDED)
   decisionAt   DateTime?

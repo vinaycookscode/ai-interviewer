@@ -13,7 +13,9 @@ import { IntegritySection, type IntegrityConsent, type IntegrityGroup, type Inte
 import { loadIntegrity, storeIntegrity } from "@/lib/integrity/compute";
 import { RULES_VERSION } from "@/lib/integrity/verdict";
 import { db } from "@/lib/db";
-import { Hourglass } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, Hourglass, ShieldCheck } from "lucide-react";
+import { focusRing } from "@/components/soft-glass/classes";
 import { StatusScreen } from "@/components/layout/status-screen";
 
 const istTime = (d: Date) =>
@@ -64,6 +66,9 @@ export default async function FeedbackPage({
                       status: true,
                       integrityRulesVersion: true,
                       consentDeclinedAt: true,
+                      // The candidate's side of what was flagged (AIIN-185)
+                      candidateContext: true,
+                      candidateContextAt: true,
                       // That and when, for the employer: never the IP or user agent (AIIN-176)
                       consents: { select: { acceptedAt: true }, orderBy: { acceptedAt: "desc" }, take: 1 },
                       // The employer's reviews of the verdict, newest first (AIIN-179)
@@ -123,6 +128,26 @@ export default async function FeedbackPage({
           }
         : null;
 
+    // The candidate's own way to what was flagged (AIIN-185): how many moments, never the verdict
+    const ownFlags =
+        viewer === "candidate" && (await db.interview.count({ where: { id, candidateId: user.id, status: "COMPLETED" } }))
+            ? ((await loadIntegrity(id))?.events.length ?? 0)
+            : null;
+    const tf = await getTranslations("CandidateFlags");
+    const candidateRow = ownFlags !== null && (
+        <Link
+            href={`/interview/${id}/flags`}
+            className={cn("sg-glass flex items-center gap-3.5 rounded-[22px] px-5 py-4", focusRing)}
+        >
+            <ShieldCheck className="size-5 shrink-0 text-sg-muted" aria-hidden="true" />
+            <span className="flex min-w-0 flex-1 flex-col">
+                <span className="font-bold">{tf("rowTitle")}</span>
+                <span className="text-sm text-sg-muted">{ownFlags ? tf("rowSome", { count: ownFlags }) : tf("rowNone")}</span>
+            </span>
+            <ChevronRight className="size-5 shrink-0 text-sg-muted" aria-hidden="true" />
+        </Link>
+    );
+
     const flags = await getFeatureFlags();
     const flagMap = flags.reduce<Record<string, boolean>>((acc, f) => ({ ...acc, [f.key]: f.enabled }), {});
 
@@ -141,7 +166,22 @@ export default async function FeedbackPage({
                     averageScore={averageScore ?? null}
                     viewer={viewer}
                     back={back}
-                    integrity={integrity && consent && <IntegritySection {...integrity} consent={consent} review={review} />}
+                    integrity={
+                        (integrity && consent && (
+                            <IntegritySection
+                                {...integrity}
+                                consent={consent}
+                                review={review}
+                                candidateContext={
+                                    decision?.candidateContext && decision.candidateContextAt
+                                        ? { text: decision.candidateContext, when: istTime(decision.candidateContextAt) }
+                                        : null
+                                }
+                            />
+                        )) ||
+                        candidateRow ||
+                        null
+                    }
                     aside={
                         decision && (
                             <DecisionPanel

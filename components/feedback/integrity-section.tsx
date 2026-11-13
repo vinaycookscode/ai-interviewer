@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import { Ban, ClipboardPaste, Clock, Code, Copy, Eye, Keyboard, LogOut, Minimize, Monitor, OctagonAlert, ShieldCheck, ShieldQuestion } from "lucide-react";
+import { Ban, ClipboardPaste, MessageSquareQuote, Clock, Code, Copy, Eye, Keyboard, LogOut, Minimize, Monitor, OctagonAlert, ShieldCheck, ShieldQuestion } from "lucide-react";
 import type { EventKind, IntegritySummary, Reason, Verdict } from "@/lib/integrity/verdict";
 import { Mascot } from "@/components/soft-glass/mascot";
 import { focusRing } from "@/components/soft-glass/classes";
@@ -88,7 +88,12 @@ function timeAway(t: T, s: IntegritySummary) {
 }
 
 /** What happened during the interview, for the employer only (AIIN-177). Kept out of the PDF and anything shared. */
-export function IntegritySection({ consent, review, ...props }: IntegrityProps & { consent: IntegrityConsent; review: IntegrityReviewState | null }) {
+export function IntegritySection({
+    consent,
+    review,
+    candidateContext,
+    ...props
+}: IntegrityProps & { consent: IntegrityConsent; review: IntegrityReviewState | null; candidateContext?: { text: string; when: string } | null }) {
     const t = useTranslations("Integrity");
     const [ConsentIcon, consentText] = consent.agreedAt
         ? [ShieldCheck, t("consent.agreed", { when: consent.agreedAt })]
@@ -128,6 +133,17 @@ export function IntegritySection({ consent, review, ...props }: IntegrityProps &
             )}
 
             {props.state === "ready" && <Details t={t} {...props} />}
+
+            {candidateContext && (
+                // The candidate's side, as they sent it (AIIN-185 AC2)
+                <div className={cn(row, "flex flex-col gap-1.5")}>
+                    <span className="inline-flex items-center gap-2 font-bold">
+                        <MessageSquareQuote className="size-[18px] shrink-0" aria-hidden="true" />
+                        {t("candidateSide", { when: candidateContext.when })}
+                    </span>
+                    <blockquote className="whitespace-pre-line [overflow-wrap:anywhere]">“{candidateContext.text}”</blockquote>
+                </div>
+            )}
 
             {props.state === "ready" && review && props.verdict !== "NO_CONCERNS" && (
                 <IntegrityReview

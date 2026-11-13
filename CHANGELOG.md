@@ -4,6 +4,13 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
+Migration `candidate_context` adds `Interview.candidateContext` and `candidateContextAt`.
+
+- **Candidates see what was flagged and can add their side (AIIN-185).** A finished interview's report now has a "What was flagged" row leading to a page from the approved artboards:
+  - **The moments:** each moment noted during the interview, with the question and time, in the same neutral words the employer sees. Never the employer's verdict, review or notes. An interview with nothing noted says so.
+  - **Their side:** an optional note of up to 500 characters, sent once to the hiring team. The employer sees it in the integrity section with when it was sent.
+  - Only the interview's own candidate can see the page or send the note.
+
 ## 2026-11-13, third release
 
 Migration `college_shares` adds `CollegeShare`.
