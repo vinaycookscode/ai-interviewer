@@ -29,3 +29,7 @@ Answers were graded with Gemini inside the candidate's requests: each after it w
 - Scores arrive a little after the interview ends: seconds when the queue is quiet, longer during a drive's peak, paced by the rate limit.
 - Practice sessions still grade inline with the old non-strict behaviour (low volume).
 - `scripts/load-test-grading.ts` checks 300 interviews (1,500 answers) against a stub with a rate limit, on a local database only.
+
+## Addendum 2026-11-13: background work and the model choice
+
+Grading started with `after()` failed in production until the fourth 2026-11-13 release: choosing the Gemini model read a request cookie, which Next.js forbids in `after()`, so every such run errored and retried until the answer was marked failed. Only the daily cron graded. Reading and writing those cookies now falls back to the default model when there's no request (`actions/gemini-config.ts`). Since then, the first time an interview's score is set also writes its AI summaries (`2026-11-13-ai-interview-summaries.md`).

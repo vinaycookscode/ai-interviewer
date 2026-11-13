@@ -43,6 +43,8 @@ This directory records significant technical decisions made on this project — 
 | 2026-11-12 | [Talent Match: invitation allowance, phone on apply, human rounds](2026-11-12-talent-match-decisions.md) | Accepted · implemented | AIIN-204, AIIN-196 |
 | 2026-11-13 | [Queue outbound email in the database](2026-11-13-queue-outbound-email-in-the-database.md) | Accepted · implemented | AIIN-167 |
 | 2026-11-13 | [Grade answers through a queue](2026-11-13-grade-answers-through-a-queue.md) | Accepted · implemented | AIIN-170, AIIN-171 |
+| 2026-11-13 | [Verify email before practice, and count existing accounts as verified](2026-11-13-verify-email-before-practice.md) | Accepted · implemented | AIIN-55, AIIN-57 |
+| 2026-11-13 | [AI interview summaries, one per audience, and what candidates see](2026-11-13-ai-interview-summaries.md) | Accepted · implemented | AIIN-41, AIIN-42 |
 
 Proposals that aren't ADRs yet (Upstash rate limiting, Deepgram and Google TTS) are listed in `docs/audits/2026-10-24-master-decision-index.md`.
 
