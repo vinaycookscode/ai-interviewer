@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
+import { isFreeUser as isFree } from "@/lib/free-user";
 import { getTranslations } from "next-intl/server";
-import { PlanTier } from "@prisma/client";
 import { auth } from "@/auth";
 import { getStudyCards, getDeckWithCards } from "@/actions/flashcards";
 import { getCurrentSubscription } from "@/actions/subscription";
@@ -13,7 +13,7 @@ export default async function StudyPage({ params }: { params: Promise<{ deckId: 
     if (!session?.user?.id) redirect("/auth/login");
 
     const subscription = await getCurrentSubscription();
-    const isFreeUser = !subscription || subscription.isFree || subscription.plan?.tier === PlanTier.FREE;
+    const isFreeUser = isFree(subscription);
     if (isFreeUser) {
         const t = await getTranslations("Flashcards");
         return <UpgradePrompt feature={t("title")} description={t("upgrade")} />;

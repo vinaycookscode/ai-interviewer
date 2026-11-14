@@ -40,26 +40,11 @@ export async function getCurrentSubscription() {
         },
     });
 
-    if (!subscription) {
-        // Return free tier info
-        const freePlan = await db.subscriptionPlan.findUnique({
-            where: { tier: PlanTier.FREE },
-        });
-
-        return {
-            plan: freePlan,
-            status: "ACTIVE" as SubscriptionStatus,
-            billingPeriod: "MONTHLY" as BillingPeriod,
-            isFree: true,
-            currentPeriodStart: new Date(),
-            currentPeriodEnd: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0),
-            payments: [],
-        };
-    }
+    // No subscription means the Free plan: callers check with isFreeUser(), never a made-up record (AIIN-70)
+    if (!subscription) return null;
 
     return {
         ...subscription,
-        isFree: subscription.plan.tier === PlanTier.FREE,
         plan: {
             ...subscription.plan,
             monthlyPriceDisplay: toRupees(subscription.plan.monthlyPrice),

@@ -1,8 +1,8 @@
 import Link from "next/link";
+import { isFreeUser as isFree } from "@/lib/free-user";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { CalendarDays, Flame, LineChart, Target } from "lucide-react";
-import { PlanTier } from "@prisma/client";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { checkFeature } from "@/actions/feature-flags";
@@ -34,7 +34,7 @@ export default async function PlacementProgramPage() {
     }
 
     const subscription = await getCurrentSubscription();
-    const isFreeUser = !subscription || subscription.isFree || subscription.plan?.tier === PlanTier.FREE;
+    const isFreeUser = isFree(subscription);
     if (isFreeUser) {
         return <UpgradePrompt feature={t("title")} description={t("upgrade")} />;
     }

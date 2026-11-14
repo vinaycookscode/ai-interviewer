@@ -1,8 +1,8 @@
 import Link from "next/link";
+import { isFreeUser as isFree } from "@/lib/free-user";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { ArrowRight, Layers } from "lucide-react";
-import { PlanTier } from "@prisma/client";
 import { auth } from "@/auth";
 import { getDecks } from "@/actions/flashcards";
 import { getCurrentSubscription } from "@/actions/subscription";
@@ -31,7 +31,7 @@ export default async function FlashcardsPage() {
     const t = await getTranslations("Flashcards");
 
     const subscription = await getCurrentSubscription();
-    const isFreeUser = !subscription || subscription.isFree || subscription.plan?.tier === PlanTier.FREE;
+    const isFreeUser = isFree(subscription);
     if (isFreeUser) {
         return <UpgradePrompt feature={t("title")} description={t("upgrade")} />;
     }

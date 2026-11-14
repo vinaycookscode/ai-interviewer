@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
+import { isFreeUser as isFree } from "@/lib/free-user";
 import { getTranslations } from "next-intl/server";
-import { PlanTier } from "@prisma/client";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { checkFeature } from "@/actions/feature-flags";
@@ -21,7 +21,7 @@ export default async function CompanyPrepPage() {
     }
 
     const subscription = await getCurrentSubscription();
-    const isFreeUser = !subscription || subscription.isFree || subscription.plan?.tier === PlanTier.FREE;
+    const isFreeUser = isFree(subscription);
     if (isFreeUser) {
         return <UpgradePrompt feature={t("title")} description={t("upgrade")} />;
     }

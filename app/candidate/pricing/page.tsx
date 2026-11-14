@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { PlanTier } from "@prisma/client";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { ChevronDown } from "lucide-react";
@@ -34,7 +35,7 @@ export default async function PricingPage() {
                 <p className="text-lg text-sg-muted">{t("description")}</p>
             </div>
 
-            <PricingCards plans={plans} currentPlanTier={currentSubscription?.plan?.tier} razorpayKeyId={getRazorpayKeyId()} />
+            <PricingCards plans={plans} currentPlanTier={currentSubscription?.plan?.tier ?? PlanTier.FREE} razorpayKeyId={getRazorpayKeyId()} />
 
             <section aria-label={t("faq")} className="flex max-w-[760px] flex-col gap-4">
                 <h2 className={sectionTitle}>{t("faq")}</h2>

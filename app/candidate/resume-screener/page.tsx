@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
+import { isFreeUser as isFree } from "@/lib/free-user";
 import { getTranslations } from "next-intl/server";
 import { Lock } from "lucide-react";
-import { PlanTier } from "@prisma/client";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { checkFeature } from "@/actions/feature-flags";
@@ -32,7 +32,7 @@ export default async function ResumeScreenerPage() {
     if (!session?.user?.id) redirect("/auth/login");
 
     const subscription = await getCurrentSubscription();
-    const isFreeUser = !subscription || subscription.isFree || subscription.plan?.tier === PlanTier.FREE;
+    const isFreeUser = isFree(subscription);
     if (isFreeUser) {
         return <UpgradePrompt feature={t("title")} />;
     }

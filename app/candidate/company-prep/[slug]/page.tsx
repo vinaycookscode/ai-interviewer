@@ -1,6 +1,6 @@
 import { redirect, notFound } from "next/navigation";
+import { isFreeUser as isFree } from "@/lib/free-user";
 import { getTranslations } from "next-intl/server";
-import { PlanTier } from "@prisma/client";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { checkFeature } from "@/actions/feature-flags";
@@ -55,7 +55,7 @@ export default async function CompanyDetailPage({ params }: PageProps) {
 
     // Same plan check as the list, so a company can't be opened directly by URL on the free plan.
     const subscription = await getCurrentSubscription();
-    const isFreeUser = !subscription || subscription.isFree || subscription.plan?.tier === PlanTier.FREE;
+    const isFreeUser = isFree(subscription);
     if (isFreeUser) {
         return <UpgradePrompt feature={t("title")} description={t("upgrade")} />;
     }

@@ -1,9 +1,9 @@
 import { Metadata } from "next";
+import { isFreeUser } from "@/lib/free-user";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { CheckCircle2, RotateCcw, XCircle } from "lucide-react";
-import { PlanTier } from "@prisma/client";
 import { auth } from "@/auth";
 import { getCurrentSubscription } from "@/actions/subscription";
 import { getUsageStats } from "@/lib/usage";
@@ -28,7 +28,7 @@ export default async function SubscriptionPage() {
     const [t, subscription, usage] = await Promise.all([getTranslations("Subscription.page"), getCurrentSubscription(), getUsageStats()]);
 
     const plan = subscription?.plan;
-    const isFree = !subscription || subscription.isFree || plan?.tier === PlanTier.FREE;
+    const isFree = isFreeUser(subscription);
     const planName = plan?.name ?? t("free");
     const periodEnd = subscription?.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
     const status = subscription?.status ?? "ACTIVE";
