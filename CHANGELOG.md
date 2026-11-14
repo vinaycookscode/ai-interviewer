@@ -4,6 +4,8 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
+## 2026-11-14, release
+
 Migration `resume_reviews` adds `ResumeReview`.
 
 - **Past resume reviews are kept (AIIN-64).** From the approved ResumeHistory boards: every resume review is saved with its score, what it was for (the job description's first line, or "General review"), the resume text and job description it used, and the review itself. Resume review now opens on your latest review, and a "Past reviews" panel lists up to 20; picking one shows it again, including its cover letter and rewrite tabs. Only your own reviews can be opened. Reviews are deleted after a year by the daily retention job (and with the account); the privacy policy says so.
