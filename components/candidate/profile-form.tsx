@@ -8,9 +8,10 @@ import { toast } from "sonner";
 import { updateProfile } from "@/actions/profile";
 import { field, fieldLabel, inkButton } from "@/components/jobs/employer-ui";
 import { cn } from "@/lib/utils";
+import { ChangeEmail } from "@/components/candidate/change-email";
 
-/** Name and (read-only) email. */
-export function AccountForm({ name: initialName, email }: { name: string; email: string }) {
+/** Name, and the email with Change (AIIN-227). `pending` is the address a change link is waiting on. */
+export function AccountForm({ name: initialName, email, pending }: { name: string; email: string; pending: string | null }) {
     const t = useTranslations("Profile");
     const router = useRouter();
     const [name, setName] = useState(initialName);
@@ -41,9 +42,12 @@ export function AccountForm({ name: initialName, email }: { name: string; email:
                 <label htmlFor="pf-email" className={fieldLabel}>
                     {t("email")}
                 </label>
-                <input id="pf-email" type="email" value={email} readOnly aria-describedby="pf-email-hint" className={cn(field, "h-12 bg-sg-chip")} />
-                <span id="pf-email-hint" className="text-[13px] leading-[18px] text-sg-muted">
-                    {t("emailHint")}
+                <div className="flex gap-2">
+                    <input id="pf-email" type="email" value={email} readOnly aria-describedby="pf-email-hint" className={cn(field, "h-12 min-w-0 flex-1 bg-sg-chip")} />
+                    <ChangeEmail email={email} />
+                </div>
+                <span id="pf-email-hint" className="text-[13px] leading-[18px] [overflow-wrap:anywhere] text-sg-muted">
+                    {pending ? t("emailPending", { email: pending }) : t("emailHint")}
                 </span>
             </div>
             <button type="submit" disabled={isPending || !name.trim() || name.trim() === initialName} className={cn(inkButton, "h-12 self-start")}>

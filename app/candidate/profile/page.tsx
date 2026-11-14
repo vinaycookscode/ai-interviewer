@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { pendingEmailChange } from "@/lib/email-verification";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { ArrowRight, FileText, Pencil, Sparkles } from "lucide-react";
@@ -76,7 +77,7 @@ export default async function ProfilePage() {
                 <div className="flex min-w-0 flex-[999_1_520px] flex-col gap-6">
                     <section aria-label={t("account")} className={panel}>
                         <h2 className={panelTitle}>{t("account")}</h2>
-                        <AccountForm name={user.name ?? ""} email={user.email} />
+                        <AccountForm name={user.name ?? ""} email={user.email} pending={await pendingEmailChange(session.user.id)} />
                         <WeeklyEmailSwitch on={user.weeklyReportEmails} />
                     </section>
                     <section aria-label={t("docs")} className={panel}>

@@ -55,9 +55,4 @@ export function istDay(d: Date): string {
     return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 }
 
-/** A plausible email address, lower-cased, or null. */
-export function cleanEmail(v: unknown): string | null {
-    if (typeof v !== "string") return null;
-    const e = v.trim().toLowerCase();
-    return e.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) ? e : null;
-}
+export { cleanEmail } from "./email-address.ts";

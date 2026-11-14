@@ -60,9 +60,11 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
             const stale = typeof token.roleCheckedAt !== "number" || now - token.roleCheckedAt > ROLE_RECHECK_MS;
             if (trigger !== "update" && token.role && !stale) return token;
 
-            const existingUser = await db.user.findUnique({ where: { id: token.sub }, select: { role: true } });
+            const existingUser = await db.user.findUnique({ where: { id: token.sub }, select: { role: true, email: true } });
             if (!existingUser) return token;
             token.role = existingUser.role;
+            // A changed email (AIIN-227) shows up within the same few minutes
+            token.email = existingUser.email;
             token.roleCheckedAt = now;
             return token;
         }

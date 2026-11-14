@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { needsVerification } from "@/lib/email-verification";
 import { CardWrapper } from "@/components/auth/card-wrapper";
 import { ResendVerification } from "@/components/auth/resend-verification";
-import { coralButton } from "@/components/soft-glass/classes";
+import { coralButton, focusRing } from "@/components/soft-glass/classes";
 
 export async function generateMetadata(): Promise<Metadata> {
     const t = await getTranslations("VerifyEmail");
@@ -38,6 +38,15 @@ export default async function CheckEmailPage({ searchParams }: { searchParams: P
                 <Link href={next} className={cn(coralButton, "h-12 w-full")}>
                     {t(next.startsWith("/candidate/onboarding") ? "continueSetup" : "continue")}
                 </Link>
+                <p className="text-center text-sm text-sg-muted">
+                    {t.rich("wrongAddress", {
+                        link: (chunks) => (
+                            <Link href="/candidate/profile" className={cn("rounded font-bold text-sg-text", focusRing)}>
+                                {chunks}
+                            </Link>
+                        ),
+                    })}
+                </p>
             </div>
         </CardWrapper>
     );

@@ -10,7 +10,7 @@ import { coralButton, focusRing } from "@/components/soft-glass/classes";
 
 export async function generateMetadata(): Promise<Metadata> {
     const t = await getTranslations("VerifyEmail");
-    return { title: t("doneTitle"), robots: { index: false, follow: false } };
+    return { title: t("linkTitle"), robots: { index: false, follow: false } };
 }
 
 /** Where the email's link lands (AIIN-55): verified, or the link has expired. */
@@ -21,6 +21,23 @@ export default async function VerifyPage({ searchParams }: { searchParams: Promi
     const session = await auth();
     // An old link opened by someone already verified: nothing to do
     const already = result === "expired" && !!session?.user?.id && !(await needsVerification(session.user.id));
+
+    if (result === "changed")
+        return (
+            <CardWrapper title={t("changedTitle")} description={t("changedBody")}>
+                <Link href="/candidate/profile" className={cn(coralButton, "h-12 w-full")}>
+                    {t("toProfile")}
+                </Link>
+            </CardWrapper>
+        );
+    if (result === "taken")
+        return (
+            <CardWrapper title={t("takenTitle")} description={t("takenBody")}>
+                <Link href="/candidate/profile" className={cn(coralButton, "h-12 w-full")}>
+                    {t("toProfile")}
+                </Link>
+            </CardWrapper>
+        );
 
     if (result === "done" || already)
         return (

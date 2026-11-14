@@ -2023,7 +2023,7 @@
         "account": "Account",
         "name": "Full name",
         "email": "Email",
-        "emailHint": "Your sign-in email can’t be changed.",
+        "emailHint": "Used to sign in and for interview emails.",
         "save": "Save changes",
         "saving": "Saving…",
         "saved": "Your details are saved.",
@@ -2060,7 +2060,32 @@
         "badges": "Badges",
         "badgesCount": "{earned} of {total} earned",
         "badgesNone": "Your first practice interview earns your first badge.",
-        "badgesSee": "See your badges"
+        "badgesSee": "See your badges",
+        "emailPending": "Changing to {email}: open the link we sent there.",
+        "changeEmail": {
+            "open": "Change",
+            "title": "Change your email",
+            "close": "Close",
+            "intro": "We’ll send a link to the new address. Your email stays <b>{email}</b> until you open it.",
+            "newEmail": "New email",
+            "password": "Your password",
+            "passwordHint": "To check it’s really you.",
+            "send": "Send a link",
+            "cancel": "Cancel",
+            "done": "Done",
+            "sentTitle": "Check your new inbox",
+            "sentBody": "We sent a link to <b>{email}</b>. Open it within 24 hours to switch.",
+            "sentNote": "Until then you sign in with {email}. We’ll also let that address know about the change.",
+            "errors": {
+                "invalid": "Enter the new email and your password.",
+                "same": "That’s already your email.",
+                "password": "That password isn’t right. Nothing was changed.",
+                "taken": "That email can’t be used. Try another address.",
+                "limit": "That’s 3 tries in the last hour. Try again later.",
+                "failed": "Couldn’t send the link. Try again in a minute.",
+                "signedOut": "Your session ended. Sign in again."
+            }
+        }
     },
     "Offers": {
         "title": "Offers",
@@ -4370,6 +4395,13 @@
         "signedOut": "Signed out? <link>Sign in</link> and we’ll send a new link.",
         "bannerTitle": "Verify your email to start practising",
         "bannerBody": "We sent a link to {email}. It works for 24 hours. Check spam if it isn’t there.",
-        "practiceBlocked": "Verify your email first: open the link we sent you, or send a new one from Today."
+        "practiceBlocked": "Verify your email first: open the link we sent you, or send a new one from Today.",
+        "changedTitle": "Your email is changed",
+        "changedBody": "Your account now uses this address. Sign in with it from now on.",
+        "takenTitle": "That email can’t be used",
+        "takenBody": "Another account started using it after you asked. Your email wasn’t changed; try a different address from your profile.",
+        "toProfile": "Go to your profile",
+        "wrongAddress": "Wrong address? <link>Change it</link>",
+        "linkTitle": "Your email"
     }
 }
