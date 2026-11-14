@@ -1,4 +1,5 @@
 import { checkFeature } from "@/actions/feature-flags";
+import { PRACTICE_LEVELS } from "@/lib/practice-levels";
 import { FEATURES } from "@/lib/features";
 import { PracticeView, type RecentPractice } from "@/components/candidate/practice-view";
 import { Lock } from "lucide-react";
@@ -8,7 +9,6 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { checkUsageLimit } from "@/lib/usage";
 
-const LEVELS = ["Junior", "Mid", "Senior"];
 
 export default async function PracticePage({
     searchParams,
@@ -68,7 +68,7 @@ export default async function PracticePage({
             allowance={usage.limit > 0 ? { remaining: usage.remaining, limit: usage.limit } : null}
             recent={recent}
             initialRole={role?.slice(0, 100) ?? ""}
-            initialLevel={level && LEVELS.includes(level) ? level : "Junior"}
+            initialLevel={level && (PRACTICE_LEVELS as readonly string[]).includes(level) ? level : "Junior"}
         />
     );
 }

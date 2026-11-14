@@ -4,6 +4,8 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
+- **Practice settings are checked on the server (AIIN-49).** Starting a practice accepts only the Junior, Mid and Senior levels and a one-line role of up to 100 characters (it goes into the question prompt); anything else gets "Choose a role and a level."
+
 ## 2026-11-13, fourth release
 
 - **Continue your practice from Today (AIIN-50).** When a practice from the last week isn't finished, Today's warm-up card becomes "Continue your practice", from the approved artboards: the role, how many questions are answered (with a progress bar), "Continue at question 3" and "Start a new one instead".

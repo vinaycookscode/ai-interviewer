@@ -3,6 +3,7 @@
 import { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { PRACTICE_LEVELS } from "@/lib/practice-levels";
 import { useTranslations } from "next-intl";
 import { AlertCircle, Loader2, Mic } from "lucide-react";
 import { toast } from "sonner";
@@ -30,7 +31,7 @@ interface PracticeViewProps {
 }
 
 const ROLE_KEYS = ["frontend", "software", "data", "pm", "hr"] as const;
-const LEVELS = ["Junior", "Mid", "Senior"] as const;
+const LEVELS = PRACTICE_LEVELS;
 
 export function PracticeView({ allowance, recent, initialRole = "", initialLevel = "Junior" }: PracticeViewProps) {
     const t = useTranslations("PracticeInterviews");

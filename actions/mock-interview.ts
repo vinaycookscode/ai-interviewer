@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
+import { cleanPracticeSettings } from "@/lib/practice-levels";
 import { bankIdFor, gradingPrompt, mergeBankQuestion, type BankQuestion } from "@/lib/mock/questions";
 import { db } from "@/lib/db";
 import { awardAchievements } from "@/lib/achievements/server";
@@ -39,6 +40,10 @@ export async function checkApiStatus(): Promise<{ available: boolean; usingFallb
 export async function createMockInterview(role: string, difficulty: string) {
     const session = await auth();
 
+    // Only the levels the screen offers, and a one-line role (AIIN-49)
+    const settings = cleanPracticeSettings(role, difficulty);
+    if (!settings) return { error: "Choose a role and a level." };
+
     if (!session || !session.user || !session.user.id) {
         return { error: "Unauthorized" };
     }
@@ -70,8 +75,8 @@ export async function createMockInterview(role: string, difficulty: string) {
         const mockInterview = await db.mockInterview.create({
             data: {
                 userId: session.user.id,
-                role,
-                difficulty,
+                role: settings.role,
+                difficulty: settings.difficulty,
             },
         });
 
