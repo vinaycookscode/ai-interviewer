@@ -1,15 +1,11 @@
 "use client";
 
+import type { ReadingContent } from "@/lib/placement-task-content";
 import { useState, useEffect } from "react";
 import { BookOpen, CheckCircle, Clock, ChevronDown, ChevronUp } from "lucide-react";
 
 interface ReadingTaskProps {
-    content: {
-        text?: string;
-        title?: string;
-        keyPoints?: string[];
-        estimatedMinutes?: number;
-    };
+    content: ReadingContent;
     onComplete: () => void;
     isPending?: boolean;
 }

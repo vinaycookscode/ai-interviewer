@@ -1,13 +1,10 @@
 "use client";
 
+import type { VideoContent } from "@/lib/placement-task-content";
 import { Play, Clock, CheckCircle } from "lucide-react";
 
 interface VideoTaskProps {
-    content: {
-        url?: string;
-        youtubeId?: string;
-        description?: string;
-    };
+    content: VideoContent;
     onComplete: () => void;
     isPending?: boolean;
 }

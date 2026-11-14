@@ -7,6 +7,7 @@ import { checkFeature } from "@/actions/feature-flags";
 import { getCurrentSubscription } from "@/actions/subscription";
 import { FEATURES } from "@/lib/features";
 import { generateDayToken, validateDayToken } from "@/lib/day-token";
+import { readTaskContent } from "@/lib/placement-task-content";
 import { istDay, planWeek } from "@/lib/daily-challenge/logic";
 import { loadStreak } from "@/lib/daily-challenge/server";
 import { isCheckpointDay, phaseStart, skillLabel } from "@/lib/plan/checkpoints";
@@ -102,7 +103,8 @@ export default async function ProgramDayPage({ params, searchParams }: PageProps
                 title: task.title,
                 type: task.type,
                 duration: task.duration,
-                content: task.content,
+                // Only content of the shape its type needs reaches the page; anything else shows a fallback (AIIN-68)
+                content: readTaskContent(task.type, task.content),
                 isStarted: !!completion,
                 isCompleted: !!completion?.completedAt,
                 skill: skillLabel(task.skills, candidateSkills),

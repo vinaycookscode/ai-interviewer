@@ -1,5 +1,6 @@
 "use client";
 
+import type { ProblemContent } from "@/lib/placement-task-content";
 import { useState } from "react";
 import {
     Code, Play, CheckCircle, Lightbulb, Eye, EyeOff,
@@ -10,17 +11,7 @@ import { cn } from "@/lib/utils";
 import { CodeEditor } from "@/components/ui/code-editor";
 
 interface ProblemTaskProps {
-    content: {
-        difficulty?: string;
-        problem?: string;
-        description?: string;
-        examples?: { input: string; output: string; explanation?: string }[];
-        hints?: string[];
-        constraints?: string[];
-        solution?: string;
-        starterCode?: string;
-        testCases?: { input: string; expected: string }[];
-    };
+    content: ProblemContent;
     initialCode?: string;
     onComplete: (score?: number, metadata?: any) => void;
     isPending?: boolean;
@@ -493,9 +484,7 @@ export function ProblemTask({ content, onComplete, isPending, initialCode }: Pro
                             language={selectedLanguage}
                             onLanguageChange={setSelectedLanguage}
                             height="400px"
-                            starterCodes={{
-                                javascript: problem.starterCode || SAMPLE_PROBLEMS.default.starterCode,
-                            }}
+                            starterCodes={content.starterCodes ?? { javascript: problem.starterCode || SAMPLE_PROBLEMS.default.starterCode }}
                             solutions={problem.solution ? { [selectedLanguage]: problem.solution } : undefined}
                             showLanguageSelector={true}
                             className="flex-1"

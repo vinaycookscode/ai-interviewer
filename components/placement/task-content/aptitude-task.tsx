@@ -1,21 +1,12 @@
 "use client";
 
+import type { AptitudeContent } from "@/lib/placement-task-content";
 import { useState, useEffect } from "react";
 import { Brain, Clock, CheckCircle, ChevronRight, ChevronLeft, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AptitudeTaskProps {
-    content: {
-        questions?: number;
-        topic?: string;
-        items?: {
-            question: string;
-            options: string[];
-            correct: number;
-            explanation?: string;
-        }[];
-        timeLimit?: number; // in minutes
-    };
+    content: AptitudeContent;
     onComplete: (score?: number) => void;
     isPending?: boolean;
 }

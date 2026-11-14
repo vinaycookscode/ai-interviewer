@@ -1985,7 +1985,8 @@
             "skillNew": "New for you · {skill}",
             "skillRevision": "Revision · {skill}",
             "skillNote": "New for you marks skills you didn’t list in your career path; Revision, the ones you did. Nothing is hidden or skipped.",
-            "checkpointHeading": "How far you’ve come"
+            "checkpointHeading": "How far you’ve come",
+            "brokenTask": "This task couldn’t be loaded. You can mark it done and carry on; we’ll fix the task."
         },
         "forRole": "Built for your role · {role}",
         "roles": {

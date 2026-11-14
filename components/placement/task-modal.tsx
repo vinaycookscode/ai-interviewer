@@ -14,6 +14,7 @@ import { HRPrepTask } from "./task-content/hr-prep-task";
 import { coralButton, focusRing } from "@/components/soft-glass/classes";
 import { outlineButton } from "@/components/jobs/employer-ui";
 import { cn } from "@/lib/utils";
+import type { AptitudeContent, HRPrepContent, ProblemContent, QuizContent, ReadingContent, VideoContent } from "@/lib/placement-task-content";
 
 // TODO: Phase 2 - Replace any with proper types from @/types after updating child components
 interface TaskModalProps {
@@ -22,7 +23,8 @@ interface TaskModalProps {
         title: string;
         type: TaskType;
         duration: number;
-        content: any;
+        /** Checked on the server; null when it didn't have its type's shape (AIIN-68). */
+        content: Record<string, unknown> | null;
         metadata?: any;
     };
     onComplete: (taskId: string, score?: number, metadata?: any) => void;
@@ -51,11 +53,21 @@ export function TaskModal({ task, onComplete, onClose, isPending }: TaskModalPro
     };
 
     const renderContent = () => {
+        // Malformed content: say so and let them move on, rather than break the day (AIIN-68)
+        if (!task.content && task.type !== "MOCK_INTERVIEW")
+            return (
+                <div className="flex flex-col items-center gap-4 py-10 text-center">
+                    <p className="text-sg-muted">{t("brokenTask")}</p>
+                    <button type="button" onClick={() => handleComplete()} disabled={isCompleting || isPending} className={cn(outlineButton, "h-10 text-sm")}>
+                        {t("markDone")}
+                    </button>
+                </div>
+            );
         switch (task.type) {
             case "VIDEO":
                 return (
                     <VideoTask
-                        content={task.content}
+                        content={task.content as VideoContent}
                         onComplete={handleComplete}
                         isPending={isCompleting || isPending}
                     />
@@ -63,7 +75,7 @@ export function TaskModal({ task, onComplete, onClose, isPending }: TaskModalPro
             case "PROBLEM":
                 return (
                     <ProblemTask
-                        content={task.content}
+                        content={task.content as ProblemContent}
                         initialCode={task.metadata?.code}
                         onComplete={handleComplete}
                         isPending={isCompleting || isPending}
@@ -72,7 +84,7 @@ export function TaskModal({ task, onComplete, onClose, isPending }: TaskModalPro
             case "APTITUDE":
                 return (
                     <AptitudeTask
-                        content={task.content}
+                        content={task.content as AptitudeContent}
                         onComplete={handleComplete}
                         isPending={isCompleting || isPending}
                     />
@@ -80,7 +92,7 @@ export function TaskModal({ task, onComplete, onClose, isPending }: TaskModalPro
             case "QUIZ":
                 return (
                     <QuizTask
-                        content={task.content}
+                        content={task.content as QuizContent}
                         onComplete={handleComplete}
                         isPending={isCompleting || isPending}
                     />
@@ -88,7 +100,7 @@ export function TaskModal({ task, onComplete, onClose, isPending }: TaskModalPro
             case "READING":
                 return (
                     <ReadingTask
-                        content={task.content}
+                        content={task.content as ReadingContent}
                         onComplete={handleComplete}
                         isPending={isCompleting || isPending}
                     />
@@ -96,7 +108,7 @@ export function TaskModal({ task, onComplete, onClose, isPending }: TaskModalPro
             case "HR_PREP":
                 return (
                     <HRPrepTask
-                        content={task.content}
+                        content={task.content as HRPrepContent}
                         onComplete={handleComplete}
                         isPending={isCompleting || isPending}
                     />

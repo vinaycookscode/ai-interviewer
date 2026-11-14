@@ -1,19 +1,12 @@
 "use client";
 
+import type { QuizContent } from "@/lib/placement-task-content";
 import { useState } from "react";
 import { HelpCircle, CheckCircle, X, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface QuizTaskProps {
-    content: {
-        questions?: number;
-        topic?: string;
-        items?: {
-            question: string;
-            options: string[];
-            correct: number;
-        }[];
-    };
+    content: QuizContent;
     onComplete: (score?: number) => void;
     isPending?: boolean;
 }

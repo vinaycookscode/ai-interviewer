@@ -41,7 +41,8 @@ export interface DayTask {
     title: string;
     type: TaskType;
     duration: number;
-    content: unknown;
+    /** Checked against its type's shape; null when it doesn't match (AIIN-68). */
+    content: Record<string, unknown> | null;
     isStarted: boolean;
     isCompleted: boolean;
     /** Code saved from an earlier attempt at a problem task. */

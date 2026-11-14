@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { readTaskContent } from "@/lib/placement-task-content";
 import { auth } from '@/auth';
 import { db } from '@/lib/db';
 
@@ -83,7 +84,7 @@ export async function GET(
                 type: task.type,
                 duration: task.duration,
                 order: task.order,
-                content: task.content,
+                content: readTaskContent(task.type, task.content),
                 isCompleted: completion?.isCompleted || false,
                 isStarted: !!completion,
                 score: completion?.score || null,

@@ -4,6 +4,8 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
+- **Placement plan tasks are checked before they're shown (AIIN-68).** Each task type's content now has a defined shape (`lib/placement-task-content.ts`), checked on the server before the day page or the day API sends it, and by the program seed before it stores it. A task whose content doesn't fit shows "This task couldn't be loaded" with Mark as done, instead of breaking. Video links must be `https://`. Two older content formats from the template seed now work instead of showing nothing: quizzes that list `questions` with `correctAnswer`, and problems with starter code per language (the editor now offers each language's starter).
+
 - **Placement plan day links are checked in one step (AIIN-66).** A day link's token now carries its day next to the signature (`?d=7.<signature>`), so opening a day checks one signature, in constant time, instead of trying every day of the plan. Links only ever exist for days already reached. Older bookmarked day links open today's day instead.
 
 - **The gaze tracker loads only from our own site (AIIN-44).** Its script was already ours, but the face model's WebAssembly and data files came from jsDelivr. They now load from the copy of the same version in `public/mediapipe/face_mesh`, so an interview no longer depends on a third-party CDN being up or unchanged.

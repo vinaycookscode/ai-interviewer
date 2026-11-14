@@ -1,5 +1,6 @@
 // Server-only: called from the admin-only /api/seed-placement route. Not a Server Action, so not a public endpoint (AIIN-138).
 
+import { readTaskContent } from "@/lib/placement-task-content";
 import { db } from "@/lib/db";
 import { TaskType } from "@prisma/client";
 
@@ -129,6 +130,8 @@ Features streak tracking, progress analytics, and daily accountability.`,
         });
 
         for (const taskData of moduleData.tasks) {
+            // Content must have its type's shape before it's stored (AIIN-68)
+            if (!readTaskContent(taskData.type, taskData.content)) throw new Error(`Day ${moduleData.dayNumber}: "${taskData.title}" has content of the wrong shape`);
             await db.dailyTask.create({
                 data: {
                     moduleId: module.id,

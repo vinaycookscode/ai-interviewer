@@ -1,15 +1,11 @@
 "use client";
 
+import type { HRPrepContent } from "@/lib/placement-task-content";
 import { useState } from "react";
 import { MessageSquare, CheckCircle, Lightbulb, Mic, Star } from "lucide-react";
 
 interface HRPrepTaskProps {
-    content: {
-        topic?: string;
-        question?: string;
-        tips?: string[];
-        sampleAnswer?: string;
-    };
+    content: HRPrepContent;
     onComplete: () => void;
     isPending?: boolean;
 }
