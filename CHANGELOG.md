@@ -4,6 +4,8 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
+- **Admin visit counts are real (AIIN-82).** `DailyStat` was being filled, but "visitors" was just a copy of "views", only first page loads counted, and days were UTC. Now every page view counts (route changes too), a browser counts as one visitor a day through a small first-party cookie (`gbtu_seen`, the date only, no personal data), and days are India's calendar days for both counting and the admin overview.
+
 - **Node 22 is pinned, and the `Promise.withResolvers` patch is gone (AIIN-65).** `package.json` now says `"engines": { "node": "22.x" }`, matching Vercel, so the PDF reader's need is met by Node itself instead of a global patch in two files.
 
 - **Practice settings are checked on the server (AIIN-49).** Starting a practice accepts only the Junior, Mid and Senior levels and a one-line role of up to 100 characters (it goes into the question prompt); anything else gets "Choose a role and a level."

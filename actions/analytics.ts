@@ -3,25 +3,33 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { generateGrowthInsights } from "@/lib/ai/analytics";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { istDate, istDayStart } from "@/lib/visit-day";
 
+/**
+ * One page view, from AnalyticsTracker on every route change (AIIN-82). A browser counts as a visitor once a day in
+ * India: a first-party cookie remembers the day it was last counted. No personal data is stored.
+ */
 export async function trackVisit() {
     try {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const now = new Date();
+        const today = istDayStart(now);
+        const jar = await cookies();
+        const day = istDate(now);
+        const newVisitor = jar.get("gbtu_seen")?.value !== day;
+        if (newVisitor) jar.set("gbtu_seen", day, { maxAge: 2 * 24 * 3600, sameSite: "lax", httpOnly: true, secure: process.env.NODE_ENV === "production", path: "/" });
 
-        // Update Daily Stats
         await db.dailyStat.upsert({
             where: { date: today },
             update: {
                 views: { increment: 1 },
-                visitors: { increment: 1 } // Simplified: increment both for now
+                ...(newVisitor ? { visitors: { increment: 1 } } : {}),
             },
             create: {
                 date: today,
                 views: 1,
-                visitors: 1
-            }
+                visitors: 1,
+            },
         });
 
         // Track Location (if available via headers - Vercel)

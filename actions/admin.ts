@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { deleteAccount } from "@/lib/account-deletion";
 import { revalidatePath } from "next/cache";
+import { istDayStart } from "@/lib/visit-day";
 
 export async function getPlatformStats() {
     const session = await auth();
@@ -12,8 +13,8 @@ export async function getPlatformStats() {
         throw new Error("Unauthorized");
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Today in India, the same day trackVisit counts towards (AIIN-82)
+    const today = istDayStart(new Date());
 
     const [totalUsers, totalJobs, totalInterviews, dailyStats] = await Promise.all([
         db.user.count(),
