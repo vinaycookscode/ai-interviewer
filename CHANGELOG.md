@@ -4,6 +4,8 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
+- **The gaze tracker loads only from our own site (AIIN-44).** Its script was already ours, but the face model's WebAssembly and data files came from jsDelivr. They now load from the copy of the same version in `public/mediapipe/face_mesh`, so an interview no longer depends on a third-party CDN being up or unchanged.
+
 - **Resume review reuses the resume's text (AIIN-33).** Reviewing the profile resume used to download and read the PDF every time. Its text is now kept on the candidate's profile the first time it's read (by a review or by resume facts) and reused; replacing the resume clears it, as before. A file uploaded just for one review is read but not kept.
 
 - **Admin visit counts are real (AIIN-82).** `DailyStat` was being filled, but "visitors" was just a copy of "views", only first page loads counted, and days were UTC. Now every page view counts (route changes too), a browser counts as one visitor a day through a small first-party cookie (`gbtu_seen`, the date only, no personal data), and days are India's calendar days for both counting and the admin overview.

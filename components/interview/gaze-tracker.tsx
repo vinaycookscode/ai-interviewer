@@ -59,11 +59,8 @@ export function GazeTrackerBase({ videoElement, onWarning, isActive }: GazeTrack
             try {
 
                 const faceMesh = new window.FaceMesh({
-                    locateFile: (file: string) => {
-                        // Use JSDelivr for assets to ensure correct MIME types and headers.
-                        // The local script (0.4.1633) is guaranteed to be compatible with this pinned version.
-                        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/${file}`;
-                    },
+                    // Our own copy of the same version (0.4.1633559619) as face_mesh.js, never a third-party CDN (AIIN-44)
+                    locateFile: (file: string) => `/mediapipe/face_mesh/${file}`,
                 });
 
                 faceMesh.setOptions({
