@@ -4,6 +4,8 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
+- **Placement plan day links are checked in one step (AIIN-66).** A day link's token now carries its day next to the signature (`?d=7.<signature>`), so opening a day checks one signature, in constant time, instead of trying every day of the plan. Links only ever exist for days already reached. Older bookmarked day links open today's day instead.
+
 - **The gaze tracker loads only from our own site (AIIN-44).** Its script was already ours, but the face model's WebAssembly and data files came from jsDelivr. They now load from the copy of the same version in `public/mediapipe/face_mesh`, so an interview no longer depends on a third-party CDN being up or unchanged.
 
 - **Resume review reuses the resume's text (AIIN-33).** Reviewing the profile resume used to download and read the PDF every time. Its text is now kept on the candidate's profile the first time it's read (by a review or by resume facts) and reused; replacing the resume clears it, as before. A file uploaded just for one review is read but not kept.
