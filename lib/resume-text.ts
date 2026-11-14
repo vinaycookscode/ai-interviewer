@@ -1,16 +1,5 @@
-// A PDF resume's text (AIIN-193). Server only. Same pdf-parse setup as the resume screener.
+// A PDF resume's text (AIIN-193). Server only. pdf-parse needs Promise.withResolvers, built into Node 22 (AIIN-65).
 
-if (typeof Promise.withResolvers === "undefined") {
-    // @ts-expect-error pdf-parse's pdf.js needs it on older runtimes
-    Promise.withResolvers = function () {
-        let resolve, reject;
-        const promise = new Promise((res, rej) => {
-            resolve = res;
-            reject = rej;
-        });
-        return { promise, resolve, reject };
-    };
-}
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const pdf = require("pdf-parse/lib/pdf-parse.js");
 

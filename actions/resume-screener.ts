@@ -10,19 +10,7 @@ import { getGeminiModelInstance } from "@/lib/gemini";
 import { getGeminiModel } from "@/actions/gemini-config";
 import type { ResumeAnalysis } from "@/types";
 
-// Polyfill for pdf-parse dependencies
-if (typeof Promise.withResolvers === "undefined") {
-    // @ts-ignore
-    Promise.withResolvers = function () {
-        let resolve, reject;
-        const promise = new Promise((res, rej) => {
-            resolve = res;
-            reject = rej;
-        });
-        return { promise, resolve, reject };
-    };
-}
-
+// pdf-parse needs Promise.withResolvers, built into Node 22 (pinned in package.json engines; AIIN-65)
 const pdf = require("pdf-parse/lib/pdf-parse.js");
 
 export async function analyzeResume(formData: FormData) {

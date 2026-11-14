@@ -4,6 +4,8 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
+- **Node 22 is pinned, and the `Promise.withResolvers` patch is gone (AIIN-65).** `package.json` now says `"engines": { "node": "22.x" }`, matching Vercel, so the PDF reader's need is met by Node itself instead of a global patch in two files.
+
 - **Practice settings are checked on the server (AIIN-49).** Starting a practice accepts only the Junior, Mid and Senior levels and a one-line role of up to 100 characters (it goes into the question prompt); anything else gets "Choose a role and a level."
 
 ## 2026-11-13, fourth release

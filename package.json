@@ -2,6 +2,9 @@
   "name": "ai-interviewer",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "node scripts/guard-production-db.mjs dev && next dev --webpack",
     "build": "prisma generate && node scripts/require-database-url.mjs && node scripts/guard-production-db.mjs build && prisma migrate deploy && next build --webpack",
