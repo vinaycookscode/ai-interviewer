@@ -52,25 +52,30 @@ export async function analyzeResume(formData: FormData) {
     }
 
     try {
-        let buffer: Buffer;
+        let resumeText: string;
         if (file && file.size > 0) {
             const upload = await validateUpload(file, "resumePdf", "resume");
             if (!upload.ok) return { error: upload.error };
-            buffer = upload.buffer;
+            resumeText = (await pdf(upload.buffer)).text;
         } else if (profileResumeUrl) {
-            const response = await fetch(profileResumeUrl, { redirect: "error" });
-            if (!response.ok) throw new Error("Failed to fetch resume from profile URL");
-            if (Number(response.headers.get("content-length") ?? 0) > MAX_UPLOAD_BYTES) {
-                return { error: "Your profile resume is too large to analyze." };
+            // The profile resume's text is kept once read, and cleared when the resume is replaced (AIIN-33)
+            const cached = await db.candidateProfile.findUnique({ where: { userId: session.user.id }, select: { resumeText: true } });
+            if (cached?.resumeText) {
+                resumeText = cached.resumeText;
+            } else {
+                const response = await fetch(profileResumeUrl, { redirect: "error" });
+                if (!response.ok) throw new Error("Failed to fetch resume from profile URL");
+                if (Number(response.headers.get("content-length") ?? 0) > MAX_UPLOAD_BYTES) {
+                    return { error: "Your profile resume is too large to analyze." };
+                }
+                resumeText = (await pdf(Buffer.from(await response.arrayBuffer()))).text;
+                if (resumeText?.trim().length >= 50) {
+                    await db.candidateProfile.updateMany({ where: { userId: session.user.id }, data: { resumeText } });
+                }
             }
-            buffer = Buffer.from(await response.arrayBuffer());
         } else {
             return { error: "No valid resume source found." };
         }
-
-        // Extract text from PDF
-        const pdfData = await pdf(buffer);
-        const resumeText = pdfData.text;
 
         if (!resumeText || resumeText.trim().length < 50) {
             return { error: "Could not extract sufficient text from the resume. Please ensure it is a text-based PDF." };

@@ -4,6 +4,8 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
+- **Resume review reuses the resume's text (AIIN-33).** Reviewing the profile resume used to download and read the PDF every time. Its text is now kept on the candidate's profile the first time it's read (by a review or by resume facts) and reused; replacing the resume clears it, as before. A file uploaded just for one review is read but not kept.
+
 - **Admin visit counts are real (AIIN-82).** `DailyStat` was being filled, but "visitors" was just a copy of "views", only first page loads counted, and days were UTC. Now every page view counts (route changes too), a browser counts as one visitor a day through a small first-party cookie (`gbtu_seen`, the date only, no personal data), and days are India's calendar days for both counting and the admin overview.
 
 - **Node 22 is pinned, and the `Promise.withResolvers` patch is gone (AIIN-65).** `package.json` now says `"engines": { "node": "22.x" }`, matching Vercel, so the PDF reader's need is met by Node itself instead of a global patch in two files.
