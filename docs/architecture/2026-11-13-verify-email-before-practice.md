@@ -27,3 +27,7 @@ Anyone could sign up with any address and start using AI features straight away.
 - **Block the whole app until verified.** It's simpler and stricter, but it loses people at the moment they're most interested, and most of the app (resume review, flashcards, the plan) doesn't cost us per use.
 - **Ask existing accounts to verify too.** It's more honest about what `emailVerified` means, but would lock out every current user from practice on release day.
 - **A six-digit code instead of a link.** It's better on phones when the email opens in another app, but it adds a screen and a guessable secret; a link is one tap.
+
+## Addendum 2026-11-14: changing the email (AIIN-227)
+
+The "no way to change an account's email" consequence above no longer holds. Profile → Change asks for the new address and the account's password, then sends a link to the new address. It's a `VerificationToken` with identifier `change:<userId>:<new email>`: hash only, 24 hours, one per user. Until the link is opened the account keeps its email; opening it switches the address, marks it verified (the link proved it) and tells the old address. The password is checked before saying an address can't be used, so the dialog never reveals which addresses have accounts. Requests are limited to 3 an hour. The session's email refreshes with the role recheck, within 5 minutes.
