@@ -4,6 +4,10 @@ Notable changes, newest first. Tickets are in Kaam (project AIIN); the reasoning
 
 ## Unreleased
 
+Migration `resume_reviews` adds `ResumeReview`.
+
+- **Past resume reviews are kept (AIIN-64).** From the approved ResumeHistory boards: every resume review is saved with its score, what it was for (the job description's first line, or "General review"), the resume text and job description it used, and the review itself. Resume review now opens on your latest review, and a "Past reviews" panel lists up to 20; picking one shows it again, including its cover letter and rewrite tabs. Only your own reviews can be opened. Reviews are deleted after a year by the daily retention job (and with the account); the privacy policy says so.
+
 - **Change your account email (AIIN-227).** From the approved ChangeEmail boards: the profile's email has Change, which asks for the new address and your password and sends a link to the new address. The account keeps its email until that link is opened (the profile says "Changing to …" meanwhile); then it switches, counts as verified, and the old address gets "Your email was changed" (replies go to hello@getbacktou.com). A wrong password changes nothing; an address that has an account "can't be used", said only after the password is right; 3 requests an hour; a new request replaces the earlier link. "Check your email" now has "Wrong address? Change it". A signed-in session picks up the new email within 5 minutes.
 
 - **No more made-up Free subscription (AIIN-70).** `getCurrentSubscription()` used to invent an "active" subscription for people on the Free plan, so any check that forgot `isFree` treated them as paying. It now returns nothing when there's no real subscription, and every paid-feature gate uses one check, `isFreeUser()`. Plan limits were already typed columns, so that half of the audit item needed nothing more.

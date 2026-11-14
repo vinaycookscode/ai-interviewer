@@ -1329,6 +1329,15 @@
         "unavailable": {
             "title": "Feature Unavailable",
             "description": "The Resume Screener feature is currently disabled by the administrator."
+        },
+        "history": {
+            "title": "Past reviews",
+            "kept": "Kept for a year",
+            "none": "Your reviews will be kept here, so you can see how your resume improves.",
+            "general": "General review",
+            "scoreLabel": "Score",
+            "note": "Each review keeps the resume text and job description it used, so you can compare before and after.",
+            "failed": "Couldn’t open that review. Try again."
         }
     },
     "PracticeInterviews": {
@@ -2972,7 +2981,7 @@
         }
     },
     "Privacy": {
-        "updated": "13 November 2026",
+        "updated": "14 November 2026",
         "title": "Privacy",
         "lead": "What we collect, why, who helps us run the service, how long we keep it, and how to have it changed or deleted.",
         "short": [
@@ -3122,6 +3131,10 @@
                         ],
                         [
                             "Interview integrity events",
+                            "1 year, then deleted"
+                        ],
+                        [
+                            "Resume reviews, with the resume text and job description each used",
                             "1 year, then deleted"
                         ],
                         [

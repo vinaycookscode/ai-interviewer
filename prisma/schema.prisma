@@ -114,6 +114,7 @@ model User {
   bankItems     BankItem[]
   shortlistShares ShortlistShare[] @relation("ShortlistShares")
   collegeShares   CollegeShare[]   @relation("CollegeShares")
+  resumeReviews   ResumeReview[]
   // Talent Match applications (AIIN-195)
   candidateApplications Application[]      @relation("CandidateApplications")
   employerApplications  Application[]      @relation("EmployerApplications")
@@ -1721,4 +1722,24 @@ model AptitudeAttempt {
 
   @@index([testId])
   @@index([deadline])
+}
+
+// A resume review kept so the candidate can look back and compare (AIIN-64). Holds the resume text and job description
+// it used. Deleted after a year by the daily retention job, and with the account.
+model ResumeReview {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // 0 to 100: a match score when a job description was given, else the resume's own score
+  score          Int
+  // What it was for: the job description's first line, or null for a general review
+  label          String?
+  jobDescription String?  @db.Text
+  resumeText     String   @db.Text
+  // The review itself: summary, strengths, weaknesses, suggestions, keywords, ATS compatibility, formatting issues
+  analysis       Json
+  createdAt      DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
 }

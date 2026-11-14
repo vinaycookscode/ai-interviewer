@@ -9,6 +9,8 @@ import { handleError } from "@/lib/error-handler";
 import { getGeminiModelInstance } from "@/lib/gemini";
 import { getGeminiModel } from "@/actions/gemini-config";
 import type { ResumeAnalysis } from "@/types";
+import type { Prisma } from "@prisma/client";
+import { readStoredAnalysis, reviewLabel } from "@/lib/resume-reviews";
 
 // pdf-parse needs Promise.withResolvers, built into Node 22 (pinned in package.json engines; AIIN-65)
 const pdf = require("pdf-parse/lib/pdf-parse.js");
@@ -97,7 +99,21 @@ export async function analyzeResume(formData: FormData) {
         // Increment usage
         await incrementUsage("resume_analysis");
 
-        return { success: true, analysis: result };
+        // Kept so the candidate can look back and compare (AIIN-64)
+        const { score, ...review } = analysis;
+        const saved = await db.resumeReview.create({
+            data: {
+                userId: session.user.id,
+                score: Math.max(0, Math.min(100, Math.round(score))),
+                label: reviewLabel(jobDescription),
+                jobDescription: jobDescription?.trim() || null,
+                resumeText,
+                analysis: review as unknown as Prisma.InputJsonValue,
+            },
+            select: { id: true, createdAt: true, score: true, label: true },
+        });
+
+        return { success: true, analysis: result, saved: { ...saved, createdAt: saved.createdAt.toISOString() } };
 
     } catch (error) {
         handleError(error, "analyzeResume");
@@ -230,3 +246,15 @@ export async function rewriteResume(currentText: string, analysis: ResumeAnalysi
     }
 }
 
+/** One of the candidate's own past reviews, to show again (AIIN-64). Anyone else's is not found. */
+export async function getResumeReview(id: string) {
+    const session = await auth();
+    const userId = session?.user?.id;
+    if (!userId || typeof id !== "string") return { error: "notFound" as const };
+    const r = await db.resumeReview.findFirst({
+        where: { id, userId },
+        select: { score: true, analysis: true, resumeText: true, jobDescription: true },
+    });
+    if (!r) return { error: "notFound" as const };
+    return { ok: true as const, analysis: { ...readStoredAnalysis(r.analysis, r.score), resumeText: r.resumeText, jobDescription: r.jobDescription ?? undefined } };
+}

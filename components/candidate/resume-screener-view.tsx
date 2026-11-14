@@ -3,25 +3,53 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { FileText, Upload } from "lucide-react";
+import { ChevronRight, FileText, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { analyzeResume } from "@/actions/resume-screener";
+import { analyzeResume, getResumeReview } from "@/actions/resume-screener";
 import { ResumeAnalysisView, type ResumeAnalysis } from "@/components/candidate/resume-analysis-view";
 import { Mascot } from "@/components/soft-glass/mascot";
 import { coralButton, focusRing } from "@/components/soft-glass/classes";
 import { field, glassButton, inkButton, panel, panelTitle } from "@/components/jobs/employer-ui";
 import { cn } from "@/lib/utils";
 
+/** A kept review in the "Past reviews" list (AIIN-64). */
+export interface PastReview {
+    id: string;
+    createdAt: string;
+    score: number;
+    /** The job description's first line, or null for a general review. */
+    label: string | null;
+}
+
 interface ResumeScreenerViewProps {
     resumeUrl: string | null;
     resumeName: string | null;
+    history: PastReview[];
+    /** The newest review, shown when the page opens. */
+    initial: { id: string; analysis: ResumeAnalysis } | null;
 }
 
-export function ResumeScreenerView({ resumeUrl, resumeName }: ResumeScreenerViewProps) {
+const when = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" });
+
+export function ResumeScreenerView({ resumeUrl, resumeName, history: initialHistory, initial }: ResumeScreenerViewProps) {
     const t = useTranslations("ResumeScreener");
     const [jobDescription, setJobDescription] = useState("");
-    const [analysis, setAnalysis] = useState<ResumeAnalysis | null>(null);
+    const [analysis, setAnalysis] = useState<ResumeAnalysis | null>(initial?.analysis ?? null);
+    const [history, setHistory] = useState(initialHistory);
+    const [selected, setSelected] = useState<string | null>(initial?.id ?? null);
     const [isPending, startTransition] = useTransition();
+    const [isOpening, startOpening] = useTransition();
+
+    const open = (id: string) => {
+        if (id === selected) return;
+        startOpening(async () => {
+            const r = await getResumeReview(id).catch(() => ({ error: "notFound" as const }));
+            if ("ok" in r && r.analysis) {
+                setAnalysis(r.analysis);
+                setSelected(id);
+            } else toast.error(t("history.failed"));
+        });
+    };
 
     const handleAnalyze = () => {
         if (!resumeUrl) {
@@ -39,6 +67,11 @@ export function ResumeScreenerView({ resumeUrl, resumeName }: ResumeScreenerView
                 toast.error(result.error);
             } else if (result.success && result.analysis) {
                 setAnalysis(result.analysis);
+                if (result.saved) {
+                    const saved = result.saved;
+                    setHistory((h) => [saved, ...h.filter((x) => x.id !== saved.id)]);
+                    setSelected(saved.id);
+                }
                 toast.success(t("toast.reviewed"));
             }
         });
@@ -57,7 +90,8 @@ export function ResumeScreenerView({ resumeUrl, resumeName }: ResumeScreenerView
             </div>
 
             <div className="flex flex-wrap items-start gap-6">
-                <section aria-label={t("resume.title")} className={cn(panel, "max-w-full flex-[1_1_320px] gap-[18px]")}>
+                <div className="flex max-w-full min-w-0 flex-[1_1_320px] flex-col gap-6">
+                <section aria-label={t("resume.title")} className={cn(panel, "gap-[18px]")}>
                     <h2 className={panelTitle}>{t("resume.title")}</h2>
 
                     {resumeUrl ? (
@@ -103,6 +137,53 @@ export function ResumeScreenerView({ resumeUrl, resumeName }: ResumeScreenerView
                         {isPending ? t("cta.reviewing") : analysis ? t("cta.again") : t("cta.review")}
                     </button>
                 </section>
+
+                <section aria-labelledby="rh-title" className={cn(panel, "gap-3.5")}>
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-1">
+                        <h2 id="rh-title" className={panelTitle}>
+                            {t("history.title")}
+                        </h2>
+                        <span className="text-[13px] font-medium text-sg-muted">{t("history.kept")}</span>
+                    </div>
+                    {history.length === 0 ? (
+                        <p className="text-sg-muted">{t("history.none")}</p>
+                    ) : (
+                        <>
+                            <ol className="flex flex-col gap-2" aria-busy={isOpening}>
+                                {history.map((h) => {
+                                    const current = h.id === selected;
+                                    return (
+                                        <li key={h.id}>
+                                            <button
+                                                type="button"
+                                                aria-current={current ? "true" : undefined}
+                                                disabled={isOpening || isPending}
+                                                onClick={() => open(h.id)}
+                                                className={cn(
+                                                    "flex min-h-16 w-full items-center gap-3 rounded-[18px] border-2 px-3.5 py-3 text-left disabled:cursor-wait",
+                                                    current ? "border-sg-ink bg-sg-glass-strong" : "border-transparent bg-sg-row",
+                                                    focusRing,
+                                                )}
+                                            >
+                                                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                                                    <span className="text-[13px] leading-[18px] font-bold text-sg-muted">{when.format(new Date(h.createdAt))}</span>
+                                                    <span className="font-bold [overflow-wrap:anywhere]">{h.label ?? t("history.general")}</span>
+                                                </span>
+                                                <span className="inline-flex h-[30px] min-w-[52px] items-center justify-center rounded-full bg-sg-lavender-soft px-2.5 text-sm font-bold text-sg-lavender-ink">
+                                                    <span className="sr-only">{t("history.scoreLabel")} </span>
+                                                    {h.score}
+                                                </span>
+                                                <ChevronRight className="size-4 shrink-0 text-sg-muted" aria-hidden="true" />
+                                            </button>
+                                        </li>
+                                    );
+                                })}
+                            </ol>
+                            <span className="text-[13px] text-sg-muted">{t("history.note")}</span>
+                        </>
+                    )}
+                </section>
+                </div>
 
                 <section aria-label={t("tabs.review")} className="flex min-w-0 flex-[999_1_520px] flex-col gap-5">
                     {isPending ? (
